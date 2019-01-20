@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -e
+
+# Note: they say you shouldn't parse the output of ls ( http://mywiki.wooledge.org/ParsingLs ). Unfortunately I don't know how to do it otherwise. Help?
+for file in `ls $1 | sort -V`
+do
+    y=`"${@:2}" < $file`
+    if [ -z "$y" ]
+    then
+        printf "ERROR!!!! %s doesn't appear in any subtask\n" $file
+        exit 1
+    fi
+    printf "%30s appears in the following subtasks: " $file
+    for sub in $y
+    do
+        printf "%s " $sub
+    done
+    echo
+done
+
+echo SUBTASKS OK

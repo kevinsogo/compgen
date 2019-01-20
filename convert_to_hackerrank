@@ -1,0 +1,23 @@
+#!/bin/bash
+
+set -e
+
+mkdir -p input
+mkdir -p output  
+for x in input/input*.txt output/output*.txt
+do
+    [ -e $x ] && rm $x
+done
+
+
+idx=0
+for src in `find $1/* | grep -v '\.a$' | sort -V`
+do
+    itarg=$(printf "input/input%02d.txt" $idx)
+    otarg=$(printf "output/output%02d.txt" $idx)
+    cp $src $itarg
+    cp $src.a $otarg
+    idx=$((idx+1))
+done
+
+echo Converted $idx files

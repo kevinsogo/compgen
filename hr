@@ -1,0 +1,79 @@
+#!/usr/bin/python2
+
+from sys import *
+from os import system, mkdir
+from glob import glob
+
+args = list(argv[1:])
+
+basura = 'basura_delete_later_once_scripts_finish_running_hr'
+basura2 = 'basura_delete_later_once_scripts_finish_running_hr2'
+
+def print_to(x): return 'cat > %s' % x
+
+def go_through(cmd, replacement, destination, prints=(stderr,)):
+    for targ in prints: print >>targ, 'times are printed as "real user sys"'
+    for filename in sorted(glob('input/input*.txt')):
+        outfilename = filename.replace('input', replacement)
+        for targ in prints: print >>targ, 'DOING', outfilename
+        system('/usr/bin/time -f "TIME %%es %%Us %%Ss" %s < %s | %s' % (cmd, filename, destination(outfilename)))
+        yield outfilename
+
+def unknown(cmd):
+    print >>stderr, "unrecognized command:", cmd
+    exit(1)
+
+
+if args[0] == '-h':
+    print 'USAGE:'
+    print argv[0], "gen xxx [cmd]      - generates output files to folder 'xxx'"
+    print argv[0], "genxxx [cmd]       - equivalent to 'gen xxxput [cmd]'"
+    print argv[0], "test [cmd]         - checks a program against existing solutions in output/"
+    print argv[0], "testc [cmd]    - similar to 'test', but doesn't print diff"
+    print argv[0], "run [cmd]          - just runs the program across all files, and prints to stdout."
+    print argv[0], "runboth [cmd]      - similar to 'run', but also prints the metadata to stdout, not just stderr."
+elif args[0].startswith('gen'):
+
+    if args[0] == 'gen':
+        args = args[1:]
+    else:
+        args[0] = args[0][len('gen'):] + 'put'
+
+    out = args[0]
+
+    try:
+        mkdir(out)
+    except OSError:
+        pass
+
+    for outfilename in go_through(' '.join(args[1:]), out, print_to):
+        pass
+elif args[0].startswith('test'):
+    fileverb = False
+    if args[0] not in ('testget', 'testc', 'test'):
+        unknown(args[0])
+
+    correct = files = 0
+    for outfilename in go_through(' '.join(args[1:]), 'output', lambda x: print_to(basura)):
+        if args[0] == 'test':
+            system("diff %s %s | head -n 100" % (basura, outfilename))
+        status = system("diff %s %s > %s" % (basura, outfilename, basura2))
+        files += 1
+        if status == 0:
+            correct += 1
+        print >>stderr, "correct" if status == 0 else "WRONG!!!!!!!!!", outfilename if args[0] == 'testget' else ''
+
+    print >>stderr, "{} out of {} correct".format(correct, files)
+elif args[0].startswith('run'):
+    if args[0] == 'run':
+        prints = stderr,
+    elif args[0] == 'runboth':
+        prints = stdout, stderr
+    else:
+        unknown(args[0])
+
+    for outfilename in go_through(' '.join(args[1:]), 'input', lambda x: 'cat', prints=prints):
+        pass
+
+else:
+    unknown(args[0])

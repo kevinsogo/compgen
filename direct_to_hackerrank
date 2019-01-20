@@ -1,0 +1,31 @@
+#!/bin/bash
+
+set -e
+
+# prepare hackerrank folders
+echo PREPARING FOLDERS
+mkdir -p input
+mkdir -p output  
+for x in input/input*.txt output/output*.txt
+do
+    [ -e $x ] && rm $x
+done
+
+# create data set
+echo GENERATING INPUT FILES
+/usr/bin/python2 _compile_testsets_to_bash.py $1 "$2" | bash
+echo GENERATED $(find input/input*.txt | wc -l) FILES
+
+# detect subtasks
+subs=${@:4}
+if [ -z "$subs" ]
+then
+    echo NO SUBTASKS LIST... NOT DETECTING SUBTASKS
+else
+    echo DETECTING SUBTASKS
+    ./all_files_subtasks "input/input*.txt" ./subtasks_from_validator "$2" $subs
+fi
+
+# generate output
+echo GENERATING OUTPUT FILES
+./hr genout $3
