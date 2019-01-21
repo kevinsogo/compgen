@@ -1,4 +1,4 @@
-<!-- Note to contributors: Please don't edit this file; edit readme_src/README_TEMPLATE.md instead. -->
+<!-- NOTE TO CONTRIBUTORS: PLEASE DON'T EDIT THIS FILE; EDIT readme_src/README_TEMPLATE.md INSTEAD, THEN RUN 'python2 gen_readme.py'. -->
 
 
 Some useful programs that will help you write data generators, checkers and validators for Polygon and HackerRank (and later on, other judges as well), *in Python*.  
