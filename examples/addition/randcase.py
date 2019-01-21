@@ -15,4 +15,5 @@ if __name__ == '__main__':
     from sys import argv, stdout
 
     from validator import validate_file # import the validate_file function
-    compgen.write_to_file(print_to_file, random_cases, argv[1:], stdout, validate=lambda f: validate_file(f, subtask=1))
+    compgen.write_to_file(print_to_file, random_cases, argv[1:], stdout,
+            validate=lambda f: validate_file(f, subtask=1))
