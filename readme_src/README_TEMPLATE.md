@@ -36,20 +36,7 @@ Then the `$PATH` variable will be updated after logging out and then logging in 
 
 # Example Problem
 
-Given an array, print the sum of its elements.
-
-The input format is as follows.
-    
-    T
-    N
-    A1 A2 ... AN
-    N
-    A1 A2 ... AN
-    ...
-    N
-    A1 A2 ... AN
-
-
+{{{statement.md}}}
 
 
 
