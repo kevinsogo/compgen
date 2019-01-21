@@ -11,7 +11,7 @@ Let's go through the whole process. I promise this will be easy!
 
 
 
-# Setup intructions  
+# Setup instructions  
 
 ```
 bash install.sh
@@ -93,7 +93,7 @@ def print_to_file(file, cases):
 # Validating a file
 
 
-`compgen` contains testlib-like functions for validating a file. One can alternatively just use testlib here, but there are some other reasons to use this library instead:
+`compgen` contains testlib-like functions for validating a file. You can alternatively just use testlib here, but there are some other reasons to use this library instead:
 
 - So that the generator files below can possibly import the validator.
 - So that we can detect subtasks (explained later).  
@@ -231,9 +231,9 @@ The random seed will be based on `argv[1:]`.
 
 *Note:* Don't import `random`! Instead, use the provided random number generator `rand`. This ensures reproducibility.  
 
-**Polygon note:** One can write files like this and use them under "tests". The usage is very similar to generators written with testlib.
+**Polygon note:** You can write files like this and use them under "tests". The usage is very similar to generators written with testlib.
 
-One can make it slightly cleaner by using the convenience function `listify`.  
+You can make it slightly cleaner by using the convenience function `listify`.  
 
 ```python
 import compgen
@@ -321,9 +321,9 @@ This "lazily" generates all test data and groups them into some number of files,
 
 The function decorated by `new_case` must contain the bulk of work needed to generate that case; that way, the work is not done for cases that will not be needed. Notice that we also need to pass `n` and `x` through it, since we need to capture their values. (should I just use a lazily-evaluated language for this? haha)
 
-`distribute` is responsible for distributing the (ungenerated) cases into files. The `group_into` convenience functions makes it easy to split the files into groups of equal size.  
+`distribute` is responsible for distributing the (ungenerated) cases into files. The `group_into` convenience function makes it easy to split the files into groups of equal size.  
 
-One may optionally choose to generate additional cases in `distribute`. For example, suppose we want to fill in each file with extra cases so that total of N becomes exactly 5*10^5 (or as close to it as possible). Then we could do something like this:
+You may optionally choose to generate additional cases in `distribute`. For example, suppose we want to fill in each file with extra cases so that the sum of $N$s becomes exactly $5\cdot 10^5$ (or as close to it as possible). Then we could do something like this:
 
 ```python
 import compgen
@@ -405,8 +405,6 @@ subtasks_from_validator "python2 validator.py" 1 2 3
 
 This takes input from stdin, so if needed, use pipe, or add `< file_to_detect_subtasks.in` at the end.
 
-(If it says `Permission denied`, just add executable permission using `chmod`, like `chmod +x subtasks_from_validator`. If it still fails, it probably means bash is not found in `/bin/bash`. I don't know what's the best way to fix this actually. I guess, just replace the first line of the script, haha.)
-
 Either way, once you have a command that detects subtasks, you can just loop across all files using `all_files_subtasks`: 
 
 ```bash
@@ -475,7 +473,7 @@ This will generate two folders, `input` and `output`. (Their contents will be de
 
 **Warning**: Behind the scenes, the testset script will be converted to a bash file with `$$$` replaced by something, and some lines inserted before and after, hence, it is highly recommended to not make syntax errors. I make no guarantees on what could go wrong if it fails!
 
-*Note:* If you just want to generate the test without a validator and/or a working solution, use `echo` as substitute. As a "validator", it accepts all files as valid. As a "solution", it just prints dummy answer files. e.g.
+*Note:* If you just want to generate the test without a validator and/or a working solution, use `echo` as a substitute. As a "validator", it accepts all files as valid. As a "solution", it just prints dummy answer files. e.g.
 
 ```bash
 direct_to_hackerrank testset_script_file echo echo
@@ -487,7 +485,7 @@ direct_to_hackerrank testset_script_file echo echo
 
 # Testing a solution locally with files in HackerRank format
 
-One can use the handy `hr` script to test solutions and regenerate the output files in HackerRank format without needing to generate the input files again.
+You can use the handy `hr` script to test solutions and regenerate the output files in HackerRank format without needing to generate the input files again.
 
 ```bash
 hr genout python2 solution.py           # to generate output files in output/
@@ -530,8 +528,8 @@ TODO
 
 **Others**  
 
-- Implementing missing features above. 
-- Improving scripts. Possibly look for mistakes, or badly-written parts.
-- Improving `StrictStream`. Right now, I'm manually buffering 10^5 characters at a time, but I think there has to be a more idiomatic way to buffer.  
-- Writing unit tests, possibly.  
+- Implement missing features above. 
+- Improve scripts. Possibly look for mistakes. And badly-written parts.
+- Improve `StrictStream`. Right now, I'm manually buffering 10^5 characters at a time, but I think there has to be a more idiomatic way to buffer.  
+- Write unit tests, possibly.  
 - Come up with better naming practices/conventions.
