@@ -1,6 +1,6 @@
-Some useful programs that will help you write data generators, checkers and validators for polygon and hackerrank.
+Some useful programs that will help you write data generators, checkers and validators for polygon and hackerrank, in *Python*.
 
-Needs Python 2 for now. This decision is taken so that speedup through PyPy is possible. I'll translate to Python 3 if PyPy 3 becomes ready.
+Needs Python 2 for now. This decision is taken so that speedup through PyPy is possible. I'll translate to Python 3 when PyPy 3 becomes ready.
 
 
 
@@ -27,7 +27,7 @@ The input format is as follows.
 
 # Printing a case to a file
 
-Write this in some file, say `case_formatter.py`, where it could be imported.  
+Easy enough, doesn't even use this library! But I suggest writing it on a separate file on its own, say `case_formatter.py`, where it could be imported later.  
 
 ```
 from __future__ import print_function
@@ -52,11 +52,10 @@ def print_to_file(file, cases):
 - So that the generator files below can possibly import the validator.
 - So that we can test for subtasks.  
 - So that we don't have to worry about overflow and undefined behavior.  
-
+- So that you use Python and not C++.  
 
 
 No subtasks:
-
 
 ```
 from compgen import Interval, Task, validator, ensure
@@ -403,7 +402,7 @@ done
 
 This will generate two folders, `input` and `output`. (Their contents will be deleted initially.) The `output` folder will be populated automatically from the provided solution. They will also be validated, and subtasks will be detected. `1 2 3` are the subtasks; if you leave it empty, then 
 
-Note: If you just want to generate the test without a validator and/or a working solution, use `:` to accept all files as valid and/or print dummy answer files, respectively.
+*Note:* If you just want to generate the test without a validator and/or a working solution, use `echo` to accept all files as valid and/or print dummy answer files, respectively.
 
 
 

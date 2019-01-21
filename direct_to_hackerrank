@@ -29,3 +29,5 @@ fi
 # generate output
 echo GENERATING OUTPUT FILES
 ./hr genout $3
+
+echo DONE
