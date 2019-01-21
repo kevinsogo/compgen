@@ -4,6 +4,9 @@ Needs Python 2 for now. This decision is made so that speedup through PyPy is po
 
 Let's go through the whole process. I promise this will be easy!
 
+
+*Note:* Add the `scripts/` folder to your `$PATH` variable so you can run the scripts anywhere. To import `compgen` anywhere, I think there's also `$PYTHONPATH` or something? Whatever, just find a way to add `scripts/` to `sys.path` somehow, haha. (Someone with more knowledge in Python, please fix this part, haha...)
+
 **Polygon note:** Import the file `compgen.py` into "resources".  
 
 
@@ -356,7 +359,7 @@ It just prints *all* subtasks as separate tokens. If we save this in `detect_sub
 Alternatively, if we're lazy, we can use the validator we wrote above and just run it across all subtasks, and print those where it passes. This is a bit slower, but only by a constant (proportional to the number of subtasks). In fact, the script `subtasks_from_validator` automates this for you! We can simply run the following command (supposing the only subtasks are 1, 2 and 3):
 
 ```bash
-./subtasks_from_validator "python2 validator.py" 1 2 3
+subtasks_from_validator "python2 validator.py" 1 2 3
 ```
 
 This takes input from stdin, so if needed, use pipe, or add `< file_to_detect_subtasks.in` at the end.
@@ -366,7 +369,7 @@ This takes input from stdin, so if needed, use pipe, or add `< file_to_detect_su
 Either way, once you have a command that detects subtasks, you can just loop across all files using `all_files_subtasks`: 
 
 ```bash
-./all_files_subtasks "tests/*.in" [command to detect subtasks]
+all_files_subtasks "tests/*.in" [command to detect subtasks]
 ```
 
 The `"tests/*.in"` argument should match all files you want to extract subtasks for.
@@ -374,9 +377,9 @@ The `"tests/*.in"` argument should match all files you want to extract subtasks 
 For example, using the commands above,
 
 ```bash
-./all_files_subtasks "tests/*.in" python2 detect_subtasks.py
+all_files_subtasks "tests/*.in" python2 detect_subtasks.py
 # or
-./all_files_subtasks "tests/*.in" ./subtasks_from_validator "python2 validator.py" 1 2 3
+all_files_subtasks "tests/*.in" subtasks_from_validator "python2 validator.py" 1 2 3
 ```
 
 
@@ -390,7 +393,7 @@ For example, using the commands above,
 Suppose you downloaded a collection of test cases formatted Polygon-style, and you would like to convert it into a format suitable for uploading to HackerRank. I have a ready-made script for you.
 
 ```bash
-./convert_to_hackerrank path/to/tests
+convert_to_hackerrank path/to/tests
 ```
 
 Here, `path/to/tests` is the tests folder of the Polygon-style package. It contains all test data.
@@ -421,10 +424,10 @@ done
 ```
 
 
-2. Use the `./direct_to_hackerrank` program to interpret this script. This requires a validator and a working solution.
+2. Use the `direct_to_hackerrank` program to interpret this script. This requires a validator and a working solution.
 
 ```bash
-./direct_to_hackerrank testset_script_file "python2 validator.py" "python2 solution.py" 1 2 3
+direct_to_hackerrank testset_script_file "python2 validator.py" "python2 solution.py" 1 2 3
 ```
 
 This will generate two folders, `input` and `output`. (Their contents will be deleted initially.) The `output` folder will be populated automatically from the provided solution. They will also be validated, and subtasks will be detected. In the example above, `1 2 3` are the subtasks. If you don't provide these arguments, then sit will assume that the task doesn't have subtasks.
@@ -434,7 +437,7 @@ This will generate two folders, `input` and `output`. (Their contents will be de
 *Note:* If you just want to generate the test without a validator and/or a working solution, use `echo` as substitute. As a "validator", it accepts all files as valid. As a "solution", it just prints dummy answer files. e.g.
 
 ```bash
-./direct_to_hackerrank testset_script_file echo echo
+direct_to_hackerrank testset_script_file echo echo
 ```
 
 
@@ -443,14 +446,14 @@ This will generate two folders, `input` and `output`. (Their contents will be de
 
 # Testing a solution locally with files in HackerRank format
 
-One can use the handy `./hr` script to test solutions and regenerate the output files in HackerRank format without needing to generate the input files again.
+One can use the handy `hr` script to test solutions and regenerate the output files in HackerRank format without needing to generate the input files again.
 
 ```bash
-./hr genout python2 solution.py           # to generate output files in output/
-./hr gen customfolder python2 solution.py # to generate output files in customfolder/
-./hr test python2 solution.py             # to test against the output files
-./hr testc python2 solution.py            # same as 'test', but doesn't print the output of diff
-./hr run python2 solution.py              # to just run a program across all input files
+hr genout python2 solution.py           # to generate output files in output/
+hr gen customfolder python2 solution.py # to generate output files in customfolder/
+hr test python2 solution.py             # to test against the output files
+hr testc python2 solution.py            # same as 'test', but doesn't print the output of diff
+hr run python2 solution.py              # to just run a program across all input files
 ```
 
 Obviously, the solution can be in any language; just replace the command `python2 solution.py` with the actual command to run your solution. (Compile it first if needed!)
