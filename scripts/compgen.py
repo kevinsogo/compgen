@@ -1,4 +1,9 @@
 #!/usr/bin/python2
+
+'''
+Useful stuff for generating data, validating, etc.
+'''
+
 from __future__ import print_function
 
 import re
@@ -6,6 +11,15 @@ from StringIO import StringIO
 from random import Random
 from functools import wraps
 from collections import deque
+
+__author__ = "Kevin Atienza"
+__license__ = "MIT"
+
+__maintainer__ = "Kevin Atienza"
+__email__ = "kevin.charles.atienza@gmail.com"
+__status__ = "Development"
+__version__ = "0.1"
+
 
 def ensure(condition, message=None):
     ''' assert that doesn't raise AssertionError. Useful/Convenient for judging. '''
@@ -18,6 +32,7 @@ def ensure(condition, message=None):
 
 
 def apply_after(g, name=None):
+    ''' Make a decorator that applies "g" to the return value of a function. '''
     def dec(f):
         @wraps(f)
         def new_f(*args, **kwargs):
@@ -26,11 +41,13 @@ def apply_after(g, name=None):
     if name is None: dec.__name__ = name
     return dec
 
+
 listify = apply_after(list, 'listify')
 
 
 @listify
 def group_into(v, seq):
+    ''' Group 'seq' into lists of size "v". The last group could have size < v '''
     buf = []
     for s in seq:
         buf.append(s)
@@ -48,6 +65,8 @@ class XRandom(Random):
         self.shuffle(x)
         return x
 
+
+# some hash on a sequence of integers. Don't change this! This is used by seed computation based on command line args.  
 _pmod = 2013265921
 _pbase = 1340157138
 _xmod = 10**9 + 7
@@ -63,6 +82,7 @@ def _chash_seq(seq):
 
 
 class Interval(object):
+    ''' Represents a closed interval [l, r] '''
     def __init__(self, l, r):
         self.l = l
         self.r = r
@@ -95,6 +115,10 @@ class Bounds(object):
         super(Bounds, self).__init__()
 
     def __and__(self, other):
+        '''
+        Combine two Bounds objects together. Merges intervals for conflicting attributes.
+        If not both are intervals, an error is raised.
+        '''
         m = {}
         for attr in sorted(set(self._attrs) | set(other._attrs)):
             def combine(a, b):
@@ -105,9 +129,19 @@ class Bounds(object):
             m[attr] = combine(getattr(self, attr, None), getattr(other, attr, None))
         return Bounds(m)
 
+
 _int_re = re.compile(r'0|(?:-?[1-9]\d*)$')
 
 def strict_int(x, *args):
+    '''
+    Check if the string x is a valid integer token, and that it satisfies certain constraints.
+
+    Sample usage:
+    strict_int(x) # just checks if the token is a valid integer.
+    strict_int(x, 5) # checks if x is in the half-open interval [0, 5)
+    strict_int(x, 5, 8) # checks if x is in the closed interval [5, 8]
+    strict_int(x, interval) # check if  is in the Interval 'interval'
+    '''
     ensure(_int_re.match(x), lambda: "Expected integer literal, got: {}".format(repr(x)))
     x = int(x)
     if len(args) == 2:
@@ -203,9 +237,22 @@ def _make_seed(args):
 
 
 def write_to_file(print_to_file, make, args, file, validate=None):
+    '''
+    Creates test case/s meant for a single file.
+
+    print_to_file: function that prints to a file
+    make: function that generates the data
+    args: arguments that will be passed to 'make', along with a random number generator.
+    file: file-like object to write to.
+    validate: (optional) Validate the output before printing
+
+    Note: Ensure that `make` is deterministic, and any "randomness" is obtained from
+    the given random number generator. This ensures reproducibility.
+    '''
     rand = XRandom(_make_seed(args))
     case_ = make(rand, *args)
     _write_with_validate(print_to_file, file, case_, validate=validate)
+
 
 def _get_all_groups(make, distribute, args):
     # make the cases
@@ -238,7 +285,22 @@ def _get_all_groups(make, distribute, args):
         return _dnew_case
     return distribute(rand, dnew_case, casemakers, *args)
 
+
 def write_nth_group_to_file(index, print_to_file, make, distribute, args, file, validate=None):
+    '''
+    Creates test case/s meant for several files, and returns the 'index'th among them. The given
+    new_case decorator provides a way to ensure that only the needed cases are generated.
+
+    print_to_file: function that prints to a file
+    make: function that generates the data
+    distribute: function that groups the data into separate files.
+    args: arguments that will be passed to 'make', along with a random number generator.
+    file: file-like object to write to.
+    validate: (optional) Validate the output before printing
+
+    Note: Ensure that `make` and `distribute` are deterministic, and any "randomness" is obtained from
+    the given random number generator. This ensures reproducibility.
+    '''
     groups = _get_all_groups(make, distribute, args)
     ensure(0 <= index < len(groups), lambda: "Invalid index: {} out of {} groups".format(index, len(groups)))
     group = [make() for make in groups[index]]
