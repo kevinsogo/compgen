@@ -477,9 +477,12 @@ TODO
 
 - Optimizing `StrictStream`. It's quite slow on large input files right now. Right now, it calls `.read(1)` repeatedly; I think buffering would solve it.  
 
+**Important**  
+
+- Do something about the fact that Python's `random` module makes no guarantees of reproducibility across implementations and platforms; see [this](https://stackoverflow.com/questions/8786084/reproducibility-of-python-pseudo-random-numbers-across-systems-and-versions).
+
 **Others**  
 
 - Implementing missing features above. 
 - Improving scripts. Possibly look for mistakes, or badly-written parts.
 - Writing unit tests, possibly.  
-
