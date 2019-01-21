@@ -4,7 +4,7 @@ Needs Python 2 for now. This decision is made so that speedup through PyPy is po
 
 Let's go through the whole process. I promise this will be easy!
 
-**Polygon note:** Import the file `compgen.py` under "resources".  
+**Polygon note:** Import the file `compgen.py` into "resources".  
 
 
 # Example Problem
@@ -41,7 +41,7 @@ def print_to_file(file, cases):
         print(*arr, sep=' ', file=file)
 ```
 
-**Polygon note:** Import this under "resources" as well.
+**Polygon note:** Import this into "resources" as well.
 
 
 
@@ -219,7 +219,7 @@ If you want to validate before printing, make the `validate_file` function above
             validate=lambda f: validate_file(f, subtask=1))
 ```
 
-**Polygon note:** This requires uploading `validator.py` under "resources". For the actual validator to use, we can simply write a small program like this:
+**Polygon note:** This requires uploading `validator.py` into "resources". For the actual validator to use, we can simply write a small program like this:
 
 ```python
 from validator import validate_file
