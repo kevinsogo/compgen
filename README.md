@@ -1,8 +1,10 @@
-Some useful programs that will help you write data generators, checkers and validators for polygon and hackerrank, in *Python*.
+Some useful programs that will help you write data generators, checkers and validators for Polygon and Hackerrank, in *Python*. (Later on, other judges as well.)
 
-Needs Python 2 for now. This decision is taken so that speedup through PyPy is possible. I'll translate to Python 3 when PyPy 3 becomes ready.
+Needs Python 2 for now. This decision is made so that speedup through PyPy is possible. I'll translate to Python 3 when PyPy 3 becomes ready.
 
+Let's go through the whole process. I promise this will be quick!
 
+**Polygon note:** Import the file `compgen.py`s under "resources".  
 
 
 # Example Problem
@@ -39,7 +41,7 @@ def print_to_file(file, cases):
         print(*arr, sep=' ', file=file)
 ```
 
-
+**Polygon note:** Import this under resource as well.
 
 
 
@@ -55,6 +57,8 @@ def print_to_file(file, cases):
 - So that you use Python and not C++.  
 - So that you use Python and not C++.  
 - So that you use Python and not C++.  
+
+A validator takes input from stdin. It returns with 0 exit code iff the input is valid.
 
 Here's an example of a validator:
 
@@ -92,10 +96,11 @@ if __name__ == '__main__':
     validate_file(stdin)
 ```
 
-Note that using things like `Interval` and `Bounds` is completely optional. `.read_int` can also be called like this: `file.read_int(1, 10**5)`. However, using `ensure` is recommended. (It is similar to `assert`.)
+*Note:* Using things like `Interval` and `Bounds` is completely optional. `.read_int` can also be called like `file.read_int(1, 10**5)`. However, using `ensure` is recommended. (It is similar to `assert`.)
 
-Note: `.read_ints` method coming up in the future!
+*Note:* `.read_ints` method coming up in the future!
 
+**Polygon note:** This file can be used as a "validator" in Polygon.  
 
 Here's a validator that can also check subtasks:
 
@@ -146,7 +151,7 @@ if __name__ == '__main__':
     validate_file(stdin, subtask=subtask)
 ```
 
-The `&` operator merges intervals of two `Bounds` objects.
+This takes the subtask name as an argument. The `&` operator merges intervals of two `Bounds` objects.
 
 
 
@@ -180,6 +185,8 @@ if __name__ == '__main__':
 
 One simply calls `compgen.write_to_file`. The random seed will be based on `argv[1:]`. *Note:* Don't import `random`, instead, use the provided random number generator `rand`! This ensures reproducibility.  
 
+**Polygon note:** One can write files like this and use them under "tests". The usage iss very similar to generators written with testlib!
+
 One can make it slightly cleaner by using the convenience function `listify`.  
 
 ```python
@@ -209,6 +216,14 @@ If you want to validate before printing, make the `validate_file` function above
     compgen.write_to_file(print_to_file, random_cases, argv[1:], stdout, validate=lambda f: validate_file(f, subtask=1))
 ```
 
+**Polygon note:** This requires putting the `validate_file` function in a file under "resources". To do so, remove the `if __name__ == '__main__':` clause, then upload it under resources. Then for the validator, we can simply write a small program like this:
+
+```python
+from validator import validate_file
+from sys import stdin, argv
+subtask = int(argv[1]) if len(argv) > 1 else None
+validate_file(stdin, subtask=subtask)
+```
 
 
 
@@ -330,7 +345,7 @@ print 3
 
 It just prints *all* subtasks as separate tokens. If we wrote this in a file named `detect_subtasks.py`, then we can use the command `python detect_subtasks.py`. It will take input from stdin.
 
-Alternatively, if we're lazy, we can use the validator we wrote above and just run it across all subtasks, and print those where it passes. This is a bit slower, but only by a constant. In fact, the custom script `subtasks_from_validator` automates the process for you. We can simply run the following command (supposing the only subtasks are 1, 2 and 3):
+Alternatively, if we're lazy, we can use the validator we wrote above and just run it across all subtasks, and print those where it passes. This is a bit slower, but only by a constant (proportional to the number of subtasks)s. In fact, the custom script `subtasks_from_validator` automates the process for you. We can simply run the following command (supposing the only subtasks are 1, 2 and 3):
 
 ```bash
 ./subtasks_from_validator "python2 validator.py" 1 2 3
@@ -410,6 +425,8 @@ This will generate two folders, `input` and `output`. (Their contents will be de
 
 
 
+
+
 # Testing a solution locally with files in HackerRank format
 
 One can use the handy `./hr` script to test solutions and regenerate the output files without generating the input files again.
@@ -448,5 +465,15 @@ TODO
 
 
 
-# Testing solutions  
+# Help needed  
+
+**Most important**  
+
+- Optimizing `StrictStream`. It's quite slow on large input files right now.  
+
+**Others**  
+
+- Implementing missing features above. 
+- Improving scripts. Possibly look for mistakes, or badly-written parts.
+- Writing unit tests, possibly.  
 
