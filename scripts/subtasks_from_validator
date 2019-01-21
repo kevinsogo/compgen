@@ -2,18 +2,29 @@
 
 set -e
 
-BASURA=basura_delete_later_once_scripts_finish_running
+# check if some params are missing
+subs="$1"
+if [[ -z "$subs" ]]; then
+    >&2 echo "ERROR (subtasks_from_validator): The first argument must be the subtask list, comma separated."
+    exit 1
+fi
 
+if [[ -z "${@:2}" ]]; then
+    >&2 echo "ERROR (subtasks_from_validator): The rest of the arguments must be the validator command."
+    exit 1
+fi
+
+BASURA=basura_delete_later_once_scripts_finish_running
 cat > $BASURA # store input to temp file
 
-for x in "${@:2}"; do
-    if $1 $x < $BASURA 2> ${BASURA}2; then
-        echo $x
+for sub in $(echo "$subs" | sed "s/,/ /g"); do
+    if ${@:2} $sub < $BASURA > ${BASURA}_vout 2> ${BASURA}_verr; then
+        echo $sub
     fi
 done
 
 
 # remove kalat
-for x in $BASURA ${BASURA}2; do
+for x in ${BASURA}{,_v{out,err}}; do
     [ -e $x ] && rm $x
 done

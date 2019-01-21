@@ -96,6 +96,8 @@ Here's a validator that can also check subtasks:
 
 This takes the subtask name as an argument. The `&` operator merges intervals of two `Bounds` objects.
 
+**Polygon note:** It is important that such a subtask checker must not reject if the subtask name (`argv[1]`) is invalid. This is because Polygon calls the validator with some command line arguments, and the first of those arguments (usually something like `--testset`) gets interpreted as a subtask name. I suggest keeping the subtask names as integer literals to avoid conflict.
+
 
 
 
@@ -181,7 +183,7 @@ It just prints *all* subtasks as separate tokens. If we save this in `detect_sub
 Alternatively, if we're lazy, we can use the validator we wrote above and just run it across all subtasks, and print those where it passes. This is a bit slower, but only by a constant (proportional to the number of subtasks). In fact, the script `subtasks_from_validator` automates this for you! We can simply run the following command (supposing the only subtasks are 1, 2 and 3):
 
 ```bash
-subtasks_from_validator "python2 validator.py" 1 2 3
+subtasks_from_validator 1,2,3 python2 validator.py
 ```
 
 This takes input from stdin, so if needed, use pipe, or add `< file_to_detect_subtasks.in` at the end.
@@ -199,7 +201,7 @@ For example, using the commands above,
 ```bash
 all_files_subtasks "tests/*.in" python2 detect_subtasks.py
 # or
-all_files_subtasks "tests/*.in" subtasks_from_validator "python2 validator.py" 1 2 3
+all_files_subtasks "tests/*.in" subtasks_from_validator 1,2,3 python2 validator.py
 ```
 
 
@@ -242,10 +244,10 @@ Although not recommended, if you don't want to use Polygon, you can also generat
 2. Use the `direct_to_hackerrank` program to interpret this script. This requires a validator and a working solution.
 
 ```bash
-direct_to_hackerrank testset_script_file "python2 validator.py" "python2 solution.py" 1 2 3
+direct_to_hackerrank testset_script_file "python2 validator.py" "python2 solution.py" 1,2,3
 ```
 
-This will generate two folders, `input` and `output`. (Their contents will be deleted initially.) The `output` folder will be populated automatically from the provided solution. They will also be validated, and subtasks will be detected. In the example above, `1 2 3` are the subtasks. If you don't provide these arguments, then it will assume that the task doesn't have subtasks.
+This will generate two folders, `input` and `output`. (Their contents will be deleted initially.) The `output` folder will be populated automatically from the provided solution. They will also be validated, and subtasks will be detected. In the example above, `1,2,3` are the subtasks. If you don't provide these arguments, then it will assume that the task doesn't have subtasks.
 
 **Warning**: Behind the scenes, the testset script will be converted to a bash file with `$$$` replaced by something, and some lines inserted before and after, hence, it is highly recommended to not make syntax errors. I make no guarantees on what could go wrong if it fails!
 

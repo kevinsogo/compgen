@@ -2,19 +2,25 @@
 
 set -e
 
-mkdir -p input
-mkdir -p output  
+# check if some params are missing
+IFS= tests="$1"
+if [[ -z "$tests" ]]; then
+    >&2 echo "ERROR (convert_to_hackerrank): The first argument must be the tests folder of the Polygon package."
+    exit 1
+fi
+
+mkdir -p input output  
 for x in input/input*.txt output/output*.txt; do
     [ -e $x ] && rm $x
 done
 
 idx=0
-if ! [ -z $1 ]; then
+if [[ -n "$tests" ]]; then
     while IFS= read -rd '' src; do
         cp $src $(printf "input/input%02d.txt" $idx)       # input file 
         cp $src.a $(printf "output/output%02d.txt" $idx)   # output file 
         idx=$((idx+1))
-    done < <(find $1/* -print0 | grep -z -v '\.a$' | sort -z -V)
+    done < <(find $tests -type f -name '*' -print0 | grep -z -v '\.a$' | sort -z -V)
 fi
 
-echo Converted $idx files
+echo "Converted $idx files"

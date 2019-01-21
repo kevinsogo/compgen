@@ -2,13 +2,13 @@ from __future__ import print_function
 from compgen import *
 
 subtasks = {
-    1: {
+    '1': {
         'n': Interval(1, 10),
     },
-    2: {
+    '2': {
         'n': Interval(1, 1000),
     },
-    3: {
+    '3': {
     },
 }
 

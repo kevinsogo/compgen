@@ -2,17 +2,37 @@
 
 set -e
 
+# check if some params are missing
+globpattern="$1"
+if [[ -z "$globpattern" ]]; then
+    >&2 echo "ERROR (all_files_subtasks): The first argument must contain a pattern matching the input files (enclosed in quotes)."  
+    exit 1
+fi
+
+if [[ -z "${@:2}" ]]; then
+    >&2 echo "ERROR (all_files_subtasks): The rest of the arguments must contain the command for the subtask detector."  
+    exit 1
+fi
+
+total=""
 while IFS= read -rd '' file; do
-    y=`"${@:2}" < $file`
+    y=$("${@:2}" < $file)
     if [ -z "$y" ]; then
-        printf "ERROR!!!! %s doesn't appear in any subtask\n" $file
+        echo "ERROR (all_files_subtasks): $file doesn't appear in any subtask"
         exit 1
     fi
     printf "%30s appears in the following subtasks: " $file
-    for sub in $y; do
+    for sub in $(echo $y | xargs -n1 | sort -V | uniq); do
         printf "%s " $sub
     done
     echo
-done < <(find $1 -print0 | sort -z -V)
+    total="$total $y"
+done < <(find . -wholename "./$globpattern" -print0 | sort -z -V)
 
-echo SUBTASKS OK
+printf "Distinct subtasks found:"
+for sub in $(echo $total | xargs -n1 | sort -V | uniq); do
+    printf " %s" $sub
+done
+echo
+
+echo "Subtasks OK"
