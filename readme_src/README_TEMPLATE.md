@@ -57,7 +57,7 @@ Easy enough, doesn't even use this library! But I suggest writing it on a separa
 # Validating a file
 
 
-`compgen` contains testlib-like functions for validating a file. One can alternatively just use testlib here, but there are some other reasons to use this library instead:
+`compgen` contains testlib-like functions for validating a file. You can alternatively just use testlib here, but there are some other reasons to use this library instead:
 
 - So that the generator files below can possibly import the validator.
 - So that we can detect subtasks (explained later).  
@@ -106,9 +106,9 @@ The random seed will be based on `argv[1:]`.
 
 *Note:* Don't import `random`! Instead, use the provided random number generator `rand`. This ensures reproducibility.  
 
-**Polygon note:** One can write files like this and use them under "tests". The usage is very similar to generators written with testlib.
+**Polygon note:** You can write files like this and use them under "tests". The usage is very similar to generators written with testlib.
 
-One can make it slightly cleaner by using the convenience function `listify`.  
+You can make it slightly cleaner by using the convenience function `listify`.  
 
 ```python
 {{{single_case2.py}}}
@@ -152,7 +152,7 @@ The function decorated by `new_case` must contain the bulk of work needed to gen
 
 `distribute` is responsible for distributing the (ungenerated) cases into files. The `group_into` convenience functions makes it easy to split the files into groups of equal size.  
 
-One may optionally choose to generate additional cases in `distribute`. For example, suppose we want to fill in each file with extra cases so that total of N becomes exactly 5*10^5 (or as close to it as possible). Then we could do something like this:
+You may optionally choose to generate additional cases in `distribute`. For example, suppose we want to fill in each file with extra cases so that total of N becomes exactly 5*10^5 (or as close to it as possible). Then we could do something like this:
 
 ```python
 {{{multifile_cases.py}}}
@@ -181,8 +181,6 @@ subtasks_from_validator "python2 validator.py" 1 2 3
 ```
 
 This takes input from stdin, so if needed, use pipe, or add `< file_to_detect_subtasks.in` at the end.
-
-(If it says `Permission denied`, just add executable permission using `chmod`, like `chmod +x subtasks_from_validator`. If it still fails, it probably means bash is not found in `/bin/bash`. I don't know what's the best way to fix this actually. I guess, just replace the first line of the script, haha.)
 
 Either way, once you have a command that detects subtasks, you can just loop across all files using `all_files_subtasks`: 
 
@@ -259,7 +257,7 @@ direct_to_hackerrank testset_script_file echo echo
 
 # Testing a solution locally with files in HackerRank format
 
-One can use the handy `hr` script to test solutions and regenerate the output files in HackerRank format without needing to generate the input files again.
+You can use the handy `hr` script to test solutions and regenerate the output files in HackerRank format without needing to generate the input files again.
 
 ```bash
 hr genout python2 solution.py           # to generate output files in output/
