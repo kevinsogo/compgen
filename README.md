@@ -5,7 +5,9 @@ Needs Python 2 for now. This decision is made so that speedup through PyPy is po
 Let's go through the whole process. I promise this will be easy!
 
 
-*Note:* Add the `scripts/` folder to your `$PATH` variable so you can run the scripts anywhere. To import `compgen` anywhere, I think there's also `$PYTHONPATH` or something? Whatever, just find a way to add `scripts/` to `sys.path` somehow, haha. (Someone with more knowledge in Python, please fix this part, haha...)
+*Note:* Add the `scripts/` folder to your `$PATH` variable so you can run the scripts anywhere. You might also need to give executable permission (`chmod +x scripts/*` or something).
+
+*Note:* To be able to import `compgen` anywhere, I think there's also `$PYTHONPATH` or something? Whatever, just find a way to add `scripts/` to `sys.path` somehow, haha. (Someone with more knowledge in Python, please fix this part, haha...)
 
 **Polygon note:** Import the file `compgen.py` into "resources".  
 
@@ -492,3 +494,4 @@ TODO
 - Improving scripts. Possibly look for mistakes, or badly-written parts.
 - Improving `StrictStream`. Right now, I'm manually buffering 10^5 characters at a time, but I think there has to be a more idiomatic way to buffer.  
 - Writing unit tests, possibly.  
+- Come up with better naming practices/conventions.
