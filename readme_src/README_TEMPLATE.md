@@ -10,11 +10,13 @@ Let's go through the whole process. I promise this will be easy!
 
 # Setup instructions  
 
+Run this:
+
 ```
 bash install.sh
 ```
 
-The last line printed should be `DONE`.  
+The last line printed should be `DONE`. This sets up most of it.
 
 Also, add the `scripts/` folder to your `$PATH` variable so you can run the scripts anywhere. One way to do this would be to add the following line at the end of `~/.profile`:
 
@@ -26,7 +28,7 @@ Replace `/path/to/` with the location of the `compgen` folder. Ensure that there
 
 Then the `$PATH` variable will be updated after logging out and then logging in again. (You can run `source ~/.profile` if you want to update `$PATH` in your current session.)
 
-**Polygon note:** Due to the way Polygon works, we have to make some hacks so that we are able to use this there. **If you want to use this for Polygon, you need to follow these rules:**
+**Polygon note:** Due to the way Polygon works, we have to do some hacks so that we are able to use this there. **If you want to use this for Polygon, you need to follow these rules:**
 
 - Any `import`, aside from builtin packages, must be of the following form: `from xxx import *`. (It should be an asterisk `*`.) It will not work otherwise. In addition, these import statements must be unindented.
 
@@ -34,8 +36,7 @@ Then the `$PATH` variable will be updated after logging out and then logging in 
 
 - You cannot upload any code you write directly into Polygon; you have to run the following command first: `polygonate`. This will generate a folder called `polygon_ready`; the files inside it can now be uploaded. 
 
-
-
+*Note:* It would be great if the path containing `compgen` AND the location of the problem data you're working on doesn't have spaces and other special characters in it; I haven't tested if the scripts work if there are. 
 
 
 
@@ -308,3 +309,5 @@ TODO
 - Improve `StrictStream`. Right now, I'm manually buffering 10^5 characters at a time, but I think there has to be a more idiomatic way to buffer.  
 - Write unit tests, possibly.  
 - Come up with better naming practices/conventions.
+- Ensure that the scripts work even in path names containing spaces and special characters. 
+- Improve `polygonate` to reduce the restrictions above. For example, better handling of other forms of `import`.
