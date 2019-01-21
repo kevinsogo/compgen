@@ -6,11 +6,11 @@ Let's go through the whole process. I promise this will be easy!
 
 **Polygon note:** Due to the way Polygon works, we have to make some hacks so that we are able to use this there. If you want to use this for Polygon, you need to note these things:
 
-- *Any `import`, aside from builtin packages, must be of the following form*: `from xxx import *`. (It should always be `*`; only `xxx` will be replaced.) It will not work otherwise.
+- Any `import`, aside from builtin packages, must be of the following form: `from xxx import *`. (It should always be an asterisk `*`; only `xxx` will be replaced.) It will not work otherwise. In addition, these imports must be unindented.
 
 - If you're printing, you need to add the line `from __future__ import print_function` at the beginning of your code. Ideally, you don't import any other thing from `__future__`, though in some cases it would work. 
 
-- You cannot upload any code here directly into Polygon; you have to run the following command first: `polygonate`. This will generate a folder called `polygon_ready`; the files inside can now be uploaded. 
+- You cannot upload any code you write directly into Polygon; you have to run the following command first: `polygonate`. This will generate a folder called `polygon_ready`; the files inside can now be uploaded. 
 
 
 
@@ -73,7 +73,7 @@ This just takes a test case and prints it to a file in the correct input format.
 - So that you use Python and not C++.  
 - So that you use Python and not C++.  
 
-A validator should stake input from stdin. It should return with 0 exit code iff the input is valid.
+A validator should take input from stdin. It should return with 0 exit code iff the input is valid.
 
 Here's an example of a validator:
 
@@ -131,14 +131,7 @@ from validator import *
             validate=lambda f: validate_file(f, subtask=1))
 ```
 
-**Polygon note:** This requires uploading `validator.py` into "resources". For the actual validator to use, we can simply write a small program like this (again, note `from ... import *`):
-
-```python
-from validator import *
-from sys import stdin, argv
-subtask = int(argv[1]) if len(argv) > 1 else None
-validate_file(stdin, subtask=subtask)
-```
+**Polygon note:** Again, `from ... import *`.
 
 
 

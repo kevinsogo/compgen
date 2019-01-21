@@ -6,6 +6,8 @@ Useful stuff for generating data, validating, etc.
 
 from __future__ import print_function
 
+# @@@@@ embedding starts here
+
 __author__ = "Kevin Atienza"
 __license__ = "MIT"
 
@@ -13,8 +15,6 @@ __maintainer__ = "Kevin Atienza"
 __email__ = "kevin.charles.atienza@gmail.com"
 __status__ = "Development"
 __version__ = "0.1"
-
-# @@@@@ embedding starts here
 
 import re
 from StringIO import StringIO
