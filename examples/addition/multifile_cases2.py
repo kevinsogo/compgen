@@ -1,4 +1,6 @@
-import compgen
+from __future__ import print_function
+from compgen import *
+from formatter import *
 
 A = 10**9
 def rand_case(rand, n):
@@ -21,11 +23,10 @@ def many_cases(rand, new_case, *args):
 
 def distribute(rand, new_case, casemakers, *args):
     T, N = map(int, args[:2])
-    return compgen.group_into(T, rand.shuff(casemakers)) # shuffle and then divide into groups of size T
+    return group_into(T, rand.shuff(casemakers)) # shuffle and then divide into groups of size T
 
 if __name__ == '__main__':
-    from case_formatter import print_to_file
     from sys import argv, stdout
 
     index = int(argv[1])
-    compgen.write_nth_group_to_file(index, print_to_file, many_cases, distribute, argv[2:], stdout)
+    write_nth_group_to_file(index, print_to_file, many_cases, distribute, argv[2:], stdout)

@@ -1,4 +1,4 @@
-from compgen import Interval, Bounds, validator, ensure
+from compgen import *
 
 subtasks = {
     1: {

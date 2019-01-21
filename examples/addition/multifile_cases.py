@@ -1,5 +1,7 @@
-
-import compgen
+from __future__ import print_function
+from compgen import *
+from formatter import *
+from validator import *
 
 A = 10**9
 SN = 5*10**5
@@ -14,7 +16,7 @@ def many_cases(rand, new_case, *args):
                 return [rand.randrange(-A + (x + A) % 8, A + 1, 8) for i in xrange(n)]
 
 
-@compgen.listify
+@listify
 def distribute(rand, new_case, casemakers, *args):
     T, N = map(int, args[:2])
     def fill_up(group, totaln):
@@ -40,8 +42,7 @@ def distribute(rand, new_case, casemakers, *args):
     if group: yield fill_up(group, totaln)
 
 if __name__ == '__main__':
-    from case_formatter import print_to_file
     from sys import argv, stdout
 
     index = int(argv[1])
-    compgen.write_nth_group_to_file(index, print_to_file, many_cases, distribute, argv[2:], stdout)
+    write_nth_group_to_file(index, print_to_file, many_cases, distribute, argv[2:], stdout)

@@ -1,4 +1,5 @@
-from compgen import Interval, Bounds, validator, ensure
+from __future__ import print_function
+from compgen import *
 
 bounds = {
     't': Interval(1, 10**5),
