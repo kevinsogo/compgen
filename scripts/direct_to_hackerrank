@@ -2,6 +2,9 @@
 
 set -e
 
+script_name=$0
+__dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # prepare hackerrank folders
 echo PREPARING FOLDERS
 mkdir -p input
@@ -13,7 +16,7 @@ done
 
 # create data set
 echo GENERATING INPUT FILES
-/usr/bin/python2 _compile_testsets_to_bash.py $1 "$2" | bash
+/usr/bin/python2 $__dir/_compile_testsets_to_bash.py $1 "$2" | bash
 echo GENERATED $(find input/input*.txt | wc -l) FILES
 
 # detect subtasks
@@ -23,11 +26,11 @@ then
     echo NO SUBTASKS LIST... NOT DETECTING SUBTASKS
 else
     echo DETECTING SUBTASKS
-    ./all_files_subtasks "input/input*.txt" ./subtasks_from_validator "$2" $subs
+    $__dir/all_files_subtasks "input/input*.txt" $__dir/subtasks_from_validator "$2" $subs
 fi
 
 # generate output
 echo GENERATING OUTPUT FILES
-./hr genout $3
+$__dir/hr genout $3
 
 echo DONE

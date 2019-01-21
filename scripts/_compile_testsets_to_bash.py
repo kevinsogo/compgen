@@ -19,24 +19,23 @@ for line in script:
         exit(1)
 
 
-# var = 'kljashflskajhflksjahflskjahflsakjhfl'
-var = 'yy'
+fctr = 'kljashflskajhflksjahflskjahflsakjhfl'
+fname = 'slkdfjsdafsdifoidsafuoisdoidoioiioo'
 
-file_command = '$(printf "input/input%02d.txt" ${})'.format(var)
 
-print '''
-#!/bin/bash
+print '''#!/bin/bash
 set -e
-{}=0
+{fctr}=0
 
-'''.format(var)
+'''.format(fctr=fctr)
 
 for line in script.strip().split('\n'):
     if '$$$' in line:
-        line = line.replace('$$$', file_command)
+        line = line.replace('$$$', '$' + fname)
         indent = line[:len(line) - len(line.lstrip())]
+        print indent + '{fname}=$(printf "input/input%02d.txt" ${fctr})'.format(fctr=fctr, fname=fname)
+        print indent + '{fctr}=$(({fctr}+1))'.format(fctr=fctr)
         print line
-        print indent + '{} < {}'.format(validator, file_command)
-        print indent + '{var}=$(({var}+1))'.format(var=var)
+        print indent + '{} < ${fname}'.format(validator, fname=fname)
     else:
         print line

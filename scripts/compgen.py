@@ -232,3 +232,4 @@ def write_nth_group_to_file(index, print_to_file, make, distribute, args, file, 
     ensure(0 <= index < len(groups), lambda: "Invalid index: {} out of {} groups".format(index, len(groups)))
     group = [make() for make in groups[index]]
     _write_with_validate(print_to_file, file, group, validate=validate)
+    return len(groups)

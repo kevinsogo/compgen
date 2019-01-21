@@ -5,3 +5,4 @@ convert_to_hackerrank
 direct_to_hackerrank
 hr
 subtasks_from_validator
+__init__.py
