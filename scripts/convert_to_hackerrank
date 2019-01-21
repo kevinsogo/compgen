@@ -4,21 +4,17 @@ set -e
 
 mkdir -p input
 mkdir -p output  
-for x in input/input*.txt output/output*.txt
-do
+for x in input/input*.txt output/output*.txt; do
     [ -e $x ] && rm $x
 done
 
 idx=0
-if ! [ -z $1 ]
-then
-
-    for src in `find $1/* | grep -v '\.a$' | sort -V`
-    do
+if ! [ -z $1 ]; then
+    while IFS= read -rd '' src; do
         cp $src $(printf "input/input%02d.txt" $idx)       # input file 
         cp $src.a $(printf "output/output%02d.txt" $idx)   # output file 
         idx=$((idx+1))
-    done
+    done < <(find $1/* -print0 | grep -z -v '\.a$' | sort -z -V)
 fi
 
 echo Converted $idx files

@@ -6,17 +6,14 @@ BASURA=basura_delete_later_once_scripts_finish_running
 
 cat > $BASURA # store input to temp file
 
-for x in "${@:2}"
-do
-    if $1 $x < $BASURA 2> ${BASURA}2
-    then
+for x in "${@:2}"; do
+    if $1 $x < $BASURA 2> ${BASURA}2; then
         echo $x
     fi
 done
 
 
 # remove kalat
-for x in $BASURA ${BASURA}2
-do
+for x in $BASURA ${BASURA}2; do
     [ -e $x ] && rm $x
 done

@@ -9,8 +9,7 @@ __dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 echo PREPARING FOLDERS
 mkdir -p input
 mkdir -p output  
-for x in input/input*.txt output/output*.txt
-do
+for x in input/input*.txt output/output*.txt; do
     [ -e $x ] && rm $x
 done
 
@@ -21,8 +20,7 @@ echo GENERATED $(find input/input*.txt | wc -l) FILES
 
 # detect subtasks
 subs=${@:4}
-if [ -z "$subs" ]
-then
+if [ -z "$subs" ]; then
     echo NO SUBTASKS LIST... NOT DETECTING SUBTASKS
 else
     echo DETECTING SUBTASKS
