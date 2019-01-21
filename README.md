@@ -128,7 +128,7 @@ bounds = {
 
 @validator
 def validate_file(file, subtask=None):
-    lim = Bounds(bounds) & Bounds(subtasks.get(subtask))
+    lim = Bounds(bounds) & Bounds(subtasks[subtask] if subtask is not None else None)
 
     t = file.read_int(lim.t)
     file.read_eoln()
