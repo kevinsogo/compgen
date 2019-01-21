@@ -24,7 +24,7 @@ def unknown(cmd):
     exit(1)
 
 
-if args[0] == '-h':
+if not args or args[0] == '-h':
     print 'USAGE:'
     print argv[0], "gen xxx [cmd]      - generates output files to folder 'xxx'"
     print argv[0], "genxxx [cmd]       - equivalent to 'gen xxxput [cmd]'"
