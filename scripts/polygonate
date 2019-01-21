@@ -1,0 +1,99 @@
+#!/usr/bin/python
+
+from __future__ import print_function
+
+from sys import *
+import os.path
+from os import mkdir
+from glob import glob
+from compgen import apply_after
+
+compgen_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "compgen", "compgen.py")
+
+# extract pastable from compgen
+contents = {}
+with open(compgen_file) as f:
+    good_lines = ['if 1:\n']
+    lines = f.readlines()
+    found = False
+    for line in lines:
+        new_found = '@@@@@' in line
+        if found:
+            good_lines.append(' '*4 + line)
+            assert not new_found, "There must only be one @@@@@"
+        found |= new_found
+    contents[compgen_file] = good_lines
+
+
+copied_files = sorted(glob('*.py'))
+all_files = copied_files + [compgen_file]
+
+for file in copied_files:
+    with open(file) as f:
+        contents[file] = f.readlines()
+
+
+name_of_file = {}
+for file in all_files:
+    name, ext = os.path.splitext(os.path.basename(file))
+    assert ext == '.py'
+    name_of_file[file] = name
+
+file_of_name = {name: file for file, name in name_of_file.items()}
+
+def get_imported(parts):
+    if len(parts) == 4 and parts[:1] + parts[2:] == ['from', 'import', '*']:
+        return parts[1]
+
+
+def clear_future_print(lines):
+    found_future_print = False
+    for line in lines:
+        if line.strip().split() == ['from', '__future__', 'import', 'print_function']:
+            if found_future_print: continue
+            found_future_print = True
+        yield line
+
+
+@apply_after(clear_future_print)
+def expand_imports(file, visiting, visited):
+    if file in visiting:
+        print("Infinite loop!", file=stderr)
+        exit(1)
+    visiting.add(file)
+    for line in contents[file]:
+        imported = get_imported(line.strip().split())
+        if imported in file_of_name:
+            fimported = file_of_name[imported]
+            if fimported not in visited:
+                for line in expand_imports(fimported, visiting, visited):
+                    yield line
+        else:
+            yield line
+    visiting.remove(file)
+    visited.add(file)
+
+expanded = {}
+for file in contents:
+    expanded[file] = list(expand_imports(file, set(), set()))
+
+
+
+
+
+# import print_function exactly once
+
+polygon_ready = 'polygon_ready'
+try:
+    mkdir(polygon_ready)
+except OSError:
+    pass
+
+for file in copied_files:
+    dname, bname = os.path.split(file)
+    poly_file = os.path.join(dname, polygon_ready, bname)
+    print('CONVERTING', file, 'TO', poly_file)
+    with open(poly_file, 'w') as f:
+        f.writelines(expanded[file])
+
+print('DONE')

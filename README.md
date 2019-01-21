@@ -7,6 +7,14 @@ Needs Python 2 for now. This decision is made so that speedup through PyPy is po
 
 Let's go through the whole process. I promise this will be easy!
 
+**Polygon note:** Due to the way Polygon works, we have to make some hacks so that we are able to use this there. If you want to use this for Polygon, you need to note these things:
+
+- *Any `import`, aside from builtin packages, must be of the following form*: `from xxx import *`. (It should always be `*`; only `xxx` will be replaced.) It will not work otherwise.
+
+- If you're printing, you need to add the line `from __future__ import print_function` at the beginning of your code. Ideally, you don't import any other thing from `__future__`, though in some cases it would work. 
+
+- You cannot upload any code here directly into Polygon; you have to run the following command first: `polygonate`. This will generate a folder called `polygon_ready`; the files inside can now be uploaded. 
+
 
 
 
@@ -29,8 +37,6 @@ Replace `/path/to/` with the location of the `compgen` folder. Ensure that there
 
 Then the `$PATH` variable will be updated after logging out and then logging in again. (You can run `source ~/.profile` if you want to update `$PATH` in your current session.)
 
-
-**Polygon note:** Import the file `compgen.py` into "resources".  
 
 
 
@@ -73,7 +79,7 @@ $-10**9 \le A_i \le 10^9$
 
 # Printing a case to a file
 
-Easy enough, doesn't even use this library! But I suggest writing it on a separate file on its own, say `case_formatter.py`, so that it could be imported later.  
+This just takes a test case and prints it to a file in the correct input format. I suggest writing it on a separate file on its own, say `formatter.py`, so that it could be imported later.  
 
 ```python
 from __future__ import print_function
@@ -85,7 +91,8 @@ def print_to_file(file, cases):
         print(*arr, sep=' ', file=file)
 ```
 
-**Polygon note:** Import this into "resources" as well.
+
+
 
 
 
@@ -107,7 +114,8 @@ A validator should stake input from stdin. It should return with 0 exit code iff
 Here's an example of a validator:
 
 ```python
-from compgen import Interval, Bounds, validator, ensure
+from __future__ import print_function
+from compgen import *
 
 bounds = {
     't': Interval(1, 10**5),
@@ -144,13 +152,12 @@ if __name__ == '__main__':
 
 *Note:* `.read_ints` method coming up in the future!
 
-**Polygon note:** This file can be used as the "validator" in Polygon.  
+**Polygon note:** This file can be used as the "validator" in Polygon (after running the `polygonate` script). Also, notice that `compgen` is imported with the form `from ... import *`.
 
 Here's a validator that can also check subtasks:
 
-
 ```python
-from compgen import Interval, Bounds, validator, ensure
+from compgen import *
 
 subtasks = {
     1: {
@@ -172,7 +179,7 @@ bounds = {
 
 @validator
 def validate_file(file, subtask=None):
-    lim = Bounds(bounds) & Bounds(subtasks[subtask] if subtask is not None else None)
+    lim = Bounds(bounds) & Bounds(subtasks.get(subtask))
 
     t = file.read_int(lim.t)
     file.read_eoln()
@@ -191,7 +198,7 @@ def validate_file(file, subtask=None):
 
 if __name__ == '__main__':
     from sys import stdin, argv
-    subtask = int(argv[1]) if len(argv) > 1 else None
+    subtask = argv[1] if len(argv) > 1 else None
     validate_file(stdin, subtask=subtask)
 ```
 
@@ -207,7 +214,9 @@ This takes the subtask name as an argument. The `&` operator merges intervals of
 It's easy to write a test generator.  
 
 ```python
-import compgen
+from __future__ import print_function
+from compgen import *
+from formatter import *
 
 A = 10**9
 
@@ -221,11 +230,12 @@ def random_cases(rand, *args):
     return cases
 
 if __name__ == '__main__':
-    from case_formatter import print_to_file
     from sys import argv, stdout
 
-    compgen.write_to_file(print_to_file, random_cases, argv[1:], stdout)
+    write_to_file(print_to_file, random_cases, argv[1:], stdout)
 ```
+
+**Polygon note:** Note that `formatter` is imported using the form `from ... import *`.
 
 The random seed will be based on `argv[1:]`.  
 
@@ -236,11 +246,13 @@ The random seed will be based on `argv[1:]`.
 You can make it slightly cleaner by using the convenience function `listify`.  
 
 ```python
-import compgen
+from __future__ import print_function
+from compgen import *
+from formatter import *
 
 A = 10**9
 
-@compgen.listify
+@listify
 def random_cases(rand, *args):
     ''' generates test data for a file '''
     T, N = map(int, args[:2])
@@ -249,28 +261,29 @@ def random_cases(rand, *args):
         yield [rand.randint(-A, A) for i in xrange(n)]
 
 if __name__ == '__main__':
-    from case_formatter import print_to_file
     from sys import argv, stdout
 
-    compgen.write_to_file(print_to_file, random_cases, argv[1:], stdout)
+    write_to_file(print_to_file, random_cases, argv[1:], stdout)
 ```
 
 If you want to validate before printing, make the `validate_file` function above importable, then you could replace the last line with this:
 
 ```python
-    from validator import validate_file
+from validator import *
+...
     compgen.write_to_file(print_to_file, random_cases, argv[1:], stdout,
             validate=lambda f: validate_file(f, subtask=1))
 ```
 
-**Polygon note:** This requires uploading `validator.py` into "resources". For the actual validator to use, we can simply write a small program like this:
+**Polygon note:** This requires uploading `validator.py` into "resources". For the actual validator to use, we can simply write a small program like this (again, note `from ... import *`):
 
 ```python
-from validator import validate_file
+from validator import *
 from sys import stdin, argv
 subtask = int(argv[1]) if len(argv) > 1 else None
 validate_file(stdin, subtask=subtask)
 ```
+
 
 
 
@@ -284,7 +297,9 @@ Well, you could still just generate everything and only print a subset of them, 
 For this, you can use this pattern:
 
 ```python
-import compgen
+from __future__ import print_function
+from compgen import *
+from formatter import *
 
 A = 10**9
 def rand_case(rand, n):
@@ -307,14 +322,13 @@ def many_cases(rand, new_case, *args):
 
 def distribute(rand, new_case, casemakers, *args):
     T, N = map(int, args[:2])
-    return compgen.group_into(T, rand.shuff(casemakers)) # shuffle and then divide into groups of size T
+    return group_into(T, rand.shuff(casemakers)) # shuffle and then divide into groups of size T
 
 if __name__ == '__main__':
-    from case_formatter import print_to_file
     from sys import argv, stdout
 
     index = int(argv[1])
-    compgen.write_nth_group_to_file(index, print_to_file, many_cases, distribute, argv[2:], stdout)
+    write_nth_group_to_file(index, print_to_file, many_cases, distribute, argv[2:], stdout)
 ```
 
 This "lazily" generates all test data and groups them into some number of files, but only prints out the `index`th group.
@@ -326,7 +340,9 @@ The function decorated by `new_case` must contain the bulk of work needed to gen
 You may optionally choose to generate additional cases in `distribute`. For example, suppose we want to fill in each file with extra cases so that the sum of $N$s becomes exactly $5\cdot 10^5$ (or as close to it as possible). Then we could do something like this:
 
 ```python
-import compgen
+from __future__ import print_function
+from compgen import *
+from formatter import *
 
 A = 10**9
 SN = 5*10**5
@@ -341,7 +357,7 @@ def many_cases(rand, new_case, *args):
                 return [rand.randrange(-A + (x + A) % 8, A + 1, 8) for i in xrange(n)]
 
 
-@compgen.listify
+@listify
 def distribute(rand, new_case, casemakers, *args):
     T, N = map(int, args[:2])
     def fill_up(group, totaln):
@@ -367,11 +383,10 @@ def distribute(rand, new_case, casemakers, *args):
     if group: yield fill_up(group, totaln)
 
 if __name__ == '__main__':
-    from case_formatter import print_to_file
     from sys import argv, stdout
 
     index = int(argv[1])
-    compgen.write_nth_group_to_file(index, print_to_file, many_cases, distribute, argv[2:], stdout)
+    write_nth_group_to_file(index, print_to_file, many_cases, distribute, argv[2:], stdout)
 ```
 
 Here, the keyword arg `n=n` passed to `new_case` is what allows us to access `n` in `distribute`, even though the case hasn't been generated yet. In general, the keyword arguments allow you to store any useful info about the ungenerated case if you need them, without needing to generate the case itself.  

@@ -4,6 +4,14 @@ Needs Python 2 for now. This decision is made so that speedup through PyPy is po
 
 Let's go through the whole process. I promise this will be easy!
 
+**Polygon note:** Due to the way Polygon works, we have to make some hacks so that we are able to use this there. If you want to use this for Polygon, you need to note these things:
+
+- *Any `import`, aside from builtin packages, must be of the following form*: `from xxx import *`. (It should always be `*`; only `xxx` will be replaced.) It will not work otherwise.
+
+- If you're printing, you need to add the line `from __future__ import print_function` at the beginning of your code. Ideally, you don't import any other thing from `__future__`, though in some cases it would work. 
+
+- You cannot upload any code here directly into Polygon; you have to run the following command first: `polygonate`. This will generate a folder called `polygon_ready`; the files inside can now be uploaded. 
+
 
 
 
@@ -27,8 +35,6 @@ Replace `/path/to/` with the location of the `compgen` folder. Ensure that there
 Then the `$PATH` variable will be updated after logging out and then logging in again. (You can run `source ~/.profile` if you want to update `$PATH` in your current session.)
 
 
-**Polygon note:** Import the file `compgen.py` into "resources".  
-
 
 
 
@@ -43,13 +49,14 @@ Then the `$PATH` variable will be updated after logging out and then logging in 
 
 # Printing a case to a file
 
-Easy enough, doesn't even use this library! But I suggest writing it on a separate file on its own, say `case_formatter.py`, so that it could be imported later.  
+This just takes a test case and prints it to a file in the correct input format. I suggest writing it on a separate file on its own, say `formatter.py`, so that it could be imported later.  
 
 ```python
-{{{case_formatter.py}}}
+{{{formatter.py}}}
 ```
 
-**Polygon note:** Import this into "resources" as well.
+
+
 
 
 
@@ -78,10 +85,9 @@ Here's an example of a validator:
 
 *Note:* `.read_ints` method coming up in the future!
 
-**Polygon note:** This file can be used as the "validator" in Polygon.  
+**Polygon note:** This file can be used as the "validator" in Polygon (after running the `polygonate` script). Also, notice that `compgen` is imported with the form `from ... import *`.
 
 Here's a validator that can also check subtasks:
-
 
 ```python
 {{{validator.py}}}
@@ -102,6 +108,8 @@ It's easy to write a test generator.
 {{{single_case.py}}}
 ```
 
+**Polygon note:** Note that `formatter` is imported using the form `from ... import *`.
+
 The random seed will be based on `argv[1:]`.  
 
 *Note:* Don't import `random`! Instead, use the provided random number generator `rand`. This ensures reproducibility.  
@@ -117,19 +125,21 @@ You can make it slightly cleaner by using the convenience function `listify`.
 If you want to validate before printing, make the `validate_file` function above importable, then you could replace the last line with this:
 
 ```python
-    from validator import validate_file
+from validator import *
+...
     compgen.write_to_file(print_to_file, random_cases, argv[1:], stdout,
             validate=lambda f: validate_file(f, subtask=1))
 ```
 
-**Polygon note:** This requires uploading `validator.py` into "resources". For the actual validator to use, we can simply write a small program like this:
+**Polygon note:** This requires uploading `validator.py` into "resources". For the actual validator to use, we can simply write a small program like this (again, note `from ... import *`):
 
 ```python
-from validator import validate_file
+from validator import *
 from sys import stdin, argv
 subtask = int(argv[1]) if len(argv) > 1 else None
 validate_file(stdin, subtask=subtask)
 ```
+
 
 
 

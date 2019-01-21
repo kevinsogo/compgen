@@ -6,12 +6,6 @@ Useful stuff for generating data, validating, etc.
 
 from __future__ import print_function
 
-import re
-from StringIO import StringIO
-from random import Random
-from functools import wraps
-from collections import deque
-
 __author__ = "Kevin Atienza"
 __license__ = "MIT"
 
@@ -19,6 +13,15 @@ __maintainer__ = "Kevin Atienza"
 __email__ = "kevin.charles.atienza@gmail.com"
 __status__ = "Development"
 __version__ = "0.1"
+
+# @@@@@ embedding starts here
+
+import re
+from StringIO import StringIO
+from random import Random
+from functools import wraps
+from collections import deque
+
 
 
 def ensure(condition, message=None):
@@ -38,7 +41,7 @@ def apply_after(g, name=None):
         def new_f(*args, **kwargs):
             return g(f(*args, **kwargs))
         return new_f
-    if name is None: dec.__name__ = name
+    if name is not None: dec.__name__ = name
     return dec
 
 

@@ -1,4 +1,6 @@
-import compgen
+from __future__ import print_function
+from compgen import *
+from formatter import *
 
 A = 10**9
 
@@ -12,7 +14,6 @@ def random_cases(rand, *args):
     return cases
 
 if __name__ == '__main__':
-    from case_formatter import print_to_file
     from sys import argv, stdout
 
-    compgen.write_to_file(print_to_file, random_cases, argv[1:], stdout)
+    write_to_file(print_to_file, random_cases, argv[1:], stdout)
