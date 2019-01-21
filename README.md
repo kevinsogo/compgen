@@ -7,14 +7,6 @@ Needs Python 2 for now. This decision is made so that speedup through PyPy is po
 
 Let's go through the whole process. I promise this will be easy!
 
-**Polygon note:** Due to the way Polygon works, we have to make some hacks so that we are able to use this there. **If you want to use this for Polygon, you need to follow these rules:**
-
-- Any `import`, aside from builtin packages, must be of the following form: `from xxx import *`. (It should always be an asterisk `*`; only `xxx` will be replaced.) It will not work otherwise. In addition, these imports must be unindented.
-
-- If you're printing, you need to add the line `from __future__ import print_function` at the beginning of your code. Ideally, you don't import any other thing from `__future__`, though in some cases it would work. 
-
-- You cannot upload any code you write directly into Polygon; you have to run the following command first: `polygonate`. This will generate a folder called `polygon_ready`; the files inside can now be uploaded. 
-
 
 
 
@@ -36,6 +28,14 @@ export PATH="/path/to/compgen/scripts:$PATH"
 Replace `/path/to/` with the location of the `compgen` folder. Ensure that there is a trailing newline.
 
 Then the `$PATH` variable will be updated after logging out and then logging in again. (You can run `source ~/.profile` if you want to update `$PATH` in your current session.)
+
+**Polygon note:** Due to the way Polygon works, we have to make some hacks so that we are able to use this there. **If you want to use this for Polygon, you need to follow these rules:**
+
+- Any `import`, aside from builtin packages, must be of the following form: `from xxx import *`. (It should be an asterisk `*`.) It will not work otherwise. In addition, these import statements must be unindented.
+
+- If you're printing, you need to add the line `from __future__ import print_function` at the beginning of your code. Ideally, you don't import any other thing from `__future__`, though in some cases it would work. 
+
+- You cannot upload any code you write directly into Polygon; you have to run the following command first: `polygonate`. This will generate a folder called `polygon_ready`; the files inside it can now be uploaded. 
 
 
 
@@ -157,6 +157,7 @@ if __name__ == '__main__':
 Here's a validator that can also check subtasks:
 
 ```python
+from __future__ import print_function
 from compgen import *
 
 subtasks = {
@@ -477,7 +478,7 @@ done
 direct_to_hackerrank testset_script_file "python2 validator.py" "python2 solution.py" 1 2 3
 ```
 
-This will generate two folders, `input` and `output`. (Their contents will be deleted initially.) The `output` folder will be populated automatically from the provided solution. They will also be validated, and subtasks will be detected. In the example above, `1 2 3` are the subtasks. If you don't provide these arguments, then sit will assume that the task doesn't have subtasks.
+This will generate two folders, `input` and `output`. (Their contents will be deleted initially.) The `output` folder will be populated automatically from the provided solution. They will also be validated, and subtasks will be detected. In the example above, `1 2 3` are the subtasks. If you don't provide these arguments, then it will assume that the task doesn't have subtasks.
 
 **Warning**: Behind the scenes, the testset script will be converted to a bash file with `$$$` replaced by something, and some lines inserted before and after, hence, it is highly recommended to not make syntax errors. I make no guarantees on what could go wrong if it fails!
 
