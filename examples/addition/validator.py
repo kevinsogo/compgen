@@ -1,4 +1,4 @@
-from compgen import Interval, Task, validator, ensure
+from compgen import Interval, Bounds, validator, ensure
 
 subtasks = {
     1: {
@@ -20,7 +20,7 @@ bounds = {
 
 @validator
 def validate_file(file, subtask=None):
-    lim = Task(bounds) & Task(subtasks.get(subtask))
+    lim = Bounds(bounds) & Bounds(subtasks.get(subtask))
 
     t = file.read_int(lim.t)
     file.read_eoln()

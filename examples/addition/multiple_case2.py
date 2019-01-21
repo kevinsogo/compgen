@@ -2,6 +2,7 @@ import compgen
 
 A = 10**9
 def make_case(rand, n):
+    ''' just random data '''
     return [rand.randint(-A, A) for i in xrange(n)]
 
 def many_cases(rand, new_case, *args):
@@ -27,4 +28,3 @@ if __name__ == '__main__':
     from sys import argv, stdout
 
     compgen.write_nth_group_to_file(int(argv[1]), print_to_file, many_cases, distribute, argv[2:], stdout)
-

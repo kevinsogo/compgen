@@ -1,4 +1,4 @@
-from compgen import Interval, Task, validator, ensure
+from compgen import Interval, Bounds, validator, ensure
 
 bounds = {
     't': Interval(1, 10**5),
@@ -9,7 +9,7 @@ bounds = {
 
 @validator
 def validate_file(file):
-    lim = Task(bounds)
+    lim = Bounds(bounds)
 
     t = file.read_int(lim.t)
     file.read_eoln()

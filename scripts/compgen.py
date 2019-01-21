@@ -85,14 +85,14 @@ class Interval(object):
         return '[{}, {}]'.format(self.l, self.r)
 
 
-class Task(object):
+class Bounds(object):
     def __init__(self, bounds):
         self._attrs = []
         if bounds:
             for name, value in bounds.items():
                 self._attrs.append(name)
                 setattr(self, name, value)
-        super(Task, self).__init__()
+        super(Bounds, self).__init__()
 
     def __and__(self, other):
         m = {}
@@ -103,7 +103,7 @@ class Task(object):
                 ensure(isinstance(a, Interval) and isinstance(b, Interval), lambda: "Conflict for attribute {} in merging!".format(attr))
                 return a & b
             m[attr] = combine(getattr(self, attr, None), getattr(other, attr, None))
-        return Task(m)
+        return Bounds(m)
 
 _intre = re.compile(r'-?(0|[1-9]\d*)$')
 
