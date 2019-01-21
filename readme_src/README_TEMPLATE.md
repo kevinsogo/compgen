@@ -8,7 +8,7 @@ Let's go through the whole process. I promise this will be easy!
 
 
 
-# Setup intructions  
+# Setup instructions  
 
 ```
 bash install.sh
@@ -150,9 +150,9 @@ This "lazily" generates all test data and groups them into some number of files,
 
 The function decorated by `new_case` must contain the bulk of work needed to generate that case; that way, the work is not done for cases that will not be needed. Notice that we also need to pass `n` and `x` through it, since we need to capture their values. (should I just use a lazily-evaluated language for this? haha)
 
-`distribute` is responsible for distributing the (ungenerated) cases into files. The `group_into` convenience functions makes it easy to split the files into groups of equal size.  
+`distribute` is responsible for distributing the (ungenerated) cases into files. The `group_into` convenience function makes it easy to split the files into groups of equal size.  
 
-You may optionally choose to generate additional cases in `distribute`. For example, suppose we want to fill in each file with extra cases so that total of N becomes exactly 5*10^5 (or as close to it as possible). Then we could do something like this:
+You may optionally choose to generate additional cases in `distribute`. For example, suppose we want to fill in each file with extra cases so that the sum of $N$s becomes exactly $5\cdot 10^5$ (or as close to it as possible). Then we could do something like this:
 
 ```python
 {{{multifile_cases.py}}}
@@ -245,7 +245,7 @@ This will generate two folders, `input` and `output`. (Their contents will be de
 
 **Warning**: Behind the scenes, the testset script will be converted to a bash file with `$$$` replaced by something, and some lines inserted before and after, hence, it is highly recommended to not make syntax errors. I make no guarantees on what could go wrong if it fails!
 
-*Note:* If you just want to generate the test without a validator and/or a working solution, use `echo` as substitute. As a "validator", it accepts all files as valid. As a "solution", it just prints dummy answer files. e.g.
+*Note:* If you just want to generate the test without a validator and/or a working solution, use `echo` as a substitute. As a "validator", it accepts all files as valid. As a "solution", it just prints dummy answer files. e.g.
 
 ```bash
 direct_to_hackerrank testset_script_file echo echo
@@ -301,7 +301,7 @@ TODO
 **Others**  
 
 - Implement missing features above. 
-- Improve scripts. Possibly look for mistakes, or badly-written parts.
+- Improve scripts. Possibly look for mistakes. And badly-written parts.
 - Improve `StrictStream`. Right now, I'm manually buffering 10^5 characters at a time, but I think there has to be a more idiomatic way to buffer.  
 - Write unit tests, possibly.  
 - Come up with better naming practices/conventions.
