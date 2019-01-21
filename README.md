@@ -1,15 +1,35 @@
 Some useful programs that will help you write data generators, checkers and validators for Polygon and HackerRank (and later on, other judges as well), *in Python*.  
 
-Needs Python 2 for now. This decision is made so that speedup through PyPy is possible. I'll translate to Python 3 when PyPy 3 becomes ready.
+Needs Python 2 for now. This decision is made so that speedup through PyPy is possible. I'll translate to Python 3 when PyPy 3 becomes ready.  
 
 Let's go through the whole process. I promise this will be easy!
 
 
-*Note:* Add the `scripts/` folder to your `$PATH` variable so you can run the scripts anywhere. You might also need to give executable permission (`chmod +x scripts/*` or something).
 
-*Note:* To be able to import `compgen` anywhere, I think there's also `$PYTHONPATH` or something? Whatever, just find a way to add `scripts/` to `sys.path` somehow, haha. (Someone with more knowledge in Python, please fix this part, haha...)
+
+
+# Setup intructions  
+
+```
+bash install.sh
+```
+
+Also, add the `scripts/` folder to your `$PATH` variable so you can run the scripts anywhere. One way to do this would be to add the following line at the end of `~/.profile`:
+
+```
+export PATH="/path/to/compgen/scripts:$PATH"
+```
+
+Replace `/path/to/` with the location of the `compgen` folder. Ensure that there is a trailing newline.
+
+Then the `$PATH` variable will be updated after logging out and then logging in again. (You can run `source ~/.profile` if you want to update `$PATH` in your current session.)
+
 
 **Polygon note:** Import the file `compgen.py` into "resources".  
+
+
+
+
 
 
 # Example Problem
@@ -487,6 +507,7 @@ TODO
 **Important**  
 
 - Do something about the fact that Python's `random` module makes no guarantees of reproducibility across implementations and platforms; see [this](https://stackoverflow.com/questions/8786084/reproducibility-of-python-pseudo-random-numbers-across-systems-and-versions).
+- Give a better name than "compgen". We can still rename this package while it's early.    
 
 **Others**  
 

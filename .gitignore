@@ -3,3 +3,4 @@ input/
 output/
 __pycache__
 *.pyc
+scripts/build/
