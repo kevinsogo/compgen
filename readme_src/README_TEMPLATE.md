@@ -302,8 +302,8 @@ TODO
 
 **Others**  
 
-- Implementing missing features above. 
-- Improving scripts. Possibly look for mistakes, or badly-written parts.
-- Improving `StrictStream`. Right now, I'm manually buffering 10^5 characters at a time, but I think there has to be a more idiomatic way to buffer.  
-- Writing unit tests, possibly.  
+- Implement missing features above. 
+- Improve scripts. Possibly look for mistakes, or badly-written parts.
+- Improve `StrictStream`. Right now, I'm manually buffering 10^5 characters at a time, but I think there has to be a more idiomatic way to buffer.  
+- Write unit tests, possibly.  
 - Come up with better naming practices/conventions.
