@@ -473,9 +473,6 @@ TODO
 
 # Help needed  
 
-**Most important**  
-
-- Optimizing `StrictStream`. It's quite slow on large input files right now. Right now, it calls `.read(1)` repeatedly; I think buffering would solve it.  
 
 **Important**  
 
@@ -485,4 +482,5 @@ TODO
 
 - Implementing missing features above. 
 - Improving scripts. Possibly look for mistakes, or badly-written parts.
+- Improving `StrictStream`. Right now, I'm manually buffering 10^5 characters at a time, but I think there has to be a more idiomatic way to buffer.  
 - Writing unit tests, possibly.  

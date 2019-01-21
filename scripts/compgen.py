@@ -105,10 +105,10 @@ class Bounds(object):
             m[attr] = combine(getattr(self, attr, None), getattr(other, attr, None))
         return Bounds(m)
 
-_intre = re.compile(r'-?(0|[1-9]\d*)$')
+_int_re = re.compile(r'-?(0|[1-9]\d*)$')
 
 def strict_int(x, *args):
-    ensure(_intre.match(x), lambda: "Expected integer literal, got: {}".format(repr(x)))
+    ensure(_int_re.match(x), lambda: "Expected integer literal, got: {}".format(repr(x)))
     x = int(x)
     if len(args) == 2:
         l, r = args
@@ -130,7 +130,9 @@ class StrictStream(object):
         self._buff = deque()
         self.file = file
 
-    # TODO add readline
+    # TODO add read_line
+
+    # TODO add read_ints
 
     def read_token(self, regex=None):
         tok = self._read_token()
@@ -144,24 +146,33 @@ class StrictStream(object):
         return self.read_char(' ')
 
     def read_eoln(self):
-        return self.read_char('\n') # ubuntu only
+        return self.read_char('\n') # ubuntu only (I think).
 
     def read_eof(self):
-        ensure(self._next_char() == '', lambda: "Expected end-of-file, got {}".format(repr(self._last)))
+        return self.read_char('')
 
     def read_char(self, ch):
-        ensure(self._next_char() == ch, lambda: "Expected {}, got {}".format(repr(ch), repr(self._last)))
+        ensure(self._next_char() == ch, lambda: "Expected {}, got {}".format(self._label(ch), repr(self._last)))
 
-    # TODO optimize a bit, consecutive self.file.read(1) on a huge file is slow
+    def _label(self, ch):
+        if ch == '':
+            return 'end-of-file'
+        else:
+            assert len(ch) == 1
+            return repr(ch)
+
+    # TODO learn how to buffer idiomatically...
+    def _buffer(self):
+        if not self._buff: self._buff += self.file.read(10**5) or ['']
+
     def _next_char(self):
-        if not self._buff: self._buff.append(self.file.read(1))
+        self._buffer()
         self._last = self._buff.popleft()
         return self._last
 
     def _peek_char(self):
-        if not self._buff: self._buff.append(self.file.read(1))
-        self._last = self._buff[0]
-        return self._last
+        self._buffer()
+        return self._buff[0]
 
     def _read_token(self):
         res = []
