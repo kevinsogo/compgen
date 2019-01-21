@@ -1,6 +1,7 @@
 #!/usr/bin/python2
 
 from sys import *
+import os
 from os import system, mkdir
 from os.path import basename
 from glob import glob
@@ -66,6 +67,13 @@ elif args[0].startswith('test'):
         print >>stderr, "correct" if status == 0 else "WRONG!!!!!!!!!", outfilename if args[0] == 'testget' else ''
 
     print >>stderr, "{} out of {} correct".format(correct, files)
+    # remove basura and basura2
+    for name in basura, basura2:
+        try:
+            os.remove(name)
+        except OSError:
+            pass
+
 elif args[0].startswith('run'):
     if args[0] == 'run':
         prints = stderr,

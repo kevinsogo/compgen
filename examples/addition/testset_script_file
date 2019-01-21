@@ -1,6 +1,6 @@
-pypy single_case.py 10 10 > $$$
-pypy single_case.py 10 100 > $$$
+python2 single_case.py 10 10 > $$$
+python2 single_case.py 10 100 > $$$
 for x in $(seq 0 3)
 do
-    pypy multifile_case.py $x 10 20 > $$$
+    python2 multifile_case.py $x 10 20 > $$$
 done

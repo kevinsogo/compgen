@@ -14,6 +14,8 @@ Let's go through the whole process. I promise this will be easy!
 bash install.sh
 ```
 
+The last line printed should be `DONE`.  
+
 Also, add the `scripts/` folder to your `$PATH` variable so you can run the scripts anywhere. One way to do this would be to add the following line at the end of `~/.profile`:
 
 ```
