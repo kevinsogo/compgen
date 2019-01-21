@@ -2,6 +2,7 @@
 
 from sys import *
 from os import system, mkdir
+from os.path import basename
 from glob import glob
 
 args = list(argv[1:])
@@ -26,12 +27,13 @@ def unknown(cmd):
 
 if not args or args[0] == '-h':
     print 'USAGE:'
-    print argv[0], "gen xxx [cmd]      - generates output files to folder 'xxx'"
-    print argv[0], "genxxx [cmd]       - equivalent to 'gen xxxput [cmd]'"
-    print argv[0], "test [cmd]         - checks a program against existing solutions in output/"
-    print argv[0], "testc [cmd]    - similar to 'test', but doesn't print diff"
-    print argv[0], "run [cmd]          - just runs the program across all files, and prints to stdout."
-    print argv[0], "runboth [cmd]      - similar to 'run', but also prints the metadata to stdout, not just stderr."
+    script_name = basename(argv[0])
+    print script_name, "gen xxx [cmd]      - generates output files to folder 'xxx'"
+    print script_name, "genxxx [cmd]       - equivalent to 'gen xxxput [cmd]'"
+    print script_name, "test [cmd]         - checks a program against existing data in output/"
+    print script_name, "testc [cmd]        - similar to 'test', but doesn't print the output of diff"
+    print script_name, "run [cmd]          - just runs the program across all files, and prints to stdout."
+    print script_name, "runboth [cmd]      - similar to 'run', but also prints the metadata to stdout, not just to stderr."
 elif args[0].startswith('gen'):
 
     if args[0] == 'gen':
