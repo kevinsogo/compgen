@@ -105,7 +105,7 @@ class Bounds(object):
             m[attr] = combine(getattr(self, attr, None), getattr(other, attr, None))
         return Bounds(m)
 
-_int_re = re.compile(r'-?(0|[1-9]\d*)$')
+_int_re = re.compile(r'0|(?:-?[1-9]\d*)$')
 
 def strict_int(x, *args):
     ensure(_int_re.match(x), lambda: "Expected integer literal, got: {}".format(repr(x)))
