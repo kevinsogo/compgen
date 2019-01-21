@@ -14,7 +14,7 @@ def print_to(x): return 'cat > %s' % x
 def go_through(cmd, replacement, destination, prints=(stderr,)):
     for targ in prints: print >>targ, 'times are printed as "real user sys"'
     for filename in sorted(glob('input/input*.txt')):
-        outfilename = filename.replace('input', replacement)
+        outfilename = filename.replace('input', replacement, 1).replace('input', 'output', 1)
         for targ in prints: print >>targ, 'DOING', outfilename
         system('/usr/bin/time -f "TIME %%es %%Us %%Ss" %s < %s | %s' % (cmd, filename, destination(outfilename)))
         yield outfilename
