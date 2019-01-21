@@ -4,7 +4,7 @@ Needs Python 2 for now. This decision is made so that speedup through PyPy is po
 
 Let's go through the whole process. I promise this will be easy!
 
-**Polygon note:** Due to the way Polygon works, we have to make some hacks so that we are able to use this there. If you want to use this for Polygon, you need to note these things:
+**Polygon note:** Due to the way Polygon works, we have to make some hacks so that we are able to use this there. **If you want to use this for Polygon, you need to follow these rules:**
 
 - Any `import`, aside from builtin packages, must be of the following form: `from xxx import *`. (It should always be an asterisk `*`; only `xxx` will be replaced.) It will not work otherwise. In addition, these imports must be unindented.
 
