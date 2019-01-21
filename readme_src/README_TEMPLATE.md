@@ -301,7 +301,7 @@ TODO
 **Others**  
 
 - Implement missing features above. 
-- Improve scripts. Possibly look for mistakes. And badly-written parts.
+- Improve scripts. Possibly look for mistakes. And badly-written parts. In particular, some bash scripts are quite janky, unidiomatic or just plain buggy.
 - Improve `StrictStream`. Right now, I'm manually buffering 10^5 characters at a time, but I think there has to be a more idiomatic way to buffer.  
 - Write unit tests, possibly.  
 - Come up with better naming practices/conventions.
