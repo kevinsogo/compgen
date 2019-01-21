@@ -1,7 +1,7 @@
 import compgen
 
 A = 10**9
-def make_case(rand, n):
+def rand_case(rand, n):
     ''' just random data '''
     return [rand.randint(-A, A) for i in xrange(n)]
 
@@ -16,7 +16,7 @@ def many_cases(rand, new_case, *args):
                 return [rand.randrange(-A + (x + A) % 8, A+1, 8) for i in xrange(n)]
 
     while new_case.total_cases % T:
-        new_case(N)(make_case)
+        new_case(N)(rand_case)
 
 
 def distribute(rand, new_case, casemakers, *args):
@@ -27,4 +27,5 @@ if __name__ == '__main__':
     from case_formatter import print_to_file
     from sys import argv, stdout
 
-    compgen.write_nth_group_to_file(int(argv[1]), print_to_file, many_cases, distribute, argv[2:], stdout)
+    index = int(argv[1])
+    compgen.write_nth_group_to_file(index, print_to_file, many_cases, distribute, argv[2:], stdout)

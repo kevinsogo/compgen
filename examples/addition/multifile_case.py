@@ -1,3 +1,4 @@
+
 import compgen
 
 A = 10**9
@@ -20,7 +21,7 @@ def distribute(rand, new_case, casemakers, *args):
         ''' fill up the file with a bunch of cases so the total n is as close as possible to SN '''
         while len(group) < T and totaln < SN:
             n = min(N, SN - totaln)
-            group.append
+            @group.append
             @new_case(n)
             def make(rand, n):
                 return [rand.randint(-A, A) for i in xrange(n)]
@@ -42,4 +43,5 @@ if __name__ == '__main__':
     from case_formatter import print_to_file
     from sys import argv, stdout
 
-    compgen.write_nth_group_to_file(int(argv[1]), print_to_file, many_cases, distribute, argv[2:], stdout)
+    index = int(argv[1])
+    compgen.write_nth_group_to_file(index, print_to_file, many_cases, distribute, argv[2:], stdout)

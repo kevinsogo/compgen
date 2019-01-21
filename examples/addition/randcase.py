@@ -14,6 +14,6 @@ if __name__ == '__main__':
     from case_formatter import print_to_file
     from sys import argv, stdout
 
-    from validator import validate_file # import the validate_file function
+    from validator import validate_file
     compgen.write_to_file(print_to_file, random_cases, argv[1:], stdout,
             validate=lambda f: validate_file(f, subtask=1))
