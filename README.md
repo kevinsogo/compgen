@@ -21,6 +21,8 @@ bash install.sh
 
 The last line printed should be `DONE`. This sets up most of it.
 
+**Note:** Whenever this library gets updated, run `bash install.sh` again to update your installation.
+
 Also, add the `scripts/` folder to your `$PATH` variable so you can run the scripts anywhere. One way to do this would be to add the following line at the end of `~/.profile`:
 
 ```
@@ -29,13 +31,13 @@ export PATH="/path/to/compgen/scripts:$PATH"
 
 Replace `/path/to/` with the location of the `compgen` folder. Ensure that there is a trailing newline.
 
-Then the `$PATH` variable will be updated after logging out and then logging in again. (You can run `source ~/.profile` if you want to update `$PATH` in your current session.)
+Then the `$PATH` variable will be updated after logging out and then logging in again. (If you can't do that yet, you can run `. ~/.profile` to set it up temporarily.)
 
 **Polygon note:** Due to the way Polygon works, we have to do some hacks so that we are able to use this there. **If you want to use this for Polygon, you need to follow these rules:**
 
 - Any `import`, aside from builtin packages, must be of the following form: `from xxx import *`. (It should be an asterisk `*`.) It will not work otherwise. In addition, these import statements must be unindented.
 
-- If you're printing, you need to add the line `from __future__ import print_function` at the beginning of your code. Ideally, you don't import any other thing from `__future__`, though in some cases it would work. 
+- Don't print anything to stderr for validators and generators; Polygon will interpret it as an error. (Of course, unless you really want to signal an error.) But if you're printing something anyway, you need to add the line `from __future__ import print_function` at the beginning of your code. Ideally, you don't import anything else from `__future__`, though in some cases it would work. 
 
 - You cannot upload any code you write directly into Polygon; you have to run the following command first: `polygonate`. This will generate a folder called `polygon_ready`; the files inside it can now be uploaded. 
 
@@ -532,6 +534,23 @@ TODO
 
 
 
+# Random notes, observations  
+
+- In general, the *pathname* of `compgen` and the problem directory you're working on must not have spaces or other special characters; the scripts I wrote are a bit haphazard and may not work otherwise. 
+
+- Polygon annoyingly has an old python version, which means that some programs that run for you might not run there. Be careful! For example:
+    
+    - Don't use xrange with arguments exceeding C long.
+
+- Feel free to request features/changes/improvements you'd like to see.
+
+- Feel free to make a merge request!
+
+
+
+
+
+
 # Help needed  
 
 
@@ -549,3 +568,22 @@ TODO
 - Come up with better naming practices/conventions.
 - Ensure that the scripts work even in path names containing spaces and special characters. 
 - Improve `polygonate` to reduce the restrictions above. For example, better handling of other forms of `import`.
+- Copy `random.py` to guarantee reproducibility. 
+- More error handling in scripts; in general, make them more robust.
+- Improve the readme by separating it into parts. (`gen_readme.py` should still generate them all.) This is more like a tutorial. haha
+    
+    - We could have separate pages for validators+generators, local scripts, and custom checkers.
+    - README.md would just contain a small overview.
+    - Maybe the Polygon notes can be compiled into their own section as well.
+
+**To consider**  
+
+- Make the `direct_to_hackerrank` command look like:
+
+    ```
+    direct_to_hackerrank testset_script_file -- validator command -- solution command -- subtasks
+    ```
+
+    The `--` can be replaced by any token not appearing in the validator and solution commands. 
+
+- Convert all scripts to Python in case no one knows (or likes to work with) Bash.

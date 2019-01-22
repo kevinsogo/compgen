@@ -5,6 +5,8 @@ from __future__ import print_function
 import os.path
 from glob import glob
 
+# TODO improve this so it's not dependent on where it's run
+
 with open('README_TEMPLATE.md') as f:
     s = f.read()
 

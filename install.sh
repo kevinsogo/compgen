@@ -2,7 +2,7 @@
 
 set -e
 
-chmod +x install.sh
+chmod +x install.sh readme_src/gen_readme.py
 cd scripts/
 chmod +x all_files_subtasks convert_to_hackerrank direct_to_hackerrank hr subtasks_from_validator polygonate
 sudo python2 setup.py install
