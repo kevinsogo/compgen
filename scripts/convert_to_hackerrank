@@ -17,8 +17,8 @@ done
 idx=0
 if [[ -n "$tests" ]]; then
     while IFS= read -rd '' src; do
-        cp $src $(printf "input/input%02d.txt" $idx)       # input file 
-        cp $src.a $(printf "output/output%02d.txt" $idx)   # output file 
+        cp $src $(printf "input/input%02d.txt" $idx)
+        cp $src.a $(printf "output/output%02d.txt" $idx)
         idx=$((idx+1))
     done < <(find $tests -type f -name '*' -print0 | grep -z -v '\.a$' | sort -z -V)
 fi

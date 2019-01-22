@@ -208,7 +208,7 @@ if __name__ == '__main__':
 
 This takes the subtask name as an argument. The `&` operator merges intervals of two `Bounds` objects.
 
-**Polygon note:** It is important that such a subtask checker must not reject if the subtask name (`argv[1]`) is invalid. This is because Polygon calls the validator with some command line arguments, and the first of those arguments (usually something like `--testset`) gets interpreted as a subtask name. I suggest keeping the subtask names as integer literals to avoid conflict.
+**Polygon note:** It is important that such a subtask checker must not reject if the subtask name (`argv[1]`) is invalid. This is because Polygon calls the validator with some command line arguments, and so the first of those arguments (usually something like `--testset`) gets interpreted as a subtask name. I suggest keeping the subtask names as integer literals to avoid conflict.
 
 
 
@@ -570,7 +570,7 @@ TODO
 - Improve `polygonate` to reduce the restrictions above. For example, better handling of other forms of `import`.
 - Copy `random.py` to guarantee reproducibility. 
 - More error handling in scripts; in general, make them more robust.
-- Improve the readme by separating it into parts. (`gen_readme.py` should still generate them all.) This is more like a tutorial. haha
+- Improve the readme by separating it into parts. (`gen_readme.py` should still generate them all.) The current readme is more like a tutorial. haha
     
     - We could have separate pages for validators+generators, local scripts, and custom checkers.
     - README.md would just contain a small overview.
@@ -584,6 +584,8 @@ TODO
     direct_to_hackerrank testset_script_file -- validator command -- solution command -- subtasks
     ```
 
-    The `--` can be replaced by any token not appearing in the validator and solution commands. 
+    The idea is that `--` can be replaced by any token not appearing in the validator and solution commands. 
 
 - Convert all scripts to Python in case no one knows (or likes to work with) Bash.
+
+- Use gitlab's "Issues" feature and write these things there instead.  

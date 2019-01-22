@@ -2,6 +2,7 @@
 
 set -e
 
+# check if some params are missing
 testset="$1"
 if [[ -z "$testset" ]]; then
     >&2 echo "ERROR (direct_to_hackerrank): The first argument must be the location of the testset script."  

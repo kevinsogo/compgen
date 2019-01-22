@@ -155,7 +155,7 @@ def strict_int(x, *args):
         if isinstance(r, Interval):
             ensure(x in r, lambda: "Integer {} not in {}".format(x, r))
         else:
-            ensure(x in Interval(0, r + 1), lambda: "Integer {} not in [0, {})".format(x, r))
+            ensure(x in Interval(0, r - 1), lambda: "Integer {} not in [0, {})".format(x, r))
     else:
         ensure(False, lambda: "Invalid arguments to strict_int: {}".format(args))
     return x
