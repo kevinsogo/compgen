@@ -45,7 +45,7 @@ Then the `$PATH` variable will be updated after logging out and then logging in 
 
 # Example Problem
 
-{{{statement.md}}}
+{{{addition/statement.md}}}
 
 
 
@@ -55,7 +55,7 @@ Then the `$PATH` variable will be updated after logging out and then logging in 
 This just takes a test case and prints it to a file in the correct input format. I suggest writing it on a separate file on its own, say `formatter.py`, so that it could be imported later.  
 
 ```python
-{{{formatter.py}}}
+{{{addition/formatter.py}}}
 ```
 
 
@@ -81,7 +81,7 @@ A validator should take input from stdin. It should return with 0 exit code iff 
 Here's an example of a validator:
 
 ```python
-{{{validator2.py}}}
+{{{addition/validator2.py}}}
 ```
 
 *Note:* Using things like `Interval` and `Bounds` is completely optional; `.read_int` can also be called like `.read_int(1, 10**5)`. However, using `ensure` is recommended. (It is similar to `assert`.)
@@ -93,7 +93,7 @@ Here's an example of a validator:
 Here's a validator that can also check subtasks:
 
 ```python
-{{{validator.py}}}
+{{{addition/validator.py}}}
 ```
 
 This takes the subtask name as an argument. The `&` operator merges intervals of two `Bounds` objects.
@@ -110,7 +110,7 @@ This takes the subtask name as an argument. The `&` operator merges intervals of
 It's easy to write a test generator.  
 
 ```python
-{{{single_case.py}}}
+{{{addition/single_case.py}}}
 ```
 
 **Polygon note:** Note that `formatter` is imported using the form `from ... import *`.
@@ -124,7 +124,7 @@ The random seed will be based on `argv[1:]`.
 You can make it slightly cleaner by using the convenience function `listify`.  
 
 ```python
-{{{single_case2.py}}}
+{{{addition/single_case2.py}}}
 ```
 
 If you want to validate before printing, make the `validate_file` function above importable, then you could replace the last line with this:
@@ -151,7 +151,7 @@ Well, you could still just generate everything and only print a subset of them, 
 For this, you can use this pattern:
 
 ```python
-{{{multifile_cases2.py}}}
+{{{addition/multifile_cases2.py}}}
 ```
 
 This "lazily" generates all test data and groups them into some number of files, but only prints out the `index`th group.
@@ -163,7 +163,7 @@ The function decorated by `new_case` must contain the bulk of work needed to gen
 You may optionally choose to generate additional cases in `distribute`. For example, suppose we want to fill in each file with extra cases so that the sum of $N$s becomes exactly $5\cdot 10^5$ (or as close to it as possible). Then we could do something like this:
 
 ```python
-{{{multifile_cases.py}}}
+{{{addition/multifile_cases.py}}}
 ```
 
 Here, the keyword arg `n=n` passed to `new_case` is what allows us to access `n` in `distribute`, even though the case hasn't been generated yet. In general, the keyword arguments allow you to store any useful info about the ungenerated case if you need them, without needing to generate the case itself.  
@@ -177,7 +177,7 @@ You have a bunch of files and you want to be saved the trouble of determining wh
 First, write a custom script that detects the subtask(s) of a file. For example, we can write the following:
 
 ```python
-{{{detect_subtasks.py}}}
+{{{addition/detect_subtasks.py}}}
 ```
 
 It just prints *all* subtasks as separate tokens. If we save this in `detect_subtasks.py`, then we can use it with `python2 detect_subtasks.py`. It will take input from stdin.
@@ -239,7 +239,7 @@ Although not recommended, if you don't want to use Polygon, you can also generat
 1. Write a testset script similar to the one in Polygon, but with a small change: you need to use `$$$` for test enumeration instead of `$` or explicit numbers, e.g.
 
 ```bash
-{{{testset_script_file}}}
+{{{addition/testset_script_file}}}
 ```
 
 
@@ -353,3 +353,5 @@ TODO
 - Convert all scripts to Python in case no one knows (or likes to work with) Bash.
 
 - Use gitlab's "Issues" feature and write these things there instead.  
+
+- Generalize `hr` to any of the supported formats. Make conversion between different formats seamless. 
