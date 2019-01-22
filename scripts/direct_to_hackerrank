@@ -14,7 +14,7 @@ if [[ -z "$2" ]]; then
 fi
 
 if [[ -z "$3" ]]; then
-    >&2 echo "ERROR (direct_to_hackerrank): The thirds argument must be the solution command."  
+    >&2 echo "ERROR (direct_to_hackerrank): The third argument must be the solution command."  
     exit 1
 fi
 

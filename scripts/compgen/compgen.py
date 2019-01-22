@@ -169,7 +169,16 @@ class StrictStream(object):
 
     # TODO add read_line
 
-    # TODO add read_ints
+    @listify
+    def read_ints(self, n, *args, **kwargs):
+        sep = ''.join(kwargs.get('sep', ' '))
+        for i in xrange(n):
+            yield self.read_int(*args)
+            if i < n - 1:
+                for ch in sep:
+                    self.read_char(ch)
+        for ch in kwargs.get('end', ''):
+            self.read_char(ch)
 
     def read_token(self, regex=None):
         tok = self._read_token()
