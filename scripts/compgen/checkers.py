@@ -273,7 +273,7 @@ def _check_local(checker, title='', file=stdout):
     parser.add_argument('-i', '--identical', action='store_true', help=argparse.SUPPRESS)
     args = parser.parse_args()
 
-    tc_id = args.tc_id if args.tc_id is not None else ''
+    tc_id = args.tc_id or ''
 
     if args.verbose: print("{:>2} Checking the output...".format(tc_id), file=file)
     verdict, score, message = _check_generic(checker,
@@ -339,6 +339,8 @@ default_score = default_return(1.0)
 
 def abs_rel_error(a, b):
     return abs(a - b) / max(abs(a), abs(b), 1)
+
+def noop(*args, **kwargs): pass
 
 chk = Checker() # create singleton
 

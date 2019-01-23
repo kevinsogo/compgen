@@ -300,7 +300,7 @@ def _get_all_groups(make, distribute, args):
     return distribute(rand, dnew_case, casemakers, *args)
 
 
-def write_nth_group_to_file(index, print_to_file, make, distribute, args, file, validate=None):
+def write_nth_group_to_file(index, print_to_file, make, distribute, args, file, validate=None, single_case=False):
     '''
     Creates test case/s meant for several files, and returns the 'index'th among them. The given
     new_case decorator provides a way to ensure that only the needed cases are generated.
@@ -317,6 +317,6 @@ def write_nth_group_to_file(index, print_to_file, make, distribute, args, file, 
     '''
     groups = _get_all_groups(make, distribute, args)
     if not (0 <= index < len(groups)): raise Exception("Invalid index: {} out of {} groups".format(index, len(groups)))
-    group = [make() for make in groups[index]]
+    group = groups[index]() if single_case else [make() for make in groups[index]]
     _write_with_validate(print_to_file, file, group, validate=validate)
     return len(groups)
