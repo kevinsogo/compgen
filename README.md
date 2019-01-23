@@ -730,13 +730,13 @@ If there was only one test case, you simply replace `set_multi_checker` with `se
 
 As before, you can't immediately upload these files as checkers. Here's what to do:
 
-- For **Polygon**: Just run `polygonate`; checkers will be included.
+For **Polygon**: Just run `polygonate`; checkers will be included.
 
-- For **HackerRank**: Run `hrate`; similar to `polygonate`, this will create a folder called `hr_ready` which will contain the snippet of checker codes that can be uploaded to HackerRank.
+For **HackerRank**: Run `hrate`; similar to `polygonate`, this will create a folder called `hr_ready` which will contain the snippet of checker codes that can be uploaded to HackerRank.
 
-    If you wish to grade subtasks as well, you need to create a file called `details.json` and describe the subtasks there. It will look something like.
+If you wish to grade subtasks as well, you need to create a file called `details.json` and describe the subtasks there. It will look something like.
 
-    ```
+```
 {
     "title": "Split",
     "valid_subtasks": [1, 2, 3],
@@ -753,11 +753,11 @@ As before, you can't immediately upload these files as checkers. Here's what to 
         "IMPORTANT: The last file of each subtask must be unique to that subtask. (HackerRank restriction)"
     ]
 }
-    ```
+```
 
-    You can also automate this process by running the `make_details` script, which takes the same arguments as `all_files_subtasks`. This is also automatically created by `direct_to_hackerrank`.  
+You can also automate this process by running the `make_details` script, which takes the same arguments as `all_files_subtasks`. This is also automatically created by `direct_to_hackerrank`.  
 
-- Support for other formats to follow soon.
+For other platforms: Will support in the future.
 
 
 # Converting to other formats  
