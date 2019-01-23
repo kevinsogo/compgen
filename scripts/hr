@@ -8,8 +8,8 @@ from glob import glob
 
 args = list(argv[1:])
 
-basura = 'basura_delete_later_once_scripts_finish_running_hr'
-basura2 = 'basura_delete_later_once_scripts_finish_running_hr2'
+basura = '/tmp/basura_delete_later_once_scripts_finish_running_hr'
+basura2 = '/tmp/basura_delete_later_once_scripts_finish_running_hr2'
 
 def print_to(x): return 'cat > %s' % x
 

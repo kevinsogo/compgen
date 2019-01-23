@@ -14,7 +14,7 @@ if [[ -z "${@:2}" ]]; then
     exit 1
 fi
 
-BASURA=basura_delete_later_once_scripts_finish_running
+BASURA=/tmp/basura_delete_later_once_scripts_finish_running
 cat > $BASURA # store input to temp file
 
 for sub in $(echo "$subs" | sed "s/,/ /g"); do
