@@ -28,9 +28,17 @@ parser.add_argument('-t', '--test-hr-locally', action='store_true', help=argpars
 
 args = parser.parse_args()
 
-print('filename', args.details)
-with open(args.details) as f:
-    details = json.load(f)
+details = {}
+if os.path.isfile(args.details):
+    with open(args.details) as f:
+        try:
+            details = json.load(f)
+            print("LOADED DETAILS FROM {}".format(args.details))
+        except ValueError:
+            print("ERROR: INVALID JSON FILE: {}".format(args.details))
+            exit(1)
+else:
+    print("WARNING: {} NOT FOUND".format(args.details))
 
 script_path = os.path.dirname(os.path.realpath(__file__))
 compgen_file = os.path.join(script_path, "compgen", "compgen.py")

@@ -30,7 +30,7 @@ def check_valid(a, b, exc=Exception):
     # check distinct
     ensure(len(b) == len(set(b)), "Values not unique!", exc=exc)
 
-@set_multi_checker(no_extra_chars=True)
+@set_single_checker(no_extra_chars=True)
 def check_solution(a, cont_b, judge_b, **kwargs):
     check_valid(a, cont_b, exc=WA)
     check_valid(a, judge_b, exc=Fail) # remove for speed

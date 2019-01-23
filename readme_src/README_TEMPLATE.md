@@ -281,9 +281,93 @@ Obviously, the solution can be in any language; just replace the command `python
 
 # Custom checkers
 
-TODO add support for custom checkers
+Some problems require a custom judge/checker to evaluate submissions. The `compgen.checkers` module provides a simple way to write checkers that can support several platforms. (just HackerRank and Polygon for nwo)
 
+## Sample Problem  
 
+Here's an example of such a problem:
+
+{{{split/statement.md}}}
+
+The standard procedure of making test data and validators is basically the same, but now we also have to write a custom checker since there are several acceptable solutions.  
+
+## Writing checkers
+
+The most general template for custom checkers is the following:
+
+```python
+{{{templates/checker_generic_template.py}}}
+```
+
+Here, `input_file`, `output_file` and `judge_file` are of the same data type and are self-explanatory. They are iterators that enumerate the distinct *lines* of each file.
+
+However, there are a couple of constraints:
+
+- As above, the import line has to be exactly `from compgen.checkers import *`.
+- Here, the first line should be the exact same future import statement.  
+
+Both are due to technical reasons arising from the constraints of the judging platforms we're using. Please just follow them.
+
+Here's an example for our problem above:
+
+```python
+{{{split/checker_generic.py}}}
+```
+
+Note that, even though the judge data should be absolutely correct, the custom checker shouldn't assume so, and must raise `Fail` if it detects that something is wrong. This is better than silently ignoring this inconsistency and risking incorrect judgements, ultimately ruining the contest.  
+
+The `set_checker()` decorator can take some arguments. Here are some possible uses:
+
+```python
+@set_checker('tokens') # Split by tokens instead of split by lines.
+
+@set_checker('tokens', 'lines', 'tokens') # If you want different files to have different tokenizing styles.
+
+@set_checker(no_extra_chars=True) # Automatically detect that all files have been read completely,
+                                  # and issue a WA/Fail otherwise. This is to give the correct verdict in
+                                  # cases where the contestant outputs extra characters/lines at the end.
+```
+
+## Convenient single-case and multi-case checker
+
+A lot of the times, we don't need the full power of checkers above. Most checkers you'll write will be of the following form:
+
+1. Read the input from `input_file`.  
+2. Read the contestant's output from `output_file`.
+3. Read the judge's data from `judge_file`.
+4. Analyze all three things and determine the score, usually just 0.0 or 1.0.  
+
+or, if the problem has several test cases,
+
+- Read the number of test cases from `input_file`, say `t`.  
+- Do the above `t` times.  
+- Take the minimum of the scores as the final score.
+
+These are not that hard to write (as shown above), but since they're so common, I've provided convenience functions `set_single_checker()` and `set_multi_checker()` to make it much, much easier. Here's an example:
+
+```
+{{{split/checker.py}}}
+```
+
+You simply have to write four functions and decorate them accordingly. They should be self-explanatory.
+
+If there was only one test case, you simply replace `set_multi_checker` with `set_single_checker`, and it will work!
+
+## Uploading to judges
+
+As before, you can't immediately upload these files as checkers. Here's what to do:
+
+- For **Polygon**: Just run `polygonate`; checkers will be included.
+
+- For **HackerRank**: Run `hrate`; similar to `polygonate`, this will create a folder called `hr_ready` which will contain the snippet of checker codes that can be uploaded to HackerRank.
+
+    If you wish to grade subtasks as well, you need to create a file called `details.json` and describe the subtasks there. It will look something like.
+
+    ```
+{{{split/details.json}}}
+    ```
+
+- Support for other formats to follow soon.
 
 
 # Converting to other formats  
@@ -340,6 +424,8 @@ TODO
     - README.md would just contain a small overview.
     - Maybe the Polygon notes can be compiled into their own section as well.
 
+- Move the convenience functions common to `compgen` and `compgen.checkers` to a separate file, so they can be imported by both. Extend `polygonate` and `hrate` to handle it.
+
 **To consider**  
 
 - Make the `direct_to_hackerrank` command look like:
@@ -360,3 +446,4 @@ TODO
 
     - Preferably, testing (via `hr`-like scripts) is still possible on all supported formats.
 
+- Automate the creation of `details.json` based on `direct_to_hackerrank`.

@@ -517,9 +517,242 @@ Obviously, the solution can be in any language; just replace the command `python
 
 # Custom checkers
 
-TODO add support for custom checkers
+Some problems require a custom judge/checker to evaluate submissions. The `compgen.checkers` module provides a simple way to write checkers that can support several platforms. (just HackerRank and Polygon for nwo)
+
+## Sample Problem  
+
+Here's an example of such a problem:
+
+**Statement**  
+
+Given an array, find the longest subsequence consisting of distinct elements. If there are multiple, any one will be accepted.
+
+**Input Format**  
+
+    T
+    N
+    A1 A2 ... AN
+    N
+    A1 A2 ... AN
+    ...
+    N
+    A1 A2 ... AN
+
+**Output Format**  
+
+    M
+    B1 B2 ... BM
+    M
+    B1 B2 ... BM
+    ...
+    M
+    B1 B2 ... BM
 
 
+**Constraints**  
+
+$1 \le T \le 10^5$  
+$1 \le N \le 10^5$  
+$\sum N \le 5\cdot 10^5$  
+$-10**9 \le A_i \le 10^9$  
+
+**Subtask 1**: $N \le 10$  
+**Subtask 2**: $N \le 1000$  
+**Subtask 3**: No additional constraints  
+
+The standard procedure of making test data and validators is basically the same, but now we also have to write a custom checker since there are several acceptable solutions.  
+
+## Writing checkers
+
+The most general template for custom checkers is the following:
+
+```python
+from __future__ import print_function, division, unicode_literals, absolute_import
+from compgen.checkers import *
+
+@set_checker()
+def check_solution(input_file, output_file, judge_file, **kwargs):
+    # write your grader here
+    
+    # Raise this if the answer is incorrect
+    raise WA("The contestant's output is incorrect!")
+    
+    # Raise this if the judge data is incorrect, or if the checking fails for some reason other than WA
+    # Any other exception type raised will be considered equivalent to Fail.
+    raise Fail("The judge data is incorrect. Fix it!")
+
+    # the return value is the score, and must be a value between 0.0 and 1.0
+    return 1.0 
+
+if __name__ == '__main__': chk()
+```
+
+Here, `input_file`, `output_file` and `judge_file` are of the same data type and are self-explanatory. They are iterators that enumerate the distinct *lines* of each file.
+
+However, there are a couple of constraints:
+
+- As above, the import line has to be exactly `from compgen.checkers import *`.
+- Here, the first line should be the exact same future import statement.  
+
+Both are due to technical reasons arising from the constraints of the judging platforms we're using. Please just follow them.
+
+Here's an example for our problem above:
+
+```python
+from __future__ import print_function, division, unicode_literals, absolute_import
+from compgen.checkers import *
+
+
+def get_sequence(file, exc=Exception):
+    try:
+        m = int(file.next().rstrip())
+        b = map(int, file.next().rstrip().split(' ')) # stricter
+    except Exception as e:
+        raise ParseError("Failed to get a sequence: " + str(e))
+    ensure(m >= 0, "Invalid length", exc=exc)
+    ensure(len(b) == m, lambda: "Expected {} numbers but got {}".format(m, len(b)), exc=exc)
+    return b
+
+def check_valid(a, b, exc=Exception):
+    # check subsequence
+    j = 0
+    for i in xrange(len(a)):
+        if j < len(b) and a[i] == b[j]: j += 1
+    ensure(j == len(b), "Not a subsequence!", exc=exc)
+    # check distinct
+    ensure(len(b) == len(set(b)), "Values not unique!", exc=exc)
+
+@set_checker()
+def check_solution(input_file, output_file, judge_file, **kwargs):
+    z = int(input_file.next())
+    for cas in xrange(z):
+        n = int(input_file.next())
+        a = map(int, input_file.next().strip().split())
+        if len(a) != n:
+            raise Fail("Judge input invalid")
+        cont_b = get_sequence(output_file, exc=WA)
+        judge_b = get_sequence(judge_file, exc=Fail)
+        check_valid(a, cont_b, exc=WA)
+        check_valid(a, judge_b, exc=Fail)
+        if len(cont_b) < len(judge_b): raise WA("Suboptimal solution")
+        if len(cont_b) > len(judge_b): raise Fail("Judge data incorrect!")
+
+    if output_file.has_next(): raise WA("Extra characters at the end of the output file")
+    if judge_file.has_next(): raise Fail("Extra characters at the end of the judge file!")
+    return 1.0
+
+if __name__ == '__main__': chk()
+```
+
+Note that, even though the judge data should be absolutely correct, the custom checker shouldn't assume so, and must raise `Fail` if it detects that something is wrong. This is better than silently ignoring this inconsistency and risking incorrect judgements, ultimately ruining the contest.  
+
+The `set_checker()` decorator can take some arguments. Here are some possible uses:
+
+```python
+@set_checker('tokens') # Split by tokens instead of split by lines.
+
+@set_checker('tokens', 'lines', 'tokens') # If you want different files to have different tokenizing styles.
+
+@set_checker(no_extra_chars=True) # Automatically detect that all files have been read completely,
+                                  # and issue a WA/Fail otherwise. This is to give the correct verdict in
+                                  # cases where the contestant outputs extra characters/lines at the end.
+```
+
+## Convenient single-case and multi-case checker
+
+A lot of the times, we don't need the full power of checkers above. Most checkers you'll write will be of the following form:
+
+1. Read the input from `input_file`.  
+2. Read the contestant's output from `output_file`.
+3. Read the judge's data from `judge_file`.
+4. Analyze all three things and determine the score, usually just 0.0 or 1.0.  
+
+or, if the problem has several test cases,
+
+- Read the number of test cases from `input_file`, say `t`.  
+- Do the above `t` times.  
+- Take the minimum of the scores as the final score.
+
+These are not that hard to write (as shown above), but since they're so common, I've provided convenience functions `set_single_checker()` and `set_multi_checker()` to make it much, much easier. Here's an example:
+
+```
+from __future__ import print_function, division, unicode_literals, absolute_import
+from compgen.checkers import *
+
+@chk.get_one_input
+def get_one_input(file, **kwargs):
+    n = int(file.next())
+    a = map(int, file.next().strip().split())
+    ensure(len(a) == n, "Invalid length in input", exc=Fail)
+    return a
+
+@chk.get_output_from_input
+@chk.get_judge_data_from_input
+def get_output_from_input(file, a, **kwargs):
+    exc = kwargs['exc']
+    try:
+        m = int(file.next().rstrip())
+        b = map(int, file.next().rstrip().split(' ')) # stricter
+    except Exception as e:
+        raise exc("Failed to get a sequence: " + str(e))
+    ensure(m >= 0, "Invalid length", exc=exc)
+    ensure(len(b) == m, lambda: "Expected {} numbers but got {}".format(m, len(b)), exc=exc)
+    return b
+
+def check_valid(a, b, exc=Exception):
+    # check subsequence
+    j = 0
+    for i in xrange(len(a)):
+        if j < len(b) and a[i] == b[j]: j += 1
+    ensure(j == len(b), "Not a subsequence!", exc=exc)
+    # check distinct
+    ensure(len(b) == len(set(b)), "Values not unique!", exc=exc)
+
+@set_multi_checker(no_extra_chars=True)
+def check_solution(a, cont_b, judge_b, **kwargs):
+    check_valid(a, cont_b, exc=WA)
+    check_valid(a, judge_b, exc=Fail) # remove for speed
+    if len(cont_b) < len(judge_b): raise WA("Suboptimal solution")
+    if len(cont_b) > len(judge_b): raise Fail("Judge data incorrect!")
+    return 1.0
+
+if __name__ == '__main__': chk(title="Split")
+```
+
+You simply have to write four functions and decorate them accordingly. They should be self-explanatory.
+
+If there was only one test case, you simply replace `set_multi_checker` with `set_single_checker`, and it will work!
+
+## Uploading to judges
+
+As before, you can't immediately upload these files as checkers. Here's what to do:
+
+- For **Polygon**: Just run `polygonate`; checkers will be included.
+
+- For **HackerRank**: Run `hrate`; similar to `polygonate`, this will create a folder called `hr_ready` which will contain the snippet of checker codes that can be uploaded to HackerRank.
+
+    If you wish to grade subtasks as well, you need to create a file called `details.json` and describe the subtasks there. It will look something like.
+
+    ```
+{
+    "title": "Split",
+    "valid_subtasks": [1, 2, 3],
+    "subtasks_files": [
+        [[0, 0], [1, 2, 3]],
+        [[1, 2], [2, 3]],
+        [[3, 3], [3]]
+    ],
+    "comments": [
+        "Anything can go here. This will not be read by the scripts. It can also be removed completely.",
+        "Each entry under 'subtasks_files' are of the format '[[low_index, high_index], [ list of subtasks ]]'",
+        "[low_index, high_index] represents a range of files under those subtasks.",
+        "Each file must appear in exactly one range.",
+        "IMPORTANT: The last file of each subtask must be unique to that subtask. (HackerRank restriction)"
+    ]
+}
+    ```
+
+- Support for other formats to follow soon.
 
 
 # Converting to other formats  
@@ -576,6 +809,8 @@ TODO
     - README.md would just contain a small overview.
     - Maybe the Polygon notes can be compiled into their own section as well.
 
+- Move the convenience functions common to `compgen` and `compgen.checkers` to a separate file, so they can be imported by both. Extend `polygonate` and `hrate` to handle it.
+
 **To consider**  
 
 - Make the `direct_to_hackerrank` command look like:
@@ -596,3 +831,4 @@ TODO
 
     - Preferably, testing (via `hr`-like scripts) is still possible on all supported formats.
 
+- Automate the creation of `details.json` based on `direct_to_hackerrank`.
