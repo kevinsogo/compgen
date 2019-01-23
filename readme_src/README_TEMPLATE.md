@@ -147,11 +147,9 @@ from validator import *
 
 # Generating multiple files simultaneously
 
-Sometimes, you just want to create several kinds of cases without worrying about how to distribute them into different files. Of course, you could generate all cases first, arrange them, then call `write_to_file` multiple times. This works if you're only generating test data locally. But if you're using Polygon, then there's a small problem: Polygon wants each generator to make only one file!
+Sometimes, you just want to create several kinds of cases without worrying about how to distribute them into different files. Of course, you could generate all cases first, arrange them, then call `write_to_file` multiple times. But this library provides an easier way of generating a bunch of cases without worrying too much about distributing to different files.
 
-Well, you could still just generate everything and only print a subset of them, but this is still quite slow since you're generating all the cases every time: you might hit Polygon's time limit. What we want is a way to only generate the necessary files without worrying about how to distribute them into files.  
-
-For this, you can use this pattern:
+You can use this pattern:
 
 ```python
 {{{addition/multifile_cases2.py}}}
