@@ -1,9 +1,7 @@
 #!/usr/bin/python2
-
 '''
 Useful stuff for custom checkers/judges.
 '''
-
 from __future__ import print_function, division, unicode_literals, absolute_import
 
 __author__ = "Kevin Atienza"
@@ -247,7 +245,7 @@ def _check_hr(checker, t_obj, r_obj, print_message=False):
                 tc_id=t_obj.testcase_id,
                 identical=t_obj.testcase_result,
             )
-        r_obj.result = verdict == Verdict.ac
+        r_obj.result = verdict == Verdict.AC
         r_obj.message = _hr_verdict_name[verdict]
 
     if print_message and message:
@@ -261,7 +259,7 @@ _polygon_rcode = {
     Verdict.FAIL: 3,
     Verdict.EXC: 3,
 }
-@_register_platform('local') # @@@ remove to suppress
+@_register_platform('local') # @@@@@ remove to suppress
 @_register_platform('polygon') # AFAIK, they are currently identical in behavior
 def _check_local(checker, title='', file=stdout):
     desc = 'Judge for the problem "{}"'.format(title) if title else 'Judge for the problem'

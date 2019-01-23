@@ -1,9 +1,7 @@
 #!/usr/bin/python2
-
 '''
 Useful stuff for generating data, validating, etc.
 '''
-
 from __future__ import print_function
 
 # @@@@@ embedding starts here

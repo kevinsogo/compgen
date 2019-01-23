@@ -1,87 +1,62 @@
 #!/usr/bin/python
 
+'''
+Recursively expand imports of compgen, compgen.checkers and files in the current directory so
+that it can be used for Polygon.
+'''
+
 from __future__ import print_function
 
 from sys import *
 import os.path
 from os import mkdir
 from glob import glob
-from compgen import apply_after
+from black_magic import expand_imports
 
-compgen_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "compgen", "compgen.py")
+script_path = os.path.dirname(os.path.realpath(__file__))
+compgen_file = os.path.join(script_path, "compgen", "compgen.py")
+checkers_file = os.path.join(script_path, "compgen", "checkers.py")
 
 # extract pastable from compgen
-contents = {}
-with open(compgen_file) as f:
-    good_lines = ['if 1:\n']
-    lines = f.readlines()
-    found = False
-    for line in lines:
-        new_found = '@@@@@' in line
-        if found:
-            good_lines.append(' '*4 + line)
-            assert not new_found, "There must only be one @@@@@"
-        found |= new_found
-    contents[compgen_file] = good_lines
-
+def get_contents(file, f):
+    if file == compgen_file:
+        yield 'if 1:\n'
+        found = False
+        for line in f.readlines():
+            new_found = '@@@@@' in line
+            if found:
+                line = ' '*4 + line
+                ct = len(line) - len(line.lstrip(' '))
+                ct -= ct % 4
+                yield ' '*(ct // 4) + line[ct:]
+                assert not new_found, "There must only be one @@@@@"
+            found |= new_found
+    elif file == checkers_file:
+        yield 'if 1:\n'
+        for line in f.readlines():
+            if '@@@@@' not in line:
+                line = ' '*4 + line
+                ct = len(line) - len(line.lstrip(' '))
+                ct -= ct % 4
+                yield ' '*(ct // 4) + line[ct:]
+    else:
+        for line in f:
+            yield line
 
 copied_files = sorted(glob('*.py'))
-all_files = copied_files + [compgen_file]
 
-for file in copied_files:
-    with open(file) as f:
-        contents[file] = f.readlines()
-
-
-name_of_file = {}
-for file in all_files:
+def get_name(file):
+    if file == compgen_file: return 'compgen'
+    if file == checkers_file: return 'compgen.checkers'
     name, ext = os.path.splitext(os.path.basename(file))
     assert ext == '.py'
-    name_of_file[file] = name
+    return name
 
-file_of_name = {name: file for file, name in name_of_file.items()}
-
-def get_imported(parts):
-    if len(parts) == 4 and parts[:1] + parts[2:] == ['from', 'import', '*']:
-        return parts[1]
-
-
-def clear_future_print(lines):
-    found_future_print = False
-    for line in lines:
-        if line.strip().split() == ['from', '__future__', 'import', 'print_function']:
-            if found_future_print: continue
-            found_future_print = True
-        yield line
-
-
-@apply_after(clear_future_print)
-def expand_imports(file, visiting, visited):
-    if file in visiting:
-        print("Infinite loop!", file=stderr)
-        exit(1)
-    visiting.add(file)
-    for line in contents[file]:
-        imported = get_imported(line.strip().split())
-        if imported in file_of_name:
-            fimported = file_of_name[imported]
-            if fimported not in visited:
-                for line in expand_imports(fimported, visiting, visited):
-                    yield line
-        else:
-            yield line
-    visiting.remove(file)
-    visited.add(file)
-
-expanded = {}
-for file in contents:
-    expanded[file] = list(expand_imports(file, set(), set()))
-
-
-
-
-
-# import print_function exactly once
+expanded, deps = expand_imports(copied_files + [compgen_file, checkers_file], get_contents, get_name)
+for file in sorted(expanded):
+    if file != checkers_file and checkers_file in deps[file]:
+        print('FOUND CHECKER', file)
+        expanded[file].append("chk.run('polygon')\n")
 
 polygon_ready = 'polygon_ready'
 try:
@@ -89,7 +64,7 @@ try:
 except OSError:
     pass
 
-for file in copied_files:
+for file in sorted(copied_files):
     dname, bname = os.path.split(file)
     poly_file = os.path.join(dname, polygon_ready, bname)
     print('CONVERTING', file, 'TO', poly_file)

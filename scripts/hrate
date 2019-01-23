@@ -1,0 +1,130 @@
+#!/usr/bin/python
+
+'''
+Recursively expand imports of compgen, compgen.checkers and files in the current directory so
+that it can be used for Polygon.
+'''
+
+from __future__ import print_function
+
+from sys import *
+import os.path
+from os import mkdir
+from glob import glob
+import json
+import argparse
+import textwrap
+import string
+from time import time
+from StringIO import StringIO
+from black_magic import expand_imports
+
+parser = argparse.ArgumentParser(description="Create HackerRank-friendly versions of checkers")
+parser.add_argument('-d', '--details', default='details.json', help='Path to a json file containing problem details.')
+parser.add_argument('-p', '--print-message', action='store_true',
+                    help='Print the "message" issued by the grader, so that it will be seen by the contestant '
+                         'when he/she tests on the sample I/O in HackerRank.')
+parser.add_argument('-t', '--test-hr-locally', action='store_true', help=argparse.SUPPRESS)
+
+args = parser.parse_args()
+
+print('filename', args.details)
+with open(args.details) as f:
+    details = json.load(f)
+
+script_path = os.path.dirname(os.path.realpath(__file__))
+compgen_file = os.path.join(script_path, "compgen", "compgen.py")
+checkers_file = os.path.join(script_path, "compgen", "checkers.py")
+
+# extract pastable from compgen
+def get_contents(file, f):
+    if file == compgen_file:
+        yield 'if 1:\n'
+        found = False
+        for line in f.readlines():
+            new_found = '@@@@@' in line
+            if found:
+                line = ' '*4 + line
+                ct = len(line) - len(line.lstrip(' '))
+                ct -= ct % 4
+                yield ' '*(ct // 4) + line[ct:]
+                assert not new_found, "There must only be one @@@@@"
+            found |= new_found
+    elif file == checkers_file:
+        yield 'if 1:\n'
+        for line in f.readlines():
+            if '@@@@@' not in line:
+                line = ' '*4 + line
+                ct = len(line) - len(line.lstrip(' '))
+                ct -= ct % 4
+                yield ' '*(ct // 4) + line[ct:]
+    else:
+        for line in f:
+            yield line
+
+copied_files = sorted(glob('*.py'))
+
+def get_name(file):
+    if file == compgen_file: return 'compgen'
+    if file == checkers_file: return 'compgen.checkers'
+    name, ext = os.path.splitext(os.path.basename(file))
+    assert ext == '.py'
+    return name
+
+if 'valid_subtasks' in details:
+    template_file = 'hr_checker_template_subtasks.py'
+    subtasks_files = '\n'.join(
+        '    (({}, {}), [{}]),'.format(
+                low, high, ', '.join(map(str, indices)),
+            )
+        for [[low, high], indices] in details['subtasks_files']
+    )
+    valid_subtasks = ', '.join(map(str, details['valid_subtasks']))
+else:
+    template_file = 'hr_checker_template_binary.py'
+    subtasks_files = '------------------------'
+    valid_subtasks = '------------------------'
+
+sane_chars = set(string.ascii_letters + string.digits + '_-')
+filename_base = ''.join(ch for ch in details.get('title', 'hej_monika') + '_' + str(time()) if ch in sane_chars)
+
+with open(os.path.join(script_path, template_file)) as f:
+    template = f.read()
+
+if args.test_hr_locally:
+    with open(os.path.join(script_path, 'hr_checker_template_local_test.py')) as f:
+        template = f.read().format(template=template)
+
+expanded, deps = expand_imports(copied_files + [compgen_file, checkers_file], get_contents, get_name, keep_future_imports=False)
+checkers = set()
+for file in sorted(expanded):
+    if file != checkers_file and checkers_file in deps[file]:
+        print('FOUND CHECKER', file)
+
+        # we need the subtasks file and some options:
+        # print_message or not
+        expanded[file] = StringIO(template.format(
+                expanded_code=''.join(expanded[file]),
+                print_message='True' if args.print_message else 'False',
+                filename_base=filename_base,
+                subtasks_files=subtasks_files,
+                valid_subtasks=valid_subtasks,
+            )).readlines()
+        checkers.add(file)
+
+
+
+hr_ready = 'hr_ready'
+try:
+    mkdir(hr_ready)
+except OSError:
+    pass
+
+for file in sorted(checkers):
+    dname, bname = os.path.split(file)
+    hr_file = os.path.join(dname, hr_ready, bname)
+    print('CONVERTING', file, 'TO', hr_file)
+    with open(hr_file, 'w') as f:
+        f.writelines(expanded[file])
+
+print('DONE')
