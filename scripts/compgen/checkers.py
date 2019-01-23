@@ -262,14 +262,14 @@ _polygon_rcode = {
 @_register_platform('local') # @@@@@ remove to suppress
 @_register_platform('polygon') # AFAIK, they are currently identical in behavior
 def _check_local(checker, title='', file=stdout):
-    desc = 'Judge for the problem "{}"'.format(title) if title else 'Judge for the problem'
+    desc = 'judge for the problem "{}"'.format(title) if title else 'judge for the problem'
     parser = argparse.ArgumentParser(description=desc)
-    parser.add_argument('input_path', help='Input file path')
-    parser.add_argument('output_path', help="Contestant's file path")
-    parser.add_argument('judge_path', help='Judge auxiliary data file path')
-    parser.add_argument('-c', '--code', default='n/a', help='Path to the solution used')
-    parser.add_argument('-t', '--tc-id', default=None, type=int, help='Test case ID, zero indexed')
-    parser.add_argument('-v', '--verbose', action='store_true', help='Print more details')
+    parser.add_argument('input_path', help='input file path')
+    parser.add_argument('output_path', help="contestant's file path")
+    parser.add_argument('judge_path', help='judge auxiliary data file path')
+    parser.add_argument('-c', '--code', default='n/a', help='path to the solution used')
+    parser.add_argument('-t', '--tc-id', default=None, type=int, help='test case ID, zero indexed')
+    parser.add_argument('-v', '--verbose', action='store_true', help='print more details')
     parser.add_argument('-i', '--identical', action='store_true', help=argparse.SUPPRESS)
     args = parser.parse_args()
 
