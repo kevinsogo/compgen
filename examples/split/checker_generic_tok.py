@@ -1,7 +1,6 @@
 from __future__ import print_function, division, unicode_literals, absolute_import
 from compgen.checkers import *
 
-
 def get_sequence(file, exc=Exception):
     try:
         m = int(file.next())

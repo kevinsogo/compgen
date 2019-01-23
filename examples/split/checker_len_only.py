@@ -1,7 +1,6 @@
 from __future__ import print_function, division, unicode_literals, absolute_import
 from compgen.checkers import *
 
-
 @chk.get_one_input
 def get_one_input(file, **kwargs):
     n = int(file.next())
@@ -36,6 +35,5 @@ def check_solution(a, b, ans, **kwargs):
     ensure(len(b) == len(set(b)), "Values not unique!", exc=WA)
     if len(b) < ans: raise WA("Suboptimal solution")
     if len(b) > ans: raise Fail("Judge data incorrect!")
-
 
 if __name__ == '__main__': chk(title="Split")

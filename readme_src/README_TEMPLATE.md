@@ -307,7 +307,7 @@ Here, `input_file`, `output_file` and `judge_file` are of the same data type and
 However, there are a couple of constraints:
 
 - As above, the import line has to be exactly `from compgen.checkers import *`.
-- Here, the first line should be the exact same future import statement.  
+- You *must* write the exact same future import statement in the first line, for all checkers.
 
 Both are due to technical reasons arising from the constraints of the judging platforms we're using. Please just follow them.
 
@@ -317,7 +317,7 @@ Here's an example for our problem above:
 {{{split/checker_generic.py}}}
 ```
 
-Note that, even though the judge data should be absolutely correct, the custom checker shouldn't assume so, and must raise `Fail` if it detects that something is wrong. This is better than silently ignoring this inconsistency and risking incorrect judgements, ultimately ruining the contest.  
+Note that, even though the judge data should be absolutely correct, the custom checker shouldn't assume so, and must raise `Fail` if it detects that something is wrong. This is better than silently ignoring the problem and risking incorrect judgement.
 
 The `set_checker()` decorator can take some arguments. Here are some possible uses:
 
@@ -346,9 +346,9 @@ or, if the problem has several test cases,
 - Do the above `t` times.  
 - Take the minimum of the scores as the final score.
 
-These are not that hard to write (as shown above), but since they're so common, I've provided convenience functions `set_single_checker()` and `set_multi_checker()` to make it much, much easier. Here's an example:
+These are not that hard to write (as shown above), but since they're so common, I've provided convenience functions `set_single_checker()` and `set_multi_checker()` to make it much easier. Here's an example:
 
-```
+```python
 {{{split/checker.py}}}
 ```
 
@@ -366,7 +366,7 @@ For **HackerRank**: Run `hrate`; similar to `polygonate`, this will create a fol
 
 If you wish to grade subtasks as well, you need to create a file called `details.json` and describe the subtasks there. It will look something like.
 
-```
+```json
 {{{templates/details.json}}}
 ```
 
