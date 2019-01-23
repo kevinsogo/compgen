@@ -354,7 +354,7 @@ These are not that hard to write (as shown above), but since they're so common, 
 
 You simply have to write four functions and decorate them accordingly. They should be self-explanatory.
 
-If there was only one test case, you simply replace `set_multi_checker` with `set_single_checker`, and it will work!
+If there was only one test case, you simply replace `set_multi_checker` with `set_single_checker`!
 
 ## Uploading to judges
 

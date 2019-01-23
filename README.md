@@ -723,7 +723,7 @@ if __name__ == '__main__': chk(title="Split")
 
 You simply have to write four functions and decorate them accordingly. They should be self-explanatory.
 
-If there was only one test case, you simply replace `set_multi_checker` with `set_single_checker`, and it will work!
+If there was only one test case, you simply replace `set_multi_checker` with `set_single_checker`!
 
 ## Uploading to judges
 
@@ -746,7 +746,7 @@ If you wish to grade subtasks as well, you need to create a file called `details
     ],
     "comments": [
         "Anything can go here. This will not be read by the scripts. It can also be removed completely.",
-        "Each entry under 'subtasks_files' are of the format '[[low_index, high_index], [ list of subtasks ]]'",
+        "Each entry in 'subtasks_files' is of the form '[[low_index, high_index], [ list of subtasks ]]'",
         "[low_index, high_index] represents a range of files under those subtasks.",
         "Each file must appear in exactly one range.",
         "IMPORTANT: The last file of each subtask must be unique to that subtask. (HackerRank restriction)"
