@@ -12,7 +12,7 @@ __status__ = "Development"
 __version__ = "0.1"
 
 from sys import stdout, stderr
-import itertools, functools, argparse
+import itertools, functools, argparse, traceback
 
 
 def ensure(condition, message=None, exc=Exception):
@@ -210,6 +210,8 @@ def _check_generic(checker, input_path, output_path, judge_path, **kwargs):
                     verdict = Verdict.FAIL
                 except Exception as exc:
                     verdict = Verdict.EXC
+                if kwargs.get('verbose'):
+                    traceback.print_exc()
                 return verdict, getattr(exc, 'score', 0.0), str(exc)
 
 
@@ -283,6 +285,7 @@ def _check_local(checker, title='', file=stdout):
             code_path=args.code,
             tc_id=args.tc_id,
             identical=args.identical,
+            verbose=args.verbose,
         )
 
     if args.verbose:

@@ -52,6 +52,6 @@ else
 fi
 
 echo "POSSIBLY CONVERTING CHECKERS"
-$current/hrate
+$current/hrate ${@:5}
 
 echo "DONE. ALL OK"
