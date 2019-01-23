@@ -1,0 +1,4 @@
+python2 single_case.py 10 10 > $$$
+python2 single_case.py 10 100 > $$$
+python2 single_case.py 10 1000 > $$$
+python2 single_case.py 10 10000 > $$$

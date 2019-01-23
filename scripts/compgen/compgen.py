@@ -10,7 +10,6 @@ from __future__ import print_function
 
 __author__ = "Kevin Atienza"
 __license__ = "MIT"
-
 __maintainer__ = "Kevin Atienza"
 __email__ = "kevin.charles.atienza@gmail.com"
 __status__ = "Development"
@@ -23,15 +22,14 @@ from functools import wraps
 from collections import deque
 
 
-
-def ensure(condition, message=None):
+def ensure(condition, message=None, exc=Exception):
     ''' assert that doesn't raise AssertionError. Useful/Convenient for judging. '''
     if not condition:
         try:
             message = message()
         except TypeError:
             pass
-        raise Exception(message)
+        raise exc(message)
 
 
 def apply_after(g, name=None):
@@ -54,7 +52,7 @@ def group_into(v, seq):
     buf = []
     for s in seq:
         buf.append(s)
-        ensure(len(buf) <= v, lambda: "v cannot be zero if seq is nonempty")
+        if len(buf) > v: raise Exception("v cannot be zero if seq is nonempty")
         if len(buf) == v:
             yield buf
             buf = []
@@ -92,7 +90,7 @@ class Interval(object):
         super(Interval, self).__init__()
 
     def __and__(self, other):
-        ensure(isinstance(other, Interval))
+        if not isinstance(other, Interval): raise TypeError("Cannot merge {} with {}".format(self.__class__.__name__, other.__class__.__name__))
         return Interval(max(self.l, other.l), min(self.r, other.r))
 
     def __len__(self):
@@ -127,14 +125,14 @@ class Bounds(object):
             def combine(a, b):
                 if a is None: return b
                 if b is None: return a
-                ensure(isinstance(a, Interval) and isinstance(b, Interval), lambda: "Conflict for attribute {} in merging!".format(attr))
+                if not (isinstance(a, Interval) and isinstance(b, Interval)):
+                    raise Exception("Conflict for attribute {} in merging!".format(attr))
                 return a & b
             m[attr] = combine(getattr(self, attr, None), getattr(other, attr, None))
         return Bounds(m)
 
 
 _int_re = re.compile(r'0|(?:-?[1-9]\d*)$')
-
 def strict_int(x, *args):
     '''
     Check if the string x is a valid integer token, and that it satisfies certain constraints.
@@ -145,19 +143,23 @@ def strict_int(x, *args):
     strict_int(x, 5, 8) # checks if x is in the closed interval [5, 8]
     strict_int(x, interval) # check if  is in the Interval 'interval'
     '''
-    ensure(_int_re.match(x), lambda: "Expected integer literal, got: {}".format(repr(x)))
+    if not _int_re.match(x):
+        raise Exception("Expected integer literal, got: {}".format(repr(x)))
     x = int(x)
     if len(args) == 2:
         l, r = args
-        ensure(x in Interval(l, r), lambda: "Integer {} not in [{}, {}]".format(x, l, r))
+        if x not in Interval(l, r):
+            raise Exception("Integer {} not in [{}, {}]".format(x, l, r))
     elif len(args) == 1:
         r, = args
         if isinstance(r, Interval):
-            ensure(x in r, lambda: "Integer {} not in {}".format(x, r))
+            if x not in r:
+                raise Exception("Integer {} not in {}".format(x, r))
         else:
-            ensure(x in Interval(0, r - 1), lambda: "Integer {} not in [0, {})".format(x, r))
+            if x not in Interval(0, r - 1):
+                raise Exception("Integer {} not in [0, {})".format(x, r))
     else:
-        ensure(False, lambda: "Invalid arguments to strict_int: {}".format(args))
+        raise Exception("Invalid arguments to strict_int: {}".format(args))
     return x
 
 
@@ -182,7 +184,8 @@ class StrictStream(object):
 
     def read_token(self, regex=None):
         tok = self._read_token()
-        if regex is not None: ensure(re.match('^' + regex + '$', tok), lambda: "Expected token with regex {}, got {}".format(repr(regex), repr(tok)))
+        if regex is not None and not re.match('^' + regex + '$', tok):
+            raise Exception("Expected token with regex {}, got {}".format(repr(regex), repr(tok)))
         return tok
 
     def read_int(self, *args):
@@ -198,7 +201,8 @@ class StrictStream(object):
         return self.read_char('')
 
     def read_char(self, ch):
-        ensure(self._next_char() == ch, lambda: "Expected {}, got {}".format(self._label(ch), repr(self._last)))
+        if self._next_char() != ch:
+            raise Exception("Expected {}, got {}".format(self._label(ch), repr(self._last)))
 
     def _label(self, ch):
         if ch == '':
@@ -314,7 +318,7 @@ def write_nth_group_to_file(index, print_to_file, make, distribute, args, file, 
     the given random number generator. This ensures reproducibility.
     '''
     groups = _get_all_groups(make, distribute, args)
-    ensure(0 <= index < len(groups), lambda: "Invalid index: {} out of {} groups".format(index, len(groups)))
+    if not (0 <= index < len(groups)): raise Exception("Invalid index: {} out of {} groups".format(index, len(groups)))
     group = [make() for make in groups[index]]
     _write_with_validate(print_to_file, file, group, validate=validate)
     return len(groups)

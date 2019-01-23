@@ -1,6 +1,7 @@
 basura*
 input/
 output/
+tempoutput/
 __pycache__
 *.pyc
 scripts/build/

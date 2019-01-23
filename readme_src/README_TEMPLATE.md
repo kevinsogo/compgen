@@ -354,4 +354,9 @@ TODO
 
 - Use gitlab's "Issues" feature and write these things there instead.  
 
-- Generalize `hr` to any of the supported formats. Make conversion between different formats seamless. 
+- Generalize `hr` to any of the supported formats. e.g. `localdata`. `hr` will then be an alias of `localdata hackerrank`, but we will have `poly` = `localdata polygon`, `cc` = `localdata codechef`, `localdata kattis`, `localdata pc2`.  
+
+- Make conversion between different formats seamless. `convert_data polygon hackerrank`, `convert_data hackerrank polygon`. The base format could be in one single folder with `.in` and `.ans` extensions. When uploading to hackerrank, a new script will convert them to hackerrank's zip format (without leaving traces of the `input/` and `output/` folder).
+
+    - Preferably, testing (via `hr`-like scripts) is still possible on all supported formats.
+
