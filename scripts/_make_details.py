@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+from sys import stderr
 import re
 
 assert raw_input() == 'DETAILS', "invalid stdin data... where did you get this??"
@@ -21,7 +22,7 @@ def raw_sub_files():
 def is_compatible(((a, b), l), ((A, B), L)):
     assert a <= b
     assert A <= B
-    return a + 1 == A and l == L
+    return b + 1 == A and l == L
 
 def merge(((a, b), l), ((A, B), L)):
     return (a, B), l

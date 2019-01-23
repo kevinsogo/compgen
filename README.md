@@ -43,6 +43,7 @@ Then the `$PATH` variable will be updated after logging out and then logging in 
 
 *Note:* It would be great if the path containing `compgen` AND the location of the problem data you're working on doesn't have spaces and other special characters in it; I haven't tested if the scripts work if there are. 
 
+*Note:* Some of the scripts below make use of some temp files, so running multiple instances simultaneously could cause some problems. Please don't run multiple scripts simultaneously.
 
 
 
@@ -795,6 +796,7 @@ TODO
 
 - Do something about the fact that Python's `random` module makes no guarantees of reproducibility across implementations and platforms; see [this](https://stackoverflow.com/questions/8786084/reproducibility-of-python-pseudo-random-numbers-across-systems-and-versions).
 - Give a better name than "compgen". We can still rename this package while it's early.    
+- Ensure that multiple instances of the scripts can be run simultaneously, at least the common ones.
 
 **Others**  
 
