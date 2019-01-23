@@ -19,7 +19,7 @@ subtasks_files = [
 ]
 
 # change this for every problem just to be safe
-tmp_filename_base = '/tmp/{filename_base}_'
+tmp_filename_base = '/tmp/hr_custom_checker_{filename_base}_'
 
 # under the testcases tab, if a file is the last file for some subtask (which should be unique),
 # set the weight of the file to be the number of points for the subtask.
