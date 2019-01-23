@@ -44,4 +44,14 @@ fi
 echo "GENERATING OUTPUT FILES"
 $current/hr genout "$3"
 
+echo "GENERATING details.json"
+if [[ -z "$subs" ]]; then
+    echo "{}" > details.json
+else
+    $current/make_details "input/input*.txt" $current/subtasks_from_validator $subs "$2" > details.json
+fi
+
+echo "POSSIBLY CONVERTING CHECKERS"
+$current/hrate
+
 echo "DONE. ALL OK"

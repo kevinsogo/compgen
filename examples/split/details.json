@@ -1,16 +1,8 @@
 {
-    "title": "Split",
     "valid_subtasks": [1, 2, 3],
     "subtasks_files": [
         [[0, 0], [1, 2, 3]],
         [[1, 2], [2, 3]],
         [[3, 3], [3]]
-    ],
-    "comments": [
-        "Anything can go here. This will not be read by the scripts. It can also be removed completely.",
-        "Each entry under 'subtasks_files' are of the format '[[low_index, high_index], [ list of subtasks ]]'",
-        "[low_index, high_index] represents a range of files under those subtasks.",
-        "Each file must appear in exactly one range.",
-        "IMPORTANT: The last file of each subtask must be unique to that subtask. (HackerRank restriction)"
     ]
 }

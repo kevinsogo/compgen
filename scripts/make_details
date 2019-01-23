@@ -1,0 +1,31 @@
+#!/bin/bash
+
+set -e
+
+current="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BASURA=/tmp/basura_delete_later_once_scripts_finish_running_make_details
+
+# check if some params are missing
+globpattern="$1"
+if [[ -z "$globpattern" ]]; then
+    >&2 echo "ERROR (make_details): The first argument must contain a pattern matching the input files (enclosed in quotes)."  
+    exit 1
+fi
+
+if [[ -z "${@:2}" ]]; then
+    >&2 echo "ERROR (make_details): The rest of the arguments must contain the command for the subtask detector."  
+    exit 1
+fi
+
+echo DETAILS > $BASURA
+while IFS= read -rd '' file; do
+    y=$("${@:2}" < $file)
+    echo FILE >> $BASURA
+    echo $file >> $BASURA
+    echo $y >> $BASURA
+done < <(find . -wholename "./$globpattern" -print0 | sort -z -V)
+
+echo DONE >> $BASURA
+
+python2 $current/_make_details.py < $BASURA
+

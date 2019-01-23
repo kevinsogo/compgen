@@ -208,7 +208,9 @@ if __name__ == '__main__':
 
 This takes the subtask name as an argument. The `&` operator merges intervals of two `Bounds` objects.
 
-**Polygon note:** It is important that such a subtask checker must not reject if the subtask name (`argv[1]`) is invalid. This is because Polygon calls the validator with some command line arguments, and so the first of those arguments (usually something like `--testset`) gets interpreted as a subtask name. I suggest keeping the subtask names as integer literals to avoid conflict.
+*Note:* Use integer literals as subtask names. This will be required later on.
+
+**Polygon note:** It is important that such a subtask checker must not reject if the subtask name (`argv[1]`) is invalid. This is because Polygon calls the validator with some command line arguments, and so the first of those arguments (usually something like `--testset`) gets interpreted as a subtask name.
 
 
 
@@ -752,6 +754,8 @@ As before, you can't immediately upload these files as checkers. Here's what to 
 }
     ```
 
+    You can also automate this process by running the `make_details` script, which takes the same arguments as `all_files_subtasks`. This is also automatically created by `direct_to_hackerrank`.  
+
 - Support for other formats to follow soon.
 
 
@@ -830,5 +834,3 @@ TODO
 - Make conversion between different formats seamless. `convert_data polygon hackerrank`, `convert_data hackerrank polygon`. The base format could be in one single folder with `.in` and `.ans` extensions. When uploading to hackerrank, a new script will convert them to hackerrank's zip format (without leaving traces of the `input/` and `output/` folder).
 
     - Preferably, testing (via `hr`-like scripts) is still possible on all supported formats.
-
-- Automate the creation of `details.json` based on `direct_to_hackerrank`.

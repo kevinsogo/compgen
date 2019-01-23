@@ -18,7 +18,7 @@ total=""
 while IFS= read -rd '' file; do
     y=$("${@:2}" < $file)
     if [ -z "$y" ]; then
-        echo "ERROR (all_files_subtasks): $file doesn't appear in any subtask"
+        >&2 echo "ERROR (all_files_subtasks): $file doesn't appear in any subtask"
         exit 1
     fi
     printf "%30s appears in the following subtasks: " $file
