@@ -3,7 +3,7 @@
 
 Some useful programs that will help you write data generators, checkers and validators for Polygon and HackerRank (and later on, other judges as well), *in Python*.  
 
-Needs Python 2 for now. This decision is made so that speedup through PyPy is possible. I'll translate to Python 3 when PyPy 3 becomes ready.  
+Needs Python 2 for now. Will translate soon!
 
 
 
