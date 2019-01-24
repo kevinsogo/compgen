@@ -5,7 +5,6 @@ from formatter import *
 A = 10**9
 
 def random_cases(rand, *args):
-    ''' generates test data for a file '''
     T, N = map(int, args[:2])
     cases = []
     for cas in xrange(T):
