@@ -138,7 +138,7 @@ Here's an example for the problem "find any longest subsequence of distinct elem
 You can convert a collection of test cases formatted Polygon-style to HackerRank-style using:
 
 ```bash
-convert_to_hackerrank path/to/polygon-package/tests
+convert_to_hackerrank path/to/polygon-problem-package/tests
 ```
 
 Zip the two resulting folders `input` and `output` together and upload.  
