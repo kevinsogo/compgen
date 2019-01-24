@@ -1,17 +1,17 @@
 from __future__ import print_function, division, unicode_literals, absolute_import
 from compgen.checkers import *
 
+def is_subsequence(a, b):
+    ... # code omitted
+
 def get_sequence(file, exc):
     try:
         m = int(file.next().rstrip())
         b = map(int, file.next().rstrip().split(' ')) # stricter
     except Exception as e:
         raise exc("Failed to get a sequence: " + str(e))
-    ensure(len(b) == m, lambda: "Expected {} numbers but got {}".format(m, len(b)), exc=exc)
+    ensure(len(b) == m, "Expected {} numbers but got {}".format(m, len(b)), exc=exc)
     return b
-
-def is_subsequence(a, b):
-    ... # code omitted
 
 def check_valid(a, b, exc):
     ensure(is_subsequence(a, b), "Not a subsequence!", exc=exc)
@@ -19,8 +19,8 @@ def check_valid(a, b, exc):
 
 @set_checker(no_extra_chars=True)
 def check_solution(input_file, output_file, judge_file, **kwargs):
-    z = int(input_file.next())
-    for cas in xrange(z):
+    t = int(input_file.next())
+    for cas in xrange(t):
         n = int(input_file.next())
         a = map(int, input_file.next().strip().split())
         ensure(len(a) == n, "Judge input invalid", exc=Fail)
