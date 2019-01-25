@@ -31,7 +31,7 @@ class Details(object):
             setattr(self, key, self._maybe_prog(self.details.get(key, defaults.get(key)), key=key))
 
         for key in ['generators', 'other_programs']:
-            setattr(self, key, [self._maybe_prog(x, key=key) for x in self.details.get('generators', [])])
+            setattr(self, key, [self._maybe_prog(x, key=key) for x in self.details.get(key, [])])
 
         if not self.subtask_detector:
             self.subtask_detector = detector_from_validator(self.validator)
