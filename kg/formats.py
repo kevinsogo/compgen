@@ -129,11 +129,11 @@ class Format:
         if not m: raise InferException("Cannot match {} to {}".format(inputf, g))
         return m.groups()
 
-    def _infer_iparts(self, inputf):
+    def infer_iparts(self, inputf):
         self._check_patterns()
         return self._infer_parts(self.inputg, self._i_re, inputf)
 
-    def _infer_oparts(self, outputf):
+    def infer_oparts(self, outputf):
         self._check_patterns()
         return self._infer_parts(self.outputg, self._o_re, outputf)
 
@@ -149,10 +149,10 @@ class Format:
         return self._join_parts(self.outputg, *p)
 
     def infer_i_to_o(self, inputf):
-        return self._join_oparts(*self._infer_iparts(inputf))
+        return self._join_oparts(*self.infer_iparts(inputf))
 
     def infer_o_to_i(self, outputf):
-        return self._join_iparts(*self._infer_oparts(outputf))
+        return self._join_iparts(*self.infer_oparts(outputf))
 
     def _check_patterns(self):
         if not self._checked:

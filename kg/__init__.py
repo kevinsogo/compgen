@@ -240,7 +240,7 @@ def kg_test(format_, args):
         def check_correct():
             with tempfile.NamedTemporaryFile(delete=False) as tmp:
                 with open(input_) as inp:
-                    print('CHECKING AGAINST', input_)
+                    print(str(index).rjust(3), 'CHECKING AGAINST', input_)
                     try:
                         solution.do_run(stdin=inp, stdout=tmp, time=True)
                     except CalledProcessError:
@@ -256,7 +256,7 @@ def kg_test(format_, args):
         correct = check_correct()
         total += 1
         corrects += correct
-        print('correct' if correct else 'WRONG!!!!!!!!!!')
+        print(str(index).rjust(3), 'correct' if correct else 'WRONG!!!!!!!!!!')
 
     print('{} out of {} correct'.format(corrects, total))
 
@@ -283,7 +283,7 @@ test_p.set_defaults(func=kg_test)
 
 
 
-# generate output data
+# just run the solution
 
 run_p = subparsers.add_parser('run', help='help for "run"')
 
