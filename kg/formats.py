@@ -25,8 +25,6 @@ class Format:
         self._i_re = None
         self._o_re = None
 
-        print(inputg, outputg)
-
         self.inputg = inputg
         self.outputg = outputg
         self.inputs = set(glob(inputg) if inputg is not None else [])
@@ -35,10 +33,6 @@ class Format:
         self.i_to_o = {}
         self.o_to_i = {}
 
-        if 'i' in read and not self.inputs:
-            raise FormatException("Invalid input pattern: {} ... did not match any file".format(inputg))
-        if 'o' in read and not self.outputs:
-            raise FormatException("Invalid output pattern: {} ... did not match any file".format(outputg))
         if self.inputs and self.inputs == self.outputs:
             raise FormatException("Invalid patterns: {} {} ... They match the same files.".format(inputg or '', outputg or ''))
 
@@ -47,7 +41,10 @@ class Format:
         if self.inputs <= self.outputs: self.outputs -= self.inputs
         elif self.outputs <= self.inputs: self.inputs -= self.outputs
 
-
+        if 'i' in read and not self.inputs:
+            raise FormatException("Invalid input pattern: {} ... did not match any file".format(inputg))
+        if 'o' in read and not self.outputs:
+            raise FormatException("Invalid output pattern: {} ... did not match any file".format(outputg))
 
         if len(self.inputs) != len(self.outputs) and read and write:
 
@@ -189,10 +186,16 @@ class Format:
 ###### Different formats:
 
 formats = {}
-def set_format(*names):
+short_format = {}
+short_formats = set()
+def set_format(short, *names):
+    assert short not in short_formats
+    short_formats.add(short)
     def _set_format(cls):
-        for name in names:
+        for name in (short,) + names:
+            assert name not in formats
             formats[name] = cls
+            short_format[name] = short
         return cls
     return _set_format
 
@@ -218,7 +221,6 @@ class HRFormat(Format):
 @set_format('pg', 'polygon')
 class PGFormat(Format):
     def __init__(self, loc='.', read='', write=''):
-        print('dito tayo', loc)
         super(PGFormat, self).__init__(
                 os.path.join(loc, 'tests', '*'),
                 os.path.join(loc, 'tests', '*.a'),
@@ -261,3 +263,6 @@ def get_format(args, read='', write=''):
             return formats[args.format](args.loc, read=read, write=write)
         else:
             raise ValueError('Unrecognized format: {}'.format(args.format))
+
+def is_same_format(a, b):
+    return short_format[a] == short_format[b]

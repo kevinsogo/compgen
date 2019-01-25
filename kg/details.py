@@ -1,0 +1,84 @@
+import json
+
+from programs import *
+
+
+script_path = os.path.dirname(os.path.realpath(__file__))
+with open(os.path.join(script_path, 'defaults.json')) as f:
+    defaults = json.load(f)
+
+valid_keys = set(defaults) | {"comments", "extras"}
+
+# TODO judge_data_runner defaults to model solution
+
+
+def detector_from_validator(validator):
+    if validator:
+        return Program("!fromvalidator", validator.compile, ["kg-subtasks", "-c"] + validator.run + ["--"])
+
+
+class Details(object):
+    def __init__(self, details={}):
+        self.details = details
+        self.valid_subtasks = self.details.get('valid_subtasks', [])
+
+        # data validation
+        if not all(isinstance(v, int) for v in self.valid_subtasks):
+            raise ValueError("Subtask values must be ints")
+
+        if len(set(self.valid_subtasks)) != len(self.valid_subtasks):
+            raise ValueError("Duplicate values in valid_subtasks")
+
+        for key in ['validator', 'checker', 'model_solution', 'subtask_detector', 'judge_data_runner']:
+            setattr(self, key, self._maybe_prog(self.details.get(key, defaults.get(key)), key=key))
+
+        for key in ['generators', 'other_programs']:
+            setattr(self, key, [self._maybe_prog(x, key=key) for x in self.details.get('generators', [])])
+
+        if not self.subtask_detector:
+            self.subtasks_detector = detector_from_validator(self.validator)
+            assert (not self.subtasks_detector) == (not self.validator)
+
+        if not self.judge_data_runner:
+            self.judge_data_runner = self.model_solution
+
+        # subtasks_files
+        self.subtasks_files = self.details.get('subtasks_files', [])
+        found_files = set()
+        for low, high, subs in self.subtasks_files:
+            if low > high: raise ValueError("Invalid range in subtasks_files: {} {}".format(low, high))
+            for idx in range(low, high + 1):
+                if idx in found_files: raise ValueError("File {} appears multiple times in subtasks_files: {}".format(idx))
+                found_files.add(idx)
+
+            if not subs:
+                raise ValueError("Empty list of subtasks in subtasks_files")
+
+            if not (set(subs) <= set(valid_subtasks)):
+                raise ValueError("Invalid subtasks found in subtasks_files: {}".format(' '.join(sorted(set(subs) - set(valid_subtasks)))))
+
+        # check for extra keys
+        for key in self.details:
+            if key not in valid_keys:
+                raise ValueError("Key {} invalid in details.json. If you wish to add extra data, place it under 'comments' or 'extras'".format(key))
+
+        super(Details, self).__init__()
+
+    @classmethod
+    def from_loc(cls, loc):
+        if not loc and os.path.isfile('details.json'): loc = 'details.json'
+        if loc:
+            with open(loc) as f:
+                return cls(json.load(f))
+
+    def _maybe_prog(self, v, key=None):
+        # special parsing for checker
+        if key == 'checker':
+            diff_pref = '!diff.'
+            if isinstance(v, str) and v.startswith(diff_pref):
+                v = os.path.join(script_path, 'diff', v[len(diff_pref):] + '.py')
+        return Program.from_data(v) if v else None
+
+    def serialize(self):
+        ... # not implemented yet. returns a dict to be json'ed
+

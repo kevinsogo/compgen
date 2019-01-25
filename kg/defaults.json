@@ -1,0 +1,15 @@
+{
+    "title": null,
+    "model_solution": null,
+    "validator": null,
+    "checker": "!diff.exact",
+    "testscript": null,
+    "generators": [],
+    "subtask_detector": null,
+    "judge_data_runner": null,
+    "other_programs": [],
+    "comments": null,
+    "extras": null,
+    "valid_subtasks": [],
+    "subtasks_files": []
+}

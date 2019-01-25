@@ -2,34 +2,12 @@ import os.path
 import subprocess
 from subprocess import Popen, PIPE
 from collections import defaultdict
+import json
 
-langs = {
-    'py': {
-        'compile': '',
-        'run': 'python {filename}',
-        'endings': ['.py'],
-    },
-    'py2': {
-        'compile': '',
-        'run': 'python2 {filename}',
-        'endings': ['.py2'],
-    },
-    'py3': {
-        'compile': '',
-        'run': 'python3 {filename}',
-        'endings': ['.py3'],
-    },
-    'java': {
-        'compile': 'javac {filename}',
-        'run': 'java {filename_base}',
-        'endings': ['.java'],
-    },
-    'cpp': {
-        'compile': 'g++ -O2 -std=c++17 {filename} -o {filename}.executable',
-        'run': './{filename}.executable',
-        'endings': ['.c', '.cpp', '.c++'],
-    },
-}
+script_path = os.path.dirname(os.path.realpath(__file__))
+with open(os.path.join(script_path, 'langs.json')) as f:
+    langs = json.load(f)
+
 lang_of_ending = {ending: lang for lang, data in langs.items() for ending in data['endings']}
 def infer_lang(filename):
     base, ext = os.path.splitext(filename)
@@ -38,6 +16,7 @@ def infer_lang(filename):
 
 class Program:
     def __init__(self, filename, compile_, run):
+        if not filename: raise ValueError("Filename cannot be empty")
         self.filename = filename
         self.compile = compile_
         self.run = run
@@ -46,23 +25,18 @@ class Program:
 
     def do_compile(self):
         if self.compile:
-            subprocess.call(self.compile)
+            status = subprocess.call(self.compile)
+            if status: exit(status)
         self._compiled = True
 
-    def _compile_first(self):
-        if not self._compiled:
-            self.do_compile()
-
-    def do_run(self, *args, inp=None):
-        self._compile_first()
-        if inp:
-            with open(inp) as f:
-                return Popen(self.run + list(args), stdin=f, stdout=PIPE, stderr=PIPE).communicate()
-        else:
-            return Popen(self.run + list(args), stdout=PIPE, stderr=PIPE).communicate()
+    def get_runner(self, *args, stdin=None, stdout=PIPE, stderr=PIPE, time=False):
+        if not self._compiled: raise Exception("The program is uncompiled")
+        command = self.run + list(args)
+        if time: command = ['/usr/bin/time', '-f' 'TIME %es %Us %Ss'] + command
+        return Popen(command, stdin=stdin, stdout=stdout, stderr=stderr)
 
     def __str__(self):
-        return "<Program\n{}\n{}\n{}\n>".format(self.filename, self.compile, self.run)
+        return "<{}\n    {}\n    {}\n    {}\n>".format(self.__class__.__name__, self.filename, self.compile, self.run)
 
     def __repr__(self):
         return "{}({}, {}, {})".format(self.__class__.__name__, repr(self.filename), repr(self.compile), repr(self.run))
@@ -74,7 +48,7 @@ class Program:
             if len(arg) == 2:
                 filename, run = arg
                 compile_ = ''
-            if len(arg) == 3:
+            elif len(arg) == 3:
                 filename, compile_, run = arg
             else:
                 raise Exception("Cannot understand program data: {}".format(str(arg)))
@@ -97,6 +71,11 @@ class Program:
     @classmethod
     def from_args(cls, file, command):
         if command:
-            return cls(file or '', '', command)
+            return cls(file or '!custom', '', command)
         elif file:
             return cls.from_data(file)
+
+
+
+
+
