@@ -2,7 +2,7 @@ import subprocess
 from itertools import zip_longest
 from subprocess import PIPE
 
-from kg.checkers import *
+from kg.checkers import * ### @import
 
 def is_exactly_equal(seq1, seq2):
     return all(val1 == val2 for val1, val2 in zip_longest(seq1, seq2))
