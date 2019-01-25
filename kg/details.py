@@ -16,8 +16,9 @@ def detector_from_validator(validator):
 
 
 class Details(object):
-    def __init__(self, details={}):
+    def __init__(self, details={}, source=None):
         self.details = details
+        self.source = source
         self.valid_subtasks = self.details.get('valid_subtasks', [])
 
         # data validation
@@ -77,7 +78,14 @@ class Details(object):
         if not loc and os.path.isfile('details.json'): loc = 'details.json'
         if loc:
             with open(loc) as f:
-                return cls(json.load(f))
+                return cls(json.load(f), source=loc)
+
+    @classmethod
+    def from_format_loc(cls, fmt, loc):
+        details = cls()
+        if is_same_format(args.format, 'kg'):
+            details = cls.from_loc(loc) or details
+        return details
 
     def _maybe_prog(self, v, key=None):
         # special parsing for checker

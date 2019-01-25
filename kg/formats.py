@@ -6,9 +6,8 @@ from itertools import count
 
 from natsort import natsorted
 
-class InferException(Exception): pass
-
-class FormatException(Exception): pass
+class InferException(Exception): ...
+class FormatException(Exception): ...
 
 def _check_simple(x, name):
     for invalid in [r'\*', '**'] + list('[]?'):
@@ -125,6 +124,7 @@ class Format:
         super(Format, self).__init__()
 
     def _infer_parts(self, g, _re, f):
+        if _re is None: raise InferException("Cannot infer: missing pattern.")
         m = _re.match(f)
         if not m: raise InferException("Cannot match {} to {}".format(inputf, g))
         return m.groups()
@@ -138,6 +138,7 @@ class Format:
         return self._infer_parts(self.outputg, self._o_re, outputf)
 
     def _join_parts(self, pat, *p):
+        if pat is None: raise InferException("Cannot join: missing pattern.")
         parts = pat.split('*')
         assert len(parts) == len(p) + 1
         return ''.join(a + b for a, b in zip(parts, list(p) + ['']))
@@ -156,15 +157,17 @@ class Format:
 
     def _check_patterns(self):
         if not self._checked:
-            _check_simple(self.inputg, 'input')
-            pat = '(.*)'.join(self.inputg.replace('.', r'\.').split('*'))
-            # print('Interpreting {} as regex: {}'.format(self.inputg, pat))
-            self._i_re = re.compile('^' + pat + r'\Z')
+            if self.inputg is not None:
+                _check_simple(self.inputg, 'input')
+                pat = '(.*)'.join(self.inputg.replace('.', r'\.').split('*'))
+                # print('Interpreting {} as regex: {}'.format(self.inputg, pat))
+                self._i_re = re.compile('^' + pat + r'\Z')
 
-            _check_simple(self.outputg, 'output')
-            pat = '(.*)'.join(self.outputg.replace('.', r'\.').split('*'))
-            # print('Interpreting {} as regex: {}'.format(self.outputg, pat))
-            self._o_re = re.compile('^' + pat + r'\Z')
+            if self.outputg is not None:
+                _check_simple(self.outputg, 'output')
+                pat = '(.*)'.join(self.outputg.replace('.', r'\.').split('*'))
+                # print('Interpreting {} as regex: {}'.format(self.outputg, pat))
+                self._o_re = re.compile('^' + pat + r'\Z')
 
             self._checked = True
 

@@ -7,6 +7,8 @@ from sys import *
 
 import argparse, os, os.path, pathlib, subprocess, tempfile
 
+from natsort import natsorted
+
 from .black_magic import *
 from .details import *
 from .formats import *
@@ -33,6 +35,7 @@ def memoize(function):
     f.memo = memo
     return f
 
+class CommandException(Exception): ...
 
 
 
@@ -67,8 +70,8 @@ convert_p.add_argument('--to', nargs=2, help='destination format and location')
 def kg_convert(format_, args):
     if args.main_command == 'convert':
         print("You spelled 'konvert' incorrectly. I'll let it slide for now.", file=stderr)
-    if not args.fr: raise Exception("Missing --from")
-    if not args.to: raise Exception("Missing --to")
+    if not args.fr: raise CommandException("Missing --from")
+    if not args.to: raise CommandException("Missing --to")
 
     convert_formats(args.fr, args.to)
 
@@ -107,30 +110,24 @@ subtasks_p.add_argument('-vf', '--validator-file', help='validator file')
 def kg_subtasks(format_, args):
     if not args.format: args.format = format_
     format_ = get_format(args, read='i')
+    details = Details.from_format_loc(args.format, args.details)
 
-    details = Details()
-    if is_same_format(args.format, 'kg'):
-        details = Details.from_loc(args.details) or details
-
+    # build detector
     validator = None
     detector = Program.from_args(args.file, args.command)
-
     if not detector: # try validator
         validator = Program.from_args(args.validator_file, args.validator_command)
         detector = detector_from_validator(validator)
         assert (not detector) == (not validator)
-
     # try detector from details
     if not detector: detector = details.subtask_detector
-
     # can't build any detector!
-    if not detector: raise Exception("Missing detector/validator")
-
+    if not detector: raise CommandException("Missing detector/validator")
     # find subtask list
     subtasks = args.subtasks or list(map(str, details.valid_subtasks))
 
     if validator and not subtasks: # subtask list required for detectors from validator
-        raise Exception("Missing subtask list")
+        raise CommandException("Missing subtask list")
 
     get_subtasks(subtasks, detector, format_)
 
@@ -148,14 +145,14 @@ def get_subtasks(subtasks, detector, format_):
             result = detector.do_run(*subtasks, stdin=f, stdout=PIPE)
         subtasks_of[input_] = set(result.stdout.decode('utf-8').split())
         if not subtasks_of[input_]:
-            raise Exception("No subtasks found for {}".format(input_))
+            raise CommandException("No subtasks found for {}".format(input_))
         if subtset and not (subtasks_of[input_] <= subtset):
-            raise Exception("Found invalid subtasks! {}".format(' '.join(sorted(subtasks_of[input_] - subtset))))
+            raise CommandException("Found invalid subtasks! {}".format(' '.join(sorted(subtasks_of[input_] - subtset))))
 
         overall |= subtasks_of[input_]
         print("Subtasks found for {}: {}".format(input_, ' '.join(sorted(subtasks_of[input_]))))
 
-    print("Found subtasks: {}".format(' '.join(sorted(overall))))
+    print("Distinct subtasks found: {}".format(' '.join(sorted(overall))))
 
     if subtset:
         assert overall <= subtset
@@ -187,10 +184,7 @@ gen_p.add_argument('-jf', '--judge-file', help='judge file')
 def kg_gen(format_, args):
     if not args.format: args.format = format_
     format_ = get_format(args, read='i', write='o')
-
-    details = Details()
-    if is_same_format(args.format, 'kg'):
-        details = Details.from_loc(args.details) or details
+    details = Details.from_format_loc(args.format, args.details)
 
     solution = Program.from_args(args.file, args.command) or details.judge_data_maker
     judge = Program.from_args(args.judge_file, args.judge_command) or details.checker
@@ -198,8 +192,8 @@ def kg_gen(format_, args):
     generate_outputs(format_, solution, judge)
 
 def generate_outputs(format_, solution, judge):
-    if not solution: raise Exception("Missing solution")
-    if not judge: raise Exception("Missing judge")
+    if not solution: raise CommandException("Missing solution")
+    if not judge: raise CommandException("Missing judge")
     solution.do_compile()
     judge.do_compile()
     for input_, output_ in format_.thru_io():
@@ -238,26 +232,27 @@ test_p.add_argument('-c', '--command', nargs='+', help='solution command')
 test_p.add_argument('-f', '--file', help='solution file')
 test_p.add_argument('-jc', '--judge-command', nargs='+', help='judge command')
 test_p.add_argument('-jf', '--judge-file', help='judge file')
-parser.add_argument('-js', '--judge-strict', action='store_true', help=argparse.SUPPRESS)# help="whether the checker is a bit too strict and doesn't work if extra arguments are given to it")
+test_p.add_argument('-js', '--judge-strict', action='store_true', help=argparse.SUPPRESS)# help="whether the checker is a bit too strict and doesn't work if extra arguments are given to it")
+test_p.add_argument('-s', '--subtasks', default=[], nargs='+', help='list of subtasks')
+test_p.add_argument('-vc', '--validator-command', nargs='+', help='validator command, for subtask grading')
+test_p.add_argument('-vf', '--validator-file', help='validator file, for subtask grading')
 
 @set_handler(test_p)
 def kg_test(format_, args):
     if not args.format: args.format = format_
     format_ = get_format(args, read='io')
-
-    details = Details()
-    if is_same_format(args.format, 'kg'):
-        details = Details.from_loc(args.details) or details
+    details = Details.from_format_loc(args.format, args.details)
 
     solution = Program.from_args(args.file, args.command) or details.model_solution
-    if not solution: raise Exception("Missing solution")
+    if not solution: raise CommandException("Missing solution")
 
     judge = Program.from_args(args.judge_file, args.judge_command) or details.checker
-    if not judge: raise Exception("Missing judge")
+    if not judge: raise CommandException("Missing judge")
 
     solution.do_compile()
     judge.do_compile()
     total = corrects = 0
+    scoresheet = []
     for index, (input_, output_) in enumerate(format_.thru_io()):
         def check_correct():
             with tempfile.NamedTemporaryFile(delete=False) as tmp:
@@ -279,10 +274,37 @@ def kg_test(format_, args):
         total += 1
         corrects += correct
         print(str(index).rjust(3), 'correct' if correct else 'WRONG!!!!!!!!!!')
+        scoresheet.append((index, input_, correct))
 
     print('{} out of {} correct'.format(corrects, total))
 
-    # TODO also print subtask grades
+    # also print subtask grades
+
+    validator = Program.from_args(args.validator_file, args.validator_command)
+    detector = None
+    if validator:
+        detector = detector_from_validator(validator)
+        assert detector
+        print("Found a validator.", end=' ')
+    elif details.subtask_detector:
+        print("Found a detector in {}.".format(details.source), end=' ')
+        detector = details.subtask_detector
+    if detector:
+        print('Proceeding with subtask grading...')
+        # find subtask list
+        subtasks = args.subtasks or list(map(str, details.valid_subtasks))
+        if validator and not subtasks: # subtask list required for detectors from validator
+            raise CommandException("Missing subtask list (for subtask grading)")
+        subtasks_of, overall, inputs = get_subtasks(subtasks, detector, format_)
+        # normal grading
+        min_score = {sub: 1 for sub in overall}
+        for index, input_, correct in scoresheet:
+            for sub in subtasks_of[input_]:
+                min_score[sub] = min(min_score[sub], correct)
+
+        print('SUBTASK REPORT:')
+        for sub in natsorted(overall):
+            print("Subtask {}: Score = {}".format(str(sub).rjust(3), min_score[sub]))
 
 
 
@@ -305,13 +327,10 @@ run_p.add_argument('-f', '--file', help='solution file')
 def kg_run(format_, args):
     if not args.format: args.format = format_
     format_ = get_format(args, read='i')
-
-    details = Details()
-    if is_same_format(args.format, 'kg'):
-        details = Details.from_loc(args.details) or details
+    details = Details.from_format_loc(args.format, args.details)
 
     solution = Program.from_args(args.file, args.command) or details.judge_data_maker
-    if not solution: raise Exception("Missing solution")
+    if not solution: raise CommandException("Missing solution")
 
     solution.do_compile()
     for input_ in format_.thru_inputs():
@@ -340,7 +359,7 @@ make_p.add_argument('--checks', action='store_true', help="Check the output file
 @set_handler(make_p)
 def kg_make(format_, args):
     if not is_same_format(format_, 'kg'):
-        raise Exception("You can't use '{}' format to 'make'.".format(format_))
+        raise CommandException("You can't use '{}' format to 'make'.".format(format_))
 
     details = Details()
     if is_same_format(format_, 'kg'):
@@ -350,16 +369,18 @@ def kg_make(format_, args):
 
     valid_makes = {'inputs', 'outputs', 'all', 'subtasks'}
     if not (makes <= valid_makes):
-        raise Exception("Unknown make param(s): {}".format(' '.join(sorted(makes - valid_makes))))
+        raise CommandException("Unknown make param(s): {}".format(' '.join(sorted(makes - valid_makes))))
 
     if 'all' in makes:
         makes |= valid_makes
         args.validation = args.checks = True
 
     if 'inputs' in makes:
+        print()
+        print('~~ '*14)
         print('MAKING INPUTS...' + ("WITH VALIDATION..." if args.validation else 'WITHOUT VALIDATION'))
         if not details.testscript:
-            raise Exception("Missing testscript")
+            raise CommandException("Missing testscript")
 
         with open(details.testscript) as scrf:
             script = scrf.read()
@@ -385,6 +406,8 @@ def kg_make(format_, args):
 
 
     if 'outputs' in makes:
+        print()
+        print('~~ '*14)
         print('MAKING OUTPUTS...' + ("WITH CHECKER..." if args.checks else 'WITHOUT CHECKER'))
         fmt = get_format_from_type(format_, args.loc, read='i', write='o')
         generate_outputs(fmt, details.judge_data_maker, details.checker if args.checks else Program.noop())
@@ -392,18 +415,20 @@ def kg_make(format_, args):
         print('DONE MAKING OUTPUTS.')
 
     if 'subtasks' in makes:
+        print()
+        print('~~ '*14)
         print('MAKING SUBTASKS...')
         subjson = details.subtasks_files
         if not subjson:
-            raise Exception("subtasks_files entry in details is required at this step.")
+            raise CommandException("A 'subtasks_files' entry in {} is required at this step.".format(details.source))
 
         detector = details.subtask_detector
-        if not detector: raise Exception("Missing detector/validator")
+        if not detector: raise CommandException("Missing detector/validator")
 
         # find subtask list
         subtasks = list(map(str, details.valid_subtasks))
         if details.validator and not subtasks: # subtask list required for detectors from validator
-            raise Exception("Missing subtask list")
+            raise CommandException("Missing subtask list")
 
         # iterate through inputs, run our detector against them
         subtasks_of, overall, inputs = get_subtasks(subtasks, detector, get_format_from_type(format_, args.loc, read='i'))
@@ -465,19 +490,19 @@ init_p.add_argument('-l', '--loc', default='.', help='where to make the problem'
 @set_handler(init_p)
 def kg_init(format_, args):
     if not is_same_format(format_, 'kg'):
-        raise Exception("You can't use '{}' format to 'init'.".format(format_))
+        raise CommandException("You can't use '{}' format to 'init'.".format(format_))
   
     prob = args.problemname
 
     if not set(prob) <= set(ascii_letters + '_-'):
-        raise Exception("No special characters allowed for the problem name..")
+        raise CommandException("No special characters allowed for the problem name..")
 
     src = os.path.join(script_path, 'data', 'template')
     dest = os.path.join(args.loc, prob)
 
     print('making folder', dest)
     if os.path.exists(dest):
-        raise Exception("The folder already exists!")
+        raise CommandException("The folder already exists!")
 
     env = {
         'problemtitle': ' '.join(re.split(r'[-_. ]+', prob)).title().strip(),
@@ -490,7 +515,7 @@ def kg_init(format_, args):
         with open(inp) as inpf:
             with open(outp, 'w') as outpf:
                 d = inpf.read()
-                if inp.endswith('details.json'): d %= env
+                if inp.endswith('details.json'): d %= env # so that we can write the title in the json.
                 outpf.write(d)
 
     print('DONE!')
@@ -512,7 +537,7 @@ def kg_compile(format_, args):
         print("You spelled 'kompile' incorrectly. I'll let it slide for now.", file=stderr)
 
     if not is_same_format(format_, 'kg'):
-        raise Exception("You can't use '{}' format to 'kompile'.".format(format_))
+        raise CommandException("You can't use '{}' format to 'kompile'.".format(format_))
 
     details = Details()
     if is_same_format(format_, 'kg'):
@@ -545,7 +570,7 @@ def kg_compile(format_, args):
     @listify
     def load_module(module_id):
         if module_id not in locations:
-            raise Exception("Couldn't find module {}!".format(module_id))
+            raise CommandException("Couldn't find module {}!".format(module_id))
         with open(locations[module_id]) as f:
             for line in f:
                 if not line.endswith('\n'):
@@ -569,7 +594,8 @@ def kg_compile(format_, args):
             ('pg', 'Polygon', [details.validator, details.checker] + details.generators),
             ('hr', 'HackerRank', [details.checker])
         ]:
-        print('@@ '*15)
+        print()
+        print('.. '*14)
         print('Compiling for {} ({})'.format(fmt, name))
         dest_folder = os.path.join(args.loc, 'kg_kompiled', fmt)
         to_translate = {g for g in to_translate if get_module(g.filename)}
@@ -598,6 +624,8 @@ def kg_compile(format_, args):
                     assert not line.endswith('\n')
                     print(line, file=f)
 
+        # TODO SNIPPETS FOR HACKERRANK UPLOAD. "empty grader" and "pastable versions" of grader
+
         # copy over the files
         print('copying test data from', args.loc, 'to', dest_folder)
         convert_formats(
@@ -611,6 +639,8 @@ def kg_compile(format_, args):
 
 ##########################################
 def main(format):
+    print('\n' + '='*42 + '\n')
     args = parser.parse_args()
     args.handler(format, args)
+    print('\n' + '='*42 + '\n')
     print('THE COMMAND FINISHED SUCCESSFULLY.')
