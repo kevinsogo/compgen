@@ -9,7 +9,7 @@ Use this library if you're one of the following:
 
 1. Run `bash setup.sh`. When it prints `DONE`, then it was successful.
 
-    *Note:* Among other things, it installs a python package. Feel free to modify `setup.sh` if you don't want to install globally, e.g., if you want to use virtualenv or something. 
+    *Note:* Among other things, it installs a bunch of python packages. Feel free to modify `setup.sh` if you don't want to install globally, e.g., if you want to use virtualenv or something. 
 
 2. Add the `scripts/` folder to your `$PATH` variable so you can run the scripts anywhere.
 

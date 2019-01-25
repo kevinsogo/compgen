@@ -45,8 +45,8 @@ class ChkStream(object):
 
         super(ChkStream, self).__init__()
 
-    def next(self):
-        return self._seq.next()
+    def __next__(self):
+        return next(self._seq)
 
     def has_next(self):
         try:
@@ -174,6 +174,11 @@ class Checker(object):
 
 
 def _check_generic(checker, input_path, output_path, judge_path, **kwargs):
+    kwargs.update({
+            'input_path': input_path,
+            'output_path': output_path,
+            'judge_path': judge_path,
+        })
     with open(input_path) as input_file:
         with open(output_path) as output_file:
             with open(judge_path) as judge_file:
@@ -181,16 +186,16 @@ def _check_generic(checker, input_path, output_path, judge_path, **kwargs):
                     score = checker(input_file, output_file, judge_file, **kwargs)
                     return Verdict.AC, score, ""
                 except ParseError as exc:
-                    verdict = Verdict.PAE
+                    e, verdict = exc, Verdict.PAE
                 except WA as exc:
-                    verdict = Verdict.WA
+                    e, verdict = exc, Verdict.WA
                 except Fail as exc:
-                    verdict = Verdict.FAIL
+                    e, verdict = exc, Verdict.FAIL
                 except Exception as exc:
-                    verdict = Verdict.EXC
+                    e, verdict = exc, Verdict.EXC
                 if kwargs.get('verbose'):
                     traceback.print_exc()
-                return verdict, getattr(exc, 'score', 0.0), str(exc)
+                return verdict, getattr(e, 'score', 0.0), str(e)
 
 
 _platforms = {}
@@ -241,8 +246,8 @@ _polygon_rcode = {
 }
 @_register_platform('local') # @@@@@ remove to suppress
 @_register_platform('polygon') # AFAIK, they are currently identical in behavior
-def _check_local(checker, title='', file=stdout):
-    desc = 'judge for the problem "{}"'.format(title) if title else 'judge for the problem'
+def _check_local(checker, title='', file=stdout, help=None):
+    desc = help or ('judge for the problem "{}"'.format(title) if title else 'judge for the problem')
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('input_path', help='input file path')
     parser.add_argument('output_path', help="contestant's file path")

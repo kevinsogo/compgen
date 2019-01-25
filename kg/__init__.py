@@ -25,9 +25,9 @@ def rec_ensure_exists(file):
 
 
 
-parser = argparse.ArgumentParser(description='There are several commands.')
+parser = argparse.ArgumentParser(description='There are many things you can do with this program.')
 # TODO add 'verbose' option here
-subparsers = parser.add_subparsers(help='sub-command help', dest='main_command')
+subparsers = parser.add_subparsers(help='which operation to perform', dest='main_command')
 subparsers.required = True
 
 
@@ -64,7 +64,7 @@ convert_p.set_defaults(func=kg_convert)
 
 # detect subtasks
 
-subtasks_p = subparsers.add_parser('subtasks', help='subtasks help')
+subtasks_p = subparsers.add_parser('subtasks', help='detect the subtasks of input files. you need either a detector or a validator.')
 subtasks_p.add_argument('-F', '--format', '--fmt', default='kg', help='format of data')
 subtasks_p.add_argument('-l', '--loc', default='.', help='location of files/package (if format is given)')
 subtasks_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
@@ -145,7 +145,7 @@ subtasks_p.set_defaults(func=kg_subtasks)
 
 # generate output data
 
-gen_p = subparsers.add_parser('gen', help='help for "gen"')
+gen_p = subparsers.add_parser('gen', help='generate output files for some given input files.')
 
 gen_p.add_argument('-F', '--format', '--fmt', default='kg', help='format of data')
 gen_p.add_argument('-l', '--loc', default='.', help='location of files/package (if format is given)')
@@ -209,7 +209,7 @@ gen_p.set_defaults(func=kg_gen)
 
 # generate output data
 
-test_p = subparsers.add_parser('test', help='help for "test"')
+test_p = subparsers.add_parser('test', help='test a program against given input and output files.')
 
 test_p.add_argument('-F', '--format', '--fmt', default='kg', help='format of data')
 test_p.add_argument('-l', '--loc', default='.', help='location of files/package (if format is given)')
@@ -288,7 +288,7 @@ test_p.set_defaults(func=kg_test)
 
 # just run the solution
 
-run_p = subparsers.add_parser('run', help='help for "run"')
+run_p = subparsers.add_parser('run', help='run a program against a set of input files, and print the result to stdout.')
 
 run_p.add_argument('-F', '--format', '--fmt', default='kg', help='format of data')
 run_p.add_argument('-l', '--loc', default='.', help='location of files/package (if format is given)')
@@ -351,7 +351,7 @@ run_p.set_defaults(func=kg_run)
 
 # just run the solution
 
-make_p = subparsers.add_parser('make', help='help for "make"')
+make_p = subparsers.add_parser('make', help='create all test data and validate.')
 
 make_p.add_argument('makes', nargs='+', help='what to make. (all, inputs, etc.)')
 make_p.add_argument('-l', '--loc', default='.', help='location of files/package (if format is given)')
@@ -372,12 +372,11 @@ def kg_make(format_, args):
 
     valid_makes = {'inputs', 'outputs', 'all'}
     if not (makes <= valid_makes):
-        raise Exception("Unknown make param: {}".join(' '.join(valid_makes - makes)))
+        raise Exception("Unknown make param(s): {}".format(' '.join(sorted(makes - valid_makes))))
 
     if 'all' in makes:
         makes |= {'inputs', 'outputs'}
-        args.validation = True
-        args.checks = True
+        args.validation = args.checks = True
 
     if 'inputs' in makes:
         print('MAKING INPUTS...' + ("WITH VALIDATION..." if args.validation else 'WITHOUT VALIDATION'))

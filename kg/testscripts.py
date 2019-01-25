@@ -3,6 +3,12 @@ import os.path
 from .formats import *
 from .programs import *
 
+def find_matches(cmd, generators):
+    for prog in generators:
+        if prog.matches_abbr(cmd):
+            yield prog
+
+
 # for now, only accept "> $" commands
 def parse_testscript(inputs, testscript, generators):
     for line in testscript.strip().split('\n'):
@@ -18,12 +24,14 @@ def parse_testscript(inputs, testscript, generators):
             prog = Program('!custom', '', cmd[1:])
             args = ''
         else:
-            for prog in generators:
-                if prog.matches_abbr(cmd[0]):
-                    args = cmd[1:]
-                    break
-            else:
+            progs = find_matches(cmd[0], generators)
+            if len(progs) >= 2:
+                raise Exception("{} matches at least two programs! Please ensure that the base names of generators are unique.".format(cmd[0]))
+            elif not progs:
                 raise Exception("Couldn't find program {} (from {})".format(cmd[0], cmd))
+            else:
+                [prog] = progs
+                args = cmd[1:]
 
         yield next(inputs), prog, args
 

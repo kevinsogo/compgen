@@ -7,6 +7,6 @@ setup(name='KompGen',
       description='Utilities for programming contests',
       author='Kevin Atienza',
       author_email='kevin.charles.atienza@gmail.com',
-      packages=['kg'],
-      package_data={'kg': ['data/*.json', 'diff/*.py']},
+      packages=['kg', 'kg.diff'],
+      package_data={'kg': ['data/*.json']},
      )

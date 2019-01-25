@@ -1,27 +1,25 @@
-import argparse
 import subprocess
+from itertools import zip_longest
 from subprocess import PIPE
 
-parser = argparse.ArgumentParser(description='exact diff judge')
-parser.add_argument('input_path', help='input file path')
-parser.add_argument('output_path', help="contestant's file path")
-parser.add_argument('judge_path', help='judge auxiliary data file path')
-parser.add_argument('-c', '--code', default='n/a', help='path to the solution used')
-parser.add_argument('-t', '--tc-id', default=None, type=int, help='test case ID, zero indexed')
-parser.add_argument('-v', '--verbose', action='store_true', help='print more details')
-parser.add_argument('-i', '--identical', action='store_true', help=argparse.SUPPRESS)
-args = parser.parse_args()
-args = parser.parse_args()
-p = subprocess.run(['diff', args.output_path, args.judge_path], stdout=PIPE, encoding='utf-8')
+from kg.checkers import *
 
-to_print = p.stdout
-if len(to_print) > 100+3:
-    to_print = to_print[:100] + '...'
-assert len(to_print) <= 100+3
+def is_exactly_equal(seq1, seq2):
+    return all(val1 == val2 for val1, val2 in zip_longest(seq1, seq2))
 
-if p.returncode:
-    print('Incorrect. Diff:')
-    print(to_print)
+@set_checker()
+@default_score
+def checker(input_file, output_file, judge_file, **kwargs):
+    if not is_exactly_equal(output_file, judge_file):
+        if 'output_path' in kwargs and 'judge_path' in kwargs:
+            p = subprocess.run(['diff', kwargs['output_path'], kwargs['judge_path']], stdout=PIPE, encoding='utf-8')
 
-print('Score: ', 1 if p.returncode == 0 else 0)
-exit(p.returncode)
+            to_print = p.stdout
+            if len(to_print) > 111+3: to_print = to_print[:111] + '...'
+            assert len(to_print) <= 111+3
+
+            print('Incorrect. Diff:')
+            print(to_print)
+        raise WA('Incorrect.')
+
+if __name__ == '__main__': chk(help="Exact diff checker")
