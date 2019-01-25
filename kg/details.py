@@ -1,10 +1,10 @@
 import json
 
-from programs import *
+from .programs import *
 
 
 script_path = os.path.dirname(os.path.realpath(__file__))
-with open(os.path.join(script_path, 'defaults.json')) as f:
+with open(os.path.join(script_path, 'data', 'defaults.json')) as f:
     defaults = json.load(f)
 
 valid_keys = set(defaults) | {"comments", "extras"}

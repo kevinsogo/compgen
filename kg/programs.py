@@ -1,11 +1,10 @@
 import os.path
 import subprocess
-from subprocess import run, PIPE
 from collections import defaultdict
 import json
 
 script_path = os.path.dirname(os.path.realpath(__file__))
-with open(os.path.join(script_path, 'langs.json')) as f:
+with open(os.path.join(script_path, 'data', 'langs.json')) as f:
     langs = json.load(f)
 
 lang_of_ending = {ending: lang for lang, data in langs.items() for ending in data['endings']}
@@ -24,16 +23,14 @@ class Program:
         super(Program, self).__init__()
 
     def do_compile(self):
-        if self.compile:
-            status = subprocess.call(self.compile)
-            if status: exit(status)
+        if self.compile: subprocess.run(self.compile, check=True)
         self._compiled = True
 
     def do_run(self, *args, stdin=None, stdout=None, stderr=None, time=False, check=True):
-        if not self._compiled: raise Exception("The program is uncompiled")
+        if not self._compiled: raise Exception("Compile the program first")
         command = self.run + list(args)
         if time: command = ['/usr/bin/time', '-f' 'TIME %es %Us %Ss'] + command
-        return run(command, stdin=stdin, stdout=stdout, stderr=stderr, check=check)
+        return subprocess.run(command, stdin=stdin, stdout=stdout, stderr=stderr, check=check)
 
     def __str__(self):
         return "<{}\n    {}\n    {}\n    {}\n>".format(self.__class__.__name__, self.filename, self.compile, self.run)
@@ -71,7 +68,7 @@ class Program:
     @classmethod
     def from_args(cls, file, command):
         if command:
-            return cls(file or '!custom', '', command)
+            return cls.from_data(file or '!custom', command)
         elif file:
             return cls.from_data(file)
 

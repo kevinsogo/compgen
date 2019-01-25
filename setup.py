@@ -1,6 +1,6 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
-from distutils.core import setup
+from setuptools import setup
 
 setup(name='KompGen',
       version='0.2',
@@ -8,4 +8,5 @@ setup(name='KompGen',
       author='Kevin Atienza',
       author_email='kevin.charles.atienza@gmail.com',
       packages=['kg'],
+      package_data={'kg': ['data/*.json']},
      )

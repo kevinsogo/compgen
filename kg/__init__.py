@@ -7,9 +7,9 @@ import tempfile
 from subprocess import Popen, PIPE, CalledProcessError
 from collections import defaultdict
 
-from programs import *
-from formats import *
-from details import *
+from .programs import *
+from .formats import *
+from .details import *
 
 def rec_ensure_exists(file):
     pathlib.Path(os.path.dirname(file)).mkdir(parents=True, exist_ok=True)
@@ -26,8 +26,8 @@ def rec_ensure_exists(file):
 
 parser = argparse.ArgumentParser(description='There are several commands.')
 # TODO add 'verbose' option here
-subparsers = parser.add_subparsers(help='sub-command help')
-
+subparsers = parser.add_subparsers(help='sub-command help', dest='main_command')
+subparsers.required = True
 
 
 
@@ -70,10 +70,10 @@ subtasks_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
 subtasks_p.add_argument('-i', '--input', help='input file pattern')
 subtasks_p.add_argument('-o', '--output', help='output file pattern')
 subtasks_p.add_argument('-c', '--command', nargs='+', help='detector command')
-subtasks_p.add_argument('-f', '--file', help='detector program file')
+subtasks_p.add_argument('-f', '--file', help='detector file')
 subtasks_p.add_argument('-s', '--subtasks', default=[], nargs='+', help='list of subtasks')
 subtasks_p.add_argument('-vc', '--validator-command', nargs='+', help='validator command')
-subtasks_p.add_argument('-vf', '--validator-file', help='validator program file')
+subtasks_p.add_argument('-vf', '--validator-file', help='validator file')
 
 def kg_subtasks(format_, args):
     if not args.format: args.format = format_
@@ -152,9 +152,9 @@ gen_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
 gen_p.add_argument('-i', '--input', help='input file pattern')
 gen_p.add_argument('-o', '--output', help='output file pattern')
 gen_p.add_argument('-c', '--command', nargs='+', help='solution command')
-gen_p.add_argument('-f', '--file', help='solution program file')
+gen_p.add_argument('-f', '--file', help='solution file')
 gen_p.add_argument('-jc', '--judge-command', nargs='+', help='judge command')
-gen_p.add_argument('-jf', '--judge-file', help='judge program file')
+gen_p.add_argument('-jf', '--judge-file', help='judge file')
 
 def kg_gen(format_, args):
     if not args.format: args.format = format_
@@ -169,6 +169,9 @@ def kg_gen(format_, args):
 
     judge = Program.from_args(args.judge_file, args.judge_command) or details.checker
     if not judge: raise Exception("Missing judge")
+
+    validator = Program.from_args(args.validator_file, args.validator_command) or details.validator
+    if not validator: print("Warning: No validator found!", file=stderr)
 
     solution.do_compile()
     judge.do_compile()
@@ -214,9 +217,9 @@ test_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
 test_p.add_argument('-i', '--input', help='input file pattern')
 test_p.add_argument('-o', '--output', help='output file pattern')
 test_p.add_argument('-c', '--command', nargs='+', help='solution command')
-test_p.add_argument('-f', '--file', help='solution program file')
+test_p.add_argument('-f', '--file', help='solution file')
 test_p.add_argument('-jc', '--judge-command', nargs='+', help='judge command')
-test_p.add_argument('-jf', '--judge-file', help='judge program file')
+test_p.add_argument('-jf', '--judge-file', help='judge file')
 parser.add_argument('-js', '--judge-strict', action='store_true', help=argparse.SUPPRESS)# help="whether the checker is a bit too strict and doesn't work if extra arguments are given to it")
 
 def kg_test(format_, args):
@@ -293,7 +296,7 @@ run_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
 run_p.add_argument('-i', '--input', help='input file pattern')
 run_p.add_argument('-o', '--output', help='output file pattern')
 run_p.add_argument('-c', '--command', nargs='+', help='solution command')
-run_p.add_argument('-f', '--file', help='solution program file')
+run_p.add_argument('-f', '--file', help='solution file')
 
 def kg_run(format_, args):
     if not args.format: args.format = format_
@@ -340,9 +343,7 @@ run_p.set_defaults(func=kg_run)
 
 
 
-def main(format_):
+def main(format):
+    import sys
     args = parser.parse_args()
-    args.func(format_, args)
-
-if __name__ == '__main__':
-    main('kg')
+    args.func(format, args)

@@ -8,3 +8,5 @@ scripts/build/
 polygon_ready
 hr_ready
 build/
+*.egg-info/
+*.egg
