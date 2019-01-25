@@ -200,7 +200,7 @@ class _Read:
         return _Read(self.ss, self, read_ints)
 
     def token(self, *args):
-        def read_token(): yield self.ss.read_ints(*args)
+        def read_token(): yield self.ss.read_token(*args)
         return _Read(self.ss, self, read_token)
 
     def char(self, *args):

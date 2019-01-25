@@ -34,8 +34,9 @@ class Details(object):
             setattr(self, key, [self._maybe_prog(x, key=key) for x in self.details.get('generators', [])])
 
         if not self.subtask_detector:
-            self.subtasks_detector = detector_from_validator(self.validator)
-            assert (not self.subtasks_detector) == (not self.validator)
+            self.subtask_detector = detector_from_validator(self.validator)
+            assert (not self.subtask_detector) == (not self.validator)
+
 
         if not self.judge_data_maker:
             self.judge_data_maker = self.model_solution
@@ -43,19 +44,26 @@ class Details(object):
         self.testscript = self.details.get('testscript')
 
         # subtasks_files
-        self.subtasks_files = self.details.get('subtasks_files', [])
-        found_files = set()
-        for low, high, subs in self.subtasks_files:
-            if low > high: raise ValueError("Invalid range in subtasks_files: {} {}".format(low, high))
-            for idx in range(low, high + 1):
-                if idx in found_files: raise ValueError("File {} appears multiple times in subtasks_files: {}".format(idx))
-                found_files.add(idx)
+        self.subtasks_files = self.details.get('subtasks_files', "")
 
-            if not subs:
-                raise ValueError("Empty list of subtasks in subtasks_files")
+        # TODO move this check to the appropriate place, e.g., only when subtasks_files is actually accessed
+        # if self.subtasks_files and os.path.isfile(self.subtasks_files):
+        #     with open(self.subtasks_files) as f:
+        #         ff = f.read()
+        #     if ff.strip():
+        #         subf = json.loads(ff)
+        #         found_files = set()
+        #         for low, high, subs in subf:
+        #             if low > high: raise ValueError("Invalid range in subtasks_files: {} {}".format(low, high))
+        #             for idx in range(low, high + 1):
+        #                 if idx in found_files: raise ValueError("File {} appears multiple times in subtasks_files: {}".format(idx))
+        #                 found_files.add(idx)
 
-            if not (set(subs) <= set(valid_subtasks)):
-                raise ValueError("Invalid subtasks found in subtasks_files: {}".format(' '.join(sorted(set(subs) - set(valid_subtasks)))))
+        #             if not subs:
+        #                 raise ValueError("Empty list of subtasks in subtasks_files")
+
+        #             if not (set(subs) <= set(self.valid_subtasks)):
+        #                 raise ValueError("Invalid subtasks found in subtasks_files: {}".format(' '.join(sorted(set(subs) - set(self.valid_subtasks)))))
 
         # check for extra keys
         for key in self.details:

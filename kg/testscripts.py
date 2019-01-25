@@ -24,7 +24,7 @@ def parse_testscript(inputs, testscript, generators):
             prog = Program('!custom', '', cmd[1:])
             args = ''
         else:
-            progs = find_matches(cmd[0], generators)
+            progs = list(find_matches(cmd[0], generators))
             if len(progs) >= 2:
                 raise Exception("{} matches at least two programs! Please ensure that the base names of generators are unique.".format(cmd[0]))
             elif not progs:

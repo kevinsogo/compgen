@@ -11,5 +11,7 @@
     "other_programs": [
         "formatter.py"
     ],
-    "valid_subtasks": [1, 2, 3]
+    "subtask_detector": "detect_subtasks.py",
+    "valid_subtasks": [1, 2, 3],
+    "subtasks_files": "subtasks.json"
 }

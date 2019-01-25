@@ -4,7 +4,7 @@ output/
 tempoutput/
 __pycache__
 *.pyc
-scripts/build/
+kg_compiled/
 polygon_ready
 hr_ready
 build/
@@ -12,3 +12,4 @@ build/
 *.egg
 tests/
 *.executable
+temp/

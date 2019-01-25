@@ -8,5 +8,5 @@ setup(name='KompGen',
       author='Kevin Atienza',
       author_email='kevin.charles.atienza@gmail.com',
       packages=['kg', 'kg.diff'],
-      package_data={'kg': ['data/*.json']},
+      package_data={'kg': ['data/*.json', 'data/template/*']},
      )

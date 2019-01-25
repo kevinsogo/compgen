@@ -1,0 +1,18 @@
+{
+    "title": "%(problemtitle)s",
+    "model_solution": "solution.py",
+    "validator": "validator.py",
+    "testscript": "testscript",
+    "generators": [
+        "single_case.py"
+    ],
+    "other_programs": [
+        "formatter.py"
+    ],
+    "valid_subtasks": [1, 2, 3],
+    "subtasks_files": "subtasks.json",
+
+    "comments": [
+        "You can place comments here. They will not be processed."
+    ]
+}

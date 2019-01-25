@@ -6,6 +6,7 @@ import subprocess
 import tempfile
 from subprocess import Popen, PIPE, CalledProcessError
 from collections import defaultdict
+from string import ascii_letters
 
 from .programs import *
 from .formats import *
@@ -34,11 +35,13 @@ subparsers.required = True
 
 # convert one format to another
 
-convert_p = subparsers.add_parser('convert', help='convert help')
+convert_p = subparsers.add_parser('konvert', aliases=['convert'], help='convert help')
 convert_p.add_argument('--from', nargs=2, help='source format and location', dest='fr')
 convert_p.add_argument('--to', nargs=2, help='destination format and location')
 
 def kg_convert(format_, args):
+    if args.main_command == 'convert':
+        print("You spelled 'konvert' incorrectly. Lucky for you, I'm merciful.", file=stderr)
     if not args.fr: raise Exception("Missing --from")
     if not args.to: raise Exception("Missing --to")
 
@@ -104,18 +107,21 @@ def kg_subtasks(format_, args):
     if validator and not subtasks: # subtask list required for detectors from validator
         raise Exception("Missing subtask list")
 
+    get_subtasks(subtasks, detector, format_)
+
+def get_subtasks(subtasks, detector, format_):
     subtset = set(subtasks)
 
     # iterate through inputs, run our detector against them
     subtasks_of = {}
     overall = set()
     detector.do_compile()
+    inputs = []
     for input_ in format_.thru_inputs():
+        inputs.append(input_)
         with open(input_) as f:
             result = detector.do_run(*subtasks, stdin=f, stdout=PIPE)
-            stdout, stderr = runner.communicate()
-            if runner.returncode: exit(returncode)
-        subtasks_of[input_] = set(stdout.decode('utf-8').split())
+        subtasks_of[input_] = set(result.stdout.decode('utf-8').split())
         if not subtasks_of[input_]:
             raise Exception("No subtasks found for {}".format(input_))
         if subtset and not (subtasks_of[input_] <= subtset):
@@ -130,6 +136,8 @@ def kg_subtasks(format_, args):
         assert overall <= subtset
         if overall != subtset:
             print('Warning: Some subtasks not found: {}'.format(' '.join(sorted(subtset - overall))), file=stderr)
+
+    return subtasks_of, overall, inputs
 
 subtasks_p.set_defaults(func=kg_subtasks)
 
@@ -263,6 +271,8 @@ def kg_test(format_, args):
 
     print('{} out of {} correct'.format(corrects, total))
 
+    # TODO also print subtask grades
+
 test_p.set_defaults(func=kg_test)
 
 
@@ -370,12 +380,12 @@ def kg_make(format_, args):
 
     makes = set(args.makes)
 
-    valid_makes = {'inputs', 'outputs', 'all'}
+    valid_makes = {'inputs', 'outputs', 'all', 'subtasks'}
     if not (makes <= valid_makes):
         raise Exception("Unknown make param(s): {}".format(' '.join(sorted(makes - valid_makes))))
 
     if 'all' in makes:
-        makes |= {'inputs', 'outputs'}
+        makes |= valid_makes
         args.validation = args.checks = True
 
     if 'inputs' in makes:
@@ -413,7 +423,54 @@ def kg_make(format_, args):
 
         print('DONE MAKING OUTPUTS.')
 
+    # TODO include subtasks creation and subtasks.json
+
+    if 'subtasks' in makes:
+        print('MAKING SUBTASKS...')
+        subjson = details.subtasks_files
+        if not subjson:
+            raise Exception("subtasks_files entry in details is required at this step.")
+
+        detector = details.subtask_detector
+        if not detector: raise Exception("Missing detector/validator")
+
+        # find subtask list
+        subtasks = list(map(str, details.valid_subtasks))
+        if details.validator and not subtasks: # subtask list required for detectors from validator
+            raise Exception("Missing subtask list")
+
+        # iterate through inputs, run our detector against them
+        subtasks_of, overall, inputs = get_subtasks(subtasks, detector, get_format_from_type(format_, args.loc, read='i'))
+
+        print('WRITING TO {}'.format(subjson))
+        with open(subjson, 'w') as f:
+            f.write('[\n' + '\n'.join('    {},'.format(str(list(x))) for x in construct_subs_files(subtasks_of, overall, inputs)).rstrip(',') + '\n]')
+
+        print('DONE MAKING SUBTASKS.')
+
+
+
     print('SUCCESSFUL')
+
+def construct_subs_files(subtasks_of, overall, inputs):
+    prev = None
+    lf = 0
+    rg = -1
+    for idx, file in enumerate(inputs):
+        assert rg == idx - 1
+
+        subs = subtasks_of[file]
+        assert subs
+
+        if prev != subs:
+            assert (not prev) == (lf > rg)
+            if prev:
+                yield lf, rg, list(sorted(map(int, prev)))
+            prev = subs
+            lf = idx
+        rg = idx
+    if prev:
+        yield lf, rg, list(sorted(map(int, prev)))
 
 make_p.set_defaults(func=kg_make)
 
@@ -426,6 +483,50 @@ make_p.set_defaults(func=kg_make)
 
 
 
+
+
+
+# make a new problem
+
+init_p = subparsers.add_parser('init', help='create all test data and validate.')
+
+init_p.add_argument('problemname', help='what to init. (all, inputs, etc.)')
+init_p.add_argument('-l', '--loc', default='.', help='where to make the problem')
+
+def kg_init(format_, args):
+    if not is_same_format(format_, 'kg'):
+        raise Exception("You can't use '{}' format to 'init'.".format(format_))
+  
+    prob = args.problemname
+
+    if not set(prob) <= set(ascii_letters + '_-'):
+        raise Exception("No special characters allowed for the problem name..")
+
+
+    src = os.path.join(script_path, 'data', 'template')
+    dest = os.path.join(args.loc, prob)
+
+    print('making folder', dest)
+    if os.path.exists(dest):
+        raise Exception("The folder already exists!")
+
+    env = {
+        'problemtitle': ' '.join(re.split(r'[-_. ]+', prob)).title().strip(),
+    }
+
+    fmt = Format(os.path.join(src, '*'), os.path.join(dest, '*'), read='i', write='o')
+    for inp, outp in fmt.thru_io():
+        if not os.path.isfile(inp): continue
+        rec_ensure_exists(outp)
+        with open(inp) as inpf:
+            with open(outp, 'w') as outpf:
+                d = inpf.read()
+                if inp.endswith('details.json'): d %= env
+                outpf.write(d)
+
+    print('DONE!')
+
+init_p.set_defaults(func=kg_init)
 
 
 def main(format):

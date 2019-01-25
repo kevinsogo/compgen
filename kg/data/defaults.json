@@ -9,5 +9,5 @@
     "judge_data_maker": null,
     "other_programs": [],
     "valid_subtasks": [],
-    "subtasks_files": []
+    "subtasks_files": "subtasks.json"
 }
