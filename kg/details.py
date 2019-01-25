@@ -27,7 +27,7 @@ class Details(object):
         if len(set(self.valid_subtasks)) != len(self.valid_subtasks):
             raise ValueError("Duplicate values in valid_subtasks")
 
-        for key in ['validator', 'checker', 'model_solution', 'subtask_detector', 'judge_data_runner']:
+        for key in ['validator', 'checker', 'model_solution', 'subtask_detector', 'judge_data_maker']:
             setattr(self, key, self._maybe_prog(self.details.get(key, defaults.get(key)), key=key))
 
         for key in ['generators', 'other_programs']:
@@ -37,8 +37,10 @@ class Details(object):
             self.subtasks_detector = detector_from_validator(self.validator)
             assert (not self.subtasks_detector) == (not self.validator)
 
-        if not self.judge_data_runner:
-            self.judge_data_runner = self.model_solution
+        if not self.judge_data_maker:
+            self.judge_data_maker = self.model_solution
+
+        self.testscript = self.details.get('testscript')
 
         # subtasks_files
         self.subtasks_files = self.details.get('subtasks_files', [])

@@ -126,8 +126,8 @@ $ kg make inputs outputs
 # same as the commands above, but you don't have to supply -i and -o
 $ kg subtasks
 $ kg gen
-$ kg test
-$ kg run
+$ kg test -f sol.cpp
+$ kg run -f sol.cpp
 ```
 
 ## Uploading

@@ -10,3 +10,5 @@ hr_ready
 build/
 *.egg-info/
 *.egg
+tests/
+*.executable

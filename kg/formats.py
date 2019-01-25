@@ -48,8 +48,8 @@ class Format:
 
         if len(self.inputs) != len(self.outputs) and read and write:
 
-            if self.outputs and len(self.inputs) != len(self.outputs) and mode == 'ow':
-                print("Warning: cannot match files {} to corresponding files {}. Still attempt to write? [y/N]".format(inputg, outputg), file=stderr)
+            if self.outputs and len(self.inputs) != len(self.outputs):
+                print("Warning: cannot match files {} to corresponding files {}. Attempt to write anyway? [y/N]".format(inputg, outputg), file=stderr, end=' ')
                 if input() == 'y':
                     if 'i' in read:
                         assert (read, write) == ('i', 'o')
@@ -158,12 +158,12 @@ class Format:
         if not self._checked:
             _check_simple(self.inputg, 'input')
             pat = '(.*)'.join(self.inputg.replace('.', r'\.').split('*'))
-            print('Interpreting {} as regex: {}'.format(self.inputg, pat))
+            # print('Interpreting {} as regex: {}'.format(self.inputg, pat))
             self._i_re = re.compile('^' + pat + r'\Z')
 
             _check_simple(self.outputg, 'output')
             pat = '(.*)'.join(self.outputg.replace('.', r'\.').split('*'))
-            print('Interpreting {} as regex: {}'.format(self.outputg, pat))
+            # print('Interpreting {} as regex: {}'.format(self.outputg, pat))
             self._o_re = re.compile('^' + pat + r'\Z')
 
             self._checked = True
@@ -182,6 +182,14 @@ class Format:
             inputf = self._join_iparts(*parts)
             outputf = self._join_oparts(*parts)
             yield inputf, outputf
+
+    def thru_expected_inputs(self):
+        for inf, outf in self.thru_expected_io():
+            yield inf
+
+    def thru_expected_outputs(self):
+        for inf, outf in self.thru_expected_io():
+            yield outf
 
 ###### Different formats:
 
@@ -264,5 +272,11 @@ def get_format(args, read='', write=''):
         else:
             raise ValueError('Unrecognized format: {}'.format(args.format))
 
+def get_format_from_type(format, loc, read='', write=''):
+    return formats[format](loc, read=read, write=write)
+
 def is_same_format(a, b):
     return short_format[a] == short_format[b]
+
+def is_format(f, b):
+    return isinstance(f, formats[b])

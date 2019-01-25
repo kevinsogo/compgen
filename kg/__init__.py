@@ -10,6 +10,7 @@ from collections import defaultdict
 from .programs import *
 from .formats import *
 from .details import *
+from .testscripts import *
 
 def rec_ensure_exists(file):
     pathlib.Path(os.path.dirname(file)).mkdir(parents=True, exist_ok=True)
@@ -164,15 +165,14 @@ def kg_gen(format_, args):
     if is_same_format(args.format, 'kg'):
         details = Details.from_loc(args.details) or details
 
-    solution = Program.from_args(args.file, args.command) or details.judge_data_runner
-    if not solution: raise Exception("Missing solution")
-
+    solution = Program.from_args(args.file, args.command) or details.judge_data_maker
     judge = Program.from_args(args.judge_file, args.judge_command) or details.checker
+
+    _kg_gen(format_, solution, judge)
+
+def _kg_gen(format_, solution, judge):
+    if not solution: raise Exception("Missing solution")
     if not judge: raise Exception("Missing judge")
-
-    validator = Program.from_args(args.validator_file, args.validator_command) or details.validator
-    if not validator: print("Warning: No validator found!", file=stderr)
-
     solution.do_compile()
     judge.do_compile()
     for input_, output_ in format_.thru_io():
@@ -230,7 +230,7 @@ def kg_test(format_, args):
     if is_same_format(args.format, 'kg'):
         details = Details.from_loc(args.details) or details
 
-    solution = Program.from_args(args.file, args.command) or details.judge_data_runner
+    solution = Program.from_args(args.file, args.command) or details.model_solution
     if not solution: raise Exception("Missing solution")
 
     judge = Program.from_args(args.judge_file, args.judge_command) or details.checker
@@ -306,7 +306,7 @@ def kg_run(format_, args):
     if is_same_format(args.format, 'kg'):
         details = Details.from_loc(args.details) or details
 
-    solution = Program.from_args(args.file, args.command) or details.judge_data_runner
+    solution = Program.from_args(args.file, args.command) or details.judge_data_maker
     if not solution: raise Exception("Missing solution")
 
     solution.do_compile()
@@ -331,6 +331,92 @@ run_p.set_defaults(func=kg_run)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# just run the solution
+
+make_p = subparsers.add_parser('make', help='help for "make"')
+
+make_p.add_argument('makes', nargs='+', help='what to make. (all, inputs, etc.)')
+make_p.add_argument('-l', '--loc', default='.', help='location of files/package (if format is given)')
+make_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
+make_p.add_argument('--validation', action='store_true', help="Validate the input files against the validators")
+make_p.add_argument('--checks', action='store_true', help="Check the output file against the checker")
+
+def kg_make(format_, args):
+    if not is_same_format(format_, 'kg'):
+        raise Exception("You can't use '{}' format to 'make'.".format(format_))
+
+
+    details = Details()
+    if is_same_format(format_, 'kg'):
+        details = Details.from_loc(args.details) or details
+
+    makes = set(args.makes)
+
+    valid_makes = {'inputs', 'outputs', 'all'}
+    if not (makes <= valid_makes):
+        raise Exception("Unknown make param: {}".join(' '.join(valid_makes - makes)))
+
+    if 'all' in makes:
+        makes |= {'inputs', 'outputs'}
+        args.validation = True
+        args.checks = True
+
+    if 'inputs' in makes:
+        print('MAKING INPUTS...' + ("WITH VALIDATION..." if args.validation else 'WITHOUT VALIDATION'))
+        if not details.testscript:
+            raise Exception("Missing testscript")
+
+        with open(details.testscript) as scrf:
+            script = scrf.read()
+
+        fmt = get_format_from_type(format_, args.loc, write='i')
+
+        if args.validation:
+            validator = details.validator
+            validator.do_compile()
+
+        for filename, gen, fargs in parse_testscript(fmt.thru_expected_inputs(), script, details.generators):
+            print('GENERATING', filename)
+            rec_ensure_exists(filename)
+            gen.do_compile()
+            with open(filename, 'w') as file:
+                gen.do_run(*fargs, stdout=file)
+
+            if args.validation:
+                with open(filename) as file:
+                    validator.do_run(stdin=file)
+
+        print('DONE MAKING INPUTS.')
+
+
+    if 'outputs' in makes:
+        print('MAKING OUTPUTS...' + ("WITH CHECKER..." if args.checks else 'WITHOUT CHECKER'))
+        fmt = get_format_from_type(format_, args.loc, read='i', write='o')
+        _kg_gen(fmt, details.judge_data_maker, details.checker if args.checks else Program.noop())
+
+        print('DONE MAKING OUTPUTS.')
+
+    print('SUCCESSFUL')
+
+make_p.set_defaults(func=kg_make)
 
 
 

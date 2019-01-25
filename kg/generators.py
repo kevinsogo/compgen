@@ -54,24 +54,6 @@ def _make_seed(args):
     return _chash_seq(_chash_seq(map(ord, arg)) for arg in args) ^ 0xBEABDEEF
 
 
-def write_to_file(print_to_file, make, args, file, validate=None):
-    '''
-    Creates test case/s meant for a single file.
-
-    print_to_file: function that prints to a file
-    make: function that generates the data
-    args: arguments that will be passed to 'make', along with a random number generator.
-    file: file-like object to write to.
-    validate: (optional) Validate the output before printing
-
-    Note: Ensure that `make` is deterministic, and any "randomness" is obtained from
-    the given random number generator. This ensures reproducibility.
-    '''
-    rand = XRandom(_make_seed(args))
-    case_ = make(rand, *args)
-    _write_with_validate(print_to_file, file, case_, validate=validate)
-
-
 def _get_all_groups(make, distribute, args):
     # make the cases
     rand = XRandom(_make_seed(args))
@@ -124,3 +106,35 @@ def write_nth_group_to_file(index, print_to_file, make, distribute, args, file, 
     group = groups[index]() if single_case else [make() for make in groups[index]]
     _write_with_validate(print_to_file, file, group, validate=validate)
     return len(groups)
+
+def write_to_file(print_to_file, make, args, file, validate=None):
+    '''
+    Creates test case/s meant for a single file.
+
+    print_to_file: function that prints to a file
+    make: function that generates the data
+    args: arguments that will be passed to 'make', along with a random number generator.
+    file: file-like object to write to.
+    validate: (optional) Validate the output before printing
+
+    Note: Ensure that `make` is deterministic, and any "randomness" is obtained from
+    the given random number generator. This ensures reproducibility.
+    '''
+
+    # TODO clean up this part of the code later
+    def try_triple():
+        try:
+            make_, distribute, index = make
+            return True
+        except TypeError:
+            return False
+
+    if try_triple():
+        make, distribute, index = make
+        return write_nth_group_to_file(index, print_to_file, make, distribute, args, file, validate=validate)
+
+    rand = XRandom(_make_seed(args))
+    case_ = make(rand, *args)
+    _write_with_validate(print_to_file, file, case_, validate=validate)
+
+

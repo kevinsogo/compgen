@@ -18,10 +18,10 @@ to_print = p.stdout
 if len(to_print) > 100+3:
     to_print = to_print[:100] + '...'
 assert len(to_print) <= 100+3
-print('Incorrect. Diff:')
-print(to_print)
+
+if p.returncode:
+    print('Incorrect. Diff:')
+    print(to_print)
 
 print('Score: ', 1 if p.returncode == 0 else 0)
 exit(p.returncode)
-
-# TODO make this @import from compgen.checkers

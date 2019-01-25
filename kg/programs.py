@@ -32,6 +32,9 @@ class Program:
         if time: command = ['/usr/bin/time', '-f' 'TIME %es %Us %Ss'] + command
         return subprocess.run(command, stdin=stdin, stdout=stdout, stderr=stderr, check=check)
 
+    def matches_abbr(self, abbr):
+        return os.path.splitext(os.path.basename(self.filename))[0] == abbr
+
     def __str__(self):
         return "<{}\n    {}\n    {}\n    {}\n>".format(self.__class__.__name__, self.filename, self.compile, self.run)
 
@@ -68,11 +71,11 @@ class Program:
     @classmethod
     def from_args(cls, file, command):
         if command:
-            return cls.from_data(file or '!custom', command)
+            return cls(file or '!custom', [], command)
         elif file:
             return cls.from_data(file)
 
-
-
-
+    @classmethod
+    def noop(cls):
+        return cls('!noop', [], ['kg-noop'])
 

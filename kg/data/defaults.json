@@ -6,7 +6,7 @@
     "testscript": null,
     "generators": [],
     "subtask_detector": null,
-    "judge_data_runner": null,
+    "judge_data_maker": null,
     "other_programs": [],
     "valid_subtasks": [],
     "subtasks_files": []

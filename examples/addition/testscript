@@ -1,9 +1,12 @@
-! cat sample.in > 1
+# comments go here
+
+! cat sample.in > $
+
 single_case 10 10 > $
-single_case 10 100 > 3
+single_case 10 100 > $
 single_case 10 1000 > $
 single_case 10 10000 > $
-multi_case [5-8,10] 10 1000 > {5-8,10}
+# multi_case [5-8,10] 10 1000 > {5-8,10}
 multi_case_lazy 0 10 20 > $
 multi_case_lazy 1 10 20 > $
 multi_case_lazy 2 10 20 > $
