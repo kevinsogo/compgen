@@ -1,8 +1,0 @@
-python2 single_case.py 10 10 > $$$
-python2 single_case.py 10 100 > $$$
-python2 single_case.py 10 1000 > $$$
-python2 single_case.py 10 10000 > $$$
-for x in $(seq 0 3)
-do
-    python2 multifile_cases.py $x 10 20 > $$$
-done
