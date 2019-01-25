@@ -1,6 +1,6 @@
 import os.path
 import subprocess
-from subprocess import Popen, PIPE
+from subprocess import run, PIPE
 from collections import defaultdict
 import json
 
@@ -29,11 +29,11 @@ class Program:
             if status: exit(status)
         self._compiled = True
 
-    def get_runner(self, *args, stdin=None, stdout=PIPE, stderr=PIPE, time=False):
+    def do_run(self, *args, stdin=None, stdout=None, stderr=None, time=False, check=True):
         if not self._compiled: raise Exception("The program is uncompiled")
         command = self.run + list(args)
         if time: command = ['/usr/bin/time', '-f' 'TIME %es %Us %Ss'] + command
-        return Popen(command, stdin=stdin, stdout=stdout, stderr=stderr)
+        return run(command, stdin=stdin, stdout=stdout, stderr=stderr, check=check)
 
     def __str__(self):
         return "<{}\n    {}\n    {}\n    {}\n>".format(self.__class__.__name__, self.filename, self.compile, self.run)

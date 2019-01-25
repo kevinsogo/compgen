@@ -9,8 +9,6 @@ with open(os.path.join(script_path, 'defaults.json')) as f:
 
 valid_keys = set(defaults) | {"comments", "extras"}
 
-# TODO judge_data_runner defaults to model solution
-
 
 def detector_from_validator(validator):
     if validator:
@@ -75,7 +73,7 @@ class Details(object):
         # special parsing for checker
         if key == 'checker':
             diff_pref = '!diff.'
-            if isinstance(v, str) and v.startswith(diff_pref):
+            if isinstance(v, str) and v.startswith(diff_pref): 
                 v = os.path.join(script_path, 'diff', v[len(diff_pref):] + '.py')
         return Program.from_data(v) if v else None
 

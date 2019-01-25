@@ -3,7 +3,8 @@ import os.path
 import os
 import pathlib
 import subprocess
-from subprocess import Popen, PIPE
+import tempfile
+from subprocess import Popen, PIPE, CalledProcessError
 from collections import defaultdict
 
 from programs import *
@@ -110,7 +111,7 @@ def kg_subtasks(format_, args):
     detector.do_compile()
     for input_ in format_.thru_inputs():
         with open(input_) as f:
-            runner = detector.get_runner(*subtasks, stdin=f, stderr=None)
+            result = detector.do_run(*subtasks, stdin=f, stdout=PIPE)
             stdout, stderr = runner.communicate()
             if runner.returncode: exit(returncode)
         subtasks_of[input_] = set(stdout.decode('utf-8').split())
@@ -176,18 +177,18 @@ def kg_gen(format_, args):
         with open(input_) as inp:
             with open(output_, 'w') as outp:
                 print('WRITING', input_, '-->', output_)
-                runner = solution.get_runner(stdin=inp, stdout=outp, stderr=None, time=True)
-                runner.communicate()
-                if runner.returncode:
+                try:
+                    solution.do_run(stdin=inp, stdout=outp, time=True)
+                except CalledProcessError as cpe:
                     print("The solution raised an error for {}".format(input_), file=stderr)
-                    exit(runner.returncode)
+                    exit(cpe.returncode)
 
         # check with judge
-        runner = judge.get_runner(input_, output_, output_, stdin=None)
-        runner.communicate()
-        if runner.returncode:
+        try:
+            judge.do_run(input_, output_, output_)
+        except CalledProcessError as cpe:
             print("The judge did not accept {}".format(output_), file=stderr)
-            exit(runner.returncode)
+            exit(cpe.returncode)
 
 
 gen_p.set_defaults(func=kg_gen)
@@ -202,7 +203,133 @@ gen_p.set_defaults(func=kg_gen)
 
 
 
-# test. make unique temp file
+
+# generate output data
+
+test_p = subparsers.add_parser('test', help='help for "test"')
+
+test_p.add_argument('-F', '--format', '--fmt', default='kg', help='format of data')
+test_p.add_argument('-l', '--loc', default='.', help='location of files/package (if format is given)')
+test_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
+test_p.add_argument('-i', '--input', help='input file pattern')
+test_p.add_argument('-o', '--output', help='output file pattern')
+test_p.add_argument('-c', '--command', nargs='+', help='solution command')
+test_p.add_argument('-f', '--file', help='solution program file')
+test_p.add_argument('-jc', '--judge-command', nargs='+', help='judge command')
+test_p.add_argument('-jf', '--judge-file', help='judge program file')
+parser.add_argument('-js', '--judge-strict', action='store_true', help=argparse.SUPPRESS)# help="whether the checker is a bit too strict and doesn't work if extra arguments are given to it")
+
+def kg_test(format_, args):
+    if not args.format: args.format = format_
+    format_ = get_format(args, read='io')
+
+    details = Details()
+    if is_same_format(args.format, 'kg'):
+        details = Details.from_loc(args.details) or details
+
+    solution = Program.from_args(args.file, args.command) or details.judge_data_runner
+    if not solution: raise Exception("Missing solution")
+
+    judge = Program.from_args(args.judge_file, args.judge_command) or details.checker
+    if not judge: raise Exception("Missing judge")
+
+    solution.do_compile()
+    judge.do_compile()
+    total = corrects = 0
+    for index, (input_, output_) in enumerate(format_.thru_io()):
+        def check_correct():
+            with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                with open(input_) as inp:
+                    print('CHECKING AGAINST', input_)
+                    try:
+                        solution.do_run(stdin=inp, stdout=tmp, time=True)
+                    except CalledProcessError:
+                        print('The solution issued a runtime error...')
+                        return False
+
+                jargs = [input_, tmp.name, output_]
+                if not args.judge_strict:
+                    jargs += ['-c', solution.filename, '-t', str(index), '-v']
+
+                return judge.do_run(*jargs, check=False).returncode == 0
+
+        correct = check_correct()
+        total += 1
+        corrects += correct
+        print('correct' if correct else 'WRONG!!!!!!!!!!')
+
+    print('{} out of {} correct'.format(corrects, total))
+
+test_p.set_defaults(func=kg_test)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# generate output data
+
+run_p = subparsers.add_parser('run', help='help for "run"')
+
+run_p.add_argument('-F', '--format', '--fmt', default='kg', help='format of data')
+run_p.add_argument('-l', '--loc', default='.', help='location of files/package (if format is given)')
+run_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
+run_p.add_argument('-i', '--input', help='input file pattern')
+run_p.add_argument('-o', '--output', help='output file pattern')
+run_p.add_argument('-c', '--command', nargs='+', help='solution command')
+run_p.add_argument('-f', '--file', help='solution program file')
+
+def kg_run(format_, args):
+    if not args.format: args.format = format_
+    format_ = get_format(args, read='i')
+
+    details = Details()
+    if is_same_format(args.format, 'kg'):
+        details = Details.from_loc(args.details) or details
+
+    solution = Program.from_args(args.file, args.command) or details.judge_data_runner
+    if not solution: raise Exception("Missing solution")
+
+    solution.do_compile()
+    for input_ in format_.thru_inputs():
+        with open(input_) as inp:
+            print('RUNNING FOR', input_, file=stderr)
+            try:
+                solution.do_run(stdin=inp, time=True)
+            except CalledProcessError:
+                print('The solution issued a runtime error...', file=stderr)
+
+
+run_p.set_defaults(func=kg_run)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
