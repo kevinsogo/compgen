@@ -65,6 +65,11 @@ def process_context(line, context):
     return make_copy_context(context), context['indent'] + line
 
 
+def try_run(expr, parsed, command, context):
+    try:
+        return command(expr, context)
+    except Exception as exc:
+        raise EvalException.for_parsed(parsed, "An exception occurred while running {} via {}: {}".format(repr(expr), command.__name__, str(exc))) from exc
 
 
 class Command:
@@ -72,12 +77,6 @@ class Command:
         self.name = name
         self.args = args
         super(Command, self).__init__()
-
-    def try_run(self, parsed, command, context):
-        try:
-            return command(self.args, context)
-        except Exception as exc:
-            raise EvalException.for_parsed(parsed, "An exception occurred while running {} via {}: {}".format(repr(self.args), command.__name__, str(exc))) from exc
 
     def expect(self, parsed, ct, lines):
         if ct < 0: raise ValueError("Invalid count to expect: {}".format(ct))
@@ -90,8 +89,6 @@ class Command:
         if found < ct: raise CompileException.for_parsed(parsed, "Expected {} line(s) but found {} inside @{}".format(ct, found, self.name))
 
 
-
-
 @set_command('begin', strong={'begin': True})
 class Begin(Command):
     def __call__(self, parsed, context):
@@ -102,12 +99,47 @@ class Begin(Command):
         else:
             raise CommandException.for_parsed(parsed, "Cannot 'begin' if not in the beginning of the file")
 
+
 @set_command('if')
 class If(Command):
     def __call__(self, parsed, context):
         # evaluate an expression and write the children if True (or truthy)
         # print('@if: evaluating', repr(self.args))
-        if self.try_run(parsed, eval, context):
+        if try_run(self.args, parsed, eval, context):
+            yield from parsed.compile_children(context)
+
+
+@set_command('for')
+class For(Command):
+    def __call__(self, parsed, context):
+        # write an expression multiple times.
+        try:
+            index = self.args.find(' in ')
+        except ValueError:
+            raise CommandException.for_parsed(parsed, "Cannot parse @for: ' in ' not found!")
+        to_assign = self.args[:index].strip()
+        is_tuple = ',' in to_assign
+        labels = [label.strip() for label in to_assign.split(',')]
+        if labels[-1] == '': labels.pop()
+        if not labels: raise CommandException.for_parsed(parsed, "Invalid left-side assignment for @for: empty")
+        if not all(labels): raise CommandException.for_parsed(parsed, "Invalid left-side assignment for @for: blank labels")
+
+        expr = self.args[index + 4:]
+        # print('@for: evaluating', repr(expr))
+        for value in try_run(expr, parsed, eval, context):
+            if not is_tuple: value = [value]
+            if len(labels) != len(value): raise EvalException.for_parsed(parsed, "Invalid assignment for @for: differing lengths: left {} vs right {}".format(len(labels), len(value)))
+            for label, val in zip(labels, value):
+                context[label] = val
+            yield from parsed.compile_children(context)
+
+
+@set_command('while')
+class While(Command):
+    def __call__(self, parsed, context):
+        # write an expression multiple times.
+        # print('@while: evaluating', repr(self.args))
+        while try_run(self.args, parsed, eval, context):
             yield from parsed.compile_children(context)
 
 
@@ -116,9 +148,10 @@ class Replace(Command):
     def __call__(self, parsed, context):
         # replace text in every line inside.
         # print('@replace: evaluating', repr(self.args))
-        source, target = map(str, self.try_run(parsed, eval, context))
+        source, target = map(str, try_run(self.args, parsed, eval, context))
         for wline, line in parsed.compile_children(context):
             yield wline, line.replace(source, target)
+
 
 @set_command('set')
 class Set(Command):
@@ -126,10 +159,9 @@ class Set(Command):
         # set a variable inside the current context.
         # Note that the parent context (from the importing file) is unaffected.
         # print('@set: executing', repr(self.args))
-        self.try_run(parsed, exec, context)
+        try_run(self.args, parsed, exec, context)
         [] = self.expect(parsed, 0, parsed.compile_children(context))
         return []
-
 
 
 @set_command('import',

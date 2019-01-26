@@ -199,7 +199,7 @@ Here's an example for the problem "find any longest subsequence of distinct elem
 
 # Black Magic (advanced)
 
-Feel free to skip this part; it's not needed at all in most cases. 
+Feel free to skip this part; it's not needed for most cases. 
 
 There are a few other directives that can be used aside from `### @import`. They can be used to generate specific code for different platforms. (`kg kompile` actually has a builtin preprocessor!)
 
@@ -212,8 +212,6 @@ code_that=only*appears+in_hackerrank
 
 line=that_only*appears_in%polygon ### @if format == 'pg'
 ```
-
-The conditionals are evaluated as Python expressions with a certain set of available variables. (will document soon)
 
 There is also `@replace`, which looks like:
 
@@ -228,9 +226,11 @@ for i in xrange(5):
 ### @@ }
 ```
 
-Obviously, Python interprets these as simple comments, but `kg kompile` parses them as directives. This is used to produce the different outputs you see in `kgkompiled`. 
+Obviously, Python interprets these as simple comments, but `kg kompile` parses them as directives. This is used to produce the different outputs you see in `kgkompiled`. The expressions themselves are evaluated as Python expressions, with a certain set of available variables. (will document soon)
 
 Try to read `kg/checkers.py` to see the different directives in action. Note that there are other variables accessible aside from `format`. I will document then later. I'd like to clean up this feature first. :)
+
+
 
 
 ## Preprocessor black magic options

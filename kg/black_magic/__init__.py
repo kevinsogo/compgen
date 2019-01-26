@@ -21,14 +21,14 @@ class Directive(Enum):
 
 # this will be processed in this order.
 SYNTAX_RULES = [
+    (re.compile(r'.*###\s*@.*###.*$'), Directive.BAD, "There must be at most one directive in each line"),
     (re.compile(r'^(.*###\s*)@\s*keep (.*)$'), Directive.KEEP, None),
-    (re.compile(r'^\s*###\s*@\s*@(.+){\s*$'), Directive.OPEN, None),
-    (re.compile(r'^\s*###\s*@\s*@\s*}\s*$'), Directive.CLOSE, None),
+    (re.compile(r'^(.*)###\s*@\s*@(.+){\s*$'), Directive.OPEN, None),
+    (re.compile(r'^(.*)###\s*@\s*@\s*}\s*$'), Directive.CLOSE, None),
     (re.compile(r'^(.*)###\s*@\s*([^\s@].*)$'), Directive.INLINE, None),
-    (re.compile(r'^\s*###\s*@\s*@\s*{\s*$'), Directive.BAD, "An opening directive must have an argument."),
-    (re.compile(r'^\s*###\s*@\s*@.*}\s*$'), Directive.BAD, "A closing directive cannot have arguments."),
-    (re.compile(r'^\s*###\s*@\s*@.*$'), Directive.BAD, "A '### @@' line must end with either { or }."),
-    (re.compile(r'^.*###\s*@\s*@.*$'), Directive.BAD, "The line preceding '### @@' must be empty."),
+    (re.compile(r'^.*###\s*@\s*@\s*{\s*$'), Directive.BAD, "An opening directive must have an argument."),
+    (re.compile(r'^.*###\s*@\s*@.*}\s*$'), Directive.BAD, "A closing directive cannot have arguments."),
+    (re.compile(r'^.*###\s*@\s*@.*$'), Directive.BAD, "A '### @@' line must end with either { or }."),
     (re.compile(r'^.*###\s*@\s*$'), Directive.BAD, "An inline directive must have an argument."),
     (re.compile(r'^.*###.*$'), Directive.COULD_BE_BAD, "'###' found but couldn't parse. Possible mistake."),
     (re.compile(r'^.*##\s*@.*$'), Directive.COULD_BE_BAD, "'## @' found but couldn't parse. Possible mistake."),
@@ -87,11 +87,14 @@ class Parsed:
                     left, right = match.groups()
                     yield left + right
                 elif directive == Directive.OPEN:
-                    command, = match.groups()
+                    prev_line, command = match.groups()
+                    if prev_line.strip(): yield prev_line
                     p = Parsed(command, lines, module_loc, lineno=lineno)
                     lineno = p.end_lineno
                     yield p
                 elif directive == Directive.CLOSE:
+                    prev_line, = match.groups()
+                    if prev_line.strip(): yield prev_line
                     return
                 elif directive == Directive.INLINE:
                     pline, command = match.groups()

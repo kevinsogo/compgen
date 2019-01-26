@@ -4,7 +4,7 @@
 
 
 
-This is a detailed guide on how to prepare a problem from scratch using this KompGen. 
+This is a detailed guide on how to prepare a problem from scratch using KompGen. 
 
 Actually, not from scratch; this assumes you've already written the problem statement. This also assumes you've already read the README. 
 
@@ -215,6 +215,9 @@ The chain accepts `int`, `ints`, `token`, `char`, `space`, `eoln`, and `eof` (an
 
 Finally, there is also `read_int_eoln` which is convenience for a `read_int` followed by a `read_eoln`. There's also `read_int_space`, `read_token_eoln`, etc.
 
+<!-- TODO Advanced example: graphs, range sum query -->
+
+
 
 ## Detecting subtasks automatically  
 
@@ -257,6 +260,8 @@ if __name__ == '__main__':
 
 There are a few more advanced usages and features (will document soon!), but this should cover most use cases.
 
+<!-- TODO Strict multicase, lazy multicase -->
+
 
 
 # Testscript
@@ -282,6 +287,7 @@ The program used will be taken from `generators` in `details.json`; in this case
 
 This is similar to Polygon's system, though more limited, since you have to use `$`, etc. This is a bit limited in expessive power for now, but we'll change that soon.
 
+<!-- TODO numbering in testscript -->
 
 
 
@@ -357,12 +363,14 @@ def check_solution(input_file, output_file, judge_file, **kwargs):
 if __name__ == '__main__': chk()
 ```
 
+<!-- TODO graph checking. is_tree, is_connected, etc. -->
+
 
 
 
 # Black Magic (advanced)
 
-Feel free to skip this part; it's not needed at all in most cases. 
+Feel free to skip this part; it's not needed for most cases. 
 
 There are a few other directives that can be used aside from `### @import`. They can be used to generate specific code for different platforms. (`kg kompile` actually has a builtin preprocessor!)
 
@@ -370,13 +378,11 @@ Perhaps the most useful would be the `@if` directive:
 
 ```python
 ### @@if format == 'hr' {
-code_that = only * appears + in_hackerrank
+code_that=only*appears+in_hackerrank
 ### @@}
 
-line = that_only * appears % in_polygon ### @if format == 'pg'
+line=that_only*appears_in%polygon ### @if format == 'pg'
 ```
-
-The conditionals are evaluated as Python expressions with a certain set of available variables. (will document soon)
 
 There is also `@replace`, which looks like:
 
@@ -391,15 +397,19 @@ for i in xrange(5):
 ### @@ }
 ```
 
-Obviously, Python interprets these as simple comments, but `kg kompile` parses them as directives. This is used to produce the different outputs you see in `kgkompiled`. 
+Obviously, Python interprets these as simple comments, but `kg kompile` parses them as directives. This is used to produce the different outputs you see in `kgkompiled`. The expressions themselves are evaluated as Python expressions, with a certain set of available variables. (will document soon)
 
 Try to read `kg/checkers.py` to see the different directives in action. Note that there are other variables accessible aside from `format`. I will document then later. I'd like to clean up this feature first. :)
 
 
-## Preprocessor black magic options (use at your own risk)
 
-The files generated in `kgkompiled` may be too big for your tastes. To make this better, there are two (evil) options accepted by `kg kompile` that can reduce the file sizes a bit:
 
-1. `-S`. Attempts to reduce the indentation level; this saves several spaces. Beware, may break some programs, particularly those with inconsistent indenting. I suggest keeping everything to 4 spaces. 
+## Preprocessor black magic options
+
+The files generated in `kgkompiled` may be too big for your tastes. To make them smaller, there are two (evil) options accepted by `kg kompile` that can reduce the file sizes a bit:
+
+1. `-S`. Attempts to reduce the indentation level; this saves several spaces. Beware, it may break some programs, particularly those with inconsistent indenting. I suggest keeping everything to 4 spaces. 
 
 2. `-C`. A very evil option. See for yourself! :D
+
+Use at your own risk.
