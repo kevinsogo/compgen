@@ -179,4 +179,3 @@ tests/
 - Feel free to request features/changes/improvements you'd like to see.
 
 - [See this list.](docs/HELP.md) Looking forward to your merge request!
-

@@ -5,6 +5,8 @@
 
 - Write unit tests.  
 
+- Support more formats: PC2, Kattis, CodeChef, DOM?. 
+
 
 
 # Others  
@@ -20,6 +22,8 @@
 - More error handling in scripts; in general, make them more robust.
 
 - Better error messages. 
+
+
 
 # To consider  
 

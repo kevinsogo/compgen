@@ -400,4 +400,3 @@ The files generated in `kgkompiled` may be too big for your tastes. To make this
 1. `-S`. Attempts to reduce the indentation level; this saves several spaces. Beware, may break some programs, particularly those with inconsistent indenting. I suggest keeping everything to 4 spaces. 
 
 2. `-C`. A very evil option. See for yourself! :D
-

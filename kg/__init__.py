@@ -532,6 +532,7 @@ compile_p.add_argument('-l', '--loc', default='.', help='location of files/packa
 compile_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
 compile_p.add_argument('-S', '--shift-left', action='store_true', help='compress the program by reducing the indentation size from 4 spaces to 1 tab. Use at your own risk.')
 compile_p.add_argument('-C', '--compress', action='store_true', help='compress the program by actually compressing it. Use at your own risk.')
+# TODO add option for format to "compile" to. No need for now since there are only two.
 
 @set_handler(compile_p)
 def kg_compile(format_, args):
