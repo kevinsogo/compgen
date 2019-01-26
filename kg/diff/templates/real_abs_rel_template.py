@@ -1,14 +1,16 @@
-# Checks for an absolute/relative error 
-# with an error of at most 1e-6 
+# Checks for an XXX error ### @replace "XXX", ('absolute/relative' if has_rel else 'absolute')
+# with an error of at most 1e-XXX ### @replace "XXX", prec
 
 # Don't edit this file. Edit real_abs_rel_template.py instead, and then run _real_check_gen.py
 
+# Actually, you're editing the correct file. Go on. ### @if False
+raise Exception("You're not supposed to run this!!!") ### @if False
 
 from itertools import zip_longest
 from decimal import Decimal as D, InvalidOperation
-from kg.checkers import * ### @import
+from kg.checkers import * ### @keep @import
 
-EPS = D('1e-6') 
+EPS = 0 ### @replace 0, "D('1e-{}')".format(prec)
 
 EPS *= 1+D('1e-5') # add some leniency
 @set_checker()
@@ -23,15 +25,15 @@ def checker(input_file, output_file, judge_file, **kwargs):
         for v1, v2 in zip(p1, p2):
             if v1 != v2: # they're different as tokens. try considering them as numbers
                 try:
-                    err = abs_rel_error(D(v1), D(v2)) 
+                    err = error(D(v1), D(v2)) ### @replace "error", "abs_rel_error" if has_rel else "abs_error"
                 except InvalidOperation:
                     raise WA("Unequal tokens that are not numbers: {} != {}".format(repr(v1), repr(v2)))
                 worst = max(worst, err)
                 if err > EPS:
-                    print('Found an error of', worst) ### @if format != 'hr'
+                    print('Found an error of', worst) ### @keep @if format != 'hr'
                     raise WA("Bad precision.")
-    print('Worst error:', worst) ### @if format not in ('pg', 'hr')
+    print('Worst error:', worst) ### @keep @if format not in ('pg', 'hr')
 
-help_ = ('Compare if the sequence of real numbers are "close enough" (by 1e-6). ' 
-    "Uses absolute/relative error.") 
+help_ = ('Compare if the sequence of real numbers are "close enough" (by XXX). ' ### @replace 'XXX', '1e-' + str(prec)
+    "Uses XXX error.") ### @replace 'XXX', 'absolute/relative' if has_rel else 'relative'
 if __name__ == '__main__': chk(help=help_)

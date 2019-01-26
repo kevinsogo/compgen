@@ -1,5 +1,5 @@
-# Checks for an absolute/relative error 
-# with an error of at most 1e-6 
+# Checks for an absolute error 
+# with an error of at most 1e-15 
 
 # Don't edit this file. Edit real_abs_rel_template.py instead, and then run _real_check_gen.py
 
@@ -8,7 +8,7 @@ from itertools import zip_longest
 from decimal import Decimal as D, InvalidOperation
 from kg.checkers import * ### @import
 
-EPS = D('1e-6') 
+EPS = D('1e-15') 
 
 EPS *= 1+D('1e-5') # add some leniency
 @set_checker()
@@ -23,7 +23,7 @@ def checker(input_file, output_file, judge_file, **kwargs):
         for v1, v2 in zip(p1, p2):
             if v1 != v2: # they're different as tokens. try considering them as numbers
                 try:
-                    err = abs_rel_error(D(v1), D(v2)) 
+                    err = abs_error(D(v1), D(v2)) 
                 except InvalidOperation:
                     raise WA("Unequal tokens that are not numbers: {} != {}".format(repr(v1), repr(v2)))
                 worst = max(worst, err)
@@ -32,6 +32,6 @@ def checker(input_file, output_file, judge_file, **kwargs):
                     raise WA("Bad precision.")
     print('Worst error:', worst) ### @if format not in ('pg', 'hr')
 
-help_ = ('Compare if the sequence of real numbers are "close enough" (by 1e-6). ' 
-    "Uses absolute/relative error.") 
+help_ = ('Compare if the sequence of real numbers are "close enough" (by 1e-15). ' 
+    "Uses relative error.") 
 if __name__ == '__main__': chk(help=help_)

@@ -13,6 +13,9 @@ valid_open = re.compile(r'\s*###\s*@@(.*){\s*$')
 valid_close = re.compile(r'\s*###\s*@@\s*}\s*$')
 valid_inline = re.compile(r'(.*)###\s*@([^@].*)$')
 
+valid_keep = re.compile(r'(.*###\s*)@\s*keep (.*)$')
+
+
 command_re = re.compile(r'\s*([-_A-Za-z0-9]+) (.*)$')
 
 CLOSE = '### @@ }'
@@ -50,6 +53,10 @@ class Parsed:
                 raise Exception("Consumed all lines before parsing everything. Bracket mismatch.")
 
             def get_child():
+                match = valid_keep.match(line)
+                if match is not None:
+                    left, right = match.groups()
+                    return left + right
                 match = valid_open.match(line)
                 if match is not None:
                     command, = match.groups()

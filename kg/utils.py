@@ -2,6 +2,9 @@ from functools import wraps
 
 def noop(*args, **kwargs): ...
 
+def abs_error(a, b):
+    return abs(a - b)
+
 def abs_rel_error(a, b):
     return abs(a - b) / max(abs(a), abs(b), 1)
 
