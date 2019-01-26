@@ -558,13 +558,13 @@ def kg_compile(format_, args):
 
     @memoize
     def get_module(filename):
-        if os.path.isfile(filename) and filename.endswith('.py'):
+        if filename and os.path.isfile(filename) and filename.endswith('.py'):
             module, ext = os.path.splitext(os.path.basename(filename))
             assert ext == '.py'
             return module
 
     # keep only python files
-    all_local = [p for p in all_local if get_module(p.filename)]
+    all_local = [p for p in all_local if p and get_module(p.filename)]
     for p in all_local:
         locations[get_module(p.filename)] = p.filename
 
@@ -607,7 +607,7 @@ def kg_compile(format_, args):
         print('.. '*14)
         print('Compiling for {} ({})'.format(fmt, name))
         dest_folder = os.path.join(args.loc, 'kgkompiled', fmt)
-        to_translate = {g.filename for g in to_translate if get_module(g.filename)}
+        to_translate = {g.filename for g in to_translate if g and get_module(g.filename)}
         targets = {}
         found_targets = {}
         for filename in to_translate:
@@ -638,7 +638,7 @@ def kg_compile(format_, args):
                     assert not line.endswith('\n')
                     print(line, file=f)
 
-        if fmt == 'hr' and get_module(details.checker.filename): # snippets for hackerrank upload.
+        if fmt == 'hr' and details.checker and get_module(details.checker.filename): # snippets for hackerrank upload.
             # pastable version of grader
             filename = details.checker.filename
             module = get_module(filename)

@@ -32,8 +32,8 @@ Use this library if you're one of the following:
 ## Convert files from one format to another
 
 ```bash
-$ kg convert --from polygon path/to/polygon-package --to hackerrank path/to/hr/i-o-folders
-$ kg convert --from hackerrank path/to/hr/i-o-folders --to polygon path/to/polygon-package
+$ kg konvert --from polygon path/to/polygon-package --to hackerrank path/to/hr/i-o-folders
+$ kg konvert --from hackerrank path/to/hr/i-o-folders --to polygon path/to/polygon-package
 ```
 
 This keeps the original copy, don't worry.
