@@ -6,7 +6,7 @@ Use this library if you're one of the following:
 - You already have some data, solutions, checkers, etc., already written, and would like to test, run, convert, detect subtasks, etc., locally.
 - You want to write a problem from scratch. (Bonus points if you want to write everything in Python.)
 
-*Note:* An old version was made available; just in case you need it, `checkout` the branch `v01`.  
+*Note:* In case you are looking for a very old version, `checkout` the branch `v01`. If you don't know what that is, never mind it.
 
 
 
@@ -129,7 +129,7 @@ $ kg make inputs
 # generate the inputs and outputs only
 $ kg make inputs outputs
 
-# same as the commands above, but you don't have to supply -i and -o
+# same as the commands described previously, but you don't have to supply -i and -o
 $ kg subtasks
 $ kg gen
 $ kg test -f sol.cpp

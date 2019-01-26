@@ -46,7 +46,7 @@ The metadata about the problem can be found in `details.json`. It looks like thi
 ```
 Feel free to update it with the correct values. If your problem doesn't have subtasks, simply remove `valid_subtasks` (or make it the empty list). 
 
-Note that the file endings will tell KompGen what language your program is, and there will be a predetermined compile and run command for each recognized language. You can also choose to use a three-argument version to specify a file: `[filename, compile, run]` to specify a file. (The two-argument version is `[filename, run]`) For example, if your validator is written in Haskell, then you write:
+Note that the file endings will tell KompGen what language your program is, and there will be a predetermined compile and run command for each recognized language. You can also choose to use a three-argument version to specify a file: `[filename, compile, run]`. (The two-argument version is `[filename, run]`) For example, if your validator is written in Haskell, then you could write:
 
 ```js
     "validator": ["validator.hs", "ghc validator.hs", "./validator"],
