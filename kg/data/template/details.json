@@ -12,8 +12,13 @@
     "valid_subtasks": [1, 2, 3],
     "subtasks_files": "subtasks.json",
 
+
     "comments": [
         "You can place comments here. They will not be processed.",
-        "Leave valid_subtasks blank to make a binary problem."
+        "Leave valid_subtasks blank to make a binary problem.",
+        "If you need a custom checker, add the field: checker.",
+        "There are also a couple of builtin checkers.",
+        "For a custom checker template, see:",
+        "examples/templates/checker_generic_template.py"
     ]
 }

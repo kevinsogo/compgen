@@ -1,7 +1,7 @@
 from collections import defaultdict
 from functools import wraps
 from operator import attrgetter
-from string import ascii_letters
+from string import ascii_letters, digits
 from subprocess import Popen, PIPE, CalledProcessError
 from sys import *
 import zipfile
@@ -20,7 +20,9 @@ from .utils import *
 
 def rec_ensure_exists(file):
     ''' ensures that the folder containing "file" exists, possibly creating the nested directory path to it '''
-    pathlib.Path(os.path.dirname(file)).mkdir(parents=True, exist_ok=True)
+    dirname = os.path.dirname(file)
+    if not os.path.exists(dirname): print('Creating folder:', dirname)
+    pathlib.Path(dirname).mkdir(parents=True, exist_ok=True)
 
 
 def memoize(function):
@@ -62,16 +64,17 @@ def set_handler(parser, default_file=stdout):
 # convert one format to another
 
 convert_p = subparsers.add_parser('konvert', aliases=['convert'], help='Convert test data from one format to another')
-convert_p.add_argument('--from', nargs=2, help='source format and location', dest='fr')
-convert_p.add_argument('--to', nargs=2, help='destination format and location')
+convert_p.add_argument('--from', nargs=2, help='source format and location', dest='fr', metavar=('FROM_FORMAT', 'FROM_FOLDER'))
+convert_p.add_argument('--to', nargs=2, help='destination format and location', metavar=('TO_FORMAT', 'TO_FOLDER'))
 
 @set_handler(convert_p)
 def kg_convert(format_, args):
     if args.main_command == 'convert':
         print("You spelled 'konvert' incorrectly. I'll let it slide for now.", file=stderr)
+
     if not args.fr: raise CommandException("Missing --from")
     if not args.to: raise CommandException("Missing --to")
-
+    
     convert_formats(args.fr, args.to)
 
 def convert_formats(src, dest):
@@ -80,11 +83,45 @@ def convert_formats(src, dest):
     src_format = get_format(argparse.Namespace(format=sformat, loc=sloc, input=None, output=None), read='io')
     dest_format = get_format(argparse.Namespace(format=dformat, loc=dloc, input=None, output=None), write='io')
 
+    copied = 0
+    print("Copying now...")
     for (srci, srco), (dsti, dsto) in zip(src_format.thru_io(), dest_format.thru_expected_io()):
         rec_ensure_exists(dsti)
         rec_ensure_exists(dsto)
         subprocess.run(['cp', srci, dsti], check=True)
         subprocess.run(['cp', srco, dsto], check=True)
+        copied += 2
+    print("Copied", copied, "files")
+
+
+
+
+
+##########################################
+# convert one file sequence to another
+
+convert2_p = subparsers.add_parser('konvertsequence', aliases=['convertsequence'], help='Convert a file sequence with a certain pattern to another.')
+convert2_p.add_argument('--from', help='source file pattern', dest='fr')
+convert2_p.add_argument('--to', help='destination file pattern')
+
+@set_handler(convert2_p)
+def kg_convert2(format_, args):
+    if args.main_command == 'convertsequence':
+        print("You spelled 'konvertsequence' incorrectly. I'll let it slide for now.", file=stderr)
+    if not args.fr: raise CommandException("Missing --from")
+    if not args.to: raise CommandException("Missing --to")
+    convert_sequence(args.fr, args.to)
+
+def convert_sequence(src, dest):
+    format_ = get_format(argparse.Namespace(format=None, loc=None, input=src, output=dest), read='i', write='o')
+
+    copied = 0
+    print("Copying now...")
+    for srcf, destf in format_.thru_io():
+        rec_ensure_exists(destf)
+        subprocess.run(['cp', srcf, destf], check=True)
+        copied += 1
+    print("Copied", copied, "files")
 
 
 
@@ -494,13 +531,13 @@ def kg_init(format_, args):
   
     prob = args.problemname
 
-    if not set(prob) <= set(ascii_letters + '_-'):
+    if not set(prob) <= set(ascii_letters + digits + '_-'):
         raise CommandException("No special characters allowed for the problem name..")
 
     src = os.path.join(script_path, 'data', 'template')
     dest = os.path.join(args.loc, prob)
 
-    print('making folder', dest)
+    print('The destination folder will be', dest)
     if os.path.exists(dest):
         raise CommandException("The folder already exists!")
 

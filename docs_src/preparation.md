@@ -122,6 +122,15 @@ we can write it all in one line:
 
 The chain accepts `int`, `ints`, `token`, `char`, `space`, `eoln`, and `eof` (and possibly more in the future).
 
+*Note:* The left side of a chain-style assignment must always be enclosed by `[...]`, even if there is only one argument. Also, `ints` returns a *single* variable (with data type "list"). For example,
+
+```python
+[n] = file.read. int(lim.n). eoln # takes only one
+[x, a] = file.read. int(lim.x). space. ints(n, lim.a). eoln # "a" is a list.
+```
+
+
+
 Finally, there is also `read_int_eoln` which is convenience for a `read_int` followed by a `read_eoln`. There's also `read_int_space`, `read_token_eoln`, etc.
 
 <!-- TODO Advanced example: graphs, range sum query -->

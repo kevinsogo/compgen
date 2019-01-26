@@ -16,7 +16,7 @@ bounds = {
 def validate_file(file, subtask=None):
     lim = Bounds(bounds) & Bounds(subtasks.get(subtask))
 
-    ... # write our validator here
+    ... # write your validator here
 
     # file .read_int(), .read_ints(), .read_space(), .read_eoln(), etc.
     # file.read_eof()

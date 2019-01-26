@@ -140,7 +140,7 @@ class Format:
     def _join_parts(self, pat, *p):
         if pat is None: raise InferException("Cannot join: missing pattern.")
         parts = pat.split('*')
-        assert len(parts) == len(p) + 1
+        if len(parts) != len(p) + 1: raise InferException("Cannot perform inference: unequal number of '*' parts in {} and {}.".format(self.inputg, self.outputg))
         return ''.join(a + b for a, b in zip(parts, list(p) + ['']))
 
     def _join_iparts(self, *p):

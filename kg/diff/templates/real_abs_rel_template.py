@@ -35,5 +35,5 @@ def checker(input_file, output_file, judge_file, **kwargs):
     print('Worst error:', worst) ### @keep @if format not in ('pg', 'hr')
 
 help_ = ('Compare if the sequence of real numbers are "close enough" (by XXX). ' ### @replace 'XXX', '1e-' + str(prec)
-    "Uses XXX error.") ### @replace 'XXX', 'absolute/relative' if has_rel else 'relative'
+    "Uses XXX error.") ### @replace 'XXX', 'absolute/relative' if has_rel else 'absolute'
 if __name__ == '__main__': chk(help=help_)

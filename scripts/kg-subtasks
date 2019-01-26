@@ -2,8 +2,7 @@
 
 from io import StringIO
 from subprocess import PIPE
-from sys import stdin, stderr
-import tempfile
+from sys import stdin
 import argparse
 
 from kg.programs import *
