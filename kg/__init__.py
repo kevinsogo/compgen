@@ -416,27 +416,32 @@ def kg_make(format_, args):
         print()
         print('~~ '*14)
         print('MAKING SUBTASKS...')
-        subjson = details.subtasks_files
-        if not subjson:
-            raise CommandException("A 'subtasks_files' entry in {} is required at this step.".format(details.source))
+        if not details.valid_subtasks:
+            if 'subtasks' in args.makes:
+                raise Exception("valid_subtasks list required if you wish to make subtasks")
+            else:
+                print("no valid_subtasks found, so actually, subtasks will not be made. move along.")
+        else:
+            subjson = details.subtasks_files
+            if not subjson:
+                raise CommandException("A 'subtasks_files' entry in {} is required at this step.".format(details.source))
 
-        detector = details.subtask_detector
-        if not detector: raise CommandException("Missing detector/validator")
+            detector = details.subtask_detector
+            if not detector: raise CommandException("Missing detector/validator")
 
-        # TODO be more lenient for binary tasks?
-        # find subtask list
-        subtasks = list(map(str, details.valid_subtasks))
-        if details.validator and not subtasks: # subtask list required for detectors from validator
-            raise CommandException("Missing subtask list")
+            # find subtask list
+            subtasks = list(map(str, details.valid_subtasks))
+            if details.validator and not subtasks: # subtask list required for detectors from validator
+                raise CommandException("Missing subtask list")
 
-        # iterate through inputs, run our detector against them
-        subtasks_of, all_subtasks, inputs = get_subtasks(subtasks, detector, get_format_from_type(format_, args.loc, read='i'))
+            # iterate through inputs, run our detector against them
+            subtasks_of, all_subtasks, inputs = get_subtasks(subtasks, detector, get_format_from_type(format_, args.loc, read='i'))
 
-        print('WRITING TO {}'.format(subjson))
-        with open(subjson, 'w') as f:
-            f.write('[\n' + '\n'.join('    {},'.format(str(list(x))) for x in construct_subs_files(subtasks_of, inputs)).rstrip(',') + '\n]')
+            print('WRITING TO {}'.format(subjson))
+            with open(subjson, 'w') as f:
+                f.write('[\n' + '\n'.join('    {},'.format(str(list(x))) for x in construct_subs_files(subtasks_of, inputs)).rstrip(',') + '\n]')
 
-        print('DONE MAKING SUBTASKS.')
+            print('DONE MAKING SUBTASKS.')
 
 
 def construct_subs_files(subtasks_of, inputs):

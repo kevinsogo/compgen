@@ -3,6 +3,9 @@ Use this library if you're one of the following:
 - You already have some data, solutions, checkers, etc., already written, and would like to test, run, convert, detect subtasks, etc., locally.
 - You want to write a problem from scratch. (Bonus points if you want to write everything in Python.)
 
+*Note:* If you wish to see the old version, `checkout` the branch named `v01`.  
+
+
 
 
 # Setup
