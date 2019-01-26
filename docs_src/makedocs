@@ -11,6 +11,7 @@ here = os.path.dirname(os.path.abspath(__file__))
 template_suffix = '.md'
 
 goods = ['.py', '.java', '.cpp', '.md', '.json', 'testscript']
+print('only loading files with ending', goods)
 
 # replace
 def get_replacements():
@@ -20,7 +21,6 @@ def get_replacements():
             for pathname in sorted(glob(os.path.join(base, '*'))):
                 if os.path.isfile(pathname) and any(pathname.endswith(x) for x in goods):
                     with open(pathname) as f:
-                        print('Loaded', os.path.join(example, os.path.basename(pathname)))
                         yield '{{{' + os.path.join(example, os.path.basename(pathname)) + '}}}', f.read().strip('\n')
 
 
@@ -68,7 +68,8 @@ for location, target, rel_loc in get_templates():
         print('WARNING: reference {} not found'.format(ref))
 
     with open(target, 'w') as f:
-        print("<!-- NOTE TO CONTRIBUTORS: PLEASE DON'T EDIT THIS FILE. Edit docs_src/{} instead, then run './makedocs'. -->\n\n".format(rel_loc), file=f)
+        print("<!-- NOTE TO CONTRIBUTORS: PLEASE DON'T EDIT THIS FILE. -->\n\n".format(rel_loc), file=f)
+        print("<!-- Edit docs_src/{} instead, then run './makedocs'. -->\n\n".format(rel_loc), file=f)
         f.write(s)
 
     # TODO possibly use a templating engine here instead of ad-hoc code
