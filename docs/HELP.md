@@ -1,4 +1,5 @@
-<!-- NOTE TO CONTRIBUTORS: PLEASE DON'T EDIT THIS FILE. Edit docs_src/HELP.md instead, then run './makedocs'. -->
+<!-- NOTE TO CONTRIBUTORS: PLEASE DON'T EDIT THIS FILE. -->
+<!-- Edit docs_src/HELP.md instead, then run './makedocs'. -->
 
 
 

@@ -1,4 +1,5 @@
-<!-- NOTE TO CONTRIBUTORS: PLEASE DON'T EDIT THIS FILE. Edit docs_src/preparation.md instead, then run './makedocs'. -->
+<!-- NOTE TO CONTRIBUTORS: PLEASE DON'T EDIT THIS FILE. -->
+<!-- Edit docs_src/preparation.md instead, then run './makedocs'. -->
 
 
 
@@ -12,7 +13,7 @@ This also assumes you've already read the README.
 
 # Introduction  
 
-We will be writing everything ideally in Python 3: generators, validators, checkers, etc. (It's possible to use another language to write some of those parts; we will learn how to do so later ron.)
+Ideally, we will be writing everything in Python 3: generators, validators, checkers, etc. It's possible to use another language to write some of those parts; we will learn how to do so later on.
 
 
 ## Some restrictions
@@ -214,13 +215,7 @@ Finally, there is also `read_int_eoln` which is convenience for a `read_int` fol
 
 ## Detecting subtasks automatically  
 
-If your problem has subtasks, and if your validator handles subtasks, then we can detect which subtask(s) each input file belongs to by simply running the following:
-
-```bash
-kg subtasks
-```
-
-This assumes that `valid_subtasks` and `validator` has been set in `details.json`. 
+If your problem has subtasks, and if your validator handles the subtasks, then we can detect which subtask(s) each input file belongs to by simply running `kg subtasks`. This assumes that `valid_subtasks` and `validator` has been set in `details.json`. 
 
 
 

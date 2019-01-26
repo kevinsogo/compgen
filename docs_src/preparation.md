@@ -9,7 +9,7 @@ This also assumes you've already read the README.
 
 # Introduction  
 
-We will be writing everything ideally in Python 3: generators, validators, checkers, etc. (It's possible to use another language to write some of those parts; we will learn how to do so later ron.)
+Ideally, we will be writing everything in Python 3: generators, validators, checkers, etc. It's possible to use another language to write some of those parts; we will learn how to do so later on.
 
 
 ## Some restrictions
@@ -47,7 +47,7 @@ This will create a folder named `problem_title`. We will write everything relate
 The metadata about the problem can be found in `details.json`. It looks like this:
 
 ```json
-{{{templates/details.json}}}
+{{ templates/details.json }}
 ```
 
 We will explain what most of those are. Just update them with the correct values. If your problem doesn't have subtasks, simply remove `valid_subtasks` (or turn it into the empty list). 
@@ -70,7 +70,7 @@ Now, we can begin writing those files!
 This just takes a test case and prints it to a file in the correct input format. Save it on a file on its own, say `formatter.py`, so you can import it later.
 
 ```python
-{{{addition/formatter.py}}}
+{{ addition/formatter.py }}
 ```
 
 
@@ -80,7 +80,7 @@ This just takes a test case and prints it to a file in the correct input format.
 A validator checks if an input file is valid. It should return with 0 exit code iff the input is valid. Validators should be strict: no tolerance for any extra newline or space. Here's an example:
 
 ```python
-{{{addition/validator2.py}}}
+{{ addition/validator2.py }}
 ```
 
 Again, note that `### @import` is important.
@@ -88,7 +88,7 @@ Again, note that `### @import` is important.
 Here's a validator that can also check subtasks. It takes the subtask name as an argument: 
 
 ```python
-{{{addition/validator.py}}}
+{{ addition/validator.py }}
 ```
 
 **Notes:** 
@@ -124,13 +124,7 @@ Finally, there is also `read_int_eoln` which is convenience for a `read_int` fol
 
 ## Detecting subtasks automatically  
 
-If your problem has subtasks, and if your validator handles subtasks, then we can detect which subtask(s) each input file belongs to by simply running the following:
-
-```bash
-kg subtasks
-```
-
-This assumes that `valid_subtasks` and `validator` has been set in `details.json`. 
+If your problem has subtasks, and if your validator handles the subtasks, then we can detect which subtask(s) each input file belongs to by simply running `kg subtasks`. This assumes that `valid_subtasks` and `validator` has been set in `details.json`. 
 
 
 
@@ -143,7 +137,7 @@ A generator takes some command line arguments and prints a valid test file to th
 It's easy to write a test generator.  
 
 ```python
-{{{addition/single_case.py}}}
+{{ addition/single_case.py }}
 ```
 
 **Notes:**
@@ -161,7 +155,7 @@ There are a few more advanced usages and features (will document soon!), but thi
 The testscript file contains instructions on how to generate all the tests. It looks like this:
 
 ```bash
-{{{addition/testscript}}}
+{{ addition/testscript }}
 ```
 
 The program used will be taken from `generators` in `details.json`; in this case, `single_case.py`. They can be in any language. A `!` at the beginning means "run this bash command as is". Comments begin with `#`. 
@@ -178,7 +172,7 @@ This is similar to Polygon's system, though more limited, since you have to use 
 The most general template for custom checkers is the following:
 
 ```python
-{{{templates/checker_generic_template.py}}}
+{{ templates/checker_generic_template.py }}
 ```
 
 Here, `input_file`, `output_file` and `judge_file` are iterators that enumerate the distinct *lines* of each file.
@@ -186,7 +180,7 @@ Here, `input_file`, `output_file` and `judge_file` are iterators that enumerate 
 Here's an example for the problem "find any longest subsequence of distinct elements":
 
 ```python
-{{{templates/checker_generic.py}}}
+{{ templates/checker_generic.py }}
 ```
 
 

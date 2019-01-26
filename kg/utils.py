@@ -1,6 +1,6 @@
 from functools import wraps
 
-def noop(*args, **kwargs): pass
+def noop(*args, **kwargs): ...
 
 def abs_rel_error(a, b):
     return abs(a - b) / max(abs(a), abs(b), 1)
@@ -11,7 +11,7 @@ def ensure(condition, message=None, exc=Exception):
         try:
             message = message()
         except TypeError:
-            pass
+            ...
         if isinstance(message, str):
             message = exc(message)
         raise message or exc()
