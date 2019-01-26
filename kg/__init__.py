@@ -658,7 +658,7 @@ def kg_compile(format_, args):
                     compress=args.compress,
                 ))
             with open(target, 'w') as f:
-                print("# NOTE: THIS SCRIPT IS MEANT TO BE PASTED TO HACKERRANK'S CUSTOM CHECKER, NOT RUN ON ITS OWN.")
+                print("# NOTE: THIS SCRIPT IS MEANT TO BE PASTED TO HACKERRANK'S CUSTOM CHECKER, NOT RUN ON ITS OWN.", file=f)
                 for line in lines:
                     assert not line.endswith('\n')
                     print(line, file=f)

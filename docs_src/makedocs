@@ -38,7 +38,7 @@ def get_templates():
 
 
 for location, target, rel_loc in get_templates():
-    print('DOING', location, target)
+    print('COMPILING', location, 'TO', target)
     with open(location) as f:
         s = f.read()
 

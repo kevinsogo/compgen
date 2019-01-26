@@ -5,6 +5,7 @@ Use this library if you're one of the following:
 
 - You already have some data, solutions, checkers, etc., already written, and would like to test, run, convert, detect subtasks, etc., locally.
 - You want to write a problem from scratch. (Bonus points if you want to write everything in Python.)
+- Somewhere in between.
 
 *Note:* In case you are looking for a very old version, `checkout` the branch `v01`. If you don't know what that is, never mind it.
 
@@ -81,7 +82,7 @@ $ kg run -i "tests/*.in" -f yet_another_sol.java
 You can also replace `-f [file]` with `-c [command]`.
 
 
-The checker must accept three command line arguments `inputpath outputpath judgepath`. It returns 0 iff the answer is correct. Currently, `kg test` with a custom checker only supports binary tasks. 
+The checker must accept three command line arguments `inputpath outputpath judgepath`. It returns 0 iff the answer is correct. Currently, `kg test` with a custom checker only supports binary tasks and tasks where each subtask is binary-graded. 
 
 
 ## Convenience  
@@ -118,7 +119,7 @@ You can also prepare a full problem from scratch using this library. If you writ
 
 1. Run `kg make all`. This will generate the input and output files in `tests/`, which you can look at.
 
-2. Adjust/debug until you're pretty happy with your test data. 
+2. Adjust/debug until you're happy with your test data. 
 
 Useful commands during this phase:
 
