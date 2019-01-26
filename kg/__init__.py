@@ -4,6 +4,7 @@ from operator import attrgetter
 from string import ascii_letters
 from subprocess import Popen, PIPE, CalledProcessError
 from sys import *
+import zipfile
 
 import argparse, os, os.path, pathlib, subprocess, tempfile
 
@@ -18,10 +19,7 @@ from .utils import *
 
 
 def rec_ensure_exists(file):
-    '''
-    ensures that the folder containing "file" exists,
-    possibly creating the nested directory path to it
-    '''
+    ''' ensures that the folder containing "file" exists, possibly creating the nested directory path to it '''
     pathlib.Path(os.path.dirname(file)).mkdir(parents=True, exist_ok=True)
 
 
@@ -96,7 +94,7 @@ def convert_formats(src, dest):
 # detect subtasks
 
 subtasks_p = subparsers.add_parser('subtasks', help='detect the subtasks of input files. you need either a detector or a validator.')
-subtasks_p.add_argument('-F', '--format', '--fmt', default='kg', help='format of data')
+subtasks_p.add_argument('-F', '--format', '--fmt', help='format of data')
 subtasks_p.add_argument('-l', '--loc', default='.', help='location of files/package (if format is given)')
 subtasks_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
 subtasks_p.add_argument('-i', '--input', help='input file pattern')
@@ -171,7 +169,7 @@ def get_subtasks(subtasks, detector, format_):
 
 gen_p = subparsers.add_parser('gen', help='generate output files for some given input files.')
 
-gen_p.add_argument('-F', '--format', '--fmt', default='kg', help='format of data')
+gen_p.add_argument('-F', '--format', '--fmt', help='format of data')
 gen_p.add_argument('-l', '--loc', default='.', help='location of files/package (if format is given)')
 gen_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
 gen_p.add_argument('-i', '--input', help='input file pattern')
@@ -225,7 +223,7 @@ def generate_outputs(format_, data_maker, judge, model_solution):
 
 test_p = subparsers.add_parser('test', help='test a program against given input and output files.')
 
-test_p.add_argument('-F', '--format', '--fmt', default='kg', help='format of data')
+test_p.add_argument('-F', '--format', '--fmt', help='format of data')
 test_p.add_argument('-l', '--loc', default='.', help='location of files/package (if format is given)')
 test_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
 test_p.add_argument('-i', '--input', help='input file pattern')
@@ -323,7 +321,7 @@ def kg_test(format_, args):
 
 run_p = subparsers.add_parser('run', help='run a program against a set of input files, and print the result to stdout.')
 
-run_p.add_argument('-F', '--format', '--fmt', default='kg', help='format of data')
+run_p.add_argument('-F', '--format', '--fmt', help='format of data')
 run_p.add_argument('-l', '--loc', default='.', help='location of files/package (if format is given)')
 run_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
 run_p.add_argument('-i', '--input', help='input file pattern')
@@ -690,6 +688,18 @@ def kg_compile(format_, args):
                 (format_, args.loc),
                 (fmt, dest_folder),
             )
+
+        if fmt == 'hr':
+            zipname = os.path.join(dest_folder, 'upload_this_to_hackerrank.zip')
+            print('making zip for HackerRank...', zipname)
+            def get_arcname(filename):
+                assert os.path.samefile(dest_folder, os.path.commonpath([dest_folder, filename]))
+                return os.path.relpath(filename, start=dest_folder)
+            with zipfile.ZipFile(zipname, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                for inp, outp in HRFormat(dest_folder, read='io').thru_io():
+                    for fl in inp, outp:
+                        zipf.write(fl, arcname=get_arcname(fl))
+
         print('done {} ({})'.format(fmt, name))
 
 
@@ -697,7 +707,7 @@ def kg_compile(format_, args):
 
 
 ##########################################
-def main(format):
+def main(format='kg'):
     args = parser.parse_args()
     logf = args.default_file
     print('\n' + '='*42 + '\n', file=logf)
