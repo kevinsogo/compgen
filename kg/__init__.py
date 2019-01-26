@@ -571,7 +571,7 @@ def kg_compile(format_, args):
     @listify
     def load_module(module_id):
         if module_id not in locations:
-            raise CommandException("Couldn't find module {}!".format(module_id))
+            raise CommandException("Couldn't find module {}! (Add it to other_programs?)".format(module_id))
         with open(locations[module_id]) as f:
             for line in f:
                 if not line.endswith('\n'):
@@ -585,7 +585,7 @@ def kg_compile(format_, args):
                 nmodule = 'kg' + nmodule
 
         if nmodule.startswith('.'):
-            print("WARNING: Ignoring relative import for {}".format(module), file=stderr)
+            print("Warning: Ignoring relative import for {}".format(module), file=stderr)
             nmodule = nmodule.lstrip('.')
 
         return nmodule
@@ -600,7 +600,7 @@ def kg_compile(format_, args):
     # convert to various formats
     for fmt, name, to_translate in [
             ('pg', 'Polygon', [details.validator, details.checker] + details.generators),
-            ('hr', 'HackerRank', [details.checker])
+            ('hr', 'HackerRank', [details.checker]),
         ]:
         print()
         print('.. '*14)

@@ -45,7 +45,7 @@ You have a bunch of files, and you want to know which subtask each one belongs t
 
 ### Using a detector script
 
-First, write a program that takes a valid input from stdin and prints the index of *all* subtasks in which the file is valid. Then run the following:
+First, write a program (say `detector.java`) that takes a valid input from stdin and prints the index of *all* subtasks in which the file is valid. Then run the following:
 
 ```bash
 $ kg subtasks -i "tests/*.in" -f detector.java
@@ -55,7 +55,7 @@ $ kg subtasks -i "tests/*.in" -c java detector # alternative
 
 ### Using a validator which can detect subtasks
 
-Write a program that takes the subtask number as the first argument and a valid input from stdin, and exits with code 0 iff the file is valid for that subtask. Then run the following:
+Write a program (say `validator.java`) that takes the subtask number as the first argument and a valid input from stdin, and exits with code 0 iff the file is valid for that subtask. Then run the following:
 
 ```bash
 $ kg subtasks -i "tests/*.in" -vf validator.java -s 1 2 3

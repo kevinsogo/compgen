@@ -1,20 +1,23 @@
 
 
-This is a detailed guide on how to create a problem from scratch using this KompGen. Actually, not from scratch; let's assume you've already written the problem statement.
+This is a detailed guide on how to prepare a problem from scratch using this KompGen. 
 
-This also assumes you've already read the README. 
+Actually, not from scratch; this assumes you've already written the problem statement. This also assumes you've already read the README. 
 
 
 
 
 # Introduction  
 
-Ideally, we will be writing everything in Python 3: generators, validators, checkers, etc. It's possible to use another language to write some of those parts; we will learn how to do so later on.
+When perparing a problem, you usually write a bunch of different files which serve different purposes: generators, validators, checkers, etc. We will explain what those are shortly.
+
+Ideally, we will be writing everything in Python 3, although it's possible to use another language to write some of those parts; we will learn how to do so later on.
+
 
 
 ## Some restrictions
 
-Due to limitations in some of the online judges, we will have some restrictions/requirements in our Python code. Don't worry, there aren't a lot, and they are small. 
+Due to limitations in some of the online judges, we will have some restrictions/requirements in our Python code. Don't worry, there aren't a lot, and they are small. (Other languages are not affected, although that also means you won't be taking full advantage of this library.)
 
 - A notable restriction we have is with importing:
 
@@ -24,7 +27,7 @@ Due to limitations in some of the online judges, we will have some restrictions/
 
 - Also, you cannot upload any code you write directly into Polygon. Instead, a command called `kg kompile` is used to generate files that can be uploaded. 
 
-    - In particular, the lines of the form `from xxx import * ### @import` will be replaced by the *whole* code `xxx`. This makes everything into one file without imports. 
+    - In particular, the lines of the form `from xxx import * ### @import` will be replaced by the *whole* code `xxx`. This compresses everything into one file without imports. 
 
 
 
@@ -50,7 +53,7 @@ The metadata about the problem can be found in `details.json`. It looks like thi
 {{ templates/details.json }}
 ```
 
-We will explain what most of those are. Just update them with the correct values. If your problem doesn't have subtasks, simply remove `valid_subtasks` (or turn it into the empty list). 
+Please update them with the correct values. If your problem doesn't have subtasks, simply remove `valid_subtasks` (or turn it into the empty list). 
 
 The `checker` field may be omitted. It defaults to a simple diff check. There are also a couple of builtin checks: just enter `!diff.exact`, `!diff.tokens`, or `!diff.real_abs_rel_1e_6` as the `checker`. (more to come soon...)
 
