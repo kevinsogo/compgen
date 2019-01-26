@@ -209,12 +209,12 @@ There is also `@replace`, which looks like:
 ```python
 valid_subtasks = None ### @replace None, str(sorted(details.valid_subtasks))
 
-tmp_filename_base = '/tmp/hr_custom_checker_monika_' ### @replace "monika", unique_name()
+tmp_filename_base = '/tmp/hr_custom_checker_monika_' ###  @ replace "monika", unique_name()
 
-### @@replace "xrange", "range" {
+### @@ replace "xrange", "range" {
 for i in xrange(5):
     print([i*j for j in xrange(5)])
-### @@}
+### @@ }
 ```
 
 Obviously, Python interprets these as simple comments, but `kg kompile` parses them as directives. This is used to produce the different outputs you see in `kgkompiled`. 
@@ -229,4 +229,3 @@ The files generated in `kgkompiled` may be too big for your tastes. To make this
 1. `-S`. Attempts to reduce the indentation level; this saves several spaces. Beware, may break some programs, particularly those with inconsistent indenting. I suggest keeping everything to 4 spaces. 
 
 2. `-C`. A very evil option. See for yourself! :D
-

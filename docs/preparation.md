@@ -380,12 +380,12 @@ There is also `@replace`, which looks like:
 ```python
 valid_subtasks = None ### @replace None, str(sorted(details.valid_subtasks))
 
-tmp_filename_base = '/tmp/hr_custom_checker_monika_' ### @replace "monika", unique_name()
+tmp_filename_base = '/tmp/hr_custom_checker_monika_' ###  @ replace "monika", unique_name()
 
-### @@replace "xrange", "range" {
+### @@ replace "xrange", "range" {
 for i in xrange(5):
     print([i*j for j in xrange(5)])
-### @@}
+### @@ }
 ```
 
 Obviously, Python interprets these as simple comments, but `kg kompile` parses them as directives. This is used to produce the different outputs you see in `kgkompiled`. 
