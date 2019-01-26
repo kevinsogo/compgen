@@ -190,12 +190,12 @@ def kg_gen(format_, args):
     solution = Program.from_args(args.file, args.command) or details.judge_data_maker
     judge = Program.from_args(args.judge_file, args.judge_command) or details.checker
 
-    generate_outputs(format_, solution, judge)
+    generate_outputs(format_, solution, judge, details.model_solution)
 
-def generate_outputs(format_, solution, judge):
-    if not solution: raise CommandException("Missing solution")
+def generate_outputs(format_, data_maker, judge, model_solution):
+    if not data_maker: raise CommandException("Missing solution")
     if not judge: raise CommandException("Missing judge")
-    solution.do_compile()
+    data_maker.do_compile()
     judge.do_compile()
     for input_, output_ in format_.thru_io():
         rec_ensure_exists(output_)
@@ -203,17 +203,18 @@ def generate_outputs(format_, solution, judge):
             with open(output_, 'w') as outp:
                 print('WRITING', input_, '-->', output_)
                 try:
-                    solution.do_run(stdin=inp, stdout=outp, time=True)
+                    data_maker.do_run(stdin=inp, stdout=outp, time=True)
                 except CalledProcessError as cpe:
-                    print("The solution raised an error for {}".format(input_), file=stderr)
+                    print("The data_maker raised an error for {}".format(input_), file=stderr)
                     exit(cpe.returncode)
 
-        # check with judge
-        try:
-            judge.do_run(input_, output_, output_)
-        except CalledProcessError as cpe:
-            print("The judge did not accept {}".format(output_), file=stderr)
-            exit(cpe.returncode)
+        # check with judge if they are the same
+        if model_solution == data_maker:
+            try:
+                judge.do_run(input_, output_, output_)
+            except CalledProcessError as cpe:
+                print("The judge did not accept {}".format(output_), file=stderr)
+                exit(cpe.returncode)
 
 
 
@@ -277,7 +278,11 @@ def kg_test(format_, args):
         print(str(index).rjust(3), 'correct' if correct else 'WRONG' + '!'*11)
         scoresheet.append((index, input_, correct))
 
+    print()
+    print('.'*42)
     print('{} out of {} correct'.format(corrects, total))
+    print('.'*42)
+    print()
 
     # also print subtask grades
 
@@ -303,6 +308,8 @@ def kg_test(format_, args):
             for sub in subtasks_of[input_]:
                 min_score[sub] = min(min_score[sub], correct)
 
+        print()
+        print('.'*42)
         print('SUBTASK REPORT:')
         for sub in natsorted(all_subtasks):
             print("Subtask {}: Score = {:.3f}".format(str(sub).rjust(3), float(min_score[sub])))
@@ -408,7 +415,7 @@ def kg_make(format_, args):
         print('~~ '*14)
         print('MAKING OUTPUTS...' + ("WITH CHECKER..." if args.checks else 'WITHOUT CHECKER'))
         fmt = get_format_from_type(format_, args.loc, read='i', write='o')
-        generate_outputs(fmt, details.judge_data_maker, details.checker if args.checks else Program.noop())
+        generate_outputs(fmt, details.judge_data_maker, details.checker if args.checks else Program.noop(), details.model_solution)
 
         print('DONE MAKING OUTPUTS.')
 

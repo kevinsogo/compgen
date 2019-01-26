@@ -48,7 +48,7 @@ class Format:
         if len(self.inputs) != len(self.outputs) and read and write:
 
             if self.outputs and len(self.inputs) != len(self.outputs):
-                print("Warning: cannot match files {} to corresponding files {}. Attempt to write anyway? [y/N]".format(inputg, outputg), file=stderr, end=' ')
+                print("Warning: cannot match files {} to corresponding files {} (unequal number of matched files). Attempt to write anyway? [y/N]".format(inputg, outputg), file=stderr, end=' ')
                 if input() == 'y':
                     if 'i' in read:
                         assert (read, write) == ('i', 'o')

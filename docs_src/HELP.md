@@ -1,6 +1,3 @@
-<!-- NOTE TO CONTRIBUTORS: PLEASE DON'T EDIT THIS FILE. Edit docs_src/HELP.md instead, then run './makedocs'. -->
-
-
 # Important  
 
 - Do something about the fact that Python's `random` module makes no guarantees of reproducibility across implementations and platforms; see [this](https://stackoverflow.com/questions/8786084/reproducibility-of-python-pseudo-random-numbers-across-systems-and-versions).

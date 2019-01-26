@@ -5,7 +5,7 @@ def noop(*args, **kwargs): pass
 def abs_rel_error(a, b):
     return abs(a - b) / max(abs(a), abs(b), 1)
 
-def ensure(condition, message=None):
+def ensure(condition, message=None, exc=Exception):
     ''' assert that doesn't raise AssertionError. Useful/Convenient for judging. '''
     if not condition:
         try:
@@ -13,8 +13,8 @@ def ensure(condition, message=None):
         except TypeError:
             pass
         if isinstance(message, str):
-            message = Exception(message)
-        raise message or Exception()
+            message = exc(message)
+        raise message or exc()
 
 
 def apply_after(g, name=None):

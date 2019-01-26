@@ -1,9 +1,12 @@
+
+# KompGen - A Kompetitib Generator
+
 Use this library if you're one of the following:
 
 - You already have some data, solutions, checkers, etc., already written, and would like to test, run, convert, detect subtasks, etc., locally.
 - You want to write a problem from scratch. (Bonus points if you want to write everything in Python.)
 
-*Note:* If you wish to see the old version, `checkout` the branch named `v01`.  
+*Note:* An old version was made available; just in case you need it, `checkout` the branch `v01`.  
 
 
 
@@ -56,7 +59,7 @@ $ kg subtasks -i "tests/*.in" -vc java validator -s 1 2 3 # alternative
 
 Here, `-s` is the list of subtasks. 
 
-The validator should return 0 iff a file is valid for that subtask.
+The validator should exit with code 0 iff a file is valid for that subtask.
 
 
 ## Test with local data
@@ -78,7 +81,7 @@ $ kg run -i "tests/*.in" -f yet_another_sol.java
 You can also replace `-f [file]` with `-c [command]`.
 
 
-The checker must accept three command line arguments `inputpath outputpath judgepath`. It returns 0 iff the problem is accepted. Currently, `kg test` wihc a custom checker only supports binary tasks. 
+The checker must accept three command line arguments `inputpath outputpath judgepath`. It returns 0 iff the answer is correct. Currently, `kg test` with a custom checker only supports binary tasks. 
 
 
 ## Convenience  
@@ -95,7 +98,7 @@ This automatically detects the tests based on the corresponding format, so no ne
 
 # Full process
 
-You can prepare a full problem using this library from scratch, which can then be used in various judges/platforms.
+You can also prepare a full problem from scratch using this library. If you write it properly, it will be easy to upload it to various judges/platforms.
 
 ## Preparation
 
@@ -115,9 +118,9 @@ You can prepare a full problem using this library from scratch, which can then b
 
 1. Run `kg make all`. This will generate the input and output files in `tests/`, which you can look at.
 
-2. Adjust/debug if necessary. 
+2. Adjust/debug until you're pretty happy with your test data. 
 
-Useful commands in this phase:
+Useful commands during this phase:
 
 ```bash
 # generate the inputs only, no outputs validation and subtasks detection
@@ -141,4 +144,34 @@ $ kg run -f sol.cpp
 
 3. Upload the files in `kgkompiled`.  
 
-Behind the scenes, some programs need to be compressed into one file before uploading, hence, all imports need to be inlined. (This is where the `### @import` directive comes in handy.)
+Behind the scenes, some programs need to be compressed into one file before uploading, hence, all imports need to be inlined. See the longer [tutorial](docs/preparation.md) for more details about this.
+
+
+
+## Adding to a git repo
+
+If you wish to add the problem folder to a version control system but don't want to commit huge test files, you can use the following `.gitignore`:
+
+```
+basura*
+input/
+output/
+temp/
+__pycache__
+*.pyc
+kgkompiled/
+build/
+*.egg-info/
+*.egg
+tests/
+*.executable
+```
+
+
+
+# Contributing
+
+- Feel free to request features/changes/improvements you'd like to see.
+
+- [See this list.](docs/HELP.md) Looking forward to your merge request!
+

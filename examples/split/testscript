@@ -1,0 +1,7 @@
+single_case 10 10 > $
+single_case 10 50 > $
+single_case 10 100 > $
+single_case 10 500 > $
+single_case 10 1000 > $
+single_case 10 5000 > $
+single_case 10 10000 > $

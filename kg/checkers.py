@@ -56,7 +56,7 @@ class ChkStream(object):
             return False
 
     def peek(self):
-        v = self._seq.next()
+        v = next(self._seq)
         self._seq = itertools.chain([v], self._seq)
         return v
 
@@ -194,14 +194,16 @@ def _check_generic(checker, input_path, output_path, judge_path, **kwargs):
                     return Verdict.AC, score, ""
                 except ParseError as exc:
                     e, verdict = exc, Verdict.PAE
+                    if kwargs.get('verbose'): traceback.print_exc()
                 except WA as exc:
                     e, verdict = exc, Verdict.WA
+                    if kwargs.get('verbose'): traceback.print_exc()
                 except Fail as exc:
                     e, verdict = exc, Verdict.FAIL
+                    if kwargs.get('verbose'): traceback.print_exc()
                 except Exception as exc:
                     e, verdict = exc, Verdict.EXC
-                if kwargs.get('verbose'):
-                    traceback.print_exc()
+                    if kwargs.get('verbose'): traceback.print_exc()
                 return verdict, getattr(e, 'score', 0.0), str(e)
 
 
@@ -316,7 +318,7 @@ def average_score(scores, exc=Fail):
 
 
 def iterate_with_casecount(it):
-    z = int(it.input_file.next())
+    z = int(next(it.input_file))
     for cas in range(z):
         inp = it.next_input(caseno=cas)
         yield it.get_score(inp, it.next_output(inp, caseno=cas), it.next_judge_data(inp, caseno=cas), caseno=cas)

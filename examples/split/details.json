@@ -1,0 +1,18 @@
+{
+    "title": "Addition",
+    "model_solution": "solution.py",
+    "validator": "validator.py",
+    "testscript": "testscript",
+    "generators": [
+        "single_case.py",
+        "multi_case.py",
+        "multi_case_lazy.py"
+    ],
+    "other_programs": [
+        "formatter.py"
+    ],
+    "checker": "checker_len_only.py",
+    "judge_data_maker": "solution_len_only.py",
+    "valid_subtasks": [1, 2, 3],
+    "subtasks_files": "subtasks.json"
+}

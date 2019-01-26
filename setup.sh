@@ -3,7 +3,7 @@
 set -e
 
 # make scripts executable
-chmod +x setup.sh scripts/*
+chmod +x setup.sh docs_src/makedocs scripts/*
 
 # python setup
 pip3 install -U setuptools

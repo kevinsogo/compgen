@@ -1,6 +1,3 @@
-<!-- NOTE TO CONTRIBUTORS: PLEASE DON'T EDIT THIS FILE. Edit docs_src/OLD_README.md instead, then run './makedocs'. -->
-
-
 <!-- NOTE TO CONTRIBUTORS: PLEASE DON'T EDIT THIS FILE; EDIT readme_src/docs/OLD_README_TEMPLATE.md INSTEAD, THEN RUN 'python2 gen_readme.py'. -->
 
 
