@@ -136,6 +136,6 @@ $ kg run -f sol.cpp
 
 2. Run `kg kompile`.  
 
-3. Upload the files in `kg_compiled`.  
+3. Upload the files in `kgkompiled`.  
 
 Behind the scenes, some programs need to be compressed into one file before uploading, hence, all imports need to be inlined. (This is where the `### @import` directive comes in handy.)

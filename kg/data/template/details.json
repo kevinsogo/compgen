@@ -13,6 +13,7 @@
     "subtasks_files": "subtasks.json",
 
     "comments": [
-        "You can place comments here. They will not be processed."
+        "You can place comments here. They will not be processed.",
+        "Leave valid_subtasks blank to make a binary problem."
     ]
 }

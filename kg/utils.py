@@ -1,5 +1,10 @@
 from functools import wraps
 
+def noop(*args, **kwargs): pass
+
+def abs_rel_error(a, b):
+    return abs(a - b) / max(abs(a), abs(b), 1)
+
 def ensure(condition, message=None):
     ''' assert that doesn't raise AssertionError. Useful/Convenient for judging. '''
     if not condition:

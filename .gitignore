@@ -4,7 +4,7 @@ output/
 tempoutput/
 __pycache__
 *.pyc
-kg_kompiled/
+kgkompiled/
 polygon_ready
 hr_ready
 build/

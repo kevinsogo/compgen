@@ -8,9 +8,14 @@ class ParseException(Exception):
         self.message = message
         super(ParseException, self).__init__()
 
+
 valid_open = re.compile(r'\s*###\s*@@(.*){\s*$')
-valid_close = re.compile(r'\s*###\s*@@\s+}\s*$')
-valid_inline = re.compile(r'(.*)###\s*@(.*)$')
+valid_close = re.compile(r'\s*###\s*@@\s*}\s*$')
+valid_inline = re.compile(r'(.*)###\s*@([^@].*)$')
+
+command_re = re.compile(r'\s*([-_A-Za-z0-9]+) (.*)$')
+
+CLOSE = '### @@ }'
 
 bads = [
     # generic
@@ -25,9 +30,6 @@ def extract_import(line):
     if match: return match['indent'], match['module']
     raise Exception("Unsupported import line: {}".format(line))
 
-command_re = re.compile(r'\s*([-_A-Za-z0-9]+) (.*)')
-
-CLOSE = '### @@ }'
 
 def enclose(seq):
     yield from seq
@@ -60,10 +62,10 @@ class Parsed:
                     pline, command = match.groups()
                     return Parsed(command, enclose(enumerate([pline], lineno)), module_loc)
 
-                # try matching here 
+                # try matching bads 
                 for bad, message in bads:
                     if bad.search(line):
-                        print("WARNING: Line {}. {}".format(lineno, message), file=stderr)
+                        print("WARNING: Line {}. {} ... {}".format(lineno, message, line), file=stderr)
                 return line
             child = get_child()
             if child is None: break
@@ -85,19 +87,21 @@ class Parsed:
         if self.command == 'begin' and begin:
             yield from self.compile_children(context, indent=indent)
         elif self.command == 'if':
+            # print('evaluating', self.args)
             if eval(self.args, context):
                 yield from self.compile_children(context, indent=indent)
         elif self.command == 'import':
-            if self.args.strip(): raise Exception("Unsupported import args: {}".format(self.args))
+            if self.args.strip(): raise Exception("Unsupported @import args: {}".format(self.args))
             [line] = self.compile_children(context, indent=indent)
             nindent, module = extract_import(line)
             yield from context['import'](self, nindent, module, context)
         elif self.command == 'replace':
-            source, target = eval(self.args, context)
+            # print('evaluating', self.args)
+            source, target = map(str, eval(self.args, context))
             for line in self.compile_children(context, indent=indent):
                 yield line.replace(source, target)
         else:
-            raise Exception("Unknown command: {}".format(self.command))
+            raise Exception("Unknown directive: {}".format(self.command))
 
     def compile_children(self, context, indent=''):
         for child in self.children:
@@ -148,6 +152,7 @@ def import_(parent, indent, module, context):
     yield indent + '{name}, __name__ = __name__, "{name}"'.format(name=name)
     ncontext = dict(context)
     ncontext['parent'] = parent
+    ncontext['parent_context'] = context
     ncontext['current_id'] = module_id
     yield from parse_contents(lines, module_id).compile(ncontext, indent=indent)
     yield indent + '__name__ = {name}'.format(name=name)
@@ -158,8 +163,10 @@ def compile_contents(lines, **context):
     strong_context = {
         'import': import_,
         'parent': None,
+        'parent_context': None,
         'imported': {},
         'current_id': None,
+        'unique_name': unique_name,
     }
     for key, value in strong_context.items():
         if key in context: raise Exception("Reserved context key: '{}'".format(key))

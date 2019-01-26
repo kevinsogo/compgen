@@ -74,6 +74,10 @@ class _SN:
     iterator = 'iterator'
 
 
+CURR_PLATFORM = 'pg' ### @if format == 'pg'
+CURR_PLATFORM = 'hr' ### @if format == 'hr'
+CURR_PLATFORM = 'local' ### @if format == 'local'
+
 class Checker(object):
     def __init__(self):
         self._vals = {}
@@ -92,7 +96,10 @@ class Checker(object):
         return value
 
     def __call__(self, *args, **kwargs):
-        return self.run('local', *args, **kwargs)
+        ...
+        ### @@if format != 'hr' {
+        return self.run(CURR_PLATFORM, *args, **kwargs)
+        ### @@ }
 
     def run(self, platform, *args, **kwargs):
         _actual = _platforms.get(platform)
@@ -214,6 +221,8 @@ _hr_verdict_name = {
     Verdict.FAIL: "Checker Failed",
     Verdict.EXC: "Checker Failed.", # Added a dot so we can recognize which kind of failure it is.
 }
+
+### @@if format == 'hr' {
 @_register_platform('hr')
 def _check_hr(checker, t_obj, r_obj, print_message=False):
     if t_obj.testcase_signal:
@@ -235,7 +244,7 @@ def _check_hr(checker, t_obj, r_obj, print_message=False):
 
     if print_message and message:
         print(message, file=stderr)
-
+### @@ }
 
 _polygon_rcode = {
     Verdict.AC: 0,
@@ -244,8 +253,10 @@ _polygon_rcode = {
     Verdict.FAIL: 3,
     Verdict.EXC: 3,
 }
-@_register_platform('local') # @@@@@ remove to suppress
-@_register_platform('polygon') # AFAIK, they are currently identical in behavior
+
+### @@if format in ('local', 'kg', 'pg') {
+@_register_platform('local') 
+@_register_platform('pg') # AFAIK, they are currently identical in behavior
 def _check_local(checker, title='', file=stdout, help=None):
     desc = help or ('judge for the problem "{}"'.format(title) if title else 'judge for the problem')
     parser = argparse.ArgumentParser(description=desc)
@@ -280,7 +291,7 @@ def _check_local(checker, title='', file=stdout, help=None):
         print("{:>2} Score={} {}".format(tc_id, score, verdict), file=file)
 
     exit(_polygon_rcode[verdict])
-
+### @@ }
 
 def minimum_score(scores, mn=0.0, mx=1.0, exc=Fail):
     m = mx
@@ -306,7 +317,7 @@ def average_score(scores, exc=Fail):
 
 def iterate_with_casecount(it):
     z = int(it.input_file.next())
-    for cas in xrange(z):
+    for cas in range(z):
         inp = it.next_input(caseno=cas)
         yield it.get_score(inp, it.next_output(inp, caseno=cas), it.next_judge_data(inp, caseno=cas), caseno=cas)
 
@@ -323,13 +334,105 @@ def default_return(ret):
 
 default_score = default_return(1.0)
 
-def abs_rel_error(a, b):
-    return abs(a - b) / max(abs(a), abs(b), 1)
-
-def noop(*args, **kwargs): pass
-
 chk = Checker() # create singleton
 
 set_checker = chk.set_checker
 set_single_checker = chk.set_single_checker
 set_multi_checker = chk.set_multi_checker
+
+### @@if format == 'hr' {
+
+### @@if subtasks_only {
+###     @set write = True
+### @@}
+
+valid_subtasks = None ### @replace None, str(sorted(details.valid_subtasks))
+subtasks_files = None ### @replace None, '[{}\n]'.format(''.join('\n    (({}, {}), {}),'.format(*x) for x in subtasks_files))
+
+if valid_subtasks:
+    ...
+    ### @@ if details.valid_subtasks {
+
+    # change this for every problem just to be safe
+    tmp_filename_base = '/tmp/hr_custom_checker_monika_' ### @replace "monika", unique_name()
+
+    # under the testcases tab, if a file is the last file for some subtask (which should be unique),
+    # set the weight of the file to be the number of points for the subtask.
+    # set the weight of the remaining files to be 0.  
+
+    import json
+    subtasks_of = {}
+    last_file_of = {subtask: -1 for subtask in valid_subtasks}
+
+    for (left, right), subtasks in subtasks_files:
+        ensure(0 <= left <= right <= 99, "range (%s %s) is invalid" % (left, right))
+        ensure(len(set(subtasks)) == len(subtasks), "duplicate subtasks in list: %s" % subtasks)
+        ensure(set(subtasks) <= set(valid_subtasks), "subtask list invalid: %s. allowed = %s" % (subtasks, valid_subtasks))
+        for idx in range(left, right + 1):
+            ensure(idx not in subtasks_of, "%s has already appeared!" % idx)
+            subtasks_of[idx] = subtasks
+            for subtask in subtasks:
+                last_file_of[subtask] = max(last_file_of[subtask], idx)
+
+    ensure(min(last_file_of.values()) >= 0, "some subtasks weren't represented by any files!")
+    ensure(len(set(last_file_of.values())) == len(last_file_of), "The last file of any subtask must be unique to that subtask!!")
+
+    def clear_tmp(filename):
+        try:
+            import os
+            os.remove(filename)
+        except OSError:
+            pass
+
+    def run_custom_checker(t_obj, r_obj):
+        tmp_filename = tmp_filename_base + str(sum(map(ord, t_obj.submission_code_path)))
+
+        test_id = t_obj.testcase_id
+        ensure(test_id in subtasks_of, "Testcase id invalid: %s" % (test_id))
+        curr_subtasks = subtasks_of[test_id]
+
+        if test_id == 0:
+            previous_scores = {}
+        else:
+            try:
+                with open(tmp_filename) as f:
+                    previous_scores = json.load(f)
+                previous_scores = {int(k): v for k, v in previous_scores.items()}
+            except Exception:
+                previous_scores = {}
+
+
+        for subtask in valid_subtasks:
+            previous_scores.setdefault(subtask, 1.0)
+
+        chk.run('hr', t_obj, r_obj, print_message=False)
+
+        for subtask in curr_subtasks:
+            previous_scores[subtask] = min(previous_scores[subtask], r_obj.score)
+
+        r_obj.score = 0
+
+        for subtask in curr_subtasks:
+            if last_file_of[subtask] == test_id:
+                r_obj.score = previous_scores[subtask]
+                break
+
+        with open(tmp_filename, 'w') as f:
+            json.dump(previous_scores, f)
+
+
+    ### @@ }
+else:
+    ...
+    ### @@if not details.valid_subtasks {
+    def run_custom_checker(t_obj, r_obj):
+        chk.run('hr', t_obj, r_obj, print_message=False)
+
+    ### @@ }
+
+
+### @@if subtasks_only {
+###     @set write = False
+### @@}
+
+### @@}

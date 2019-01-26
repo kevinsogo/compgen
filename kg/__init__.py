@@ -40,6 +40,7 @@ class CommandException(Exception): ...
 
 
 
+
 ##########################################
 
 # TODO use the 'logging' library
@@ -49,9 +50,9 @@ parser = argparse.ArgumentParser(description='There are many things you can do w
 subparsers = parser.add_subparsers(help='which operation to perform', dest='main_command')
 subparsers.required = True
 
-def set_handler(parser):
+def set_handler(parser, default_file=stdout):
     def _set_handler(handler):
-        parser.set_defaults(handler=handler)
+        parser.set_defaults(handler=handler, default_file=default_file)
         # return handler # Let's not return this, to ensure that they are not called.
     return _set_handler
 
@@ -136,7 +137,7 @@ def get_subtasks(subtasks, detector, format_):
 
     # iterate through inputs, run our detector against them
     subtasks_of = {}
-    overall = set()
+    all_subtasks = set()
     detector.do_compile()
     inputs = []
     for input_ in format_.thru_inputs():
@@ -149,17 +150,17 @@ def get_subtasks(subtasks, detector, format_):
         if subtset and not (subtasks_of[input_] <= subtset):
             raise CommandException("Found invalid subtasks! {}".format(' '.join(sorted(subtasks_of[input_] - subtset))))
 
-        overall |= subtasks_of[input_]
+        all_subtasks |= subtasks_of[input_]
         print("Subtasks found for {}: {}".format(input_, ' '.join(sorted(subtasks_of[input_]))))
 
-    print("Distinct subtasks found: {}".format(' '.join(sorted(overall))))
+    print("Distinct subtasks found: {}".format(' '.join(sorted(all_subtasks))))
 
     if subtset:
-        assert overall <= subtset
-        if overall != subtset:
-            print('Warning: Some subtasks not found: {}'.format(' '.join(sorted(subtset - overall))), file=stderr)
+        assert all_subtasks <= subtset
+        if all_subtasks != subtset:
+            print('Warning: Some subtasks not found: {}'.format(' '.join(sorted(subtset - all_subtasks))), file=stderr)
 
-    return subtasks_of, overall, inputs
+    return subtasks_of, all_subtasks, inputs
 
 
 
@@ -273,7 +274,7 @@ def kg_test(format_, args):
         correct = check_correct()
         total += 1
         corrects += correct
-        print(str(index).rjust(3), 'correct' if correct else 'WRONG!!!!!!!!!!')
+        print(str(index).rjust(3), 'correct' if correct else 'WRONG' + '!'*11)
         scoresheet.append((index, input_, correct))
 
     print('{} out of {} correct'.format(corrects, total))
@@ -295,16 +296,16 @@ def kg_test(format_, args):
         subtasks = args.subtasks or list(map(str, details.valid_subtasks))
         if validator and not subtasks: # subtask list required for detectors from validator
             raise CommandException("Missing subtask list (for subtask grading)")
-        subtasks_of, overall, inputs = get_subtasks(subtasks, detector, format_)
+        subtasks_of, all_subtasks, inputs = get_subtasks(subtasks, detector, format_)
         # normal grading
-        min_score = {sub: 1 for sub in overall}
+        min_score = {sub: 1 for sub in all_subtasks}
         for index, input_, correct in scoresheet:
             for sub in subtasks_of[input_]:
                 min_score[sub] = min(min_score[sub], correct)
 
         print('SUBTASK REPORT:')
-        for sub in natsorted(overall):
-            print("Subtask {}: Score = {}".format(str(sub).rjust(3), min_score[sub]))
+        for sub in natsorted(all_subtasks):
+            print("Subtask {}: Score = {:.3f}".format(str(sub).rjust(3), float(min_score[sub])))
 
 
 
@@ -323,7 +324,7 @@ run_p.add_argument('-o', '--output', help='output file pattern')
 run_p.add_argument('-c', '--command', nargs='+', help='solution command')
 run_p.add_argument('-f', '--file', help='solution file')
 
-@set_handler(run_p)
+@set_handler(run_p, stderr)
 def kg_run(format_, args):
     if not args.format: args.format = format_
     format_ = get_format(args, read='i')
@@ -361,13 +362,11 @@ def kg_make(format_, args):
     if not is_same_format(format_, 'kg'):
         raise CommandException("You can't use '{}' format to 'make'.".format(format_))
 
-    details = Details()
-    if is_same_format(format_, 'kg'):
-        details = Details.from_loc(args.details) or details
+    details = Details.from_format_loc(format_, args.details)
 
     makes = set(args.makes)
 
-    valid_makes = {'inputs', 'outputs', 'all', 'subtasks'}
+    valid_makes = {'all', 'inputs', 'outputs', 'subtasks'}
     if not (makes <= valid_makes):
         raise CommandException("Unknown make param(s): {}".format(' '.join(sorted(makes - valid_makes))))
 
@@ -404,7 +403,6 @@ def kg_make(format_, args):
 
         print('DONE MAKING INPUTS.')
 
-
     if 'outputs' in makes:
         print()
         print('~~ '*14)
@@ -425,40 +423,33 @@ def kg_make(format_, args):
         detector = details.subtask_detector
         if not detector: raise CommandException("Missing detector/validator")
 
+        # TODO be more lenient for binary tasks?
         # find subtask list
         subtasks = list(map(str, details.valid_subtasks))
         if details.validator and not subtasks: # subtask list required for detectors from validator
             raise CommandException("Missing subtask list")
 
         # iterate through inputs, run our detector against them
-        subtasks_of, overall, inputs = get_subtasks(subtasks, detector, get_format_from_type(format_, args.loc, read='i'))
+        subtasks_of, all_subtasks, inputs = get_subtasks(subtasks, detector, get_format_from_type(format_, args.loc, read='i'))
 
         print('WRITING TO {}'.format(subjson))
         with open(subjson, 'w') as f:
-            f.write('[\n' + '\n'.join('    {},'.format(str(list(x))) for x in construct_subs_files(subtasks_of, overall, inputs)).rstrip(',') + '\n]')
+            f.write('[\n' + '\n'.join('    {},'.format(str(list(x))) for x in construct_subs_files(subtasks_of, inputs)).rstrip(',') + '\n]')
 
         print('DONE MAKING SUBTASKS.')
 
 
-def construct_subs_files(subtasks_of, overall, inputs):
-    prev = None
-    lf = 0
-    rg = -1
+def construct_subs_files(subtasks_of, inputs):
+    prev, lf, rg = None, 0, -1
     for idx, file in enumerate(inputs):
         assert rg == idx - 1
-
         subs = subtasks_of[file]
         assert subs
-
         if prev != subs:
-            assert (not prev) == (lf > rg)
-            if prev:
-                yield lf, rg, list(sorted(map(int, prev)))
-            prev = subs
-            lf = idx
+            if prev: yield lf, rg, list(sorted(map(int, prev)))
+            prev, lf = subs, idx
         rg = idx
-    if prev:
-        yield lf, rg, list(sorted(map(int, prev)))
+    if prev: yield lf, rg, list(sorted(map(int, prev)))
 
 
 
@@ -527,10 +518,11 @@ def kg_init(format_, args):
 ##########################################
 # compile source codes for upload
 
-compile_p = subparsers.add_parser('kompile', aliases=['compile'], help='preprocess source codes to be ready to upload')
+compile_p = subparsers.add_parser('kompile', aliases=['compile'], help='preprocess python source codes to be ready to upload')
 compile_p.add_argument('-l', '--loc', default='.', help='location of files/package')
 compile_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
-
+compile_p.add_argument('-S', '--shift-left', action='store_true', help='compress the program by reducing the indentation from 4 to 1. Use at your own risk.')
+compile_p.add_argument('-C', '--compress', action='store_true', help='compress the program by actually compressing it. Use at your own risk.')
 @set_handler(compile_p)
 def kg_compile(format_, args):
     if args.main_command == 'compile':
@@ -539,9 +531,7 @@ def kg_compile(format_, args):
     if not is_same_format(format_, 'kg'):
         raise CommandException("You can't use '{}' format to 'kompile'.".format(format_))
 
-    details = Details()
-    if is_same_format(format_, 'kg'):
-        details = Details.from_loc(args.details) or details
+    details = Details.from_format_loc(format_, args.details)
 
     # locate all necessary files
 
@@ -589,6 +579,13 @@ def kg_compile(format_, args):
 
         return nmodule
 
+    # get subtasks files
+    subjson = details.subtasks_files
+    subtasks_files = []
+    if subjson:
+        with open(subjson) as f:
+            subtasks_files = json.load(f)
+
     # convert to various formats
     for fmt, name, to_translate in [
             ('pg', 'Polygon', [details.validator, details.checker] + details.generators),
@@ -597,41 +594,91 @@ def kg_compile(format_, args):
         print()
         print('.. '*14)
         print('Compiling for {} ({})'.format(fmt, name))
-        dest_folder = os.path.join(args.loc, 'kg_kompiled', fmt)
-        to_translate = {g for g in to_translate if get_module(g.filename)}
+        dest_folder = os.path.join(args.loc, 'kgkompiled', fmt)
+        to_translate = {g.filename for g in to_translate if get_module(g.filename)}
         targets = {}
         found_targets = {}
-        for file in to_translate:
-            module = get_module(file.filename)
-            assert module
-            target = os.path.join(dest_folder, os.path.basename(file.filename))
+        for filename in to_translate:
+            module = get_module(filename)
+            target = os.path.join(dest_folder, os.path.basename(filename))
             targets[module] = target
             if target in found_targets:
-                print("Warning: Files have the same destination file ({}): {} and {}".format(target, found_targets[targets], file.filename), file=stderr)
-            found_targets[target] = file.filename
+                print("Warning: Files have the same destination file ({}): {} and {}".format(target, found_targets[targets], filename), file=stderr)
+            found_targets[target] = filename
 
-        for file in sorted(to_translate, key=attrgetter('filename')):
-            module = get_module(file.filename)
-            print('[{}] converting {} to {}'.format(module, file.filename, targets[module]))
+        for filename in natsorted(to_translate):
+            module = get_module(filename)
+            print('[{}] converting {} to {}'.format(module, filename, targets[module]))
+            rec_ensure_exists(targets[module])
             lines = list(compile_contents(load_module(module),
                     load_module=load_module,
                     get_module_id=get_module_id,
                     format=fmt,
+                    details=details,
+                    subtasks_files=subtasks_files,
+                    snippet=False,
+                    subtasks_only=False,
+                    shift_left=args.shift_left,
+                    compress=args.compress,
                 ))
-            rec_ensure_exists(targets[module])
             with open(targets[module], 'w') as f:
                 for line in lines:
                     assert not line.endswith('\n')
                     print(line, file=f)
 
-        # TODO SNIPPETS FOR HACKERRANK UPLOAD. "empty grader" and "pastable versions" of grader
+        if fmt == 'hr' and get_module(details.checker.filename): # snippets for hackerrank upload.
+            # pastable version of grader
+            filename = details.checker.filename
+            module = get_module(filename)
+
+            target = os.path.join(dest_folder, 'hr.pastable.version.' + os.path.basename(filename))
+            print('[{}] writing snippet version of {} to {}'.format(module, filename, target))
+            rec_ensure_exists(target)
+            lines = list(compile_contents(load_module(module),
+                    load_module=load_module,
+                    get_module_id=get_module_id,
+                    format=fmt,
+                    details=details,
+                    subtasks_files=subtasks_files,
+                    snippet=True,
+                    subtasks_only=False,
+                    shift_left=args.shift_left,
+                    compress=args.compress,
+                ))
+            with open(target, 'w') as f:
+                print("# NOTE: THIS SCRIPT IS MEANT TO BE PASTED TO HACKERRANK'S CUSTOM CHECKER, NOT RUN ON ITS OWN.")
+                for line in lines:
+                    assert not line.endswith('\n')
+                    print(line, file=f)
+
+            target = os.path.join(dest_folder, 'hr.subtasks.only.' + os.path.basename(filename))
+            print('[{}] writing the subtasks snippet of {} to {}'.format(module, filename, target))
+            rec_ensure_exists(target)
+            lines = list(compile_contents(load_module(module),
+                    load_module=load_module,
+                    get_module_id=get_module_id,
+                    format=fmt,
+                    details=details,
+                    subtasks_files=subtasks_files,
+                    snippet=True,
+                    subtasks_only=True,
+                    import_extras=False,
+                    write=False,
+                ))
+            with open(target, 'w') as f:
+                print('# NOTE: THIS SCRIPT IS NOT MEANT TO BE RUN ON ITS OWN.', file=f)
+                for line in lines:
+                    assert not line.endswith('\n')
+                    print(line, file=f)
+
 
         # copy over the files
-        print('copying test data from', args.loc, 'to', dest_folder)
+        print('copying test data from', args.loc, 'to', dest_folder, '...')
         convert_formats(
                 (format_, args.loc),
                 (fmt, dest_folder),
             )
+        print('done {} ({})'.format(fmt, name))
 
 
 
@@ -639,8 +686,9 @@ def kg_compile(format_, args):
 
 ##########################################
 def main(format):
-    print('\n' + '='*42 + '\n')
     args = parser.parse_args()
+    logf = args.default_file
+    print('\n' + '='*42 + '\n', file=logf)
     args.handler(format, args)
-    print('\n' + '='*42 + '\n')
-    print('THE COMMAND FINISHED SUCCESSFULLY.')
+    print('\n' + '='*42 + '\n', file=logf)
+    print('THE COMMAND FINISHED SUCCESSFULLY.', file=logf)

@@ -1,7 +1,7 @@
 import json
 
 from .programs import *
-
+from .formats import *
 
 script_path = os.path.dirname(os.path.realpath(__file__))
 with open(os.path.join(script_path, 'data', 'defaults.json')) as f:
@@ -83,7 +83,7 @@ class Details(object):
     @classmethod
     def from_format_loc(cls, fmt, loc):
         details = cls()
-        if is_same_format(args.format, 'kg'):
+        if is_same_format(fmt, 'kg'):
             details = cls.from_loc(loc) or details
         return details
 

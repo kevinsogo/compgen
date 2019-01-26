@@ -11,3 +11,4 @@ multi_case_lazy 0 10 20 > $
 multi_case_lazy 1 10 20 > $
 multi_case_lazy 2 10 20 > $
 multi_case_lazy 3 10 20 > $
+single_case 10 100000 > $
