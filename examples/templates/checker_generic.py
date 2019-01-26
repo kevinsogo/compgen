@@ -9,13 +9,13 @@ def get_sequence(file, exc=Exception):
         b = list(map(int, next(file).rstrip().split(' ')))
     except Exception as e:
         raise ParseError("Failed to get a sequence: " + str(e))
-    ensure(m >= 0, "Invalid length", exc=exc)
-    ensure(len(b) == m, lambda: "Expected {} numbers but got {}".format(m, len(b)), exc=exc)
+    ensure(m >= 0, exc("Invalid length"))
+    ensure(len(b) == m, exc("Expected {} numbers but got {}".format(m, len(b))))
     return b
 
 def check_valid(a, b, exc=Exception):
-    ensure(is_subsequence(a, b), "Not a subsequence!", exc=exc)
-    ensure(len(b) == len(set(b)), "Values not unique!", exc=exc)
+    ensure(is_subsequence(a, b), exc("Not a subsequence!"))
+    ensure(len(b) == len(set(b)), exc("Values not unique!"))
 
 @set_checker()
 def check_solution(input_file, output_file, judge_file, **kwargs):

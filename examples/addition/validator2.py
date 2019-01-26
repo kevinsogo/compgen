@@ -15,14 +15,12 @@ def validate_file(file):
     t = file.read_int(lim.t)
     file.read_eoln()
     totaln = 0
-    for cas in xrange(t):
+    for cas in range(t):
         n = file.read_int(lim.n)
         totaln += n
         file.read_eoln()
-        a = []
-        for i in xrange(n):
-            a.append(file.read_int(lim.a))
-            (file.read_space if i < n - 1 else file.read_eoln)()
+        a = file.read_ints(n, lim.a)
+        file.read_eoln()
 
     file.read_eof()
     ensure(totaln in lim.totaln)

@@ -46,32 +46,34 @@ The metadata about the problem can be found in `details.json`. It looks like thi
 
 ```json
 {
-    "title": "Addition",
-    "model_solution": ["sol.cpp", "g++ sol.cpp -o sol.cpp.executable", "./sol.cpp.executable"],    
+    "title": "Find the Sum Extreme",
+    "model_solution": ["sol.cpp", "g++ sol.cpp -o sol", "./sol"],
     "validator": "validator.py",
-    "checker": "checker.py",
     "testscript": "testscript",
     "generators": [
         "single_case.py",
-        "multi_case.py",
-        "multi_case_lazy.py"
+        "strong_case.py",
+        "edge_case.py",
+        "foo_case.cpp"
     ],
     "other_programs": [
-        "formatter.py"
+        "formatter.py",
+        "some_other_code.java"
     ],
+    "checker": "checker.py",
     "valid_subtasks": [1, 2, 3],
     "subtasks_files": "subtasks.json"
 }
 ```
 Feel free to update it with the correct values. If your problem doesn't have subtasks, simply remove `valid_subtasks` (or make it the empty list). 
 
-Note that the file endings will tell KompGen what language your program is, and there will be a predetermined compile and run command for each recognized language. You can also choose to use the three-argument version `[filename, compile, run]` to specify a file. (The two-argument version is `[filename, run]`) For example, if your validator is written in Haskell, then you write:
+Note that the file endings will tell KompGen what language your program is, and there will be a predetermined compile and run command for each recognized language. You can also choose to use a three-argument version to specify a file: `[filename, compile, run]` to specify a file. (The two-argument version is `[filename, run]`) For example, if your validator is written in Haskell, then you write:
 
 ```js
     "validator": ["validator.hs", "ghc validator.hs", "./validator"],
 ```
 
-The `checker` field may be omitted, and defaults to a simple diff check. There are also a couple of builtin checks, just write `!diff.exact`, `!diff.tokens`, or `!diff.real_abs_rel_1e_6`. (more to come soon...)
+The `checker` field may be omitted, and defaults to a simple diff check. There are also a couple of builtin checks, just enter `!diff.exact`, `!diff.tokens`, or `!diff.real_abs_rel_1e_6`. (more to come soon...)
 
 Now, we can begin writing those files!
 
@@ -114,14 +116,12 @@ def validate_file(file):
     t = file.read_int(lim.t)
     file.read_eoln()
     totaln = 0
-    for cas in xrange(t):
+    for cas in range(t):
         n = file.read_int(lim.n)
         totaln += n
         file.read_eoln()
-        a = []
-        for i in xrange(n):
-            a.append(file.read_int(lim.a))
-            (file.read_space if i < n - 1 else file.read_eoln)()
+        a = file.read_ints(n, lim.a)
+        file.read_eoln()
 
     file.read_eof()
     ensure(totaln in lim.totaln)
@@ -211,10 +211,10 @@ Finally, there is also `read_int_eoln` which is convenience for a `read_int` fol
 If your problem has subtasks, and if your validator handles subtasks, then we can detect which subtask(s) each input file belongs to by simply running the following:
 
 ```bash
-kg subtasks -vf validator.py -s 1 2 3
+kg subtasks
 ```
 
-Here, `1 2 3` is the list of subtasks. You may omit the `-vf validator.py` part if `validator.py` is already set in `details.json`.
+This assumes that `valid_subtasks` and `validator` has been set in `details.json`. 
 
 
 
@@ -258,19 +258,21 @@ The test script file contains instructions on how to generate all the tests. It 
 ```bash
 # comments go here
 
+# "!" means just run the command as is
 ! cat sample.in > $
 
 single_case 10 10 > $
 single_case 10 100 > $
 single_case 10 1000 > $
 single_case 10 10000 > $
-# multi_case [5-8,10] 10 1000 > {5-8,10}
 multi_case_lazy 0 10 20 > $
 multi_case_lazy 1 10 20 > $
 multi_case_lazy 2 10 20 > $
 multi_case_lazy 3 10 20 > $
 single_case 10 100000 > $
 ```
+
+The first arguments will be taken from `generators` in `details.json`. 
 
 This is similar to Polygon's system, though more limited since you have to use `$`, etc. This is a bit limited in expessive power for now, but we'd like to change that soon.
 
@@ -319,13 +321,13 @@ def get_sequence(file, exc=Exception):
         b = list(map(int, next(file).rstrip().split(' ')))
     except Exception as e:
         raise ParseError("Failed to get a sequence: " + str(e))
-    ensure(m >= 0, "Invalid length", exc=exc)
-    ensure(len(b) == m, lambda: "Expected {} numbers but got {}".format(m, len(b)), exc=exc)
+    ensure(m >= 0, exc("Invalid length"))
+    ensure(len(b) == m, exc("Expected {} numbers but got {}".format(m, len(b))))
     return b
 
 def check_valid(a, b, exc=Exception):
-    ensure(is_subsequence(a, b), "Not a subsequence!", exc=exc)
-    ensure(len(b) == len(set(b)), "Values not unique!", exc=exc)
+    ensure(is_subsequence(a, b), exc("Not a subsequence!"))
+    ensure(len(b) == len(set(b)), exc("Values not unique!"))
 
 @set_checker()
 def check_solution(input_file, output_file, judge_file, **kwargs):

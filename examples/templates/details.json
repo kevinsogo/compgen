@@ -1,17 +1,19 @@
 {
-    "title": "Addition",
-    "model_solution": ["sol.cpp", "g++ sol.cpp -o sol.cpp.executable", "./sol.cpp.executable"],    
+    "title": "Find the Sum Extreme",
+    "model_solution": ["sol.cpp", "g++ sol.cpp -o sol", "./sol"],
     "validator": "validator.py",
-    "checker": "checker.py",
     "testscript": "testscript",
     "generators": [
         "single_case.py",
-        "multi_case.py",
-        "multi_case_lazy.py"
+        "strong_case.py",
+        "edge_case.py",
+        "foo_case.cpp"
     ],
     "other_programs": [
-        "formatter.py"
+        "formatter.py",
+        "some_other_code.java"
     ],
+    "checker": "checker.py",
     "valid_subtasks": [1, 2, 3],
     "subtasks_files": "subtasks.json"
 }

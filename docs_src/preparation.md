@@ -46,13 +46,13 @@ The metadata about the problem can be found in `details.json`. It looks like thi
 ```
 Feel free to update it with the correct values. If your problem doesn't have subtasks, simply remove `valid_subtasks` (or make it the empty list). 
 
-Note that the file endings will tell KompGen what language your program is, and there will be a predetermined compile and run command for each recognized language. You can also choose to use the three-argument version `[filename, compile, run]` to specify a file. (The two-argument version is `[filename, run]`) For example, if your validator is written in Haskell, then you write:
+Note that the file endings will tell KompGen what language your program is, and there will be a predetermined compile and run command for each recognized language. You can also choose to use a three-argument version to specify a file: `[filename, compile, run]` to specify a file. (The two-argument version is `[filename, run]`) For example, if your validator is written in Haskell, then you write:
 
 ```js
     "validator": ["validator.hs", "ghc validator.hs", "./validator"],
 ```
 
-The `checker` field may be omitted, and defaults to a simple diff check. There are also a couple of builtin checks, just write `!diff.exact`, `!diff.tokens`, or `!diff.real_abs_rel_1e_6`. (more to come soon...)
+The `checker` field may be omitted, and defaults to a simple diff check. There are also a couple of builtin checks, just enter `!diff.exact`, `!diff.tokens`, or `!diff.real_abs_rel_1e_6`. (more to come soon...)
 
 Now, we can begin writing those files!
 
@@ -121,10 +121,10 @@ Finally, there is also `read_int_eoln` which is convenience for a `read_int` fol
 If your problem has subtasks, and if your validator handles subtasks, then we can detect which subtask(s) each input file belongs to by simply running the following:
 
 ```bash
-kg subtasks -vf validator.py -s 1 2 3
+kg subtasks
 ```
 
-Here, `1 2 3` is the list of subtasks. You may omit the `-vf validator.py` part if `validator.py` is already set in `details.json`.
+This assumes that `valid_subtasks` and `validator` has been set in `details.json`. 
 
 
 
@@ -153,6 +153,8 @@ The test script file contains instructions on how to generate all the tests. It 
 ```bash
 {{{addition/testscript}}}
 ```
+
+The first arguments will be taken from `generators` in `details.json`. 
 
 This is similar to Polygon's system, though more limited since you have to use `$`, etc. This is a bit limited in expessive power for now, but we'd like to change that soon.
 
