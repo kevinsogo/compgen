@@ -530,9 +530,12 @@ def kg_init(format_, args):
 compile_p = subparsers.add_parser('kompile', aliases=['compile'], help='preprocess python source codes to be ready to upload')
 compile_p.add_argument('-l', '--loc', default='.', help='location of files/package')
 compile_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
-compile_p.add_argument('-S', '--shift-left', action='store_true', help='compress the program by reducing the indentation size from 4 spaces to 1 tab. Use at your own risk.')
+compile_p.add_argument('-S', '--shift-left', action='store_true', help=
+                                'compress the program by reducing the indentation size from 4 spaces to 1 tab. '
+                                'Use at your own risk. (4 is hardcoded because it is the indention level of the "kg" module.')
 compile_p.add_argument('-C', '--compress', action='store_true', help='compress the program by actually compressing it. Use at your own risk.')
-# TODO add option for format to "compile" to. No need for now since there are only two.
+# TODO add option for format to "compile" to. No need for now since there are only two,
+#      but later on this will eat up a lot of memory otherwise.
 
 @set_handler(compile_p)
 def kg_compile(format_, args):
@@ -543,6 +546,8 @@ def kg_compile(format_, args):
         raise CommandException("You can't use '{}' format to 'kompile'.".format(format_))
 
     details = Details.from_format_loc(format_, args.details)
+
+    # TODO clear kgkompiled first
 
     # locate all necessary files
 
@@ -581,7 +586,7 @@ def kg_compile(format_, args):
     def get_module_id(module, context):
         nmodule = module
         if nmodule.startswith('.'):
-            if context['current_id'] in kg_libs:
+            if context['module_id'] in kg_libs:
                 nmodule = 'kg' + nmodule
 
         if nmodule.startswith('.'):
@@ -621,7 +626,9 @@ def kg_compile(format_, args):
             module = get_module(filename)
             print('[{}] converting {} to {}'.format(module, filename, targets[module]))
             rec_ensure_exists(targets[module])
-            lines = list(compile_contents(load_module(module),
+            lines = list(compile_lines(load_module(module),
+                    module_id=module,
+                    module_file=filename,
                     load_module=load_module,
                     get_module_id=get_module_id,
                     format=fmt,
@@ -645,7 +652,9 @@ def kg_compile(format_, args):
             target = os.path.join(dest_folder, 'hr.pastable.version.' + os.path.basename(filename))
             print('[{}] writing snippet version of {} to {}'.format(module, filename, target))
             rec_ensure_exists(target)
-            lines = list(compile_contents(load_module(module),
+            lines = list(compile_lines(load_module(module),
+                    module_id=module,
+                    module_file=filename,
                     load_module=load_module,
                     get_module_id=get_module_id,
                     format=fmt,
@@ -665,7 +674,9 @@ def kg_compile(format_, args):
             target = os.path.join(dest_folder, 'hr.subtasks.only.' + os.path.basename(filename))
             print('[{}] writing the subtasks snippet of {} to {}'.format(module, filename, target))
             rec_ensure_exists(target)
-            lines = list(compile_contents(load_module(module),
+            lines = list(compile_lines(load_module(module),
+                    module_id=module,
+                    module_file=filename,
                     load_module=load_module,
                     get_module_id=get_module_id,
                     format=fmt,
@@ -673,7 +684,6 @@ def kg_compile(format_, args):
                     subtasks_files=subtasks_files,
                     snippet=True,
                     subtasks_only=True,
-                    import_extras=False,
                     write=False,
                 ))
             with open(target, 'w') as f:

@@ -1,6 +1,6 @@
 
 
-This is a detailed guide on how to prepare a problem from scratch using this KompGen. 
+This is a detailed guide on how to prepare a problem from scratch using KompGen. 
 
 Actually, not from scratch; this assumes you've already written the problem statement. This also assumes you've already read the README. 
 
@@ -55,9 +55,9 @@ The metadata about the problem can be found in `details.json`. It looks like thi
 
 Please update them with the correct values. If your problem doesn't have subtasks, simply remove `valid_subtasks` (or turn it into the empty list). 
 
-The `checker` field may be omitted. It defaults to a simple diff check. There are also a couple of builtin checks: just enter `!diff.exact`, `!diff.tokens`, or `!diff.real_abs_rel_1e_6` as the `checker`. (more to come soon...)
+The `checker` field may be omitted. It defaults to a simple diff check. There are also a couple of builtin checks: enter `!diff.exact`, `!diff.tokens`, `!diff.real_abs_rel_1e_6`, etc., as the `checker`. (more to come soon...)
 
-Note that the file endings will tell KompGen what language your program is. There will be a predetermined compile and run command for each recognized language. You can also choose to use a three-argument version to specify a file: `[filename, compile, run]`. (The two-argument version is `[filename, run]`) For example, if your validator is written in Haskell, then you could write:
+Note that the file endings will tell KompGen what language your program is. There will be a predetermined compile and run command for each recognized language. You can also use a three-argument version to specify a file: `[filename, compile, run]`. (The two-argument version is `[filename, run]`) For example, if your validator is written in Haskell, then you could write:
 
 ```js
     "validator": ["validator.hs", "ghc validator.hs", "./validator"],
@@ -124,6 +124,9 @@ The chain accepts `int`, `ints`, `token`, `char`, `space`, `eoln`, and `eof` (an
 
 Finally, there is also `read_int_eoln` which is convenience for a `read_int` followed by a `read_eoln`. There's also `read_int_space`, `read_token_eoln`, etc.
 
+<!-- TODO Advanced example: graphs, range sum query -->
+
+
 
 ## Detecting subtasks automatically  
 
@@ -151,6 +154,8 @@ It's easy to write a test generator.
 
 There are a few more advanced usages and features (will document soon!), but this should cover most use cases.
 
+<!-- TODO Strict multicase, lazy multicase -->
+
 
 
 # Testscript
@@ -165,6 +170,7 @@ The program used will be taken from `generators` in `details.json`; in this case
 
 This is similar to Polygon's system, though more limited, since you have to use `$`, etc. This is a bit limited in expessive power for now, but we'll change that soon.
 
+<!-- TODO numbering in testscript -->
 
 
 
@@ -186,6 +192,8 @@ Here's an example for the problem "find any longest subsequence of distinct elem
 {{ templates/checker_generic.py }}
 ```
 
+<!-- TODO graph checking. is_tree, is_connected, etc. -->
+
 
 
 
@@ -199,10 +207,10 @@ Perhaps the most useful would be the `@if` directive:
 
 ```python
 ### @@if format == 'hr' {
-code_that = only * appears + in_hackerrank
+code_that=only*appears+in_hackerrank
 ### @@}
 
-line = that_only * appears % in_polygon ### @if format == 'pg'
+line=that_only*appears_in%polygon ### @if format == 'pg'
 ```
 
 The conditionals are evaluated as Python expressions with a certain set of available variables. (will document soon)
@@ -225,10 +233,12 @@ Obviously, Python interprets these as simple comments, but `kg kompile` parses t
 Try to read `kg/checkers.py` to see the different directives in action. Note that there are other variables accessible aside from `format`. I will document then later. I'd like to clean up this feature first. :)
 
 
-## Preprocessor black magic options (use at your own risk)
+## Preprocessor black magic options
 
-The files generated in `kgkompiled` may be too big for your tastes. To make this better, there are two (evil) options accepted by `kg kompile` that can reduce the file sizes a bit:
+The files generated in `kgkompiled` may be too big for your tastes. To make them smaller, there are two (evil) options accepted by `kg kompile` that can reduce the file sizes a bit:
 
-1. `-S`. Attempts to reduce the indentation level; this saves several spaces. Beware, may break some programs, particularly those with inconsistent indenting. I suggest keeping everything to 4 spaces. 
+1. `-S`. Attempts to reduce the indentation level; this saves several spaces. Beware, it may break some programs, particularly those with inconsistent indenting. I suggest keeping everything to 4 spaces. 
 
 2. `-C`. A very evil option. See for yourself! :D
+
+Use at your own risk.

@@ -97,9 +97,7 @@ class Checker(object):
 
     def __call__(self, *args, **kwargs):
         ...
-        ### @@if format != 'hr' {
-        return self.run(CURR_PLATFORM, *args, **kwargs)
-        ### @@ }
+        return self.run(CURR_PLATFORM, *args, **kwargs) ### @if format != 'hr'
 
     def run(self, platform, *args, **kwargs):
         _actual = _platforms.get(platform)

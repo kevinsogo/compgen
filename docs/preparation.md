@@ -77,9 +77,9 @@ The metadata about the problem can be found in `details.json`. It looks like thi
 
 Please update them with the correct values. If your problem doesn't have subtasks, simply remove `valid_subtasks` (or turn it into the empty list). 
 
-The `checker` field may be omitted. It defaults to a simple diff check. There are also a couple of builtin checks: just enter `!diff.exact`, `!diff.tokens`, or `!diff.real_abs_rel_1e_6` as the `checker`. (more to come soon...)
+The `checker` field may be omitted. It defaults to a simple diff check. There are also a couple of builtin checks: enter `!diff.exact`, `!diff.tokens`, `!diff.real_abs_rel_1e_6`, etc., as the `checker`. (more to come soon...)
 
-Note that the file endings will tell KompGen what language your program is. There will be a predetermined compile and run command for each recognized language. You can also choose to use a three-argument version to specify a file: `[filename, compile, run]`. (The two-argument version is `[filename, run]`) For example, if your validator is written in Haskell, then you could write:
+Note that the file endings will tell KompGen what language your program is. There will be a predetermined compile and run command for each recognized language. You can also use a three-argument version to specify a file: `[filename, compile, run]`. (The two-argument version is `[filename, run]`) For example, if your validator is written in Haskell, then you could write:
 
 ```js
     "validator": ["validator.hs", "ghc validator.hs", "./validator"],

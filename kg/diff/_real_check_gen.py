@@ -9,7 +9,7 @@ for has_rel in [False, True]:
         filename = 'real_abs{}_1e_{}.py'.format('_rel'*has_rel, prec)
         print("Writing to", filename)
         with open(filename, 'w') as f:
-            for line in compile_contents(lines,
+            for line in compile_lines(lines,
                     has_rel=has_rel,
                     prec=prec,
                 ):
