@@ -1,13 +1,13 @@
 import re
 from sys import stdout, stderr
 from random import Random
+import base64, zlib
 
 class ParseException(Exception):
     def __init__(self, lineno, message):
         self.lineno = lineno
         self.message = message
         super(ParseException, self).__init__()
-
 
 valid_open = re.compile(r'\s*###\s*@@(.*){\s*$')
 valid_close = re.compile(r'\s*###\s*@@\s*}\s*$')
@@ -92,21 +92,27 @@ class Parsed:
                 yield from self.compile_children(context, indent=indent)
         elif self.command == 'import':
             if self.args.strip(): raise Exception("Unsupported @import args: {}".format(self.args))
-            [line] = self.compile_children(context, indent=indent)
+            [(wline, line)] = self.compile_children(context, indent=indent)
             nindent, module = extract_import(line)
             yield from context['import'](self, nindent, module, context)
         elif self.command == 'replace':
             # print('evaluating', self.args)
             source, target = map(str, eval(self.args, context))
-            for line in self.compile_children(context, indent=indent):
-                yield line.replace(source, target)
+            for wline, line in self.compile_children(context, indent=indent):
+                yield wline, line.replace(source, target)
+        elif self.command == 'set':
+            print("SETTING", self.args, context['write'])
+            exec(self.args, context)
+            print("GOT", context['write'])
+            [(wline, line)] = self.compile_children(context, indent=indent)
+            if line.strip(): raise Exception("Invalid set command. must not enclose!")
         else:
             raise Exception("Unknown directive: {}".format(self.command))
 
     def compile_children(self, context, indent=''):
         for child in self.children:
             if isinstance(child, str):
-                yield indent + child
+                yield context['write'], indent + child
             else:
                 yield from child.compile(context, indent=indent, begin=False)
 
@@ -144,19 +150,19 @@ def import_(parent, indent, module, context):
         return
 
     # now, actually import
-    print('importing', module)
+    print('expanding import of', module)
     lines = context['load_module'](module_id)
 
     # give __name__ a unique name so the program knows in context that it is being pasted somewhere.
     name = unique_name()
-    yield indent + '{name}, __name__ = __name__, "{name}"'.format(name=name)
+    if context['import_extras']: yield context['write'], indent + '{name}, __name__ = __name__, "{name}"'.format(name=name)
     ncontext = dict(context)
     ncontext['parent'] = parent
     ncontext['parent_context'] = context
     ncontext['current_id'] = module_id
     yield from parse_contents(lines, module_id).compile(ncontext, indent=indent)
-    yield indent + '__name__ = {name}'.format(name=name)
-    yield indent + 'del {name}'.format(name=name)
+    if context['import_extras']: yield context['write'], indent + '__name__ = {name}'.format(name=name)
+    if context['import_extras']: yield context['write'], indent + 'del {name}'.format(name=name)
 
 
 def compile_contents(lines, **context):
@@ -171,4 +177,26 @@ def compile_contents(lines, **context):
     for key, value in strong_context.items():
         if key in context: raise Exception("Reserved context key: '{}'".format(key))
         context[key] = value
-    return parse_contents(lines, None).compile(context)
+
+    weak_context = {
+        'import_extras': True,
+        'write': True,
+        'shift_left': False,
+        'compress': False,
+    }
+    for key, value in weak_context.items():
+        if key not in context: context[key] = value
+
+    def get_lines():
+        for wline, line in parse_contents(lines, None).compile(context):
+            if wline:
+                if context['shift_left']:
+                    tabs = (len(line) - len(line.lstrip(' '))) // 4
+                    line = ' '*tabs + line.lstrip(' ')
+                yield line
+
+    if context['compress']:
+        x = base64.b64encode(zlib.compress('\n'.join(get_lines()).encode('utf-8')))
+        yield "import base64,zlib;exec(zlib.decompress(base64.b64decode({})).decode('utf-8'))".format(repr(x))
+    else:
+        yield from get_lines()
