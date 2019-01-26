@@ -14,19 +14,22 @@ This also assumes you've already read the README.
 
 We will be writing everything ideally in Python 3: generators, validators, checkers, etc. (It's possible to use another language to write some of those parts; we will learn how to do so later ron.)
 
+
 ## Some restrictions
 
-Due to limitations in some of the online judges we're considering, we will have a few restrictions/requirements in our Python code.
+Due to limitations in some of the online judges, we will have some restrictions/requirements in our Python code. Don't worry, there aren't a lot, and they are small. 
 
-- The biggest limitation we have is with importing packages:
+- A notable restriction we have is with importing:
 
-    - Any `import`, aside from builtin packages, must be an import star, i.e., of the following form: `from xxx import *`.
+    - Any `import` must be an import star, i.e., of the following form: `from xxx import *`. (Builtin packages are exempted and can be imported normally.)
     - In addition, these import statements must be *unindented*.
     - The string `### @import` must be appended at the end of it.
 
-- You cannot upload any code you write directly into Polygon. Instead, a command called `kg kompile` is used to generate files that can be uploaded. 
+- Also, you cannot upload any code you write directly into Polygon. Instead, a command called `kg kompile` is used to generate files that can be uploaded. 
 
     - In particular, the lines of the form `from xxx import * ### @import` will be replaced by the *whole* code `xxx`. This makes everything into one file without imports. 
+
+
 
 
 
@@ -38,6 +41,8 @@ kg init problem_title
 ```
 
 This will create a folder named `problem_title`. We will write everything related to this problem inside that folder. It will be prepopulated with templates. 
+
+
 
 
 # details.json
@@ -65,15 +70,16 @@ The metadata about the problem can be found in `details.json`. It looks like thi
     "subtasks_files": "subtasks.json"
 }
 ```
-Feel free to update it with the correct values. If your problem doesn't have subtasks, simply remove `valid_subtasks` (or make it the empty list). 
 
-Note that the file endings will tell KompGen what language your program is, and there will be a predetermined compile and run command for each recognized language. You can also choose to use a three-argument version to specify a file: `[filename, compile, run]`. (The two-argument version is `[filename, run]`) For example, if your validator is written in Haskell, then you could write:
+We will explain what most of those are. Just update them with the correct values. If your problem doesn't have subtasks, simply remove `valid_subtasks` (or turn it into the empty list). 
+
+The `checker` field may be omitted. It defaults to a simple diff check. There are also a couple of builtin checks: just enter `!diff.exact`, `!diff.tokens`, or `!diff.real_abs_rel_1e_6` as the `checker`. (more to come soon...)
+
+Note that the file endings will tell KompGen what language your program is. There will be a predetermined compile and run command for each recognized language. You can also choose to use a three-argument version to specify a file: `[filename, compile, run]`. (The two-argument version is `[filename, run]`) For example, if your validator is written in Haskell, then you could write:
 
 ```js
     "validator": ["validator.hs", "ghc validator.hs", "./validator"],
 ```
-
-The `checker` field may be omitted, and defaults to a simple diff check. There are also a couple of builtin checks, just enter `!diff.exact`, `!diff.tokens`, or `!diff.real_abs_rel_1e_6`. (more to come soon...)
 
 Now, we can begin writing those files!
 
@@ -177,7 +183,7 @@ if __name__ == '__main__':
 
 **Notes:** 
 
-- Don't crash or reject if `argv[1]` is not a valid subtask name; instead, proceed as if you're checking against the largest subtask.  
+- Don't crash or reject if `argv[1]` is not a valid subtask name; instead, proceed as if you're checking against the largest subtask. (Important for Polygon.)
 
 - Use integer literals as subtask names.
 
@@ -198,7 +204,7 @@ file.read_eoln()
 we can write it all in one line:
 
 ```python
-[x, y, z] = file.read .int(lim.x). space .int(lim.y). space .int(lim.z). eoln
+[x, y, z] = file.read. int(lim.x). space. int(lim.y). space. int(lim.z). eoln
 ```
 
 The chain accepts `int`, `ints`, `token`, `char`, `space`, `eoln`, and `eof` (and possibly more in the future).
@@ -206,7 +212,7 @@ The chain accepts `int`, `ints`, `token`, `char`, `space`, `eoln`, and `eof` (an
 Finally, there is also `read_int_eoln` which is convenience for a `read_int` followed by a `read_eoln`. There's also `read_int_space`, `read_token_eoln`, etc.
 
 
-## Subtasks  
+## Detecting subtasks automatically  
 
 If your problem has subtasks, and if your validator handles subtasks, then we can detect which subtask(s) each input file belongs to by simply running the following:
 
@@ -221,6 +227,8 @@ This assumes that `valid_subtasks` and `validator` has been set in `details.json
 
 
 # Generators
+
+A generator takes some command line arguments and prints a valid test file to the standard output.  
 
 It's easy to write a test generator.  
 
@@ -249,18 +257,18 @@ if __name__ == '__main__':
 
 - You can replace `stdout` with a file-like object.
 
+There are a few more advanced usages and features (will document soon!), but this should cover most use cases.
+
 
 
 # Testscript
 
-The test script file contains instructions on how to generate all the tests. It looks like this:
+The testscript file contains instructions on how to generate all the tests. It looks like this:
 
 ```bash
 # comments go here
 
-# "!" means just run the command as is
 ! cat sample.in > $
-
 single_case 10 10 > $
 single_case 10 100 > $
 single_case 10 1000 > $
@@ -272,9 +280,9 @@ multi_case_lazy 3 10 20 > $
 single_case 10 100000 > $
 ```
 
-The first arguments will be taken from `generators` in `details.json`. 
+The program used will be taken from `generators` in `details.json`; in this case, `single_case.py`. They can be in any language. A `!` at the beginning means "run this bash command as is". Comments begin with `#`. 
 
-This is similar to Polygon's system, though more limited since you have to use `$`, etc. This is a bit limited in expessive power for now, but we'd like to change that soon.
+This is similar to Polygon's system, though more limited, since you have to use `$`, etc. This is a bit limited in expessive power for now, but we'll change that soon.
 
 
 
@@ -356,18 +364,21 @@ if __name__ == '__main__': chk()
 
 # Black Magic (advanced)
 
-Feel free to skip this part; it's not needed at all.
+Feel free to skip this part; it's not needed at all in most cases. 
 
-There are a few other directives that can be used aside from `### @import`. Perhaps the most useful would be the `@if` directive:
+There are a few other directives that can be used aside from `### @import`. They can be used to generate specific code for different platforms. (`kg kompile` actually has a builtin preprocessor!)
+
+Perhaps the most useful would be the `@if` directive:
 
 ```python
 ### @@if format == 'hr' {
-code_that_only_appears_in_hackerrank
+code_that = only * appears + in_hackerrank
 ### @@}
 
-line_that_only_appears_in_polygon ### @if format == 'pg'
+line = that_only * appears % in_polygon ### @if format == 'pg'
 ```
-The conditionals are evaluated as Python expressions with a certain set of available variables.
+
+The conditionals are evaluated as Python expressions with a certain set of available variables. (will document soon)
 
 There is also `@replace`, which looks like:
 
@@ -384,4 +395,14 @@ for i in xrange(5):
 
 Obviously, Python interprets these as simple comments, but `kg kompile` parses them as directives. This is used to produce the different outputs you see in `kgkompiled`. 
 
-Try to read `kg/checkers.py` to see the different directives in action. Note that there are other variables accessible aside from `format`. (will document later...)
+Try to read `kg/checkers.py` to see the different directives in action. Note that there are other variables accessible aside from `format`. I will document then later. I'd like to clean up this feature first. :)
+
+
+## Preprocessor black magic options (use at your own risk)
+
+The files generated in `kgkompiled` may be too big for your tastes. To make this better, there are two (evil) options accepted by `kg kompile` that can reduce the file sizes a bit:
+
+1. `-S`. Attempts to reduce the indentation level; this saves several spaces. Beware, may break some programs, particularly those with inconsistent indenting. I suggest keeping everything to 4 spaces. 
+
+2. `-C`. A very evil option. See for yourself! :D
+

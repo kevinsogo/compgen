@@ -533,7 +533,7 @@ def kg_init(format_, args):
 compile_p = subparsers.add_parser('kompile', aliases=['compile'], help='preprocess python source codes to be ready to upload')
 compile_p.add_argument('-l', '--loc', default='.', help='location of files/package')
 compile_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
-compile_p.add_argument('-S', '--shift-left', action='store_true', help='compress the program by reducing the indentation from 4 to 1. Use at your own risk.')
+compile_p.add_argument('-S', '--shift-left', action='store_true', help='compress the program by reducing the indentation size from 4 spaces to 1 tab. Use at your own risk.')
 compile_p.add_argument('-C', '--compress', action='store_true', help='compress the program by actually compressing it. Use at your own risk.')
 @set_handler(compile_p)
 def kg_compile(format_, args):

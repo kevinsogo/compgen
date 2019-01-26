@@ -192,7 +192,7 @@ def compile_contents(lines, **context):
             if wline:
                 if context['shift_left']:
                     tabs = (len(line) - len(line.lstrip(' '))) // 4
-                    line = ' '*tabs + line.lstrip(' ')
+                    line = '\t'*tabs + line.lstrip(' ')
                 yield line
 
     if context['compress']:

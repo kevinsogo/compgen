@@ -41,26 +41,28 @@ This keeps the original copy, don't worry.
 
 ## Detect subtasks
 
+You have a bunch of files, and you want to know which subtask each one belongs to, automatically. There are two methods, depending on your level of laziness.  
 
-### If you have already written a detector script
+### Using a detector script
+
+First, write a program that takes a valid input from stdin and prints the index of *all* subtasks in which the file is valid. Then run the following:
 
 ```bash
 $ kg subtasks -i "tests/*.in" -f detector.java
 $ kg subtasks -i "tests/*.in" -c java detector # alternative
 ```
 
-The detector should print out separate tokens denoting *all* the subtasks in which a file is valid.
 
+### Using a validator which can detect subtasks
 
-### If you already have a validator which can detect subtasks
+Write a program that takes the subtask number as the first argument and a valid input from stdin, and exits with code 0 iff the file is valid for that subtask. Then run the following:
+
 ```bash
 $ kg subtasks -i "tests/*.in" -vf validator.java -s 1 2 3
 $ kg subtasks -i "tests/*.in" -vc java validator -s 1 2 3 # alternative
 ```
 
 Here, `-s` is the list of subtasks. 
-
-The validator should exit with code 0 iff a file is valid for that subtask.
 
 
 ## Test with local data
@@ -82,7 +84,7 @@ $ kg run -i "tests/*.in" -f yet_another_sol.java
 You can also replace `-f [file]` with `-c [command]`.
 
 
-The checker must accept three command line arguments `inputpath outputpath judgepath`. It returns 0 iff the answer is correct. Currently, `kg test` with a custom checker only supports binary tasks and tasks where each subtask is binary-graded. 
+For the third command, the checker must accept three command line arguments `inputpath outputpath judgepath`. It returns 0 iff the answer is correct. (Currently, `kg test` with a custom checker only supports binary tasks and tasks where each subtask is binary-graded.) 
 
 
 ## Convenience  
@@ -94,7 +96,7 @@ kg-pg # Polygon
 kg-hr # HackerRank
 ```
 
-This automatically detects the tests based on the corresponding format, so no need to pass `-i` and `-o` arguments. It receives an optional argument `--loc` if the data doesn't exist in the current folder.
+This automatically detects the tests based on the corresponding format, so no need to pass `-i` and `-o` arguments. It receives an optional argument `--loc` which says where the test data is located. It defaults to the current folder.
 
 
 # Full process
@@ -107,7 +109,7 @@ You can also prepare a full problem from scratch using this library. If you writ
 
 2. Write the following files:
 
-    - [details.json](docs/preparation.md#details.json)
+    - [details.json](docs/preparation.md#details.json) (contains metadata)
     - [A formatter](docs/preparation.md#Formatters)
     - [A validator](docs/preparation.md#Validators)
     - [Generators](docs/preparation.md#Generators)
@@ -137,6 +139,8 @@ $ kg test -f sol.cpp
 $ kg run -f sol.cpp
 ```
 
+You can still run `kg make all` if you wish. 
+
 ## Uploading
 
 1. Run `kg make all` again.  
@@ -145,7 +149,7 @@ $ kg run -f sol.cpp
 
 3. Upload the files in `kgkompiled`.  
 
-Behind the scenes, some programs need to be compressed into one file before uploading, hence, all imports need to be inlined. See the longer [tutorial](docs/preparation.md) for more details about this.
+Behind the scenes, some programs need to be self-contained in a single file before uploading, hence, all imports are "inlined" automatically. A directive called `@import` is used for this. See the longer [tutorial](docs/preparation.md#Black Magic) for more details. 
 
 
 

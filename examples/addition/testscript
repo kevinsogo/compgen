@@ -1,8 +1,6 @@
 # comments go here
 
-# "!" means just run the command as is
 ! cat sample.in > $
-
 single_case 10 10 > $
 single_case 10 100 > $
 single_case 10 1000 > $
