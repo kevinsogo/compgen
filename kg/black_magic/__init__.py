@@ -41,8 +41,6 @@ def get_directive_type(line):
 
     raise Exception("Unmatched line by any syntax rule! This shouldn't happen. {}".format(line))
 
-# TODO allow non-blank line preceding @@
-
 command_re = re.compile(r'\s*([-_A-Za-z0-9]+) (.*)$')
 
 CLOSE = '### @@ }'

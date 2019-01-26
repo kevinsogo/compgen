@@ -6,7 +6,7 @@
 
 This is a detailed guide on how to prepare a problem from scratch using KompGen. 
 
-Actually, not from scratch; this assumes you've already written the problem statement. This also assumes you've already read the README. 
+Actually, not from scratch; this assumes you've already written the problem statement. And also that you've already read the README. 
 
 
 
@@ -21,11 +21,11 @@ Ideally, we will be writing everything in Python 3, although it's possible to us
 
 ## Some restrictions
 
-Due to limitations in some of the online judges, we will have some restrictions/requirements in our Python code. Don't worry, there aren't a lot, and they are small. (Other languages are not affected, although that also means you won't be taking full advantage of this library.)
+Due to limitations in some online judges, we will have some restrictions/requirements in our Python code. Don't worry, there aren't a lot, and they are small. (Other languages are not affected, although that also means you won't be taking full advantage of this library.)
 
 - A notable restriction we have is with importing:
 
-    - Any `import` must be an import star, i.e., of the following form: `from xxx import *`. (Builtin packages are exempted and can be imported normally.)
+    - Any `import` must be an import star, i.e., of the following form: `from xxx import *`. (Builtin packages are exempt and can be imported normally.)
     - In addition, these import statements must be *unindented*.
     - The string `### @import` must be appended at the end of it.
 
@@ -44,7 +44,7 @@ Run this command:
 kg init problem_title
 ```
 
-This will create a folder named `problem_title`. We will write everything related to this problem inside that folder. It will be prepopulated with templates. 
+This will create a folder named `problem_title`. We will write everything related to this problem inside that folder. It will be prepopulated with templates/samples. 
 
 
 
@@ -142,7 +142,7 @@ if __name__ == '__main__':
 
 Again, note that `### @import` is important.
 
-Here's a validator that can also check subtasks. It takes the subtask name as an argument: 
+Here's a validator that can also check subtasks. It takes the subtask name as the first argument: 
 
 ```python
 from sys import *
@@ -187,9 +187,9 @@ if __name__ == '__main__':
 
 **Notes:** 
 
-- Don't crash or reject if `argv[1]` is not a valid subtask name; instead, proceed as if you're checking against the largest subtask. (Important for Polygon.)
-
 - Use integer literals as subtask names.
+
+- Don't crash or reject if `argv[1]` is not a valid subtask name (or even a valid integer literal); instead, proceed as if you're checking against the largest subtask. (Important for Polygon.)
 
 - `.read_int` can also be called like `.read_int(1, 10**5)`.
 
@@ -213,11 +213,11 @@ we can write it all in one line:
 
 The chain accepts `int`, `ints`, `token`, `char`, `space`, `eoln`, and `eof` (and possibly more in the future).
 
-*Note:* The left side of a chain-style assignment must always be enclosed by `[...]`, even if there is only one argument. Also, `ints` returns a *single* variable (with data type "list"). For example,
+*Note:* The left side of a chain-style assignment must always be enclosed by `[...]`, even if there is only one recipient. Also, `ints` returns a *single* variable (with data type "list"). For example,
 
 ```python
-[n] = file.read. int(lim.n). eoln # takes only one
-[x, a] = file.read. int(lim.x). space. ints(n, lim.a). eoln # "a" is a list.
+[n] = file.read. int(1, 10**5). eoln
+[x, a] = file.read. int(lim.x). space. ints(n, lim.a). eoln # here, 'a' is a list
 ```
 
 
@@ -230,7 +230,7 @@ Finally, there is also `read_int_eoln` which is convenience for a `read_int` fol
 
 ## Detecting subtasks automatically  
 
-If your problem has subtasks, and if your validator handles the subtasks, then we can detect which subtask(s) each input file belongs to by simply running `kg subtasks`. This assumes that `valid_subtasks` and `validator` has been set in `details.json`. 
+If your problem has subtasks, and if your validator handles the subtasks, then we can detect which subtask(s) each input file belongs to by simply running `kg subtasks`. This assumes that `valid_subtasks` and `validator` have been set in `details.json`. 
 
 
 
@@ -292,7 +292,7 @@ multi_case_lazy 3 10 20 > $
 single_case 10 100000 > $
 ```
 
-The program used will be taken from `generators` in `details.json`; in this case, `single_case.py`. They can be in any language. A `!` at the beginning means "run this bash command as is". Comments begin with `#`. 
+The programs used will be taken from `generators` in `details.json`; in this case, `single_case.py` and `multi_case_lazy.py`. They can be in any language. A `!` at the beginning means "run this bash command as is". Comments begin with `#`. 
 
 This is similar to Polygon's system, though more limited, since you have to use `$`, etc. This is a bit limited in expessive power for now, but we'll change that soon.
 
