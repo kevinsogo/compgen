@@ -1,5 +1,4 @@
 from itertools import zip_longest
-
 from kg.checkers import * ### @import
 
 def is_exactly_equal(seq1, seq2):
