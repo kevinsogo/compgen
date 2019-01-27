@@ -215,25 +215,26 @@ class StrictStream(object):
         return self.read_until(['\n'] + ([EOF] if eof else []), maxn=maxn, include_end=include_end)
 
     @save_on_label
-    @listify
-    def read_ints(self, n, *a, **kw):
-        n = self._get(n)
-        if n < 0: raise ValueError("n must be nonnegative: {}".format(n))
-        sep = ''.join(kw.get('sep', ' '))
-        for i in range(n):
-            yield self.read_int(*a)
-            if i < n - 1:
-                for ch in sep:
-                    self.read_char(ch)
-        for ch in kw.get('end', ''):
-            self.read_char(ch)
-
-    @save_on_label
     def read_token(self, charset=None, regex=None, maxn=None, other_ends=[], include_end=False): # optimize this. 
         tok = self.read_until([EOF, ' ', '\t', '\n'] + other_ends, charset=charset, maxn=maxn, include_end=include_end)
         if regex is not None and not re.match('^' + regex + '$', tok):
             raise StreamError("Expected token with regex {}, got {}".format(repr(regex), repr(tok)))
         return tok
+
+    @save_on_label
+    @listify
+    def do_multiple(self, f, n, *a, **kw):
+        n = self._get(n)
+        if n < 0: raise ValueError("n must be nonnegative: {}".format(n))
+        sep = ''.join(kw.get('sep', ' '))
+        for i in range(n):
+            yield f(*a)
+            if i < n - 1:
+                for ch in sep: self.read_char(ch)
+        for ch in kw.get('end', ''): self.read_char(ch)
+
+    def read_ints(self, *a, **kw): return self.do_multiple(self.read_int, *a, **kw)
+    def read_tokens(self, *a, **kw): return self.do_multiple(self.read_token, *a, **kw)
 
     @save_on_label
     def read_int(self, *a, **kw):
@@ -261,6 +262,10 @@ class StrictStream(object):
         res = self.read_token(*a, **kw); self.read_eoln(); return res
     def read_token_space(self, *a, **kw):
         res = self.read_token(*a, **kw); self.read_space(); return res
+    def read_tokens_eoln(self, *a, **kw):
+        res = self.read_tokens(*a, **kw); self.read_eoln(); return res
+    def read_tokens_space(self, *a, **kw):
+        res = self.read_tokens(*a, **kw); self.read_space(); return res
 
     @property
     def read(self): return _Read(self)
@@ -280,22 +285,26 @@ class _Read:
             yield from self.op()
 
     def int(self, *a, **kw):
-        def read_int(label=''): yield self.ss.read_int(*a, **_add_label(kw, label))
-        return _Read(self.ss, self, read_int)
+        def op(label=''): yield self.ss.read_int(*a, **_add_label(kw, label))
+        return _Read(self.ss, self, op)
 
     def ints(self, *a, **kw):
-        def read_ints(label=''): yield self.ss.read_ints(*a, **_add_label(kw, label))
-        return _Read(self.ss, self, read_ints)
+        def op(label=''): yield self.ss.read_ints(*a, **_add_label(kw, label))
+        return _Read(self.ss, self, op)
 
     def token(self, *a, **kw):
-        def read_token(label=''): yield self.ss.read_token(*a, **_add_label(kw, label))
-        return _Read(self.ss, self, read_token)
+        def op(label=''): yield self.ss.read_token(*a, **_add_label(kw, label))
+        return _Read(self.ss, self, op)
+
+    def tokens(self, *a, **kw):
+        def op(label=''): yield self.ss.read_tokens(*a, **_add_label(kw, label))
+        return _Read(self.ss, self, op)
 
     def char(self, *a, **kw):
-        def read_char():
+        def op():
             return self.ss.read_char(*a, **kw)
             yield
-        return _Read(self.ss, self, read_char)
+        return _Read(self.ss, self, op)
 
     def label(self, label):
         def nop(): return self.op(label=label)
@@ -325,6 +334,5 @@ def validator(suppress_eof_warning=False):
             res = f(sf, *args, **kwargs)
             if sf.last != EOF and not suppress_eof_warning: print("Warning: The validator didn't check for EOF at the end.", file=stderr)
             return res
-
         return new_f
     return _validator
