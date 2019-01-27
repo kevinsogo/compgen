@@ -163,7 +163,7 @@ It's easy to write a test generator.
 
 - You can replace `stdout` with a file-like object.
 
-- Obviously, you'll have to work hard to make "strong" data set; for many problems, pure random data like this will not be enough. Writing good data is beyond the scope of this library.
+- Obviously, you'll have to work hard to make "strong" data set; for many problems, pure random data like this will not be enough. Writing good data is beyond the scope of this tutorial.
 
 There are a few more advanced usages and features (will document soon!), but this should cover most use cases.
 
