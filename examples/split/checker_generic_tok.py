@@ -5,7 +5,7 @@ def get_sequence(file, exc=Exception):
         m = int(next(file))
         b = [int(next(file)) for i in range(m)]
     except Exception as e:
-        raise ParseError("Failed to get a sequence: " + str(e))
+        raise ParseError("Failed to get a sequence: " + str(e)) from e
     ensure(m >= 0, "Invalid length", exc=exc)
     return b
 

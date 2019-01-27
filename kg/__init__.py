@@ -748,7 +748,7 @@ def kg_compile(format_, args):
                     for fl in inp, outp:
                         zipf.write(fl, arcname=get_arcname(fl))
 
-        print('done {} ({})'.format(fmt, name))
+        print('Done for {} ({})'.format(fmt, name))
 
 
 

@@ -62,14 +62,14 @@ class Format:
                 try:
                     self.outputs = set(map(self.infer_i_to_o, self.inputs))
                 except InferException as e:
-                    raise FormatException("Can't infer output file name! " + str(e))
+                    raise FormatException("Can't infer output file name!") from e
 
             if not self.inputs and write == 'i':
                 assert (read, write) == ('o', 'i')
                 try:
                     self.inputs = set(map(self.infer_o_to_i, self.outputs))
                 except InferException as e:
-                    raise FormatException("Can't infer input file name! " + str(e))
+                    raise FormatException("Can't infer input file name!") from e
 
 
         if self.inputs & self.outputs:
@@ -84,7 +84,7 @@ class Format:
                 try:
                     outputf = self.infer_i_to_o(inputf)
                 except InferException as e:
-                    raise FormatException("Can't infer output file name for {}! ".format(inputf) + str(e))
+                    raise FormatException("Can't infer output file name for {}!".format(inputf)) from e
                 if outputf not in self.outputs:
                     raise FormatException("Cannot find match for {} ... expected {}".format(inputf, outputf))
                 self.i_to_o[inputf] = outputf
@@ -93,7 +93,7 @@ class Format:
                 try:
                     inputf = self.infer_o_to_i(outputf)
                 except InferException as e:
-                    raise FormatException("Can't infer input file name for {}! ".format(outputf) + str(e))
+                    raise FormatException("Can't infer input file name for {}!".format(outputf)) from e
                 if inputf not in self.inputs:
                     raise FormatException("Cannot find match for {} ... expected {}".format(outputf, insputf))
                 self.o_to_i[outputf] = inputf

@@ -115,8 +115,8 @@ class For(Command):
         # write an expression multiple times.
         try:
             index = self.args.find(' in ')
-        except ValueError:
-            raise CommandException.for_parsed(parsed, "Cannot parse @for: ' in ' not found!")
+        except ValueError as exc:
+            raise CommandException.for_parsed(parsed, "Cannot parse @for: ' in ' not found!") from exc
         to_assign = self.args[:index].strip()
         is_tuple = ',' in to_assign
         labels = [label.strip() for label in to_assign.split(',')]

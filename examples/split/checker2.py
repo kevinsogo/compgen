@@ -15,7 +15,7 @@ def get_output_from_input(file, a, **kwargs):
         m = int(next(file).rstrip())
         b = list(map(int, next(file).rstrip().split(' ')))
     except Exception as e:
-        raise exc("Failed to get a sequence: " + str(e))
+        raise exc("Failed to get a sequence: " + str(e)) from e
     ensure(m >= 0, "Invalid length", exc=exc)
     ensure(len(b) == m, lambda: "Expected {} numbers but got {}".format(m, len(b)), exc=exc)
     return b

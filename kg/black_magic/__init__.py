@@ -17,7 +17,7 @@ class Directive(Enum):
     INLINE = auto() # an inline ### @ [...]
     BAD = auto() # definitely bad syntax. we'll issue an error
     COULD_BE_BAD = auto() # we'll issue a warning. this could just be a mistake
-    ECHO = auto()# not a directive. just echo
+    ECHO = auto() # not a directive. just echo
 
 # this will be processed in this order.
 SYNTAX_RULES = [
@@ -66,8 +66,6 @@ class Parsed:
         try:
             self.command = get_command(command)
         except ValueError as exc:
-            import traceback
-            traceback.print_exc()
             raise ParseException(module_loc, lineno, "Unable to parse command") from exc
         del command
 
@@ -78,7 +76,7 @@ class Parsed:
                 try:
                     lineno, line = next(lines)
                 except StopIteration as exc:
-                    raise ParseException(module_loc, lineno, "Consumed all lines before parsing everything. Bracket mismatch.") from exc
+                    raise ParseException(module_loc, lineno, "Consumed all lines before parsing everything. Bracket mismatch.")
 
                 pattern, match, directive, message = get_directive_type(line)
                 if directive == Directive.KEEP:

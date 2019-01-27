@@ -11,6 +11,7 @@
     "other_programs": [
         "formatter.py"
     ],
+    "subtask_detector": "detect_subtasks.py",
     "checker": "checker_len_only.py",
     "judge_data_maker": "solution_len_only.py",
     "valid_subtasks": [1, 2, 3],
