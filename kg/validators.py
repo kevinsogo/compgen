@@ -321,7 +321,9 @@ class _Read:
     def eof(self): return self.char(EOF)
     
 def _add_label(kw, label):
-    if label: kw['label'] = label
+    if label:
+        if 'label' in kw: raise StreamError("Duplicate label: {} {}".format(label, kw['label']))
+        kw['label'] = label
     return kw
 
 
