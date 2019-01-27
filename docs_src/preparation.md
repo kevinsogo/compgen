@@ -9,7 +9,7 @@ Actually, not from scratch; this assumes you've already written the problem stat
 
 # Introduction  
 
-When perparing a problem, you usually write a bunch of different files which serve different purposes: generators, validators, checkers, etc. We will explain what those are shortly.
+To prepare a problem, you will write a bunch of different files which will serve different purposes: generators, validators, checkers, etc. We will explain what those are shortly.
 
 Ideally, we will be writing everything in Python 3, although it's possible to use another language to write some of those parts; we will learn how to do so later on.
 
@@ -105,7 +105,7 @@ Here's a validator that can also check subtasks. It takes the subtask name as th
 - The method names (`read_int`, `read_space`, etc.) are inspired by testlib.
 
 
-Alternatively, you may use the **chain style validation**. Let's say you want to read `x`, `y` and `z` from a line, space-separated, and each with its own constraints. Then instead of writing this,
+Alternatively, you may use **chain-style validation**. Let's say you want to read `x`, `y` and `z` from a line, space-separated, and each with its own constraints. Then instead of writing this,
 
 ```python
 x = file.read_int(lim.x)
@@ -116,13 +116,13 @@ z = file.read_int(lim.z)
 file.read_eoln()
 ```
 
-we can write it all in one line:
+you can write it all in one line:
 
 ```python
 [x, y, z] = file.read. int(lim.x). space. int(lim.y). space. int(lim.z). eoln
 ```
 
-The chain accepts `int`, `ints`, `token`, `char`, `space`, `eoln`, and `eof` (and possibly more in the future). I recommend this one since it more closely reflects the structure of each line, yet still requires you to exactly specify each byte.
+The chain accepts `int`, `ints`, `token`, `char`, `space`, `eoln`, and `eof` (and possibly more in the future). I recommend the chain style since it more closely reflects the structure of each line, yet still requires you to exactly specify each byte.
 
 *Note:* The left side of a chain-style assignment must always be enclosed by `[...]`, even if there is only one recipient. Also, `ints` returns a *single* variable (with data type "list"). For example,
 
@@ -139,7 +139,9 @@ The chain accepts `int`, `ints`, `token`, `char`, `space`, `eoln`, and `eof` (an
 
 ## Detecting subtasks automatically  
 
-If your problem has subtasks, and if your validator handles the subtasks, then we can detect which subtask(s) each input file belongs to by simply running `kg subtasks`. This assumes that `valid_subtasks` and `validator` have been set in `details.json`. 
+If your problem has subtasks, and if your validator handles the subtasks, then we can detect which subtask(s) each input file belongs to by simply running `kg subtasks`. This assumes that `valid_subtasks` and `validator` have been set in `details.json`.  
+
+If your test data are quite big and you find this quite slow, then you might want to write a custom subtask detector (as explained in the main README) and place it under `subtask_detector` in `details.json`. 
 
 
 
@@ -161,6 +163,8 @@ It's easy to write a test generator.
 
 - You can replace `stdout` with a file-like object.
 
+- Obviously, you'll have to work hard to make "strong" data set; for many problems, pure random data like this will not be enough. Writing good data is beyond the scope of this library.
+
 There are a few more advanced usages and features (will document soon!), but this should cover most use cases.
 
 <!-- TODO Strict multicase, lazy multicase -->
@@ -177,7 +181,7 @@ The testscript file contains instructions on how to generate all the tests. It l
 
 The programs used will be taken from `generators` in `details.json`; in this case, `single_case.py` and `multi_case_lazy.py`. They can be in any language. A `!` at the beginning means "run this bash command as is". Comments begin with `#`. 
 
-This is similar to Polygon's system, though more limited, since you have to use `$`, etc. This is a bit limited in expessive power for now, but we'll change that soon.
+This is similar to Polygon's testscript system, though more limited since you have to use `$`, among other things. This is limited in expessive power for now, but we'll change that soon.
 
 <!-- TODO numbering in testscript -->
 
@@ -206,7 +210,7 @@ Here's an example for the problem "find any longest subsequence of distinct elem
 
 
 
-# Black Magic (advanced)
+# Black magic (advanced)
 
 Feel free to skip this part; it's not needed for most cases. 
 
@@ -246,7 +250,7 @@ Try to read `kg/checkers.py` to see the different directives in action. Note tha
 
 The files generated in `kgkompiled` may be too big for your tastes. To make them smaller, there are two (evil) options accepted by `kg kompile` that can reduce the file sizes a bit:
 
-1. `-S`. Attempts to reduce the indentation level; this saves several spaces. Beware, it may break some programs, particularly those with inconsistent indenting. I suggest keeping everything to 4 spaces. 
+1. `-S`. Attempts to reduce the indentation level; this saves several spaces. Beware, it may break some programs, particularly those with inconsistent indentation. I suggest keeping everything to 4 spaces. 
 
 2. `-C`. A very evil option. See for yourself! :D
 

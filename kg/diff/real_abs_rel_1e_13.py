@@ -3,7 +3,6 @@
 
 # Don't edit this file. Edit real_abs_rel_template.py instead, and then run _real_check_gen.py
 
-
 from itertools import zip_longest
 from decimal import Decimal as D, InvalidOperation
 from kg.checkers import * ### @import
@@ -32,6 +31,6 @@ def checker(input_file, output_file, judge_file, **kwargs):
                     raise WA("Bad precision.")
     print('Worst error:', worst) ### @if format not in ('pg', 'hr')
 
-help_ = ('Compare if the sequence of real numbers are "close enough" (by 1e-13). ' 
+help_ = ('Compare if two sequences of real numbers are "close enough" (by 1e-13). ' 
     "Uses absolute/relative error.") 
 if __name__ == '__main__': chk(help=help_)
