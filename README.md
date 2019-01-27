@@ -1,9 +1,8 @@
-
 # KompGen - A Kompetitib Generator
 
 Use this library if you're one of the following:
 
-- You already have some data, solutions, checkers, etc., already written, and would like to test, run, convert, detect subtasks, etc., locally.
+- You already have some data, solutions, checkers, etc., already written, and would like to test, run, detect subtasks, convert, etc., locally.
 - You want to write a problem from scratch. (Bonus points if you want to write everything in Python.)
 - Somewhere in between.
 
@@ -20,7 +19,7 @@ Use this library if you're one of the following:
 
 2. Add the `scripts/` folder to your `$PATH` variable so you can run the scripts anywhere.
 
-    *Note:* One way to do this would be to append the line `export PATH="/absolute/path/to/scripts:$PATH"` at the end of `~/.profile`. (Replace `/absolute/path/to/scripts`!) Then the `$PATH` variable will be updated after logging out and then logging in again. (If you can't do that yet, you can run `source ~/.profile` to set it up temporarily.)
+    One way to do this would be to append the line `export PATH="/absolute/path/to/scripts:$PATH"` at the end of `~/.profile`. (Replace `/absolute/path/to/scripts`!) Then the `$PATH` variable will be updated after logging out and then logging in again. (If you can't do that yet, you can run `source ~/.profile` to set it up temporarily.)
 
 3. Whenever this library gets updated (e.g. you pull from the repo), run `bash setup.sh` again to update your installation.
 
@@ -43,9 +42,9 @@ This keeps the original copy, don't worry.
 
 You have a bunch of files, and you want to know which subtask each one belongs to, automatically. There are two methods, depending on your level of laziness.  
 
-### Using a detector script
+### Method 1: Using a detector script
 
-First, write a program (say `detector.java`) that takes a valid input from stdin and prints the index of *all* subtasks in which the file is valid. Then run the following:
+First, write a program (say `detector.java`) that takes a valid input from stdin and prints the indices of *all* subtasks in which the file is valid. Then run the following:
 
 ```bash
 $ kg subtasks -i "tests/*.in" -f detector.java
@@ -53,9 +52,9 @@ $ kg subtasks -i "tests/*.in" -c java detector # alternative
 ```
 
 
-### Using a validator which can detect subtasks
+### Method 2: Using a validator which can detect subtasks
 
-Write a program (say `validator.java`) that takes the subtask number as the first argument and a valid input from stdin, and exits with code 0 iff the file is valid for that subtask. Then run the following:
+Write a program (say `validator.java`) that takes the subtask number as the first argument and an input file from stdin, and exits with code 0 iff the file is valid for that subtask. Then run the following:
 
 ```bash
 $ kg subtasks -i "tests/*.in" -vf validator.java -s 1 2 3
@@ -84,7 +83,7 @@ $ kg run -i "tests/*.in" -f yet_another_sol.java
 You can also replace `-f [file]` with `-c [command]`.
 
 
-For the third command, the checker must accept three command line arguments `inputpath outputpath judgepath`. It returns 0 iff the answer is correct. (Currently, `kg test` with a custom checker only supports binary tasks and tasks where each subtask is binary-graded.) 
+For the third command, the checker must accept three command line arguments `inputpath outputpath judgepath`. It must exit with code 0 iff the answer is correct. (Currently, `kg test` with a custom checker only supports binary tasks and tasks where each subtask is binary-graded.) 
 
 
 ## Convenience  
@@ -103,7 +102,7 @@ This automatically detects the tests based on the corresponding format, so no ne
 
 You can also prepare a full problem from scratch using this library. If you write it properly, it will be easy to upload it to various judges/platforms.
 
-## Preparation
+## Phase A. Preparation
 
 1. Run the following command: `kg init problem_title`. This creates a folder named `problem_title`.
 
@@ -117,7 +116,7 @@ You can also prepare a full problem from scratch using this library. If you writ
     - [A checker](docs/preparation.md#Checkers) (if needed)
     - The model solution
 
-## Testing  
+## Phase B. Testing  
 
 1. Run `kg make all`. This will generate the input and output files in `tests/`, which you can look at.
 
@@ -141,7 +140,7 @@ $ kg run -f sol.cpp
 
 You can still run `kg make all` if you wish. 
 
-## Uploading
+## Phase C. Uploading
 
 1. Run `kg make all` again.  
 
@@ -176,6 +175,10 @@ tests/
 
 # Contributing
 
+- This is quite new so there are probably bugs. Please report the bugs to me so that I can take a look and fix them!
+
 - Feel free to request features/changes/improvements you'd like to see.
 
 - [See this list.](docs/HELP.md) Looking forward to your merge request!
+
+
