@@ -11,7 +11,7 @@ Actually, not from scratch; this assumes you've already written the problem stat
 
 To prepare a problem, you will write a bunch of different files which will serve different purposes: generators, validators, checkers, etc. We will explain what those are shortly.
 
-Ideally, we will be writing everything in Python 3, although it's possible to use another language to write some of those parts; we will learn how to do so later on.
+Ideally, we will be writing everything in Python 3, although it's possible to use another language for it, or even parts of it; we will learn how to do so later on.
 
 
 
@@ -21,9 +21,9 @@ Due to limitations in some online judges, we will have some restrictions/require
 
 - A notable restriction we have is with importing:
 
-    - Any `import` must be an import star, i.e., of the following form: `from xxx import *`. (Builtin packages are exempt and can be imported normally.)
-    - In addition, these import statements must be *unindented*.
-    - The string `### @import` must be appended at the end of it.
+    - Any `import` must be an import star, i.e., of the following form: `from xxx import *`.
+    - In addition, the string `### @import` must be appended at the end of it.
+    - Builtin packages are exempt and can be imported normally.
 
 - Also, you cannot upload any code you write directly into Polygon. Instead, a command called `kg kompile` is used to generate files that can be uploaded. 
 
@@ -57,11 +57,13 @@ Please update them with the correct values. If your problem doesn't have subtask
 
 The `checker` field may be omitted. It defaults to a simple diff check. There are also a couple of builtin checks: enter `!diff.exact`, `!diff.tokens`, `!diff.real_abs_rel_1e_6`, etc., as the `checker`. (more to come soon...)
 
-Note that the file endings will tell KompGen what language your program is. There will be a predetermined compile and run command for each recognized language. You can also use a three-argument version to specify a file: `[filename, compile, run]`. (The two-argument version is `[filename, run]`) For example, if your validator is written in Haskell, then you could write:
+Note that the file endings will tell KompGen what language your program is. There will be a predetermined compile and run command for each recognized language. (See) You can also use a three-argument version to specify a file: `[filename, compile, run]`. (The two-argument version is `[filename, run]`) For example, if your validator is written in Haskell, then you could write:
 
 ```js
     "validator": ["validator.hs", "ghc validator.hs", "./validator"],
 ```
+
+<!-- Advanced tutorial involves all hidden options here, "extras"/"comments", "subtasks.json", "!diff.*" -->
 
 Now, we can begin writing those files!
 
@@ -76,11 +78,14 @@ This just takes a test case and prints it to a file in the correct input format.
 {{ addition/formatter.py }}
 ```
 
+This is not strictly required---indeed, you may remove it altogether from `details.json`---but is recommended anyway since it is good practice. For example, it makes it easier if you want to change the input/output format.
+
+
 
 
 # Validators
 
-A validator checks if an input file is strictly valid. It should return with 0 exit code iff the input is valid. A validator should be strict: it must not tolerate any extra newline or space. Here's an example:
+A validator checks if an input file is strictly valid. It should return with 0 exit code iff the input is valid. A validator should be **strict**: it must not tolerate any extra newline or space. Here's an example:
 
 ```python
 {{ addition/validator2.py }}
@@ -122,18 +127,21 @@ you can write it all in one line:
 [x, y, z] = file.read. int(lim.x). space. int(lim.y). space. int(lim.z). eoln
 ```
 
-The chain accepts `int`, `ints`, `token`, `char`, `space`, `eoln`, and `eof` (and possibly more in the future). I recommend the chain style since it more closely reflects the structure of each line, yet still requires you to exactly specify each byte.
+The chain accepts `int`, `ints`, `token`, `tokens`, `char`, `space`, `eoln`, and `eof` (and possibly more in the future). They accept the same arguments as their `read_*` counterparts.
+
+I recommend the chain style since it more closely reflects the structure of each line, yet still requires you to exactly specify each byte.
 
 *Note:* The left side of a chain-style assignment must always be enclosed by `[...]`, even if there is only one recipient. Also, `ints` returns a *single* variable (with data type "list"). For example,
 
 ```python
 [n]    = file.read. int(1, 10**5). space
 [x, a] = file.read. int(lim.x). space. ints(n, lim.a). eoln # here, 'a' is a list
+[]     = file.read. eof  # execute a chain without receiving anything
 ```
 
+<!-- TODO Advanced example: graphs, range sum query. -->
 
-
-<!-- TODO Advanced example: graphs, range sum query -->
+<!-- Advanced tutorial involves more details about `read_*` methods, label, GET, WITH_GET, etc. -->
 
 
 
@@ -141,7 +149,7 @@ The chain accepts `int`, `ints`, `token`, `char`, `space`, `eoln`, and `eof` (an
 
 If your problem has subtasks, and if your validator handles the subtasks, then we can detect which subtask(s) each input file belongs to by simply running `kg subtasks`. This assumes that `valid_subtasks` and `validator` have been set in `details.json`.  
 
-If your test data are quite big and you find this quite slow, then you might want to write a custom subtask detector (as explained in the main README) and place it under `subtask_detector` in `details.json`. 
+If your test data are quite big and you find this method slow, then you might want to write a custom subtask detector (as explained in the main README) and place it under `subtask_detector` in `details.json`. 
 
 
 
@@ -167,7 +175,10 @@ It's easy to write a test generator.
 
 There are a few more advanced usages and features (will document soon!), but this should cover most use cases.
 
-<!-- TODO Strict multicase, lazy multicase -->
+<!-- Advanced tutorial involves strict multicase (not implemented yet), lazy multicase, options to write_to_file and friends, .shuff vs .shuffle, etc. -->
+
+
+
 
 
 
@@ -185,6 +196,8 @@ This is similar to Polygon's testscript system, though more limited since you ha
 
 <!-- TODO numbering in testscript -->
 
+<!-- Advanced tutorial involves describing the Polygon system, Freemarker, bracket expansion syntax, etc. -->
+
 
 
 
@@ -197,7 +210,7 @@ The most general template for custom checkers is the following:
 {{ templates/checker_generic_template.py }}
 ```
 
-Here, `input_file`, `output_file` and `judge_file` are iterators that enumerate the distinct *lines* of each file.
+Here, `input_file`, `output_file` and `judge_file` are iterators that enumerate the distinct *lines* of each file. (If you want to tokenize, pass `"tokens"` to `@set_checker()`.) `kwargs` will contain other auxiliary data (e.g., file index, source code path, etc.), though it may vary between platforms. Anyway, you probably won't need it most of the time.
 
 Here's an example for the problem "find any longest subsequence of distinct elements":
 
@@ -205,8 +218,11 @@ Here's an example for the problem "find any longest subsequence of distinct elem
 {{ templates/checker_generic.py }}
 ```
 
+*Note:* KompGen uses `model_solution` to generate `*.ans` files. But sometimes, you want them to not necessarily contain the answer, but rather just some auxiliary data to help with judging. In this case, you should fill `judge_data_maker` in `details.json`, so it will be used to generate `*.ans` files. 
+
 <!-- TODO graph checking. is_tree, is_connected, etc. -->
 
+<!-- Advanced tutorial involves using the `set_{multi/single}_checker` suite, etc., and also options for `set_checker`. -->
 
 
 
@@ -243,7 +259,8 @@ Obviously, Python interprets these as simple comments, but `kg kompile` parses t
 
 Try to read `kg/checkers.py` to see the different directives in action. Note that there are other variables accessible aside from `format`. I will document them later. I'd like to clean up this feature first. :)
 
-
+<!-- Advanced tutorial involves: advanced usages, and other directives like @for. also, usage of compile_lines and stuff (clean it up first). Also show/offer _real_check_gen as example
+ -->
 
 
 ## Preprocessor black magic options

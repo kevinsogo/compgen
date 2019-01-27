@@ -681,6 +681,8 @@ def kg_compile(format_, args):
                     assert not line.endswith('\n')
                     print(line, file=f)
 
+        # TODO for hackerrank, check that the last file for each subtask is unique to that subtask.
+
         if fmt == 'hr' and details.checker and get_module(details.checker.filename): # snippets for hackerrank upload.
             # pastable version of grader
             filename = details.checker.filename

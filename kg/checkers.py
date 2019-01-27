@@ -74,9 +74,7 @@ class _SN:
     iterator = 'iterator'
 
 
-CURR_PLATFORM = 'pg' ### @if format == 'pg'
-CURR_PLATFORM = 'hr' ### @if format == 'hr'
-CURR_PLATFORM = 'local' ### @if format == 'local'
+CURR_PLATFORM = 'local' ### @replace 'local', format
 
 class Checker(object):
     def __init__(self):
