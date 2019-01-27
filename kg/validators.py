@@ -244,6 +244,7 @@ class StrictStream(object):
     def read_eoln(self): return self.read_char('\n') # ubuntu only (I think).
     def read_eof(self): return self.read_char(EOF)
 
+    # TODO call this 'expect_char' (or something. check testlib. don't necessarily follow), and make _next_char public
     @save_on_label
     def read_char(self, ch):
         if self._next_char() != ch:
@@ -320,9 +321,7 @@ class _Read:
     def eof(self): return self.char(EOF)
     
 def _add_label(kw, label):
-    if label:
-        if 'label' in kw: raise StreamError("Duplicate label: {} {}".format(label, kw['label']))
-        kw['label'] = label
+    if label: kw['label'] = label
     return kw
 
 
