@@ -2,14 +2,9 @@ from sys import *
 from kg.validators import * ### @import
 
 subtasks = {
-    '1': {
-        'n': Interval(1, 10),
-    },
-    '2': {
-        'n': Interval(1, 1000),
-    },
-    '3': {
-    },
+    '1': { 'n': Interval(1, 10) },
+    '2': { 'n': Interval(1, 1000) },
+    '3': { },
 }
 
 bounds = {
@@ -19,7 +14,7 @@ bounds = {
     'a': Interval(-10**9, 10**9),
 }
 
-@validator
+@validator()
 def validate_file(file, subtask=None):
     lim = Bounds(bounds) & Bounds(subtasks.get(subtask))
 

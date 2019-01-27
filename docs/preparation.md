@@ -106,7 +106,7 @@ def print_to_file(file, cases):
 
 # Validators
 
-A validator checks if an input file is valid. It should return with 0 exit code iff the input is valid. Validators should be strict: no tolerance for any extra newline or space. Here's an example:
+A validator checks if an input file is strictly valid. It should return with 0 exit code iff the input is valid. A validator should be strict: it must not tolerate any extra newline or space. Here's an example:
 
 ```python
 from sys import *
@@ -119,7 +119,7 @@ bounds = {
     'a': Interval(-10**9, 10**9),
 }
 
-@validator
+@validator()
 def validate_file(file):
     lim = Bounds(bounds)
 
@@ -140,7 +140,7 @@ if __name__ == '__main__':
     validate_file(stdin)
 ```
 
-Again, note that `### @import` is important.
+Again, note that `### @import` is important. 
 
 Here's a validator that can also check subtasks. It takes the subtask name as the first argument: 
 
@@ -149,14 +149,9 @@ from sys import *
 from kg.validators import * ### @import
 
 subtasks = {
-    '1': {
-        'n': Interval(1, 10),
-    },
-    '2': {
-        'n': Interval(1, 1000),
-    },
-    '3': {
-    },
+    '1': { 'n': Interval(1, 10) },
+    '2': { 'n': Interval(1, 1000) },
+    '3': { },
 }
 
 bounds = {
@@ -166,14 +161,14 @@ bounds = {
     'a': Interval(-10**9, 10**9),
 }
 
-@validator
+@validator()
 def validate_file(file, subtask=None):
     lim = Bounds(bounds) & Bounds(subtasks.get(subtask))
 
     t = file.read_int_eoln(lim.t)
     totaln = 0
     for cas in range(t):
-        n = file.read_int_eoln(lim.n)
+        n = file.read_int_eoln(lim.n) # convenience method for a read_int then a read_eoln
         a = file.read_ints_eoln(n, lim.a)
         totaln += n
 
@@ -193,8 +188,10 @@ if __name__ == '__main__':
 
 - `.read_int` can also be called like `.read_int(1, 10**5)`.
 
+- The method names (`read_int`, `read_space`, etc.) are inspired by testlib.
 
-Alternatively, you may use the "chain style" validation. Let's say you want to read `x`, `y` and `z` from a line, space-separated, and each with its own constraints. Then instead of writing this,
+
+Alternatively, you may use the **chain style validation**. Let's say you want to read `x`, `y` and `z` from a line, space-separated, and each with its own constraints. Then instead of writing this,
 
 ```python
 x = file.read_int(lim.x)
@@ -211,18 +208,16 @@ we can write it all in one line:
 [x, y, z] = file.read. int(lim.x). space. int(lim.y). space. int(lim.z). eoln
 ```
 
-The chain accepts `int`, `ints`, `token`, `char`, `space`, `eoln`, and `eof` (and possibly more in the future).
+The chain accepts `int`, `ints`, `token`, `char`, `space`, `eoln`, and `eof` (and possibly more in the future). I recommend this one since it more closely reflects the structure of each line, yet still requires you to exactly specify each byte.
 
 *Note:* The left side of a chain-style assignment must always be enclosed by `[...]`, even if there is only one recipient. Also, `ints` returns a *single* variable (with data type "list"). For example,
 
 ```python
-[n] = file.read. int(1, 10**5). eoln
+[n]    = file.read. int(1, 10**5). space
 [x, a] = file.read. int(lim.x). space. ints(n, lim.a). eoln # here, 'a' is a list
 ```
 
 
-
-Finally, there is also `read_int_eoln` which is convenience for a `read_int` followed by a `read_eoln`. There's also `read_int_space`, `read_token_eoln`, etc.
 
 <!-- TODO Advanced example: graphs, range sum query -->
 
@@ -408,7 +403,7 @@ for i in xrange(5):
 
 Obviously, Python interprets these as simple comments, but `kg kompile` parses them as directives. This is used to produce the different outputs you see in `kgkompiled`. The expressions themselves are evaluated as Python expressions, with a certain set of available variables. (will document soon)
 
-Try to read `kg/checkers.py` to see the different directives in action. Note that there are other variables accessible aside from `format`. I will document then later. I'd like to clean up this feature first. :)
+Try to read `kg/checkers.py` to see the different directives in action. Note that there are other variables accessible aside from `format`. I will document them later. I'd like to clean up this feature first. :)
 
 
 

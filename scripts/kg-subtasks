@@ -2,7 +2,7 @@
 
 from io import StringIO
 from subprocess import PIPE
-from sys import stdin
+from sys import stdin, stderr
 import argparse
 
 from kg.programs import *
@@ -18,7 +18,21 @@ prog = Program.from_args(None, args.command)
 
 inp = stdin.read()
 prog.do_compile()
+coll_out = ''
+coll_err = ''
 for sub in args.subs:
     res = prog.do_run(sub, input=inp.encode('utf-8'), stderr=PIPE, stdout=PIPE, check=False)
     if res.returncode == 0:
         print(sub)
+        if res.stdout: coll_out += '[for subtask {}]\n{}\n'.format(sub, res.stdout.decode('utf-8').rstrip('\n'))
+        if res.stderr: coll_err += '[for subtask {}]\n{}\n'.format(sub, res.stderr.decode('utf-8').rstrip('\n'))
+
+LEN = 1000
+if coll_out:
+    print('Warning: the command', prog.run, 'outputted something in stdout.\nIt is recommended to not print anything if a validator accepts.', file=stderr)
+    print('The following was printed in stdout:', file=stderr)
+    print(coll_out[:LEN+3] if len(coll_out) <= LEN+3 else coll_out[:LEN] + '...', file=stderr)
+if coll_err:
+    print('Warning: the command', prog.run, 'outputted something in stderr.\nIt is recommended to not print anything if a validator accepts.', file=stderr)
+    print('The following was printed in stderr:', file=stderr)
+    print(coll_err[:LEN+3] if len(coll_err) <= LEN+3 else coll_err[:LEN] + '...', file=stderr)

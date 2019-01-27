@@ -8,7 +8,7 @@ bounds = {
     'a': Interval(-10**9, 10**9),
 }
 
-@validator
+@validator()
 def validate_file(file):
     lim = Bounds(bounds)
 

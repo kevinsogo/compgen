@@ -2,14 +2,9 @@ from sys import *
 from kg.validators import * ### @import
 
 subtasks = {
-    '1': {
-        'n': Interval(1, 10),
-    },
-    '2': {
-        'n': Interval(1, 1000),
-    },
-    '3': {
-    },
+    '1': { 'n': Interval(1, 10) },
+    '2': { 'n': Interval(1, 1000) },
+    '3': { },
 }
 
 bounds = {
@@ -19,14 +14,14 @@ bounds = {
     'a': Interval(-10**9, 10**9),
 }
 
-@validator
+@validator()
 def validate_file(file, subtask=None):
     lim = Bounds(bounds) & Bounds(subtasks.get(subtask))
 
     t = file.read_int_eoln(lim.t)
     totaln = 0
     for cas in range(t):
-        n = file.read_int_eoln(lim.n)
+        n = file.read_int_eoln(lim.n) # convenience method for a read_int then a read_eoln
         a = file.read_ints_eoln(n, lim.a)
         totaln += n
 

@@ -169,7 +169,7 @@ def compile_lines(lines, **context):
                 yield line
 
     if context['compress']:
-        enc = base64.b64encode(zlib.compress('\n'.join(get_lines()).encode('utf-8')))
+        enc = base64.b64encode(zlib.compress('\n'.join(get_lines()).encode('utf-8'), level=9))
         yield "import base64,zlib;exec(zlib.decompress(base64.b64decode({})).decode('utf-8'))".format(repr(enc))
     else:
         yield from get_lines()
