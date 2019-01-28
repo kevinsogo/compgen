@@ -1,5 +1,3 @@
-
-
 This is a detailed guide on how to prepare a problem from scratch using KompGen. 
 
 Actually, not from scratch; this assumes you've already written the problem statement. And also that you've already read the README. 
@@ -57,7 +55,7 @@ Please update them with the correct values. If your problem doesn't have subtask
 
 The `checker` field may be omitted. It defaults to a simple diff check. There are also a couple of builtin checks: enter `!diff.exact`, `!diff.tokens`, `!diff.real_abs_rel_1e_6`, etc., as the `checker`. (more to come soon...)
 
-Note that the file endings will tell KompGen what language your program is. There will be a predetermined compile and run command for each recognized language. (See) You can also use a three-argument version to specify a file: `[filename, compile, run]`. (The two-argument version is `[filename, run]`) For example, if your validator is written in Haskell, then you could write:
+Note that the file endings will tell KompGen what language your program is. There will be a predetermined compile and run command for each recognized language. (See `langs.json` for details.) You can also use a three-argument version to specify a file: `[filename, compile, run]`, for example, as used in `model_solution` above. (The two-argument version is `[filename, run]`) For example, if your validator is written in Haskell, then you could write:
 
 ```js
     "validator": ["validator.hs", "ghc validator.hs", "./validator"],
