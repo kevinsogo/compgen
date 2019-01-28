@@ -12,7 +12,7 @@ bounds = {
     'n': Interval(1, 10**5),
 }
 
-@validator
+@validator()
 def validate_file(file, subtask=None):
     lim = Bounds(bounds) & Bounds(subtasks.get(subtask))
 
