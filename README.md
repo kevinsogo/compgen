@@ -108,12 +108,12 @@ You can also prepare a full problem from scratch using this library. If you writ
 
 2. Write the following files:
 
-    - [details.json](docs/preparation.md#details.json) (contains metadata)
-    - [A formatter](docs/preparation.md#Formatters)
-    - [A validator](docs/preparation.md#Validators)
-    - [Generators](docs/preparation.md#Generators)
-    - [A testscript](docs/preparation.md#Testscript)
-    - [A checker](docs/preparation.md#Checkers) (if needed)
+    - [details.json](docs/PREPARATION.md#details.json) (contains metadata)
+    - [A formatter](docs/PREPARATION.md#Formatters)
+    - [A validator](docs/PREPARATION.md#Validators)
+    - [Generators](docs/PREPARATION.md#Generators)
+    - [A testscript](docs/PREPARATION.md#Testscript)
+    - [A checker](docs/PREPARATION.md#Checkers) (if needed)
     - The model solution
 
 ## Phase B. Testing  

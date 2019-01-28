@@ -1,5 +1,5 @@
 <!-- NOTE TO CONTRIBUTORS: PLEASE DON'T EDIT THIS FILE. -->
-<!-- Edit docs_src/preparation.md instead, then run './makedocs'. -->
+<!-- Edit docs_src/PREPARATION.md instead, then run './makedocs'. -->
 
 
 
