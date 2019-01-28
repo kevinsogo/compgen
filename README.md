@@ -13,7 +13,7 @@ Use this library if you're one of the following:
 
 # Setup
 
-1. Run `bash setup.sh`. When it prints `DONE`, then it was successful.
+1. Run `bash setup.sh`. If it prints `DONE`, then it was successful.
 
     *Note:* Among other things, it installs a bunch of python packages. Feel free to modify `setup.sh` if you don't want to install globally, e.g., if you want to use virtualenv or something. 
 

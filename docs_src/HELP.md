@@ -22,7 +22,7 @@
 
 - Support for graphs in `kg.graphs.{validators,checkers,generators}`
 
-- `"statement"` in details.json, and `statement.md`.
+- `"statement"` in details.json, and `statement.md` template. Add recommendation for "pandoc" for conversion between formats.
 
 - "masterjudge" support, not just typical binary scoring and subtask scoring. Could be a `master_judge` in details.json which defaults to a subtask/binary grader. 
 
@@ -37,6 +37,9 @@
 - Automatically determine the version of the `python` command, and use it to determine the default execution of `.py` files. (This may require overhauling the `langs.json` format.)
 
 - On kg kompile, add option to remove blank lines and trailing spaces?
+
+- Add natsorted as a python dependency of the kg python package. (?)
+
 
 
 # To consider  
@@ -69,91 +72,119 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Implement polygon-style autonumbering and rearrangement.
 
+        Future ideas:
+
+        ! cat sample.in > 1
+        single_case 10 10 > 2
+        single_case 10 100 > 3
+        single_case 10 1000 > $
+        single_case 10 10000 > $
+        multi_case [5-8,10] 10 1000 > {5-8,10}
+        multi_case_lazy 0 10 20 > $
+        multi_case_lazy 1 10 20 > $
+        multi_case_lazy 2 10 20 > $
+        multi_case_lazy 3 10 20 > $
+
+        ... no templating (at least for now)
+        ... replicate the way polygon tests work. (dollars and stuff)
+
+        formats:
+        12
+        {3,5-7,11}
+        {3,5-7,9..11} # either way is fine
+        {3,5-7,9..11,15..} # 15 to infinity
+        {3,5-7,9..11,15..+2} # 15 to infinity, incrementing by 2
+
+        [] or {} both allowable.
+
+        command > files
+
+        becomes
+
+        transformed_command > files
+        for each file in files; validate file.
+
+
+
 - Add freemarker templating (could be an optional dependency), so we can emulate the Polygon system.
 
-```bash
-multi_case [5-8,10] 10 1000 > {5-8,10}
+        multi_case [5-8,10] 10 1000 > {5-8,10}
 
-no templating (at least for now)
-replicate the way polygon tests work. (dollars and stuff)
+        no templating (at least for now)
+        replicate the way polygon tests work. (dollars and stuff)
 
+        Formats:
 
-Formats:
+        12
+        {3,5-7,11}
+        {3,5-7,9..11} # either way is fine
+        {3,5-7,9..11,15..} # 15 to infinity
+        {3,5-7,9..11,15..+2} # 15 to infinity, incrementing by 2
 
-12
-{3,5-7,11}
-{3,5-7,9..11} # either way is fine
-{3,5-7,9..11,15..} # 15 to infinity
-{3,5-7,9..11,15..+2} # 15 to infinity, incrementing by 2
+        [] or {} both allowable.
 
-[] or {} both allowable.
+        command > files
 
+        # becomes
 
+        transformed_command > files # for each file in files; validate file.
 
-command > files
-
-# becomes
-
-transformed_command > files # for each file in files; validate file.
-```
 
 - Cleaning up of kg.generators
 
-```python
-print_to_file(generate(random_cases, *argv[1:]), file=stdout)
+        print_to_file(generate(random_cases, *argv[1:]), file=stdout)
 
-write_to_file(stdout, print_to_file, random_cases, argv[1:])
-
+        write_to_file(stdout, print_to_file, random_cases, argv[1:])
 
 
-for file, cases in zip(filenames(argv[1]), generate(random_cases, *argv[2:])):
-    with open(file, 'w') as f:
-        print_to_file(cases, file=file)
 
-write_to_files(argv[1], print_to_file, random_cases, argv[2:])
+        for file, cases in zip(filenames(argv[1]), generate(random_cases, *argv[2:])):
+            with open(file, 'w') as f:
+                print_to_file(cases, file=file)
 
-write_to_files(filenames(argv[1]), print_to_file, random_cases, argv[2:])
+        write_to_files(argv[1], print_to_file, random_cases, argv[2:])
 
+        write_to_files(filenames(argv[1]), print_to_file, random_cases, argv[2:])
 
 
 
 
-index = int(argv[1])
 
-print_to_file(generate(multi_case_lazy(many_cases, distribute, index), *argv[2:]), file=stdout)
+        index = int(argv[1])
 
-write_to_file(stdout, print_to_file, (many_cases, distribute, index), argv[2:])
-```
+        print_to_file(generate(multi_case_lazy(many_cases, distribute, index), *argv[2:]), file=stdout)
+
+        write_to_file(stdout, print_to_file, (many_cases, distribute, index), argv[2:])
+
 
 - More kg commands, some minor:
 
-```bash
-kg blackmagic
+        kg blackmagic
+
+        # minor
+
+        # has type checking
+
+        kg set subtasks 1,2,3
+        kg set checker checker.py
+        kg set checker checker.py "pypy3 checker.py"
+        kg set checker checker.java "javac checker.java" "java checker"
+        kg set validator
+        kg set title
+        kg add generators
+        kg add other_files
+        kg rem generators
+        kg add comments
+
+        kg add subtasks 4
+
+        kg add subtasks_files 5 8 1,2,3,4
 
 
+        kg set -d details.json
 
-# minor
+        or maybe kg config and kg config --global (sets in ~/.kgconfig), similar to git's "config"
 
-# has type checking
-
-kg set subtasks 1,2,3
-kg set checker checker.py
-kg set checker checker.py "pypy3 checker.py"
-kg set checker checker.java "javac checker.java" "java checker"
-kg set validator
-kg set title
-kg add generators
-kg add other_files
-kg rem generators
-kg add comments
-
-kg add subtasks 4
-
-kg add subtasks_files 5 8 1,2,3,4
-
-
-kg set -d details.json
-```
 
 - Implement `@keep` as a command directive and not as a language construct.
 
@@ -163,13 +194,14 @@ kg set -d details.json
 
 - maybe some add "convex increasing" or something, for generators?
  
-- Have `kg.validators.get.*` for the `get` functionality. Move stuff to `validators/{__init__,get}.py`. In general, split up modules so features can be imported individually, so they don't take up space. Only essential ones go to `/__init__.py`.  
+- Have `kg.validators.get.*` for the `GET` functionality. Move stuff to `validators/{__init__,get}.py`. In general, split up modules so features can be imported individually, so they don't take up space. Only essential ones go to `/__init__.py`.  
     - This requires generalizing `kg kompile`'s current approach, not too hard I think.
 
 - For uniformity:
     
     - Add @set_generator(...same_options_as_write_to_file...)
     - Add non-decorator versions of checker.
+    - Decide on "@set_checker" vs "@checker" (and also @generator)
 
 - Add checks to determine python version in setup.sh ? or a custom script that's called by setup.sh, so it can be run individually?
 

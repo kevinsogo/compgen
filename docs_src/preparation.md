@@ -78,7 +78,7 @@ This just takes a test case and prints it to a file in the correct input format.
 {{ addition/formatter.py }}
 ```
 
-This is not strictly required---indeed, you may remove it altogether from `details.json`---but is recommended anyway since it is good practice. For example, it makes it easier if you want to change the input/output format.
+This is not strictly required&mdash;indeed, you may remove it altogether from `details.json`&mdash;but is recommended anyway since it is good practice. For example, it makes it easier if you want to change the input/output format.
 
 
 

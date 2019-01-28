@@ -4,9 +4,13 @@ from operator import attrgetter
 from string import ascii_letters, digits
 from subprocess import Popen, PIPE, CalledProcessError
 from sys import *
+import argparse
+import os
+import os.path
+import pathlib
+import subprocess
+import tempfile
 import zipfile
-
-import argparse, os, os.path, pathlib, subprocess, tempfile
 
 from natsort import natsorted
 
@@ -108,8 +112,10 @@ convert2_p.add_argument('--to', help='destination file pattern')
 def kg_convert2(format_, args):
     if args.main_command == 'convertsequence':
         print("You spelled 'konvertsequence' incorrectly. I'll let it slide for now.", file=stderr)
+
     if not args.fr: raise CommandException("Missing --from")
     if not args.to: raise CommandException("Missing --to")
+
     convert_sequence(args.fr, args.to)
 
 def convert_sequence(src, dest):
