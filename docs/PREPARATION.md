@@ -102,7 +102,7 @@ def print_to_file(file, cases):
         print(*arr, sep=' ', file=file)
 ```
 
-This is not strictly required&mdash;indeed, you may remove it altogether from `details.json`&mdash;but is recommended anyway since it is good practice. For example, it makes it easier if you want to change the input/output format.
+This is not strictly required&mdash;indeed, you may remove it altogether from `details.json`&mdash;but is recommended anyway since it is good practice. For example, it makes it easier if you want to change the input/output format; you don't have to update all generators.
 
 
 
@@ -270,7 +270,7 @@ if __name__ == '__main__':
 
 - You can replace `stdout` with a file-like object.
 
-- Obviously, you'll have to work hard to make "strong" data set; for many problems, pure random data like this will not be enough. Writing good data is beyond the scope of this tutorial.
+- Obviously, you'll have to work hard to make "strong" test data; for many problems, pure random data like this will not be enough. Writing good tests is beyond the scope of this tutorial.
 
 There are a few more advanced usages and features (will document soon!), but this should cover most use cases.
 
@@ -336,7 +336,7 @@ def check_solution(input_file, output_file, judge_file, **kwargs):
 if __name__ == '__main__': chk()
 ```
 
-Here, `input_file`, `output_file` and `judge_file` are iterators that enumerate the distinct *lines* of each file. (If you want to tokenize, pass `"tokens"` to `@set_checker()`.) `kwargs` will contain other auxiliary data (e.g., file index, source code path, etc.), though it may vary between platforms. Anyway, you probably won't need it most of the time.
+Here, `input_file`, `output_file` and `judge_file` are iterators that enumerate the distinct *lines* of each file. (If you want to enumerate *tokens* instead, pass `"tokens"` to `@set_checker()`. It will be whitespace-insensitive.) `kwargs` will contain other auxiliary data (e.g., test index, source code path, etc.), though it may vary between platforms. Anyway, you probably won't need it most of the time.
 
 Here's an example for the problem "find any longest subsequence of distinct elements":
 
@@ -366,8 +366,7 @@ def check_solution(input_file, output_file, judge_file, **kwargs):
     for cas in range(z):
         n = int(next(input_file))
         a = list(map(int, next(input_file).strip().split()))
-        if len(a) != n:
-            raise Fail("Judge input invalid")
+        if len(a) != n: raise Fail("Judge input invalid")
         cont_b = get_sequence(output_file, exc=WA)
         judge_b = get_sequence(judge_file, exc=Fail)
         check_valid(a, cont_b, exc=WA)

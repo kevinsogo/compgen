@@ -111,15 +111,7 @@ class Parsed:
         self.end_lineno = lineno
         super(Parsed, self).__init__()
 
-    def pretty_print(self, indent=0, file=stdout):
-        tab = ' '*4
-        print(tab*indent, 'COMMAND', repr(self.command), 'ARGS', repr(self.args), sep='', file=file)
-        indent += 1
-        for child in self.children:
-            if isinstance(child, str):
-                print(tab*indent, repr(child), sep='', file=file)
-            else:
-                child.pretty_print(indent, file=file)
+    # TODO implement pretty_print again
 
     def compile(self, context):
         yield from self.command(self, context)

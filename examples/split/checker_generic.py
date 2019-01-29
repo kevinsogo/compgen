@@ -25,8 +25,7 @@ def check_solution(input_file, output_file, judge_file, **kwargs):
     for cas in range(z):
         n = int(next(input_file))
         a = list(map(int, next(input_file).strip().split()))
-        if len(a) != n:
-            raise Fail("Judge input invalid")
+        if len(a) != n: raise Fail("Judge input invalid")
         cont_b = get_sequence(output_file, exc=WA)
         judge_b = get_sequence(judge_file, exc=Fail)
         check_valid(a, cont_b, exc=WA)

@@ -76,7 +76,7 @@ This just takes a test case and prints it to a file in the correct input format.
 {{ addition/formatter.py }}
 ```
 
-This is not strictly required&mdash;indeed, you may remove it altogether from `details.json`&mdash;but is recommended anyway since it is good practice. For example, it makes it easier if you want to change the input/output format.
+This is not strictly required&mdash;indeed, you may remove it altogether from `details.json`&mdash;but is recommended anyway since it is good practice. For example, it makes it easier if you want to change the input/output format; you don't have to update all generators.
 
 
 
@@ -169,7 +169,7 @@ It's easy to write a test generator.
 
 - You can replace `stdout` with a file-like object.
 
-- Obviously, you'll have to work hard to make "strong" data set; for many problems, pure random data like this will not be enough. Writing good data is beyond the scope of this tutorial.
+- Obviously, you'll have to work hard to make "strong" test data; for many problems, pure random data like this will not be enough. Writing good tests is beyond the scope of this tutorial.
 
 There are a few more advanced usages and features (will document soon!), but this should cover most use cases.
 
@@ -208,7 +208,7 @@ The most general template for custom checkers is the following:
 {{ templates/checker_generic_template.py }}
 ```
 
-Here, `input_file`, `output_file` and `judge_file` are iterators that enumerate the distinct *lines* of each file. (If you want to tokenize, pass `"tokens"` to `@set_checker()`.) `kwargs` will contain other auxiliary data (e.g., file index, source code path, etc.), though it may vary between platforms. Anyway, you probably won't need it most of the time.
+Here, `input_file`, `output_file` and `judge_file` are iterators that enumerate the distinct *lines* of each file. (If you want to enumerate *tokens* instead, pass `"tokens"` to `@set_checker()`. It will be whitespace-insensitive.) `kwargs` will contain other auxiliary data (e.g., test index, source code path, etc.), though it may vary between platforms. Anyway, you probably won't need it most of the time.
 
 Here's an example for the problem "find any longest subsequence of distinct elements":
 

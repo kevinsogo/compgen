@@ -6,9 +6,13 @@
 
 
 
-# Others  
+# Others 
+
+- Allow running several solutions at once.  
 
 - Improve `StrictStream`. Right now, I'm manually buffering 10^5 characters at a time, but I think there has to be a more idiomatic way to buffer.  
+
+- Add option to generate only subranges of the tests, to make it fast.
 
 - Do something about the fact that Python's `random` module makes no guarantees of reproducibility across implementations and platforms; see [this](https://stackoverflow.com/questions/8786084/reproducibility-of-python-pseudo-random-numbers-across-systems-and-versions). I guess a simple solution would be to copy `random.py`, but this would blow up the sizes of the files in `kgkompiled`.
 
@@ -40,6 +44,7 @@
 
 - Add natsorted as a python dependency of the kg python package. (?)
 
+- Maybe add a whitespace-sensitive version of checker "tokens"?
 
 
 # To consider  
@@ -53,6 +58,8 @@ This includes some disorganized ideas, TODOs, notes...
 - Interactors/interactive tasks. (Supported everywhere except HackerRank.) (maybe it's now time for me to learn Python coroutines...)
 
 - Import from existing format, not just the I/O but also all other stuff and metadata.
+
+- Warn if two subtasks have exactly the same files.
 
 - Warn absence of @import in things like kg.validator, kg.checker, kg.generators, kg.XXX
 

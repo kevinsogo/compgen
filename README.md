@@ -152,6 +152,7 @@ Behind the scenes, some programs need to be self-contained in a single file befo
 
 
 
+
 ## Adding to a git repo
 
 If you wish to add the problem folder to a version control system but don't want to commit huge test files, you can use the following `.gitignore`:
@@ -170,6 +171,8 @@ build/
 tests/
 *.executable
 ```
+
+This also means that the folders `tests/` and `kgkompiled` may be freely deleted if you're trying to free up space. They can always be regenerated from the other files.
 
 
 
