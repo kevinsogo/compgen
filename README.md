@@ -13,7 +13,7 @@ Use this library if you're one of the following:
 
 # Setup
 
-1. Run `bash setup.sh`. If it prints `DONE`, then it was successful.
+1. Run `bash setup.sh`. If it prints `DONE`, then it was successful. Make sure you have `python3` and `pip3`.  
 
     *Note:* Among other things, it installs a bunch of python packages. Feel free to modify `setup.sh` if you don't want to install globally, e.g., if you want to use virtualenv or something. 
 
@@ -100,7 +100,7 @@ This automatically detects the tests based on the corresponding format, so no ne
 
 # Full process
 
-You can also prepare a full problem from scratch using this library. If you write it properly, it will be easy to upload it to various judges/platforms.
+You can also prepare a full problem from scratch using this library. Everything can be done locally. If you write it properly, it will be easy to upload it to various judges/platforms.
 
 ## Phase A. Preparation
 
@@ -148,7 +148,7 @@ You can still run `kg make all` if you wish.
 
 3. Upload the files in `kgkompiled`.  
 
-Behind the scenes, some programs need to be self-contained in a single file before uploading, hence, all imports are "inlined" automatically. A directive called `@import` is used for this. See the longer [tutorial](docs/preparation.md#Black Magic) for more details. 
+Behind the scenes, some programs need to be self-contained in a single file before uploading, hence, all imports are "inlined" automatically. A directive called `@import` is used for this. See the longer [tutorial](docs/preparation.md#Black magic (advanced)) for more details. 
 
 
 
@@ -169,6 +169,7 @@ build/
 *.egg-info/
 *.egg
 tests/
+*.class
 *.executable
 ```
 

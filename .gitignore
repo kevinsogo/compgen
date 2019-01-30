@@ -13,3 +13,4 @@ build/
 tests/
 *.executable
 temp/
+*.class

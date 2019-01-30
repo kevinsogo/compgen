@@ -513,6 +513,7 @@ q_p = subparsers.add_parser('joke', help='Print a non-funny joke.')
 qs = [
     '10kg > 1kg > 100g > 10g > log > log log > sqrt log log > 1',
     'Spacewaker',
+    # add your jokes here plz
 ]
 @set_handler(q_p)
 def kg_q(format_, args):

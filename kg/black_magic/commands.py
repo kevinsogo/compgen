@@ -61,6 +61,8 @@ def set_command(name, strong={}, weak={}):
 def make_copy_context(context):
     return {key: value for key, value in context.items() if key in copy_context}
 
+# TODO push 'indent' to copy_context and add "post_processors". we now have two:
+# "write" post_processor and "indent" post_processor
 def process_context(line, context):
     return make_copy_context(context), context['indent'] + line
 
@@ -205,7 +207,7 @@ def _import(parent, indent, module, context):
         return
 
     # now, actually import
-    print('expanding import of', module)
+    print('expanding import of {} (interpreted as module {})'.format(module, module_id))
     lines = context['load_module'](module_id)
 
     # give __name__ a unique name so the program knows in context that it is being pasted somewhere.
