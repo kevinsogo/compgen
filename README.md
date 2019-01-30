@@ -148,7 +148,7 @@ You can still run `kg make all` if you wish.
 
 3. Upload the files in `kgkompiled`.  
 
-Behind the scenes, some programs need to be self-contained in a single file before uploading, hence, all imports are "inlined" automatically. A directive called `@import` is used for this. See the longer [tutorial](docs/preparation.md#Black magic (advanced)) for more details. 
+Behind the scenes, some programs need to be self-contained in a single file before uploading, hence, all imports are "inlined" automatically. A directive called `@import` is used for this. See the longer [tutorial](docs/PREPARATION.md#Some restrictions) for more details.  
 
 
 
