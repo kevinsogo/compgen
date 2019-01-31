@@ -68,16 +68,13 @@ def set_handler(parser, default_file=stdout):
 # convert one format to another
 
 convert_p = subparsers.add_parser('konvert', aliases=['convert'], help='Convert test data from one format to another')
-convert_p.add_argument('--from', nargs=2, help='source format and location', dest='fr', metavar=('FROM_FORMAT', 'FROM_FOLDER'))
-convert_p.add_argument('--to', nargs=2, help='destination format and location', metavar=('TO_FORMAT', 'TO_FOLDER'))
+convert_p.add_argument('--from', nargs=2, help='source format and location', dest='fr', metavar=('FROM_FORMAT', 'FROM_FOLDER'), required=True)
+convert_p.add_argument('--to', nargs=2, help='destination format and location', metavar=('TO_FORMAT', 'TO_FOLDER'), required=True)
 
 @set_handler(convert_p)
 def kg_convert(format_, args):
     if args.main_command == 'convert':
         print("You spelled 'konvert' incorrectly. I'll let it slide for now.", file=stderr)
-
-    if not args.fr: raise CommandException("Missing --from")
-    if not args.to: raise CommandException("Missing --to")
     
     convert_formats(args.fr, args.to)
 
@@ -105,16 +102,13 @@ def convert_formats(src, dest):
 # convert one file sequence to another
 
 convert2_p = subparsers.add_parser('konvertsequence', aliases=['convertsequence'], help='Convert a file sequence with a certain pattern to another.')
-convert2_p.add_argument('--from', help='source file pattern', dest='fr')
-convert2_p.add_argument('--to', help='destination file pattern')
+convert2_p.add_argument('--from', help='source file pattern', dest='fr', required=True)
+convert2_p.add_argument('--to', help='destination file pattern', required=True)
 
 @set_handler(convert2_p)
 def kg_convert2(format_, args):
     if args.main_command == 'convertsequence':
         print("You spelled 'konvertsequence' incorrectly. I'll let it slide for now.", file=stderr)
-
-    if not args.fr: raise CommandException("Missing --from")
-    if not args.to: raise CommandException("Missing --to")
 
     convert_sequence(args.fr, args.to)
 

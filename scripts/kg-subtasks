@@ -10,7 +10,7 @@ from kg.programs import *
 parser = argparse.ArgumentParser(description='Run against the validator across multiple subtasks and print those which accept.')
 
 parser.add_argument('subs', nargs='+', help='List of subtasks')
-parser.add_argument('-c', '--command', nargs='+', help='validator command')
+parser.add_argument('-c', '--command', nargs='+', help='validator command', required=True)
 
 args = parser.parse_args()
 

@@ -77,7 +77,7 @@ def strict_int(x, *args):
     if len(args) == 2:
         x = int(x)
         l, r = args
-        if l <= x <= r:
+        if not (l <= x <= r):
             raise Exception("Integer {} not in [{}, {}]".format(x, l, r))
     elif len(args) == 1:
         if args[0] == 'str': return x
@@ -204,7 +204,7 @@ class StrictStream(object):
         if not isinstance(charset, set): charset = set(charset or ())
         res = []
         while self._peek_char() not in ends:
-            if charset and self._peek_char() not in charset: raise StreamError("Invalid character detected: {}".format(self._peek_char()))
+            if charset and self._peek_char() not in charset: raise StreamError("Invalid character detected: {}".format(charname(self._peek_char())))
             if len(res) >= maxn: raise StreamError("Took too many characters! Expected at most {}".format(maxn))
             res.append(self._next_char())
         if include_end: res.append(self._next_char())
