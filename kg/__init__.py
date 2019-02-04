@@ -592,7 +592,7 @@ def kg_compile(format_, args):
     # kg libs
     locations = {}
     for kg_lib in 'generators validators checkers utils'.split():
-        locations['kg.' + kg_lib] = script_path + '/' + kg_lib + '.py'
+        locations['kg.' + kg_lib] = os.path.join(script_path, + kg_lib + '.py')
     kg_libs = set(locations)
 
     # current files

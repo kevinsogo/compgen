@@ -46,6 +46,12 @@
 
 - Maybe add a whitespace-sensitive version of checker "tokens"?
 
+- Support windows.  
+
+    - e.g., the `/usr/bin/time` call in `programs.py` could maybe be replaced. 
+
+    - A lot of the scripts also rely on Ubuntu command-y things.  
+
 
 # To consider  
 

@@ -95,7 +95,7 @@ class Format:
                 except InferException as e:
                     raise FormatException("Can't infer input file name for {}!".format(outputf)) from e
                 if inputf not in self.inputs:
-                    raise FormatException("Cannot find match for {} ... expected {}".format(outputf, insputf))
+                    raise FormatException("Cannot find match for {} ... expected {}".format(outputf, inputf))
                 self.o_to_i[outputf] = inputf
 
             assert set(self.o_to_i) <= self.outputs

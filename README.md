@@ -6,6 +6,8 @@ Use this library if you're one of the following:
 - You want to write a problem from scratch. (Bonus points if you want to write everything in Python.)
 - Somewhere in between.
 
+Only works for Ubuntu (and probably some other Unix-based systems) for now. 
+
 *Note:* In case you are looking for a very old version, `checkout` the branch `v01`. If you don't know what that is, never mind it.
 
 
