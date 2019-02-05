@@ -10,8 +10,7 @@ with open(os.path.join(script_path, 'data', 'langs.json')) as f:
 lang_of_ending = {ending: lang for lang, data in langs.items() for ending in data['endings']}
 def infer_lang(filename):
     base, ext = os.path.splitext(filename)
-    if ext in lang_of_ending:
-        return lang_of_ending[ext]
+    return lang_of_ending.get(ext)
 
 class Program:
     def __init__(self, filename, compile_, run):

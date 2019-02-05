@@ -570,7 +570,7 @@ compile_p.add_argument('-l', '--loc', default='.', help='location of files/packa
 compile_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
 compile_p.add_argument('-S', '--shift-left', action='store_true', help=
                                 'compress the program by reducing the indentation size from 4 spaces to 1 tab. '
-                                'Use at your own risk. (4 is hardcoded because it is the indention level of the "kg" module.')
+                                'Use at your own risk. (4 is hardcoded because it is the indentation level of the "kg" module.')
 compile_p.add_argument('-C', '--compress', action='store_true', help='compress the program by actually compressing it. Use at your own risk.')
 # TODO add option for format to "compile" to. No need for now since there are only two,
 #      but later on this will eat up a lot of memory otherwise.
@@ -585,14 +585,14 @@ def kg_compile(format_, args):
 
     details = Details.from_format_loc(format_, args.details)
 
-    # TODO clear kgkompiled first
+    # TODO clear kgkompiled first, or at least the target directory
 
     # locate all necessary files
 
     # kg libs
     locations = {}
     for kg_lib in 'generators validators checkers utils'.split():
-        locations['kg.' + kg_lib] = os.path.join(script_path, + kg_lib + '.py')
+        locations['kg.' + kg_lib] = os.path.join(script_path, kg_lib + '.py')
     kg_libs = set(locations)
 
     # current files

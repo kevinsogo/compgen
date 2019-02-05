@@ -266,7 +266,7 @@ if __name__ == '__main__':
 
 **Notes:**
 
-- Don't import `random`. Use the provided random number generator.
+- Don't import `random`. Use the provided random number generator. (It is of type `random.Random`.)
 
 - You can replace `stdout` with a file-like object.
 
@@ -328,6 +328,7 @@ def check_solution(input_file, output_file, judge_file, **kwargs):
     
     # Raise this if the judge data is incorrect, or if the checking fails for some reason other than WA
     # Any other exception type raised will be considered equivalent to Fail.
+    # Any 'Fail' verdict must be investigated since it indicates a problem with the checker/data/etc.
     raise Fail("The judge data is incorrect. Fix it!")
 
     # the return value is the score, and must be a value between 0.0 and 1.0

@@ -165,7 +165,7 @@ It's easy to write a test generator.
 
 **Notes:**
 
-- Don't import `random`. Use the provided random number generator.
+- Don't import `random`. Use the provided random number generator. (It is of type `random.Random`.)
 
 - You can replace `stdout` with a file-like object.
 
