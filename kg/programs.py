@@ -28,7 +28,7 @@ class Program:
     def do_run(self, *args, input=None, stdin=None, stdout=None, stderr=None, time=False, check=True):
         if not self._compiled: raise Exception("Compile the program first")
         command = self.run + list(args)
-        if time: command = ['/usr/bin/time', '-f' 'TIME %es %Us %Ss'] + command
+        if time and os.name != 'nt': command = ['/usr/bin/time', '-f' 'TIME %es %Us %Ss'] + command
         kwargs = dict(input=input, stdin=stdin, stdout=stdout, stderr=stderr, check=check)
         if not input: kwargs.pop('input')
         if not stdin: kwargs.pop('stdin')

@@ -10,8 +10,7 @@ class InferException(Exception): ...
 class FormatException(Exception): ...
 
 def _check_simple(x, name):
-    for invalid in [r'\*', '**'] + list('[]?'):
-        if invalid in x: raise FormatException("Invalid {} pattern: {} ... cannot handle patterns with {}".format(name, x, invalid))
+    if any(r'\*' in part for part in os.path.split(x)): raise FormatException("Invalid {} pattern: {} ... cannot handle patterns with {}".format(name, x, invalid))
 
 class Format:
     def __init__(self, inputg=None, outputg=None, read='', write=''):
@@ -126,7 +125,7 @@ class Format:
     def _infer_parts(self, g, _re, f):
         if _re is None: raise InferException("Cannot infer: missing pattern.")
         m = _re.match(f)
-        if not m: raise InferException("Cannot match {} to {}".format(inputf, g))
+        if not m: raise InferException("Cannot match {} to {}".format(f, g))
         return m.groups()
 
     def infer_iparts(self, inputf):
@@ -159,13 +158,13 @@ class Format:
         if not self._checked:
             if self.inputg is not None:
                 _check_simple(self.inputg, 'input')
-                pat = '(.*)'.join(self.inputg.replace('.', r'\.').split('*'))
+                pat = '(.*)'.join(self.inputg.replace('\\', '\\\\').replace('.', r'\.').split('*'))
                 # print('Interpreting {} as regex: {}'.format(self.inputg, pat))
                 self._i_re = re.compile('^' + pat + r'\Z')
 
             if self.outputg is not None:
                 _check_simple(self.outputg, 'output')
-                pat = '(.*)'.join(self.outputg.replace('.', r'\.').split('*'))
+                pat = '(.*)'.join(self.outputg.replace('\\', '\\\\').replace('.', r'\.').split('*'))
                 # print('Interpreting {} as regex: {}'.format(self.outputg, pat))
                 self._o_re = re.compile('^' + pat + r'\Z')
 
