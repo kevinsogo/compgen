@@ -8,11 +8,15 @@
 
 - Support more formats: PC2, Kattis, CodeChef, DOM?. 
 
+- PC2 high priority.
+
 
 
 # Others 
 
 - Allow running several solutions at once.  
+
+- Use python's `timeit` to check the running time of solutions, instead of `/usr/bin/time`.
 
 - Improve `StrictStream`. Right now, I'm manually buffering 10^5 characters at a time, but I think there has to be a more idiomatic way to buffer.  
 
@@ -49,6 +53,10 @@
 - Add natsorted as a python dependency of the kg python package. (?)
 
 - Maybe add a whitespace-sensitive version of checker "tokens"?
+
+- Utility to change line endings.
+
+- Support line endings in multiple platforms.
 
 - Support windows.  
 

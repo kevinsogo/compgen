@@ -223,6 +223,8 @@ I recommend the chain style since it more closely reflects the structure of each
 []     = file.read. eof  # execute a chain without receiving anything
 ```
 
+*Note on line endings:* Currently, we only support Unix line endings, though this could change in the future. To change the line endings of a file, use `tr -d '\15\32' < windows.txt > unix.txt` for now.  
+
 <!-- TODO Advanced example: graphs, range sum query. -->
 
 <!-- Advanced tutorial involves more details about `read_*` methods, label, GET, WITH_GET, etc. -->
