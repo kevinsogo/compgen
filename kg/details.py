@@ -15,10 +15,18 @@ def detector_from_validator(validator):
         return Program("!fromvalidator", validator.compile, ["kg-subtasks", "-c"] + validator.run + ["--"])
 
 
+def _attach_relpath(relpath, path):
+    if not relpath or not path or os.path.isabs(path):
+        return path
+    else:
+        return os.path.join(relpath, path)
+
+
 class Details(object):
-    def __init__(self, details={}, source=None):
+    def __init__(self, details={}, source=None, relpath=None):
         self.details = details
         self.source = source
+        self.relpath = relpath
         self.valid_subtasks = self.details.get('valid_subtasks', [])
 
         # data validation
@@ -27,6 +35,9 @@ class Details(object):
 
         if len(set(self.valid_subtasks)) != len(self.valid_subtasks):
             raise ValueError("Duplicate values in valid_subtasks")
+
+        for key in ['title', 'time_limit']:
+            setattr(self, key, self.details.get(key, defaults.get(key)))
 
         for key in ['validator', 'checker', 'model_solution', 'subtask_detector', 'judge_data_maker']:
             setattr(self, key, self._maybe_prog(self.details.get(key, defaults.get(key)), key=key))
@@ -46,6 +57,9 @@ class Details(object):
 
         # subtasks_files
         self.subtasks_files = self.details.get('subtasks_files', "")
+
+        for key in ['testscript', 'subtasks_files']:
+            setattr(self, key, _attach_relpath(relpath, getattr(self, key)))
 
         # TODO move this check to the appropriate place, e.g., only when subtasks_files is actually accessed
         # if self.subtasks_files and os.path.isfile(self.subtasks_files):
@@ -74,17 +88,18 @@ class Details(object):
         super(Details, self).__init__()
 
     @classmethod
-    def from_loc(cls, loc):
-        if not loc and os.path.isfile('details.json'): loc = 'details.json'
+    def from_loc(cls, loc, relpath=None):
+        details_file = _attach_relpath(relpath, 'details.json')
+        if not loc and os.path.isfile(details_file): loc = details_file
         if loc:
             with open(loc) as f:
-                return cls(json.load(f), source=loc)
+                return cls(json.load(f), source=loc, relpath=relpath)
 
     @classmethod
-    def from_format_loc(cls, fmt, loc):
-        details = cls()
+    def from_format_loc(cls, fmt, loc, relpath=None):
+        details = cls(relpath=relpath)
         if is_same_format(fmt, 'kg'):
-            details = cls.from_loc(loc) or details
+            details = cls.from_loc(loc, relpath=relpath) or details
         return details
 
     def _maybe_prog(self, v, key=None):
@@ -93,7 +108,10 @@ class Details(object):
             diff_pref = '!diff.'
             if isinstance(v, str) and v.startswith(diff_pref): 
                 v = os.path.join(script_path, 'diff', v[len(diff_pref):] + '.py')
-        return Program.from_data(v) if v else None
+        prog = Program.from_data(v) if v else None
+        if prog: # TODO do this in programs.py
+            prog.filename = _attach_relpath(self.relpath, prog.filename)
+        return prog
 
     def serialize(self):
         ... # not implemented yet. returns a dict to be json'ed

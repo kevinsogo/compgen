@@ -6,9 +6,7 @@
 
 - Write unit tests.  
 
-- Support more formats: PC2, Kattis, CodeChef, DOM?. 
-
-- PC2 high priority.
+- Support more formats: Kattis, CodeChef, DOM?. 
 
 
 
@@ -16,7 +14,11 @@
 
 - Allow running several solutions at once.  
 
+- Add compatibility warning for validators: Don't return 42 since that's the success code for the pc2/kattis format.
+
 - Use python's `timeit` to check the running time of solutions, instead of `/usr/bin/time`.
+
+- Consider using the Kattis format as the base. (future backwards-incompatible version.)
 
 - Improve `StrictStream`. Right now, I'm manually buffering 10^5 characters at a time, but I think there has to be a more idiomatic way to buffer.  
 
@@ -34,7 +36,7 @@
 
 - Support for graphs in `kg.graphs.{validators,checkers,generators}`
 
-- `"statement"` in details.json, and `statement.md` template. Add recommendation for "pandoc" for conversion between formats.
+- `"statement"` in details.json, and `statement.md` template. Add recommendation for "pandoc" for conversion between formats. (maybe `kg kompile` automatically converts them to `.tex`, for polygon and kattis/pc2.)
 
 - "masterjudge" support, not just typical binary scoring and subtask scoring. Could be a `master_judge` in details.json which defaults to a subtask/binary grader. 
 

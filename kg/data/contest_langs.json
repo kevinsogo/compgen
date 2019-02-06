@@ -1,0 +1,51 @@
+{
+    "java": {
+        "display_name": "Java",
+        "compile": "javac {filename}",
+        "compiled_file": "{filename_base}.class",
+        "run": "java -Xss128m -Xms960 -Xmx960m {filename_base}",
+        "interpreted": false
+    },
+    "c": {
+        "display_name": "GNU C",
+        "compile": "gcc -O2 -std=gnu11 -o {filename_base}.exe {filename}",
+        "compiled_file": "{filename_base}.exe",
+        "run": "./{filename_base}.exe",
+        "interpreted": false
+    },
+    "cpp": {
+        "display_name": "GNU C++",
+        "compile": "g++ -O2 -std=gnu++17 -o {filename_base}.exe {filename}",
+        "compiled_file": "{filename_base}.exe",
+        "run": "./{filename_base}.exe",
+        "interpreted": false
+    },
+    "python2": {
+        "display_name": "Python 2",
+        "compile": "python2 -m py_compile {filename}",
+        "compiled_file": "{filename}",
+        "run": "python2 {filename}",
+        "interpreted": true
+    },
+    "python3": {
+        "display_name": "Python 3",
+        "compile": "python3 -m py_compile {filename}",
+        "compiled_file": "{filename}",
+        "run": "python3 {filename}",
+        "interpreted": true
+    },
+    "pypy2": {
+        "display_name": "PyPy 2",
+        "compile": "pypy -m py_compile {filename}",
+        "compiled_file": "{filename}",
+        "run": "pypy {filename}",
+        "interpreted": true
+    },
+    "pypy3": {
+        "display_name": "PyPy 3",
+        "compile": "pypy3 -m py_compile {filename}",
+        "compiled_file": "{filename}",
+        "run": "pypy3 {filename}",
+        "interpreted": true
+    }
+}

@@ -248,10 +248,10 @@ class PGFormat(Format):
 
 @set_format('kg', 'kompgen')
 class KGFormat(Format):
-    def __init__(self, loc='.', read='', write=''):
+    def __init__(self, loc='.', read='', write='', tests_folder='tests'):
         super(KGFormat, self).__init__(
-                os.path.join(loc, 'tests', '*.in'),
-                os.path.join(loc, 'tests', '*.ans'),
+                os.path.join(loc, tests_folder, '*.in'),
+                os.path.join(loc, tests_folder, '*.ans'),
             read=read, write=write)
         for inputf, ex in zip(natsorted(self.inputs), self.expected_parts()):
             expinpf = self._join_iparts(*ex)

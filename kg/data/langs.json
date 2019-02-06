@@ -1,10 +1,10 @@
 {
-    "py": {
+    "python3": {
         "compile": "kg-assert-exist {filename}",
         "run": "python3 {filename}",
         "endings": [".py", ".py3"]
     },
-    "py2": {
+    "python2": {
         "compile": "kg-assert-exist {filename}",
         "run": "python2 {filename}",
         "endings": [".py2"]
@@ -15,8 +15,8 @@
         "endings": [".java"]
     },
     "cpp": {
-        "compile": "g++ -O2 -std=c++17 {filename} -o {filename_base}.executable",
-        "run": "./{filename_base}.executable",
+        "compile": "g++ -O2 -std=c++17 {filename} -o {filename_base}.exe",
+        "run": "./{filename_base}.exe",
         "endings": [".c", ".cpp", ".c++"]
     }
 }

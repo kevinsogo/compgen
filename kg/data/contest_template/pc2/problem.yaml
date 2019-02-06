@@ -1,0 +1,45 @@
+# Problem configuration, generated from KompGen
+# Created: {datetime_created}
+--- 
+
+name: '{letter_title}'
+source: 
+author: 
+license: 
+rights_owner: 
+
+hideProblem: false
+showOutputWindow: true
+showCompare: true
+showValidationResults: true
+load-data-files: false
+stop-on-first-failed-test-case: false
+
+# groups: 
+
+datafile: 000.in
+answerfile: 000.ans
+
+# validator_flags: 
+
+limits:
+    timeout: {time_limit}
+
+validator: 
+    validatorProg: '{checker}'
+    validatorCmd: '{{:validator}} {{:infile}} {{:outfile}} {{:ansfile}} {{:resfile}} '
+    usingInternal: false
+    validatorOption: 0
+
+    use-internal-validator: false
+    use-clics-validator: false
+    use-custom-validator: true
+    use-clics-custom-validator-interface: false
+
+judging-type:
+    computer-judged: false
+    manual-review: true
+    send-prelim-judgement: false
+
+input:
+    readFromSTDIN: true

@@ -20,5 +20,6 @@
         "There are also a couple of builtin checkers.",
         "For a custom checker template, see:",
         "examples/templates/checker_generic_template.py"
-    ]
+    ],
+    "time_limit": 3
 }

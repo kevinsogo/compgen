@@ -1,13 +1,14 @@
 from collections import defaultdict
+from datetime import datetime
 from functools import wraps
 from operator import attrgetter
-from string import ascii_letters, digits
+from string import ascii_letters, ascii_uppercase, digits
 from subprocess import Popen, PIPE, CalledProcessError
 from sys import *
 import argparse
-import os
 import os.path
 import pathlib
+import re
 import subprocess
 import tempfile
 import zipfile
@@ -15,6 +16,7 @@ import zipfile
 from natsort import natsorted
 
 from .black_magic import *
+from .contest_details import *
 from .details import *
 from .formats import *
 from .programs import *
@@ -22,7 +24,7 @@ from .testscripts import *
 from .utils import *
 
 
-def rec_ensure_exists(file):
+def touch_container(file):
     ''' ensures that the folder containing "file" exists, possibly creating the nested directory path to it '''
     dirname = os.path.dirname(file)
     if not os.path.exists(dirname): print('Creating folder:', dirname)
@@ -87,8 +89,8 @@ def convert_formats(src, dest):
     copied = 0
     print("Copying now...")
     for (srci, srco), (dsti, dsto) in zip(src_format.thru_io(), dest_format.thru_expected_io()):
-        rec_ensure_exists(dsti)
-        rec_ensure_exists(dsto)
+        touch_container(dsti)
+        touch_container(dsto)
         subprocess.run(['cp', srci, dsti], check=True)
         subprocess.run(['cp', srco, dsto], check=True)
         copied += 2
@@ -118,7 +120,7 @@ def convert_sequence(src, dest):
     copied = 0
     print("Copying now...")
     for srcf, destf in format_.thru_io():
-        rec_ensure_exists(destf)
+        touch_container(destf)
         subprocess.run(['cp', srcf, destf], check=True)
         copied += 1
     print("Copied", copied, "files")
@@ -233,7 +235,7 @@ def generate_outputs(format_, data_maker, judge, model_solution):
     data_maker.do_compile()
     judge.do_compile()
     for input_, output_ in format_.thru_io():
-        rec_ensure_exists(output_)
+        touch_container(output_)
         with open(input_) as inp:
             with open(output_, 'w') as outp:
                 print('WRITING', input_, '-->', output_)
@@ -434,7 +436,7 @@ def kg_make(format_, args):
 
         for filename, gen, fargs in parse_testscript(fmt.thru_expected_inputs(), script, details.generators):
             print('GENERATING', filename)
-            rec_ensure_exists(filename)
+            touch_container(filename)
             gen.do_compile()
             with open(filename, 'w') as file:
                 gen.do_run(*fargs, stdout=file)
@@ -522,18 +524,20 @@ def kg_q(format_, args):
 
 init_p = subparsers.add_parser('init', help='create a new problem, formatted kg-style')
 
-init_p.add_argument('problemname', help='what to init. (all, inputs, etc.)')
+init_p.add_argument('problemcode', help='what to init. (all, inputs, etc.)')
 init_p.add_argument('-l', '--loc', default='.', help='where to make the problem')
+
+valid_problemcode = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$')
 
 @set_handler(init_p)
 def kg_init(format_, args):
     if not is_same_format(format_, 'kg'):
         raise CommandException("You can't use '{}' format to 'init'.".format(format_))
   
-    prob = args.problemname
+    prob = args.problemcode
 
-    if not set(prob) <= set(ascii_letters + digits + '_-'):
-        raise CommandException("No special characters allowed for the problem name..")
+    if not valid_problemcode.match(prob):
+        raise CommandException("No special characters allowed for the problem code, and the first and last characters must be a letter or a digit.")
 
     src = os.path.join(script_path, 'data', 'template')
     dest = os.path.join(args.loc, prob)
@@ -549,7 +553,7 @@ def kg_init(format_, args):
     fmt = Format(os.path.join(src, '*'), os.path.join(dest, '*'), read='i', write='o')
     for inp, outp in fmt.thru_io():
         if not os.path.isfile(inp): continue
-        rec_ensure_exists(outp)
+        touch_container(outp)
         with open(inp) as inpf:
             with open(outp, 'w') as outpf:
                 d = inpf.read()
@@ -572,18 +576,26 @@ compile_p.add_argument('-S', '--shift-left', action='store_true', help=
                                 'compress the program by reducing the indentation size from 4 spaces to 1 tab. '
                                 'Use at your own risk. (4 is hardcoded because it is the indentation level of the "kg" module.')
 compile_p.add_argument('-C', '--compress', action='store_true', help='compress the program by actually compressing it. Use at your own risk.')
-# TODO add option for format to "compile" to. No need for now since there are only two,
+# TODO add option for format to "compile" to. No need for now since there are only a few,
 #      but later on this will eat up a lot of memory otherwise.
 
 @set_handler(compile_p)
-def kg_compile(format_, args):
+def _kg_compile(format_, args):
     if args.main_command == 'compile':
         print("You spelled 'kompile' incorrectly. I'll let it slide for now.", file=stderr)
 
+    kg_compile(
+        format_,
+        Details.from_format_loc(format_, args.details),
+        'hr', 'pg', 'pc2',
+        loc=args.loc,
+        shift_left=args.shift_left,
+        compress=args.compress,
+        )
+
+def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, compress=False):
     if not is_same_format(format_, 'kg'):
         raise CommandException("You can't use '{}' format to 'kompile'.".format(format_))
-
-    details = Details.from_format_loc(format_, args.details)
 
     # TODO clear kgkompiled first, or at least the target directory
 
@@ -641,14 +653,16 @@ def kg_compile(format_, args):
             subtasks_files = json.load(f)
 
     # convert to various formats
-    for fmt, name, to_translate in [
-            ('pg', 'Polygon', [details.validator, details.checker] + details.generators),
-            ('hr', 'HackerRank', [details.checker]),
+    for fmt, name, copy_files, to_translate in [
+            ('pg', 'Polygon', False, [details.validator, details.checker] + details.generators),
+            ('hr', 'HackerRank', True, [details.checker]),
+            ('pc2', 'PC2', False, [details.validator, details.checker]),
         ]:
+        if fmt not in target_formats: continue
         print()
         print('.. '*14)
         print('Compiling for {} ({})'.format(fmt, name))
-        dest_folder = os.path.join(args.loc, 'kgkompiled', fmt)
+        dest_folder = os.path.join(loc, 'kgkompiled', fmt)
         to_translate = {g.filename for g in to_translate if g and get_module(g.filename)}
         targets = {}
         found_targets = {}
@@ -663,7 +677,7 @@ def kg_compile(format_, args):
         for filename in natsorted(to_translate):
             module = get_module(filename)
             print('[{}] converting {} to {}'.format(module, filename, targets[module]))
-            rec_ensure_exists(targets[module])
+            touch_container(targets[module])
             lines = list(compile_lines(load_module(module),
                     module_id=module,
                     module_file=filename,
@@ -674,12 +688,18 @@ def kg_compile(format_, args):
                     subtasks_files=subtasks_files,
                     snippet=False,
                     subtasks_only=False,
-                    shift_left=args.shift_left,
-                    compress=args.compress,
+                    shift_left=shift_left,
+                    compress=compress,
                 ))
             with open(targets[module], 'w') as f:
+                shebanged = False
                 for line in lines:
                     assert not line.endswith('\n')
+                    if not shebanged and not line.startswith('#!'):
+                        shebang_line = "#!/usr/bin/env python3"
+                        print('adding shebang line {}'.format(repr(shebang_line)))
+                        print(shebang_line, file=f)
+                    shebanged = True
                     print(line, file=f)
 
         # TODO for hackerrank, check that the last file for each subtask is unique to that subtask.
@@ -691,7 +711,7 @@ def kg_compile(format_, args):
 
             target = os.path.join(dest_folder, 'hr.pastable.version.' + os.path.basename(filename))
             print('[{}] writing snippet version of {} to {}'.format(module, filename, target))
-            rec_ensure_exists(target)
+            touch_container(target)
             lines = list(compile_lines(load_module(module),
                     module_id=module,
                     module_file=filename,
@@ -702,8 +722,8 @@ def kg_compile(format_, args):
                     subtasks_files=subtasks_files,
                     snippet=True,
                     subtasks_only=False,
-                    shift_left=args.shift_left,
-                    compress=args.compress,
+                    shift_left=shift_left,
+                    compress=compress,
                 ))
             with open(target, 'w') as f:
                 print("# NOTE: THIS SCRIPT IS MEANT TO BE PASTED TO HACKERRANK'S CUSTOM CHECKER, NOT RUN ON ITS OWN.", file=f)
@@ -713,7 +733,7 @@ def kg_compile(format_, args):
 
             target = os.path.join(dest_folder, 'hr.subtasks.only.' + os.path.basename(filename))
             print('[{}] writing the subtasks snippet of {} to {}'.format(module, filename, target))
-            rec_ensure_exists(target)
+            touch_container(target)
             lines = list(compile_lines(load_module(module),
                     module_id=module,
                     module_file=filename,
@@ -734,11 +754,12 @@ def kg_compile(format_, args):
 
 
         # copy over the files
-        print('copying test data from', args.loc, 'to', dest_folder, '...')
-        convert_formats(
-                (format_, args.loc),
-                (fmt, dest_folder),
-            )
+        if copy_files:
+            print('copying test data from', loc, 'to', dest_folder, '...')
+            convert_formats(
+                    (format_, loc),
+                    (fmt, dest_folder),
+                )
 
         if fmt == 'hr':
             zipname = os.path.join(dest_folder, 'upload_this_to_hackerrank.zip')
@@ -752,6 +773,176 @@ def kg_compile(format_, args):
                         zipf.write(fl, arcname=get_arcname(fl))
 
         print('Done for {} ({})'.format(fmt, name))
+
+    print('.. '*14)
+
+
+
+
+##########################################
+# compile a contest from a configuration file
+
+contest_p = subparsers.add_parser('kontest', aliases=['contest'], help='Compile a contest')
+contest_p.add_argument('format', help='Contest format to compile to')
+contest_p.add_argument('config', help='JSON file containing the contest configuration')
+
+def problem_letters():
+    for l in count(1):
+        for c in ascii_uppercase:
+            yield l * c
+
+@set_handler(contest_p)
+def kg_contest(format_, args):
+    if args.main_command == 'contest':
+        print("You spelled 'kontest' incorrectly. I'll let it slide for now.", file=stderr)
+
+    if not is_same_format(format_, 'kg'):
+        raise CommandException("You can't use '{}' format to 'kontest'.".format(format_))
+
+    if args.format == 'pc2':
+        contest = ContestDetails.from_loc(args.config)
+
+        # identify key folders
+        cdp_config = os.path.join(contest.code, 'CDP', 'config')
+        ext_data = os.path.join(contest.code, 'ALLDATA')
+        contest_template = os.path.join(script_path, 'data', 'contest_template', 'pc2')
+
+        # construct template environment
+        if not contest.site_password: raise CommandException("site_password required for PC2")
+        env = {
+            "datetime_created": datetime.now(),
+            "title": contest.title,
+            "code": contest.code,
+            "duration": contest.duration,
+            "scoreboard_freeze_length": contest.scoreboard_freeze_length,
+            "site_password": contest.site_password,
+            "team_count": contest.team_count,
+            "judge_count": contest.judge_count,
+            "admin_count": contest.admin_count,
+            "leaderboard_count": contest.leaderboard_count,
+            "feeder_count": contest.feeder_count,
+            "filename": "{:mainfile}",
+            "filename_base": "{:basename}",
+            "alldata": os.path.abspath(ext_data),
+        }
+
+        # problem envs
+        found_codes = {}
+        problem_env = {}
+        letters = []
+        for letter, problem_loc in zip(problem_letters(), contest.problems):
+            details = Details.from_format_loc(format_, os.path.join(problem_loc, 'details.json'), relpath=problem_loc)
+            code = os.path.basename(problem_loc)
+            if code in found_codes:
+                found_codes[code] += 1
+                code += str(found_codes[code])
+            else:
+                found_codes[code] = 1
+            print()
+            print('-'*42)
+            print("Getting problem {} (from {})".format(repr(code), problem_loc))
+
+            time_limit = int(round(details.time_limit))
+            if time_limit != details.time_limit:
+                raise ValueError("The time limit must be an integer for PC2: {} {}".format(problem_loc, time_limit))
+
+            letters.append(letter)
+            problem_env[letter] = {
+                'problem_loc': problem_loc,
+                'details': details,
+                'letter': letter,
+                'problem_code': code,
+                'title': details.title,
+                'letter_title': '{}: {}'.format(letter, details.title),
+                'time_limit': time_limit,
+            }
+
+            # put validator in input_validators/, and checker to output_validators/
+            kg_compile(format_, details, 'pc2', loc=problem_loc)
+            for name, targ in [
+                    ('validator', 'input_validators'),
+                    ('checker', 'output_validators'),
+                ]:
+                src = getattr(details, name)
+                srcf = os.path.join(problem_loc, 'kgkompiled', 'pc2', os.path.basename(src.filename))
+                targf = os.path.join(cdp_config, code, targ, os.path.basename(src.filename))
+                touch_container(targf)
+                subprocess.run(['cp', srcf, targf], check=True)
+                problem_env[letter][name] = os.path.abspath(targf)
+
+        def yaml_lang(lang):
+            with open(os.path.join(contest_template, '1language.yaml')) as f:
+                lenv = {key: (
+                    value.format(**env) if isinstance(value, str) else
+                    str(value).lower() if isinstance(value, bool) else value) for key, value in lang.items()}
+                run = lenv['run'] + ' '
+                spacei = run.index(' ')
+                lenv.update({
+                        "run_first": run[:spacei],
+                        "run_rest": run[spacei+1:-1]
+                    })
+                return f.read().format(**lenv)
+
+        def yaml_problem(letter):
+            with open(os.path.join(contest_template, '1problem.yaml')) as f:
+                return f.read().format(**problem_env[letter])
+
+        env['yaml_langs'] = '\n'.join(map(yaml_lang, contest.langs))
+        env['yaml_problems'] = '\n'.join(map(yaml_problem, letters))
+
+        print()
+        print('-'*42)
+        print('Writing contest config files')
+        for file in ['contest.yaml', 'problemset.yaml']:
+            print('Writing', file)
+            source = os.path.join(contest_template, file)
+            target = os.path.join(cdp_config, file)
+            touch_container(target)
+            with open(source) as source_f:
+                with open(target, 'w') as target_f:
+                    target_f.write(source_f.read().format(**env))
+
+        print()
+        print('-'*42)
+        print('Writing problem files')
+        for letter in letters:
+            penv = dict(env)
+            penv.update(problem_env[letter])
+            code = penv['problem_code']
+            for file in ['problem.yaml', os.path.join('problem_statement', 'problem.tex')]:
+                print('Writing', file, 'for', code)
+                source = os.path.join(contest_template, os.path.basename(file))
+                target = os.path.join(cdp_config, code, file)
+                touch_container(target)
+                with open(source) as source_f:
+                    with open(target, 'w') as target_f:
+                        target_f.write(source_f.read().format(**penv))
+
+            print("Copying model solution")
+            source = penv['details'].model_solution.filename
+            target = os.path.join(cdp_config, code, 'submissions', 'accepted', os.path.basename(source))
+            touch_container(target)
+            subprocess.run(['cp', source, target], check=True)
+
+            print("Copying data for {}...".format(code))
+            src_format = KGFormat(penv['problem_loc'], read='io')
+            for data_loc in [
+                    os.path.join(cdp_config, code, 'data', 'secret'),
+                    os.path.join(ext_data, code),
+                ]:
+                print("Copying to", data_loc)
+                dest_format = KGFormat(write='io', tests_folder=data_loc)
+                copied = 0
+                for (srci, srco), (dsti, dsto) in zip(src_format.thru_io(), dest_format.thru_expected_io()):
+                    touch_container(dsti)
+                    touch_container(dsto)
+                    subprocess.run(['cp', srci, dsti], check=True)
+                    subprocess.run(['cp', srco, dsto], check=True)
+                    copied += 2
+                print("Copied", copied, "files")
+
+    else:
+        raise CommandException("Unsupported contest format: {}".format(args.format))
 
 
 

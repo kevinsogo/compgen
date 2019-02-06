@@ -1,0 +1,22 @@
+{
+    "title": null,
+    "code": null,
+    "duration": "5:00:00",
+    "scoreboard_freeze_length": "01:00:00",
+    "langs": [
+        "java",
+        "c",
+        "cpp",
+        "python2",
+        "python3",
+        "pypy2",
+        "pypy3"
+    ],
+    "problems": [],
+    "site_password": null,
+    "team_count": 0,
+    "judge_count": 1,
+    "admin_count": 1,
+    "leaderboard_count": 1,
+    "feeder_count": 0
+}

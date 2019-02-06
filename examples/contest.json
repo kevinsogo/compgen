@@ -1,0 +1,26 @@
+{
+    "title": "Main Programming Contest",
+    "code": "MAIN",
+    "duration": "5:00:00",
+    "scoreboard_freeze_length": "01:00:00",
+    "langs": [
+        "java",
+        "c",
+        {
+            "lang": "cpp",
+            "compile": "g++ -O2 -std=gnu++14 -o {filename_base}.exe {filename}"
+        },
+        "python2",
+        "python3",
+        "pypy2",
+        "pypy3"
+    ],
+    "problems": [
+        "addition",
+        "split"
+    ],
+    "site_password": "testpassword",
+    "team_count": 11,
+    "judge_count": 4,
+    "admin_count": 3
+}

@@ -12,5 +12,8 @@ build/
 *.egg
 tests/
 *.executable
+*.exe
 temp/
 *.class
+CDP/
+ALLDATA/

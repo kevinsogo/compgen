@@ -1,5 +1,5 @@
 {
-    "title": "Addition",
+    "title": "Split",
     "model_solution": "solution.py",
     "validator": "validator.py",
     "testscript": "testscript",
@@ -15,5 +15,6 @@
     "checker": "checker_len_only.py",
     "judge_data_maker": "solution_len_only.py",
     "valid_subtasks": [1, 2, 3],
-    "subtasks_files": "subtasks.json"
+    "subtasks_files": "subtasks.json",
+    "time_limit": 3
 }

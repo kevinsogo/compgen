@@ -6,6 +6,8 @@ import re
 
 from .utils import * ### @import
 
+CURR_PLATFORM = 'local' ### @replace 'local', format
+
 class ValidationError(Exception): ...
 
 class StreamError(ValidationError): ...
@@ -226,19 +228,20 @@ class StrictStream(object):
     def do_multiple(self, f, n, *a, **kw):
         n = self._get(n)
         if n < 0: raise ValueError("n must be nonnegative: {}".format(n))
-        sep = ''.join(kw.get('sep', ' '))
+        sep = ''.join(kw.pop('sep', ' '))
+        end = kw.pop('end', '')
         for i in range(n):
-            yield f(*a)
+            yield f(*a, **kw)
             if i < n - 1:
                 for ch in sep: self.read_char(ch)
-        for ch in kw.get('end', ''): self.read_char(ch)
+        for ch in end: self.read_char(ch)
 
     def read_ints(self, *a, **kw): return self.do_multiple(self.read_int, *a, **kw)
     def read_tokens(self, *a, **kw): return self.do_multiple(self.read_token, *a, **kw)
 
     @save_on_label
     def read_int(self, *a, **kw):
-        return strict_int(self.read_token(charset=intchars), *map(self._get, a))
+        return strict_int(self.read_token(charset=intchars), *map(self._get, a), **kw)
 
     def read_space(self): return self.read_char(' ')
     def read_eoln(self): return self.read_char('\n') # ubuntu only (I think).
@@ -334,6 +337,10 @@ def validator(suppress_eof_warning=False):
             sf = StrictStream(file)
             res = f(sf, *args, **kwargs)
             if sf.last != EOF and not suppress_eof_warning: print("Warning: The validator didn't check for EOF at the end.", file=stderr)
+            ### @@ if format == 'pc2' {
+            if CURR_PLATFORM == 'pc2':
+                exit(42) # magic number to indicate successful validation
+            ### @@ }
             return res
         return new_f
     return _validator

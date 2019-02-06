@@ -1,7 +1,10 @@
 from sys import stdout, stderr
+import os.path
 import itertools, functools, argparse, traceback
 
 from .utils import * ### @import
+
+CURR_PLATFORM = 'local' ### @replace 'local', format
 
 def _merge_dicts(d, *others):
     d = d.copy()
@@ -20,7 +23,10 @@ class Fail(Exception): pass
 class Verdict:
     AC = "Success"
     PAE = "Wrong answer (Parse error)" # wrong answer due to invalid/unreadable format.
+    CE = "Compile Error" # the solution didn't compile
     WA = "Wrong answer" # correct output format, incorrect answer.
+    RTE = "Runtime Error" # solution crashed.
+    TLE = "Time Limit Exceeded" # solution didn't finish under the specified time limit.
     EXC = "Checker raised an error" # unintended errors of the checker.
     FAIL = "Checker failed" # deliberate failures, e.g. if the test data is detected as incorrect.
 
@@ -72,9 +78,6 @@ class _SN:
     problem_title = 'problem_title'
     aggregate = 'aggregate'
     iterator = 'iterator'
-
-
-CURR_PLATFORM = 'local' ### @replace 'local', format
 
 class Checker(object):
     def __init__(self):
@@ -177,6 +180,11 @@ class Checker(object):
 
 
 def _check_generic(checker, input_path, output_path, judge_path, **kwargs):
+    ### @@if format == 'pc2' {
+    if CURR_PLATFORM == 'pc2' and os.path.isfile('EXITCODE.TXT'): # WTH undocumented shit PC^2 !?!?
+        return Verdict.RTE, 0.0, "The solution didn't return a 0 exit code (maybe... because EXITCODE.TXT exists)."
+    ### @@}
+
     kwargs.update({
             'input_path': input_path,
             'output_path': output_path,
@@ -214,8 +222,11 @@ def _register_platform(name):
 
 _hr_verdict_name = {
     Verdict.AC: "Success",
+    Verdict.CE: "Compilation Error",
     Verdict.PAE: "Wrong Answer",
     Verdict.WA: "Wrong Answer",
+    Verdict.RTE: "Runtime Error",
+    Verdict.TLE: "Time limit exceeded", # I don't like HR's message "terminated due to timeout"
     Verdict.FAIL: "Checker Failed",
     Verdict.EXC: "Checker Failed.", # Added a dot so we can recognize which kind of failure it is.
 }
@@ -246,30 +257,65 @@ def _check_hr(checker, t_obj, r_obj, print_message=False):
 
 _polygon_rcode = {
     Verdict.AC: 0,
+    Verdict.CE: 1,
     Verdict.PAE: 2,
     Verdict.WA: 1,
+    Verdict.RTE: 1,
+    Verdict.TLE: 1,
     Verdict.FAIL: 3,
     Verdict.EXC: 3,
 }
 
-### @@if format in ('local', 'kg', 'pg') {
-@_register_platform('local') 
-@_register_platform('pg') # AFAIK, they are currently identical in behavior
+### @@if format in ('local', 'kg', 'pg', 'pc2') {
+_xml_outcome = {
+    Verdict.AC: "Accepted",
+    Verdict.CE: "No - Compilation Error",
+    Verdict.PAE: "No - Wrong Answer",
+    Verdict.WA: "No - Wrong Answer",
+    Verdict.RTE: "No - Run-time Error",
+    Verdict.TLE: "No - Time Limit Exceeded",
+    Verdict.FAIL: "No - Other - Contact Staff",
+    Verdict.EXC: "No - Other - Contact Staff",
+}
+def write_xml_verdict(verdict, message, result_file):
+    from xml.etree.ElementTree import Element, ElementTree
+    result = Element('result')
+    result.set('security', result_file)
+    result.set('outcome', _xml_outcome[verdict])
+    result.text = str(verdict) + ": " + message
+    ElementTree(result).write(result_file, xml_declaration=True, encoding="utf-8")
+### @@}
+
+### @@if format in ('local', 'kg', 'pg', 'pc2') {
+@_register_platform('local')
+@_register_platform('kg')
+@_register_platform('pg')
+@_register_platform('pc2')
 def _check_local(checker, title='', file=stdout, help=None):
-    desc = help or ('judge for the problem "{}"'.format(title) if title else 'judge for the problem')
+    desc = help or CURR_PLATFORM + ('judge for the problem' + (' "{}"'.format(title) if title else ''))
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('input_path', help='input file path')
     parser.add_argument('output_path', help="contestant's file path")
     parser.add_argument('judge_path', help='judge auxiliary data file path')
+    parser.add_argument('result_file', nargs='?', help='target file to contain the verdict in XML format')
+    parser.add_argument('extra_args', nargs='*', help='extra arguments that will be ignored')
     parser.add_argument('-c', '--code', default='n/a', help='path to the solution used')
     parser.add_argument('-t', '--tc-id', default=None, type=int, help='test case ID, zero indexed')
-    parser.add_argument('-v', '--verbose', action='store_true', help='print more details')
+    if CURR_PLATFORM == 'pc2':
+        parser.add_argument('-q', '--quiet', action='store_true', help='print less details')
+    else:
+        parser.add_argument('-v', '--verbose', action='store_true', help='print more details')
     parser.add_argument('-i', '--identical', action='store_true', help=argparse.SUPPRESS)
     args = parser.parse_args()
 
+    verbose = not args.quiet if CURR_PLATFORM == 'pc2' else args.verbose
     tc_id = args.tc_id or ''
 
-    if args.verbose: print("{:>2} Checking the output...".format(tc_id), file=file)
+    if verbose:
+        if args.extra_args:
+            print("{:>2} Received extra args {}... ignoring them.".format(tc_id, args.extra_args), file=file)
+        print("{:>2} Checking the output...".format(tc_id), file=file)
+
     verdict, score, message = _check_generic(checker,
             input_path=args.input_path,
             output_path=args.output_path,
@@ -277,16 +323,20 @@ def _check_local(checker, title='', file=stdout, help=None):
             code_path=args.code,
             tc_id=args.tc_id,
             identical=args.identical,
-            verbose=args.verbose,
+            verbose=verbose,
         )
 
-    if args.verbose:
+    if verbose:
         print("{:>2} Result:  {}".format(tc_id, verdict), file=file)
         print("{:>2} on HR:   {}".format(tc_id, _hr_verdict_name[verdict]), file=file)
         print("{:>2} Score:   {}".format(tc_id, score), file=file)
         if message: print("{:>2} Message: {}".format(tc_id, message), file=file)
     else:
         print("{:>2} Score={} {}".format(tc_id, score, verdict), file=file)
+
+    if args.result_file:
+        if verbose: print("{:>2} Writing result to {}...".format(tc_id, args.result_file), file=file)
+        write_xml_verdict(verdict, message, args.result_file)
 
     exit(_polygon_rcode[verdict])
 ### @@ }

@@ -1,0 +1,11 @@
+  - name: '{display_name}'
+    active: true
+    compilerCmd: '{compile}'
+    exemask: '{compiled_file}'
+    execCmd: '{run}'
+    runner: '{run_first}'
+    runner-args: '{run_rest}'
+    interpreted: {interpreted}
+    use-judge-cmd: false
+    judge-exec-cmd: '{run}'
+
