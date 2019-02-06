@@ -19,6 +19,7 @@ from .black_magic import *
 from .contest_details import *
 from .details import *
 from .formats import *
+from .passwords import *
 from .programs import *
 from .testscripts import *
 from .utils import *
@@ -30,16 +31,6 @@ def touch_container(file):
     if not os.path.exists(dirname): print('Creating folder:', dirname)
     pathlib.Path(dirname).mkdir(parents=True, exist_ok=True)
 
-
-def memoize(function):
-    memo = {}
-    @wraps(function)
-    def f(*args, **kwargs):
-        key = args, tuple(sorted(kwargs.items()))
-        if key not in memo: memo[key] = function(*args, **kwargs)
-        return memo[key]
-    f.memo = memo
-    return f
 
 class CommandException(Exception): ...
 
@@ -803,8 +794,9 @@ def kg_contest(format_, args):
         contest = ContestDetails.from_loc(args.config)
 
         # identify key folders
-        cdp_config = os.path.join(contest.code, 'CDP', 'config')
-        ext_data = os.path.join(contest.code, 'ALLDATA')
+        contest_folder = os.path.join('kgkompiled', contest.code)
+        cdp_config = os.path.join(contest_folder, 'CDP', 'config')
+        ext_data = os.path.join(contest_folder, 'ALLDATA')
         contest_template = os.path.join(script_path, 'data', 'contest_template', 'pc2')
 
         # construct template environment
@@ -816,11 +808,11 @@ def kg_contest(format_, args):
             "duration": contest.duration,
             "scoreboard_freeze_length": contest.scoreboard_freeze_length,
             "site_password": contest.site_password,
-            "team_count": contest.team_count,
-            "judge_count": contest.judge_count,
-            "admin_count": contest.admin_count,
-            "leaderboard_count": contest.leaderboard_count,
-            "feeder_count": contest.feeder_count,
+            "team_count": len(contest.teams),
+            "judge_count": len(contest.judges),
+            "admin_count": len(contest.admins),
+            "leaderboard_count": len(contest.leaderboards),
+            "feeder_count": len(contest.feeders),
             "filename": "{:mainfile}",
             "filename_base": "{:basename}",
             "alldata": os.path.abspath(ext_data),
@@ -944,6 +936,10 @@ def kg_contest(format_, args):
                     copied += 2
                 print("Copied", copied, "files")
 
+        print()
+        print('-'*42)
+        print('Making passwords')
+        write_passwords(contest, 'pc2', dest=contest_folder)
     else:
         raise CommandException("Unsupported contest format: {}".format(args.format))
 

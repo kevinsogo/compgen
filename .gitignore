@@ -15,5 +15,3 @@ tests/
 *.exe
 temp/
 *.class
-CDP/
-ALLDATA/

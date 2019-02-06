@@ -33,3 +33,13 @@ def apply_after(g, name=None):
 listify = apply_after(list, 'listify')
 
 
+def memoize(function):
+    memo = {}
+    @wraps(function)
+    def f(*args, **kwargs):
+        key = args, tuple(sorted(kwargs.items()))
+        if key not in memo: memo[key] = function(*args, **kwargs)
+        return memo[key]
+    f.memo = memo
+    return f
+

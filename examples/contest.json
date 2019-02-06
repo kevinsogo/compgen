@@ -1,6 +1,6 @@
 {
-    "title": "Main Programming Contest",
-    "code": "MAIN",
+    "title": "My Example Programming Contest",
+    "code": "EXAMPLECONTEST",
     "duration": "5:00:00",
     "scoreboard_freeze_length": "01:00:00",
     "langs": [
@@ -20,7 +20,22 @@
         "split"
     ],
     "site_password": "testpassword",
-    "team_count": 11,
-    "judge_count": 4,
-    "admin_count": 3
+    "teams": [
+        {
+            "school": "Diliman de Manila University",
+            "teams": [
+                ";pack",
+                "Scc:"
+            ]
+        }, {
+            "school": "University of the Philippines - Ateneo",
+            "teams": [
+                "Quimoth",
+                "Fuchsia Warriors"
+            ]
+        }
+    ],
+    "judges": [ "Kevin", "Payton", "Judy" ],
+    "admin_count": 3,
+    "leaderboard_count": 2
 }
