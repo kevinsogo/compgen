@@ -1,6 +1,6 @@
 {
     "title": "Addition",
-    "model_solution": ["sol.cpp", "g++ sol.cpp -o sol.cpp.executable", "./sol.cpp.executable"],    
+    "model_solution": ["sol.cpp", "g++ {filename} -o sol.exe", ".{sep}sol.exe"],
     "validator": "validator.py",
     "testscript": "testscript",
     "generators": [

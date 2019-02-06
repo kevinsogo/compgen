@@ -16,7 +16,7 @@
     },
     "cpp": {
         "compile": "g++ -O2 -std=c++17 {filename} -o {filename_base}.exe",
-        "run": "./{filename_base}.exe",
+        "run": ".{sep}{filename_base}.exe",
         "endings": [".c", ".cpp", ".c++"]
     }
 }

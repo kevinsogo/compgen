@@ -1,6 +1,6 @@
 {
     "title": "Find the Sum Extreme",
-    "model_solution": ["sol.cpp", "g++ sol.cpp -o sol", "./sol"],
+    "model_solution": ["sol.cpp", "g++ {filename} -o sol", "./sol"],
     "validator": "validator.py",
     "testscript": "testscript",
     "generators": [

@@ -10,7 +10,7 @@ def find_matches(cmd, generators):
 
 
 # for now, only accept "> $" commands
-def parse_testscript(inputs, testscript, generators):
+def parse_testscript(inputs, testscript, generators, relpath=None):
     for line in testscript.strip().split('\n'):
         parts = line.split()
         if not parts or parts[0] == '#':
@@ -21,7 +21,7 @@ def parse_testscript(inputs, testscript, generators):
         cmd = parts[:-2]
 
         if cmd[0] == '!':
-            prog = Program('!custom', '', cmd[1:])
+            prog = Program.from_args('', cmd[1:], relpath=relpath)
             args = ''
         else:
             progs = list(find_matches(cmd[0], generators))

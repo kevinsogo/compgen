@@ -10,16 +10,9 @@ with open(os.path.join(script_path, 'data', 'defaults.json')) as f:
 valid_keys = set(defaults) | {"comments", "extras"}
 
 
-def detector_from_validator(validator):
+def detector_from_validator(validator, relpath=None):
     if validator:
-        return Program("!fromvalidator", validator.compile, ["kg-subtasks", "-c"] + validator.run + ["--"])
-
-
-def _attach_relpath(relpath, path):
-    if not relpath or not path or os.path.isabs(path):
-        return path
-    else:
-        return os.path.join(relpath, path)
+        return Program("!fromvalidator", validator.compile, ["kg-subtasks", "-c"] + validator.run + ["--"], relpath=relpath)
 
 
 class Details(object):
@@ -46,7 +39,7 @@ class Details(object):
             setattr(self, key, [self._maybe_prog(x, key=key) for x in self.details.get(key, [])])
 
         if not self.subtask_detector:
-            self.subtask_detector = detector_from_validator(self.validator)
+            self.subtask_detector = detector_from_validator(self.validator, relpath=relpath)
             assert (not self.subtask_detector) == (not self.validator)
 
 
@@ -59,7 +52,7 @@ class Details(object):
         self.subtasks_files = self.details.get('subtasks_files', "")
 
         for key in ['testscript', 'subtasks_files']:
-            setattr(self, key, _attach_relpath(relpath, getattr(self, key)))
+            setattr(self, key, attach_relpath(relpath, getattr(self, key)))
 
         # TODO move this check to the appropriate place, e.g., only when subtasks_files is actually accessed
         # if self.subtasks_files and os.path.isfile(self.subtasks_files):
@@ -89,7 +82,7 @@ class Details(object):
 
     @classmethod
     def from_loc(cls, loc, relpath=None):
-        details_file = _attach_relpath(relpath, 'details.json')
+        details_file = attach_relpath(relpath, 'details.json')
         if not loc and os.path.isfile(details_file): loc = details_file
         if loc:
             with open(loc) as f:
@@ -108,9 +101,7 @@ class Details(object):
             diff_pref = '!diff.'
             if isinstance(v, str) and v.startswith(diff_pref): 
                 v = os.path.join(script_path, 'diff', v[len(diff_pref):] + '.py')
-        prog = Program.from_data(v) if v else None
-        if prog: # TODO do this in programs.py
-            prog.filename = _attach_relpath(self.relpath, prog.filename)
+        prog = Program.from_data(v, relpath=self.relpath) if v else None
         return prog
 
     def serialize(self):

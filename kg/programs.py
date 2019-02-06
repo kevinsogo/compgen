@@ -1,3 +1,4 @@
+import os
 import os.path
 import subprocess
 from collections import defaultdict
@@ -12,12 +13,25 @@ def infer_lang(filename):
     base, ext = os.path.splitext(filename)
     return lang_of_ending.get(ext)
 
+def attach_relpath(relpath, path):
+    if not relpath or not path or path.startswith('!') or os.path.isabs(path):
+        return path
+    else:
+        return os.path.join(relpath, path)
+
 class Program:
-    def __init__(self, filename, compile_, run):
+    def __init__(self, filename, compile_, run, relpath=None):
         if not filename: raise ValueError("Filename cannot be empty")
-        self.filename = filename
-        self.compile = compile_
-        self.run = run
+        self.filename = attach_relpath(relpath, filename)
+        env = {
+            'loc': relpath,
+            'sep': os.sep,
+            'filename': self.filename,
+            'raw_filename': filename,
+            'filename_base': os.path.splitext(os.path.basename(filename))[0],
+        }
+        self.compile = env['compile'] = [p.format(**env) for p in compile_]
+        self.run = [p.format(**env) for p in run]
         self._compiled = False
         super(Program, self).__init__()
 
@@ -45,7 +59,7 @@ class Program:
 
 
     @classmethod
-    def from_data(cls, arg):
+    def from_data(cls, arg, relpath=None):
         if isinstance(arg, list):
             if len(arg) == 2:
                 filename, run = arg
@@ -59,23 +73,19 @@ class Program:
             if not lang:
                 raise Exception("Cannot infer language: {}".format(str(arg)))
             filename = arg
-            env = {
-                'filename': filename,
-                'filename_base': os.path.splitext(os.path.basename(filename))[0],
-            }
-            compile_ = env['compile'] = langs[lang]['compile'].format(**env)
-            run = langs[lang]['run'].format(**env)
+            compile_ = langs[lang]['compile']
+            run = langs[lang]['run']
         else:
             raise Exception("Unknown program type: {}".format(repr(arg)))
 
-        return cls(filename, compile_.split(), run.split())
+        return cls(filename, compile_.split(), run.split(), relpath=relpath)
 
     @classmethod
-    def from_args(cls, file, command):
+    def from_args(cls, file, command, relpath=None):
         if command:
-            return cls(file or '!custom', [], command)
+            return cls(file or '!custom', [], command, relpath=relpath)
         elif file:
-            return cls.from_data(file)
+            return cls.from_data(file, relpath=relpath)
 
     @classmethod
     def noop(cls):

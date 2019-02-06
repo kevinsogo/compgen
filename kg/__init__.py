@@ -139,7 +139,7 @@ subtasks_p.add_argument('-vf', '--validator-file', help='validator file')
 def kg_subtasks(format_, args):
     if not args.format: args.format = format_
     format_ = get_format(args, read='i')
-    details = Details.from_format_loc(args.format, args.details)
+    details = Details.from_format_loc(args.format, args.details, relpath=args.loc)
 
     # build detector
     validator = None
@@ -160,7 +160,7 @@ def kg_subtasks(format_, args):
 
     get_subtasks(subtasks, detector, format_)
 
-def get_subtasks(subtasks, detector, format_):
+def get_subtasks(subtasks, detector, format_, relpath=None):
     subtset = set(subtasks)
 
     # iterate through inputs, run our detector against them
@@ -213,7 +213,7 @@ gen_p.add_argument('-jf', '--judge-file', help='judge file')
 def kg_gen(format_, args):
     if not args.format: args.format = format_
     format_ = get_format(args, read='i', write='o')
-    details = Details.from_format_loc(args.format, args.details)
+    details = Details.from_format_loc(args.format, args.details, relpath=args.loc)
 
     solution = Program.from_args(args.file, args.command) or details.judge_data_maker
     judge = Program.from_args(args.judge_file, args.judge_command) or details.checker
@@ -271,7 +271,7 @@ test_p.add_argument('-vf', '--validator-file', help='validator file, for subtask
 def kg_test(format_, args):
     if not args.format: args.format = format_
     format_ = get_format(args, read='io')
-    details = Details.from_format_loc(args.format, args.details)
+    details = Details.from_format_loc(args.format, args.details, relpath=args.loc)
 
     solution = Program.from_args(args.file, args.command) or details.model_solution
     if not solution: raise CommandException("Missing solution")
@@ -363,7 +363,7 @@ run_p.add_argument('-f', '--file', help='solution file')
 def kg_run(format_, args):
     if not args.format: args.format = format_
     format_ = get_format(args, read='i')
-    details = Details.from_format_loc(args.format, args.details)
+    details = Details.from_format_loc(args.format, args.details, relpath=args.loc)
 
     solution = Program.from_args(args.file, args.command) or details.judge_data_maker
     if not solution: raise CommandException("Missing solution")
@@ -393,46 +393,47 @@ make_p.add_argument('--validation', action='store_true', help="Validate the inpu
 make_p.add_argument('--checks', action='store_true', help="Check the output file against the checker")
 
 @set_handler(make_p)
-def kg_make(format_, args):
+def _kg_make(format_, args):
     if not is_same_format(format_, 'kg'):
         raise CommandException("You can't use '{}' format to 'make'.".format(format_))
 
-    details = Details.from_format_loc(format_, args.details)
+    details = Details.from_format_loc(format_, args.details, relpath=args.loc)
+    kg_make(args.makes, args.loc, format_, details, validation=args.validation, checks=args.checks)
 
-    makes = set(args.makes)
-
+def kg_make(makes, loc, format_, details, validation=False, checks=False):
+    makes = set(makes)
     valid_makes = {'all', 'inputs', 'outputs', 'subtasks'}
     if not (makes <= valid_makes):
         raise CommandException("Unknown make param(s): {}".format(' '.join(sorted(makes - valid_makes))))
 
     if 'all' in makes:
         makes |= valid_makes
-        args.validation = args.checks = True
+        validation = checks = True
 
     if 'inputs' in makes:
         print()
         print('~~ '*14)
-        print('MAKING INPUTS...' + ("WITH VALIDATION..." if args.validation else 'WITHOUT VALIDATION'))
+        print('MAKING INPUTS...' + ("WITH VALIDATION..." if validation else 'WITHOUT VALIDATION'))
         if not details.testscript:
             raise CommandException("Missing testscript")
 
         with open(details.testscript) as scrf:
             script = scrf.read()
 
-        fmt = get_format_from_type(format_, args.loc, write='i')
+        fmt = get_format_from_type(format_, loc, write='i')
 
-        if args.validation:
+        if validation:
             validator = details.validator
             validator.do_compile()
 
-        for filename, gen, fargs in parse_testscript(fmt.thru_expected_inputs(), script, details.generators):
+        for filename, gen, fargs in parse_testscript(fmt.thru_expected_inputs(), script, details.generators, relpath=loc):
             print('GENERATING', filename)
             touch_container(filename)
             gen.do_compile()
             with open(filename, 'w') as file:
                 gen.do_run(*fargs, stdout=file)
 
-            if args.validation:
+            if validation:
                 with open(filename) as file:
                     validator.do_run(stdin=file)
 
@@ -441,9 +442,9 @@ def kg_make(format_, args):
     if 'outputs' in makes:
         print()
         print('~~ '*14)
-        print('MAKING OUTPUTS...' + ("WITH CHECKER..." if args.checks else 'WITHOUT CHECKER'))
-        fmt = get_format_from_type(format_, args.loc, read='i', write='o')
-        generate_outputs(fmt, details.judge_data_maker, details.checker if args.checks else Program.noop(), details.model_solution)
+        print('MAKING OUTPUTS...' + ("WITH CHECKER..." if checks else 'WITHOUT CHECKER'))
+        fmt = get_format_from_type(format_, loc, read='i', write='o')
+        generate_outputs(fmt, details.judge_data_maker, details.checker if checks else Program.noop(), details.model_solution)
 
         print('DONE MAKING OUTPUTS.')
 
@@ -452,7 +453,7 @@ def kg_make(format_, args):
         print('~~ '*14)
         print('MAKING SUBTASKS...')
         if not details.valid_subtasks:
-            if 'subtasks' in args.makes:
+            if 'subtasks' in makes:
                 raise Exception("valid_subtasks list required if you wish to make subtasks")
             else:
                 print("no valid_subtasks found, so actually, subtasks will not be made. move along.")
@@ -470,7 +471,7 @@ def kg_make(format_, args):
                 raise CommandException("Missing subtask list")
 
             # iterate through inputs, run our detector against them
-            subtasks_of, all_subtasks, inputs = get_subtasks(subtasks, detector, get_format_from_type(format_, args.loc, read='i'))
+            subtasks_of, all_subtasks, inputs = get_subtasks(subtasks, detector, get_format_from_type(format_, loc, read='i'), relpath=loc)
 
             print('WRITING TO {}'.format(subjson))
             with open(subjson, 'w') as f:
@@ -776,6 +777,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
 contest_p = subparsers.add_parser('kontest', aliases=['contest'], help='Compile a contest')
 contest_p.add_argument('format', help='Contest format to compile to')
 contest_p.add_argument('config', help='JSON file containing the contest configuration')
+contest_p.add_argument('-m', '--make-all', action='store_true', help='Run "kg make all" in all problems')
 
 def problem_letters():
     for l in count(1):
@@ -824,6 +826,7 @@ def kg_contest(format_, args):
         letters = []
         for letter, problem_loc in zip(problem_letters(), contest.problems):
             details = Details.from_format_loc(format_, os.path.join(problem_loc, 'details.json'), relpath=problem_loc)
+
             code = os.path.basename(problem_loc)
             if code in found_codes:
                 found_codes[code] += 1
@@ -833,6 +836,10 @@ def kg_contest(format_, args):
             print()
             print('-'*42)
             print("Getting problem {} (from {})".format(repr(code), problem_loc))
+
+            if args.make_all:
+                print('Running "kg make all"...')
+                kg_make(['all'], problem_loc, format_, details)
 
             time_limit = int(round(details.time_limit))
             if time_limit != details.time_limit:
@@ -920,7 +927,7 @@ def kg_contest(format_, args):
             try:
                 src_format = KGFormat(penv['problem_loc'], read='io')
             except FormatException as exc:
-                raise CommandException("No tests found for '{}'. Please run 'kg make all' to generate the files.".format(penv['problem_loc'])) from exc
+                raise CommandException("No tests found for '{}'. Please run 'kg make all' to generate the files, or call 'kg kontest' with the '-m' option.".format(penv['problem_loc'])) from exc
             for data_loc in [
                     os.path.join(cdp_config, code, 'data', 'secret'),
                     os.path.join(ext_data, code),

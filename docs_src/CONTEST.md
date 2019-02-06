@@ -42,11 +42,11 @@ The next step is to run `kg kontest pc2 path/to/contest.json`. This will create 
 
 A couple of things to keep in mind:
 
-- The `ALLDATA` folder needs to be copied to each judge computer. It must be located in the same absolute path across all jduge computers. This is a PC2 requirement. This also means that all judge computers must be identical, including the name of the current user.
+- The `ALLDATA` folder needs to be copied to each judge computer. It must be located in the same absolute path across all judge computers. This is a PC2 requirement. This also means that all judge computers must be identical, including the name of the current user.
 
     I suggest placing the `ALLDATA` folder in `/home/[user]/[contestcode]/ALLDATA` to make it simple. And then in the admin, go to the *Problems* tab, click *Set Judge's Data Path*, and paste the absolute path to `ALLDATA` there.  
 
-- `kg kontest` expects that the command `kg make all` has been run for every problem. 
+- `kg kontest` expects that the command `kg make all` has been run for every problem. If you want to force run `kg make all` across all problems, pass the `-m` option to `kg kontest`.
 
 A working example is provided in `examples/contest.json`. You can run these to test it:
 
@@ -71,13 +71,13 @@ If you wish to update an existing PC2 contest, run `kg kontest` again, and then 
 
 ## Additional settings  
 
-There are a couple of other options that I couldn't find a way to set automatically. You'll have to set them manually for now.
+There are a couple of other options that I couldn't find a way to set automatically. You'll have to set them manually for now. You need to be an admin to do these.
 
 - Update the *Maximum output size* under *Settings*. This is set to a very low 512Kb by default. I suggest 40000Kb. Be sure to click the *Update* button.
 
 - In each problem, there's also a new feature called *Stop execution on first failed test case* which sounds very useful. You don't have to set it for all problems, and you don't have to do it immediately; you may set it while the contest is running, for instance if a particular problem seems to be attracting too many TLEs.
 
-- Good random passwords have been created for all accounts. To upload them, log in as an admin, go to the *Accounts* tab, click *Load*, and select the `accounts_{contestcode}.txt` file.
+- Good random passwords have been created for all accounts. To upload them, go to the *Accounts* tab, click *Load*, and select the `accounts_{contestcode}.txt` file.
     
     *Note:* The `logins_*.html` files contain the same passwords but in printable formats which can be distributed to the teams. (Keep them safe!)
 

@@ -1,6 +1,6 @@
 # comments go here
 
-! cat sample.in > $
+! cat {loc}{sep}sample.in > $
 single_case 10 10 > $
 single_case 10 100 > $
 single_case 10 1000 > $

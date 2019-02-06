@@ -54,7 +54,7 @@ The metadata about the problem can be found in `details.json`. It looks like thi
 ```json
 {
     "title": "Find the Sum Extreme",
-    "model_solution": ["sol.cpp", "g++ sol.cpp -o sol", "./sol"],
+    "model_solution": ["sol.cpp", "g++ {filename} -o sol", "./sol"],
     "validator": "validator.py",
     "testscript": "testscript",
     "generators": [
@@ -80,7 +80,7 @@ The `checker` field may be omitted. It defaults to a simple diff check. There ar
 Note that the file endings will tell KompGen what language your program is. There will be a predetermined compile and run command for each recognized language. (See `langs.json` for details.) You can also use a three-argument version to specify a file: `[filename, compile, run]`, for example, as used in `model_solution` above. (The two-argument version is `[filename, run]`) For example, if your validator is written in Haskell, then you could write:
 
 ```js
-    "validator": ["validator.hs", "ghc validator.hs", "./validator"],
+    "validator": ["validator.hs", "ghc {filename}", "./validator"],
 ```
 
 <!-- Advanced tutorial involves all hidden options here, "extras"/"comments", "subtasks.json", "!diff.*" -->
@@ -290,7 +290,7 @@ The testscript file contains instructions on how to generate all the tests. It l
 ```bash
 # comments go here
 
-! cat sample.in > $
+! cat {loc}{sep}sample.in > $
 single_case 10 10 > $
 single_case 10 100 > $
 single_case 10 1000 > $

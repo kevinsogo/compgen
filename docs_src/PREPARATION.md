@@ -58,7 +58,7 @@ The `checker` field may be omitted. It defaults to a simple diff check. There ar
 Note that the file endings will tell KompGen what language your program is. There will be a predetermined compile and run command for each recognized language. (See `langs.json` for details.) You can also use a three-argument version to specify a file: `[filename, compile, run]`, for example, as used in `model_solution` above. (The two-argument version is `[filename, run]`) For example, if your validator is written in Haskell, then you could write:
 
 ```js
-    "validator": ["validator.hs", "ghc validator.hs", "./validator"],
+    "validator": ["validator.hs", "ghc {filename}", "./validator"],
 ```
 
 <!-- Advanced tutorial involves all hidden options here, "extras"/"comments", "subtasks.json", "!diff.*" -->
