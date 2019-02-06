@@ -104,7 +104,7 @@ There are a couple of other options that I couldn't find a way to set automatica
 
 - In each problem, there's also a new feature called *Stop execution on first failed test case* which sounds very useful. You don't have to set it for all problems, and you don't have to do it immediately; you may set it while the contest is running, for instance if a particular problem seems to be attracting too many TLEs.
 
-- To upload the passwords as an admin, go to the *Accounts* tab, click *Load*, and select the `accounts_{contestcode}.txt` file.
+- Good random passwords have been created for all accounts. To upload them, log in as an admin, go to the *Accounts* tab, click *Load*, and select the `accounts_{contestcode}.txt` file.
     
     The `logins_*.html` files contain the same passwords but in printable formats which can be distributed to the teams.
 
