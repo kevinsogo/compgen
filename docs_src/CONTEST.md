@@ -22,11 +22,18 @@ Most fields should be self-explanatory, but here are things to keep in mind:
 
 - The filename can be anything; it doesn't have to be `contest.json`.  
 
-- The `code` field is preferred to not contain any special characters. A folder with that name will be created at the current directory later.
+- The `code` field is preferred to not contain any special characters. A folder with that name will be created later.
 
-- The `langs` field contains a list of allowed programming languages in the contest. Each entry can be a string denoting the language code name or a dictionary containing additional details (like in `cpp` above). The missing fields will have predefined defaults which can be seen in `contest_langs.json`.  
+- Each entry in the `langs` field contains a list of allowed programming languages can be a string denoting the language code name or a dictionary containing additional details (like in `cpp` above). The missing fields will have predefined defaults which can be seen in `contest_langs.json`.  
 
 - The `problems` field contains a list of folders representing the problems. Each of these folders must contain a `details.json` file.  
+
+- The `*_count` fields are optional.  
+
+- `judge_count` can be replaced by `judges` which should be a list of judge names. The same is true with the other `*_count` fields.
+
+- The `teams` field is also a bit special: you can group teams according to their university. See `examples/contest.json` for an example.
+
 
 
 ## kg kontest
@@ -41,12 +48,6 @@ A couple of things to keep in mind:
 
 - `kg kontest` expects that the command `kg make all` has been run for every problem. 
 
-- The `*_count` fields are optional.  
-
-- `judge_count` can be replaced by `judges` which should be a list of judge names. The same with the other `*_count`s.
-
-- The `teams` field is also a bit special: you can group teams according to their university. See `examples/contest.json` for an examsple.
-
 A working example is provided in `examples/contest.json`. You can run these to test it:
 
 ```bash
@@ -54,7 +55,7 @@ cd examples
 kg kontest pc2 contest.json
 ```
 
-This will create a `kgkompiled/EXAMPLECONTEST` folder from the two example problems.
+This will create the folder `kgkompiled/EXAMPLECONTEST` from the two example problems.
 
 ## Loading to PC2
 
@@ -66,7 +67,7 @@ pc2server --load path/to/CDP/config/contest.yaml
 
 Alternatively, run the server normally, and in the admin, go to the *Import Config* tab and load `contest.yaml` there.
 
-If you wish to update an existing PC2 contest, run `kg kontest` again, and then load `contest.yaml` from *Import Config* again. The `--load` method doesn't work in this case.
+If you wish to update an existing PC2 contest, run `kg kontest` again, and then load `contest.yaml` from *Import Config* again. The `--load` method cannot be used to update.
 
 ## Additional settings  
 
@@ -78,11 +79,11 @@ There are a couple of other options that I couldn't find a way to set automatica
 
 - Good random passwords have been created for all accounts. To upload them, log in as an admin, go to the *Accounts* tab, click *Load*, and select the `accounts_{contestcode}.txt` file.
     
-    The `logins_*.html` files contain the same passwords but in printable formats which can be distributed to the teams.
+    *Note:* The `logins_*.html` files contain the same passwords but in printable formats which can be distributed to the teams. (Keep them safe!)
 
 ## Practice contest
 
-If you wish to hold a practice round, create another `contest.json` file (say `practice_contest.json`) and perform the same steps above. You may load it under a different *Profile*.
+If you wish to hold a practice round, create another `contest.json` file (say `practice_contest.json`) and perform the same steps above. Give it a different contest code. You may load it under a different *Profile*.
 
 # Other Formats  
 
