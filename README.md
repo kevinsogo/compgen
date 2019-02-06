@@ -152,6 +152,18 @@ You can still run `kg make all` if you wish.
 
 Behind the scenes, some programs need to be self-contained in a single file before uploading, hence, all imports are "inlined" automatically. A directive called `@import` is used for this. See the longer [tutorial](docs/PREPARATION.md#Some restrictions) for more details.  
 
+## Phase D. Compiling a Contest  
+
+Say you have created a bunch of problems and you would now like to easily upload them to a contest system such as PC2. It is a simple two-step process.
+
+1. Create a `contest.json` file which will contain the details of the contest, including allowed languages and list of problems. A template exists in `examples/templates/contest.json` for you.  
+
+2. Run `kg kontest pc2 path/to/contest.json`. Here, `pc2` indicates the format. For now, only `pc2` is supported, but this may change in the future.  
+
+    In the case of `pc2`, this will create a folder containing, among other things, `contest.yaml`, which can be loaded by PC2.  
+
+More details can be found [here](docs/CONTEST.md), which includes additional things you need to do, like configuring settings that can't be set automatically due to technical limitations (mostly theirs).  
+
 
 
 

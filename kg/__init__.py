@@ -925,7 +925,10 @@ def kg_contest(format_, args):
             subprocess.run(['cp', source, target], check=True)
 
             print("Copying data for {}...".format(code))
-            src_format = KGFormat(penv['problem_loc'], read='io')
+            try:
+                src_format = KGFormat(penv['problem_loc'], read='io')
+            except FormatException as exc:
+                raise CommandException("No tests found for '{}'. Please run 'kg make all' to generate the files.".format(penv['problem_loc'])) from exc
             for data_loc in [
                     os.path.join(cdp_config, code, 'data', 'secret'),
                     os.path.join(ext_data, code),
