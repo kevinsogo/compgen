@@ -95,6 +95,40 @@ kg-hr # HackerRank
 This automatically detects the tests based on the corresponding format, so no need to pass `-i` and `-o` arguments. It receives an optional argument `--loc` which says where the test data is located. It defaults to the current folder.
 
 
+## Generate Passwords  
+
+Given a list of teams in JSON format in a file, say, `teams.json`, you can generate passwords for them using:
+
+```bash
+kg passwords teams.json
+```
+
+This generates the files `kgkompiled/logins_*.html` which contain the same passwords in printable format. (Keep them safe!)
+
+The teams can be grouped by school. See the example in `examples/teams.json`. The school names will be included in the output.
+
+This uses [bootstrap](https://getbootstrap.com/) for styling, so the output would look great with internet access. If you don't have internet access, find [a copy](https://getbootstrap.com/docs/3.3/getting-started/) of `bootstrap.min.css` and place it in the same folder as the `*.html` files.  
+
+
+## Generate Seating Arrangements
+
+Given a list of teams in, say, `teams.json`, and the seat layout in, say, `seating.txt`, you can assign seats to them using the following:
+
+```bash
+kg seating seating.txt write teams.json > seating.html
+```
+
+The teams can be grouped by school. See the example in `examples/teams.json`. This is used so that students from the same school can be placed far from one another.
+
+The format of `seating.txt` is quite simple. The first grid represents the layout of the seats, and all subsequent grids represent constraints. Higher digits represent stronger constraints. The example in `examples/seating.txt` is a simple layout: 
+
+- It has eight columns, with consecutive columns facing different directions.
+- One of the seats, `#`, is unavailable. 
+- Each person cannot seat within one position of a schoolmate, and cannot seat within two if at least one is facing the other.
+
+Like the password output, this also uses bootstrap.  
+
+
 
 # Full process
 
@@ -163,6 +197,7 @@ Say you have created a bunch of problems and you would now like to easily upload
     In the case of `pc2`, this will create a folder containing (among other things) `contest.yaml`, which can be loaded by PC2. It also contains randomly generated passwords for all accounts.  
 
 More details can be found [here](docs/CONTEST.md), which includes additional things you need to do, like configuring settings that can't be set automatically due to technical limitations (mostly theirs).  
+
 
 
 ## Adding to a git repo

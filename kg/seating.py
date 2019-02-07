@@ -17,10 +17,6 @@ class SeatingFormatError(SeatingError): ...
 
 script_path = os.path.dirname(os.path.realpath(__file__))
 
-@listify
-def load_grid(f, seek_eof=True):
-    size = None
-
 def dump_grid(f, grid):
     sz = max(len(str(v)) for row in grid for v in row)
     for row in grid:
@@ -48,6 +44,9 @@ class Seating:
                     eof = True
                     break
                 line = line.strip()
+                if line == 'END':
+                    eof = True
+                    break
                 if not line: break
                 line = line.split()
                 if size is None: size = len(line)
@@ -77,6 +76,7 @@ class Seating:
             for row in grid:
                 print(*(str(v).rjust(sz) for v in row), file=f)
             print(file=f)
+        print('END', file=f)
 
     @classmethod
     def gen(cls, r, c=None, w=0):

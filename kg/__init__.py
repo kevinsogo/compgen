@@ -983,15 +983,9 @@ passwords_p.add_argument('-c', '--code', '--contest-code', help='Contest code')
 passwords_p.add_argument('-t', '--title', '--contest-title', help='Contest title')
 passwords_p.add_argument('-a', '--account-format', default='team{idx}', help='Account name format')
 
-@set_handler(passwords_p, stderr)
+@set_handler(passwords_p)
 def passwords_p(format_, args):
     with open(args.teams) as f: team_schools = ContestDetails.get_team_schools(json.load(f))
-
-    print(file=stderr)
-    print('.'*30, file=stderr)
-    print('Writing the passwords to stdout... Pipe the output to a file if you wish.', file=stderr)
-    print('.'*30, file=stderr)
-    print(file=stderr)
 
     team_names = [team for ts in team_schools for team in ts['teams']]
     passwords, seed = create_passwords(team_names, seedval=args.seed)
@@ -1016,12 +1010,6 @@ def passwords_p(format_, args):
             yield school_name, team_name, account, passwords[team_name]
 
     write_passwords(list(get_accounts()), 'kgkompiled', seedval=' or '.join({str(x) for x in [args.seed, seed] if x is not None}), code=args.code, title=args.title)
-
-    print(file=stderr)
-    print('.'*30, file=stderr)
-    print('Done writing the passwords to stdout. Pipe the output to a file if you wish.', file=stderr)
-    print('.'*30, file=stderr)
-    print(file=stderr)
 
 
 
