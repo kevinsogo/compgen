@@ -37,5 +37,6 @@
     ],
     "judges": [ "Kevin", "Payton", "Judy" ],
     "admin_count": 3,
-    "leaderboard_count": 2
+    "leaderboard_count": 2,
+    "seating": "seating.txt"
 }

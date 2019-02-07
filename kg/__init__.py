@@ -19,8 +19,10 @@ from .black_magic import *
 from .contest_details import *
 from .details import *
 from .formats import *
+from .iutils import *
 from .passwords import *
 from .programs import *
+from .seating import *
 from .testscripts import *
 from .utils import *
 
@@ -46,12 +48,6 @@ parser = argparse.ArgumentParser(description='There are many things you can do w
 # TODO add 'verbose' option here
 subparsers = parser.add_subparsers(help='which operation to perform', dest='main_command')
 subparsers.required = True
-
-def set_handler(parser, default_file=stdout):
-    def _set_handler(handler):
-        parser.set_defaults(handler=handler, default_file=default_file)
-        # return handler # Let's not return this, to ensure that they are not called.
-    return _set_handler
 
 
 
@@ -778,6 +774,7 @@ contest_p = subparsers.add_parser('kontest', aliases=['contest'], help='Compile 
 contest_p.add_argument('format', help='Contest format to compile to')
 contest_p.add_argument('config', help='JSON file containing the contest configuration')
 contest_p.add_argument('-m', '--make-all', action='store_true', help='Run "kg make all" in all problems')
+contest_p.add_argument('-ns', '--no-seating', action='store_true', help='Skip the creation of the seating arrangement')
 
 def problem_letters():
     for l in count(1):
@@ -793,6 +790,8 @@ def kg_contest(format_, args):
         raise CommandException("You can't use '{}' format to 'kontest'.".format(format_))
 
     if args.format == 'pc2':
+        # TODO possibly use a yaml library here, but for now this will do.
+        # It might be a hassle to add another dependency.
         contest = ContestDetails.from_loc(args.config)
 
         # identify key folders
@@ -947,8 +946,24 @@ def kg_contest(format_, args):
         print('-'*42)
         print('Making passwords')
         write_passwords(contest, 'pc2', dest=contest_folder)
+
+        if not args.no_seating and contest.seating:
+            print()
+            print('-'*42)
+            print('Writing seating arrangement')
+            write_seating(contest, 'pc2', dest=contest_folder)
     else:
         raise CommandException("Unsupported contest format: {}".format(args.format))
+
+
+
+
+
+##########################################
+# manage seating arrangements
+
+handle_args(subparsers.add_parser('seating', help='Manage seating arrangements'))
+
 
 
 

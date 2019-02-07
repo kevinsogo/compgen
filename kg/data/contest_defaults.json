@@ -23,5 +23,6 @@
     "judge_count": 1,
     "admin_count": 1,
     "leaderboard_count": 1,
-    "feeder_count": 0
+    "feeder_count": 0,
+    "seating": null
 }

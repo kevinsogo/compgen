@@ -8,8 +8,6 @@
 
 - Support more formats: Kattis, CodeChef, DOM?. 
 
-- `kg seating`, and also call this for `kg kontest`.  
-
 
 
 # Others 
@@ -18,13 +16,17 @@
 
 - Add compatibility warning for validators: Don't return 42 since that's the success code for the pc2/kattis format.
 
+- Allow non-kg formats in `kg kontest`. Its entry in `problems` could basically contain the `details.json`, at least those which are required. 
+
 - Support for stress testing. `kg.stresses`, I guess.
 
 - Export to .tex format, both for Kattis and for `\newproblem{title}{TL}` format.
 
 - Use python's `timeit` to check the running time of solutions, instead of `/usr/bin/time`.
 
-- Consider using the Kattis format as the base. (future backwards-incompatible version.)
+- Use a YAML library.
+
+- Consider using the Kattis format as the base. (far future backwards-incompatible version.)
 
 - Improve `StrictStream`. Right now, I'm manually buffering 10^5 characters at a time, but I think there has to be a more idiomatic way to buffer.  
 
