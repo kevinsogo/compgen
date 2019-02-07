@@ -1,7 +1,7 @@
 import html
 import io
 import os.path
-from random import Random
+from random import Random, randrange
 from sys import stderr
 from textwrap import dedent
 
@@ -25,10 +25,7 @@ def create_passwords(accounts, seedval=None):
         tok toc toq mlf rac rak raq rck sac sak saq pms nad ndz nds wtf sol sob fob sfu abu alh wag gag ggo pta pot tot put tut
         tet naz nzi xex cex shi xxi
     '''.upper().strip().split())
-    if seedval is None:
-        seedval = 0
-        for idx, ch in enumerate(ch for account in accounts for ch in repr(account)):
-            seedval = ((seedval * 123 + idx) * 22 + ord(ch)) % (10**6 + 3)
+    if seedval is None: seedval = randrange(10**6)
 
     print("Using seed {}".format(seedval), file=stderr)
     rand = Random(seedval)

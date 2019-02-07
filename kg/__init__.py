@@ -3,6 +3,7 @@ from datetime import datetime
 from functools import wraps
 from html.parser import HTMLParser
 from operator import attrgetter
+from random import randrange
 from string import ascii_letters, ascii_uppercase, digits
 from subprocess import Popen, PIPE, CalledProcessError
 from sys import *
@@ -799,12 +800,7 @@ def kg_contest(format_, args):
     contest = ContestDetails.from_loc(args.config)
 
     seedval = args.seed
-    if seedval is None:
-        seedval = 0
-        accounts = [(key, account) for key in ['leaderboards', 'admins', 'judges', 'teams', 'feeders'] for account in getattr(contest, key)]
-        for idx, ch in enumerate(ch for account in accounts + [contest.title, contest.code] for ch in repr(account)):
-            seedval = ((seedval * 123 + idx) * 22 + ord(ch)) % (10**6 + 3)
-
+    if seedval is None: seedval = randrange(10**6)
 
     if args.format == 'pc2':
 

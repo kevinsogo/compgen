@@ -1,6 +1,6 @@
 from collections import defaultdict
 from itertools import combinations
-from random import Random
+from random import Random, randrange
 from string import digits
 from sys import stdout, stderr
 import html
@@ -94,9 +94,10 @@ class Seating:
 
         return cls(seating, constraint)
 
-    def assign(self, groups, seedval=0):
+    def assign(self, groups, seedval=None):
         seating = list(map(list, self.seating))
-        seedval = seedval or 0
+        
+        if seedval is None: seedval = randrange(10**6)
 
         if sum(groups) > sum(ch != '.' for row in seating for ch in row):
             raise SeatingError('More people than seats')
@@ -288,12 +289,7 @@ def write_seating(contest, seedval=None, dest='.'):
 
     with open(contest.seating) as f: seating = Seating.load(f)
 
-    if seedval is None:
-        assert len(set(contest.teams)) == len(contest.teams) # just checking
-        assert contest.teams == [t for ts in contest.team_schools for t in ts['teams']]
-        seedval = 0
-        for idx, ch in enumerate(repr((contest.title, contest.code, contest.teams))):
-            seedval = ((seedval * 123 + idx) * 22 + ord(ch)) % (10**6 + 3)
+    if seedval is None: seedval = randrange(10**6)
 
     filename = os.path.join(dest, 'seating_{}.html').format(contest.code)
     print("Writing to", filename, file=stderr)
