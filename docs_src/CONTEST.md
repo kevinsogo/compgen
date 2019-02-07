@@ -1,14 +1,17 @@
 This assumes you have already written all the problems in your problem set using KompGen, and you would like to easily upload them to contest systems like PC2.  
 
+
+
 # PC2
 
 As mentioned in the README, there are two general steps.  
 
 1. Create a `contest.json` file which will contain the details of the contest, including allowed languages and list of problems. A template exists in `examples/templates/contest.json` for you.  
 
-2. Run `kg kontest pc2 path/to/contest.json`. This will create a folder containing, among other things, `contest.yaml`, which can be loaded by PC2.  
+2. Run `kg kontest pc2 path/to/contest.json`. This will create a folder containing (among other things) `contest.yaml`, which can be loaded by PC2.  
 
 We will now explain these in more detail, including additional steps after running `kg kontest` to make sure your PC2 contest runs smoothly.
+
 
 ## contest.json
 
@@ -35,10 +38,9 @@ Most fields should be self-explanatory, but here are things to keep in mind:
 - The `teams` field is also a bit special: you can group teams according to their university. See `examples/contest.json` for an example.
 
 
-
 ## kg kontest
 
-The next step is to run `kg kontest pc2 path/to/contest.json`. This will create a folder containing, among other things, `contest.yaml`, which can be loaded by PC2.  
+The next step is to run `kg kontest pc2 path/to/contest.json`. This will create a folder `kgkompiled/[contestcode]`. It will contain (among other things) `contest.yaml`, which can be loaded by PC2.  
 
 A couple of things to keep in mind:
 
@@ -57,6 +59,7 @@ kg kontest pc2 contest.json
 
 This will create the folder `kgkompiled/EXAMPLECONTEST` from the two example problems.
 
+
 ## Loading to PC2
 
 To load everything to PC2, run the following:
@@ -68,6 +71,7 @@ pc2server --load path/to/CDP/config/contest.yaml
 Alternatively, run the server normally, and in the admin, go to the *Import Config* tab and load `contest.yaml` there.
 
 If you wish to update an existing PC2 contest, run `kg kontest` again, and then load `contest.yaml` from *Import Config* again. The `--load` method cannot be used to update.
+
 
 ## Additional settings  
 
@@ -81,9 +85,12 @@ There are a couple of other options that I couldn't find a way to set automatica
     
     *Note:* The `logins_*.html` files contain the same passwords but in printable formats which can be distributed to the teams. (Keep them safe!)
 
+
 ## Practice contest
 
 If you wish to hold a practice round, create another `contest.json` file (say `practice_contest.json`) and perform the same steps above. Give it a different contest code. You may load it under a different *Profile*.
+
+
 
 # Other Formats  
 

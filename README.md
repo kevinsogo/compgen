@@ -12,7 +12,6 @@ Only works for Ubuntu (and probably some other Unix-based systems) for now.
 
 
 
-
 # Setup
 
 1. Run `bash setup.sh`. If it prints `DONE`, then it was successful. Make sure you have `python3` and `pip3`.  
@@ -27,8 +26,8 @@ Only works for Ubuntu (and probably some other Unix-based systems) for now.
 
 
 
-
 # Useful scripts
+
 
 ## Convert files from one format to another
 
@@ -52,7 +51,6 @@ First, write a program (say `detector.java`) that takes a valid input from stdin
 $ kg subtasks -i "tests/*.in" -f detector.java
 $ kg subtasks -i "tests/*.in" -c java detector # alternative
 ```
-
 
 ### Method 2: Using a validator which can detect subtasks
 
@@ -84,7 +82,6 @@ $ kg run -i "tests/*.in" -f yet_another_sol.java
 
 You can also replace `-f [file]` with `-c [command]`.
 
-
 For the third command, the checker must accept three command line arguments `inputpath outputpath judgepath`. It must exit with code 0 iff the answer is correct. (Currently, `kg test` with a custom checker only supports binary tasks and tasks where each subtask is binary-graded.) 
 
 
@@ -100,9 +97,11 @@ kg-hr # HackerRank
 This automatically detects the tests based on the corresponding format, so no need to pass `-i` and `-o` arguments. It receives an optional argument `--loc` which says where the test data is located. It defaults to the current folder.
 
 
+
 # Full process
 
 You can also prepare a full problem from scratch using this library. Everything can be done locally. If you write it properly, it will be easy to upload it to various judges/platforms.
+
 
 ## Phase A. Preparation
 
@@ -117,6 +116,7 @@ You can also prepare a full problem from scratch using this library. Everything 
     - [A testscript](docs/PREPARATION.md#Testscript)
     - [A checker](docs/PREPARATION.md#Checkers) (if needed)
     - The model solution
+
 
 ## Phase B. Testing  
 
@@ -142,6 +142,7 @@ $ kg run -f sol.cpp
 
 You can still run `kg make all` if you wish. 
 
+
 ## Phase C. Uploading
 
 1. Run `kg make all` again.  
@@ -152,6 +153,7 @@ You can still run `kg make all` if you wish.
 
 Behind the scenes, some programs need to be self-contained in a single file before uploading, hence, all imports are "inlined" automatically. A directive called `@import` is used for this. See the longer [tutorial](docs/PREPARATION.md#Some restrictions) for more details.  
 
+
 ## Phase D. Compiling a Contest  
 
 Say you have created a bunch of problems and you would now like to easily upload them to a contest system such as PC2. It is a simple two-step process.
@@ -160,11 +162,9 @@ Say you have created a bunch of problems and you would now like to easily upload
 
 2. Run `kg kontest pc2 path/to/contest.json`. Here, `pc2` indicates the format. For now, only `pc2` is supported, but this may change in the future.  
 
-    In the case of `pc2`, this will create a folder containing, among other things, `contest.yaml`, which can be loaded by PC2.  
+    In the case of `pc2`, this will create a folder containing (among other things) `contest.yaml`, which can be loaded by PC2. It also contains randomly generated passwords for all accounts.  
 
 More details can be found [here](docs/CONTEST.md), which includes additional things you need to do, like configuring settings that can't be set automatically due to technical limitations (mostly theirs).  
-
-
 
 
 ## Adding to a git repo

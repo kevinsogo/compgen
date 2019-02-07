@@ -8,13 +8,11 @@ Actually, not from scratch; this assumes you've already written the problem stat
 
 
 
-
 # Introduction  
 
 To prepare a problem, you will write a bunch of different files which will serve different purposes: generators, validators, checkers, etc. We will explain what those are shortly.
 
 Ideally, we will be writing everything in Python 3, although it's possible to use another language for it, or even parts of it; we will learn how to do so later on.
-
 
 
 ## Some restrictions
@@ -33,8 +31,6 @@ Due to limitations in some online judges, we will have some restrictions/require
 
 
 
-
-
 # Creating a Problem
 
 Run this command:
@@ -43,7 +39,6 @@ kg init problem_title
 ```
 
 This will create a folder named `problem_title`. We will write everything related to this problem inside that folder. It will be prepopulated with templates/samples. 
-
 
 
 
@@ -89,7 +84,6 @@ Now, we can begin writing those files!
 
 
 
-
 # Formatters
 
 This just takes a test case and prints it to a file in the correct input format. Save it on a file on its own, say `formatter.py`, so you can import it later.
@@ -103,7 +97,6 @@ def print_to_file(file, cases):
 ```
 
 This is not strictly required&mdash;indeed, you may remove it altogether from `details.json`&mdash;but is recommended anyway since it is good practice. For example, it makes it easier if you want to change the input/output format; you don't have to update all generators.
-
 
 
 
@@ -230,14 +223,11 @@ I recommend the chain style since it more closely reflects the structure of each
 <!-- Advanced tutorial involves more details about `read_*` methods, label, GET, WITH_GET, etc. -->
 
 
-
 ## Detecting subtasks automatically  
 
 If your problem has subtasks, and if your validator handles the subtasks, then we can detect which subtask(s) each input file belongs to by simply running `kg subtasks`. This assumes that `valid_subtasks` and `validator` have been set in `details.json`.  
 
 If your test data are quite big and you find this method slow, then you might want to write a custom subtask detector (as explained in the main README) and place it under `subtask_detector` in `details.json`. 
-
-
 
 
 
@@ -280,9 +270,6 @@ There are a few more advanced usages and features (will document soon!), but thi
 
 
 
-
-
-
 # Testscript
 
 The testscript file contains instructions on how to generate all the tests. It looks like this:
@@ -309,8 +296,6 @@ This is similar to Polygon's testscript system, though more limited since you ha
 <!-- TODO numbering in testscript -->
 
 <!-- Advanced tutorial involves describing the Polygon system, Freemarker, bracket expansion syntax, etc. -->
-
-
 
 
 

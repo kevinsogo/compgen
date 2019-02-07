@@ -18,6 +18,8 @@
 
 - Add compatibility warning for validators: Don't return 42 since that's the success code for the pc2/kattis format.
 
+- Support for stress testing. `kg.stresses`, I guess.
+
 - Export to .tex format, both for Kattis and for `\newproblem{title}{TL}` format.
 
 - Use python's `timeit` to check the running time of solutions, instead of `/usr/bin/time`.
