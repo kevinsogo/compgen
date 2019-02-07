@@ -1,21 +1,10 @@
 <!DOCTYPE html>
     <html lang="en">
     <head>
-        <title>Login details for {title}</title>
+        <title>LOGIN DETAILS {for_code} {ptitle}</title>
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
         <link rel="stylesheet" type="text/css" href="bootstrap.min.css"> <!-- If you have it locally... -->
         <style>
-            .e-password .entry-text {{
-                font-weight: bold;
-            }}
-            .pass-table > tbody > tr > td {{
-                border: 1.5px dashed black !important;
-                padding: 15px;
-            }}
-
-            .table.team-details {{
-                margin-bottom: 0;
-            }}
             @media print {{
                 body {{-webkit-print-color-adjust: exact;}}
                 .table td.success {{
@@ -25,15 +14,20 @@
                     background-color: #F5F5F5 !important;
                 }}
             }}
+            .pass-entry code {{
+                font-size: 16px;
+            }}
         </style>
     </head>
     <body>
-        <div class="container">
-            <h1>Login details for {title}</h1>
+        <div class="container-fluid">
+            <h1>LOGIN DETAILS {for_title}</h1>
             <p><small>Using seed {seedval}.</small></p>
 
-            <table class="table pass-table">
-                <tbody>{accounts}
+            <table class="table table-hover table-bordered">
+                <thead><tr><th>University/School</th> <th>Display name</th> <th>Login name</th> <th>Password</th></tr></thead>
+                <tbody>
+                    {accounts}
                 </tbody>
             </table>
         </div>

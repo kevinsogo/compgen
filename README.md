@@ -8,8 +8,6 @@ Use this library if you're one of the following:
 
 Only works for Ubuntu (and probably some other Unix-based systems) for now. 
 
-*Note:* In case you are looking for a very old version, `checkout` the branch `v01`. If you don't know what that is, never mind it.
-
 
 
 # Setup
@@ -188,7 +186,7 @@ tests/
 *.exe
 ```
 
-This also means that the folders `tests/` and `kgkompiled` may be freely deleted if you're trying to free up space. They can always be regenerated from the other files.
+This also means that the folders `tests/` and `kgkompiled/` may be freely deleted if you're trying to free up space. They can always be regenerated from the other files.
 
 
 

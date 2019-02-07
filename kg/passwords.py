@@ -1,6 +1,6 @@
+import html
 import io
 import os.path
-from html.parser import HTMLParser
 from random import Random
 from sys import stderr
 from textwrap import dedent
@@ -9,7 +9,11 @@ script_path = os.path.dirname(os.path.realpath(__file__))
 
 class PasswordException(Exception): ...
 
-def create_passwords(cont, seedval=None):
+def create_passwords(accounts, seedval=None):
+    accounts = list(accounts)
+    if len(set(accounts)) != len(accounts):
+        raise PasswordException("Duplicate accounts!")
+
     PASSWORD_LETTERS = 'ABCDEFGHJKLMNOPRSTUVWXYZ'
     VOWELS = set('AEIOUY')
     BLACKLIST = set('''
@@ -21,11 +25,9 @@ def create_passwords(cont, seedval=None):
         tok toc toq mlf rac rak raq rck sac sak saq pms nad ndz nds wtf sol sob fob sfu abu alh wag gag ggo pta pot tot put tut
         tet naz nzi xex cex shi xxi
     '''.upper().strip().split())
-
-    accounts = [(key, account) for key in ['leaderboards', 'admins', 'judges', 'teams', 'feeders'] for account in getattr(cont, key)]
     if seedval is None:
         seedval = 0
-        for idx, ch in enumerate(repr(tuple(accounts))):
+        for idx, ch in enumerate(ch for account in accounts for ch in repr(account)):
             seedval = ((seedval * 123 + idx) * 22 + ord(ch)) % (10**6 + 3)
 
     print("Using seed {}".format(seedval), file=stderr)
@@ -42,51 +44,48 @@ def create_passwords(cont, seedval=None):
 
     return {account: make_password() for account in accounts}, seedval
 
-def write_passwords(cont, format_, seedval=None, dest='.'):
-    passwords, seedval = create_passwords(cont, seedval=seedval)
+def write_passwords_format(cont, format_, seedval=None, dest='.'):
+
+    if format_ != 'pc2':
+        raise PasswordException("Unsupported format: {}".format(format_))
+
+    accounts = [(key, account) for key in ['leaderboards', 'admins', 'judges', 'teams', 'feeders'] for account in getattr(cont, key)]
+    passwords, seed = create_passwords(accounts, seedval=seedval)
 
     if format_ == 'pc2':
-        context = {
-            'title': cont.title,
-            'contest_code': cont.code,
-            'seedval': seedval,
-        }
-
         def get_rows():
             for row in [
                 ('site', 'account', 'displayname', 'password', 'group', 'permdisplay', 'permlogin', 'externalid', 'alias', 'permpassword'),
             ]:
                 yield row, None
 
-            parser = HTMLParser()
-
             for idx, scoreboard in enumerate(cont.leaderboards, 1):
                 display = scoreboard
-                account = 'scoreboard{}'.format(idx)
+                account = 'board{}'.format(idx)
                 password = passwords['leaderboards', scoreboard]
                 type_ = '[Scoreboard]'
-                yield ('1', account, parser.unescape(display), password, '', 'false', 'true', str(1000 + idx), '', 'true'), (type_, display, account, password)
+                yield ('1', account, display, password, '', 'false', 'true', str(1000 + idx), '', 'true'), (type_, display, account, password)
 
             for idx, admin in enumerate(cont.admins, 1):
                 display = admin
                 account = 'administrator{}'.format(idx)
                 password = passwords['admins', admin]
                 type_ = '[Administrator]'
-                yield ('1', account, parser.unescape(display), password, '', 'false', 'true', str(1000 + idx), '', 'true'), (type_, display, account, password)
+                yield ('1', account, display, password, '', 'false', 'true', str(1000 + idx), '', 'true'), (type_, display, account, password)
 
             for idx, judge in enumerate(cont.judges, 1):
                 display = 'Judge ' + judge
                 account = 'judge{}'.format(idx)
                 password = passwords['judges', judge]
                 type_ = '[Judge]'
-                yield ('1', account, parser.unescape(display), password, '', 'false', 'true', str(1000 + idx), '', 'false'), (type_, display, account, password)
+                yield ('1', account, display, password, '', 'false', 'true', str(1000 + idx), '', 'false'), (type_, display, account, password)
 
             for idx, feeder in enumerate(cont.feeders, 1):
                 display = feeder
                 account = 'feeder{}'.format(idx)
                 password = passwords['feeders', feeder]
                 type_ = '[Feeder]'
-                yield ('1', account, parser.unescape(display), password, '', 'false', 'true', str(1000 + idx), '', 'true'), (type_, display, account, password)
+                yield ('1', account, display, password, '', 'false', 'true', str(1000 + idx), '', 'true'), (type_, display, account, password)
             
             def team_schools():
                 for ts in cont.team_schools:
@@ -98,7 +97,7 @@ def write_passwords(cont, format_, seedval=None, dest='.'):
                 account = 'team{}'.format(idx)
                 password = passwords['teams', team_name]
                 type_= school_name
-                yield ('1', account, parser.unescape(display), password, '', 'true', 'true', str(1000 + idx), '', 'false'), (type_, display, account, password)
+                yield ('1', account, display, password, '', 'true', 'true', str(1000 + idx), '', 'false'), (type_, display, account, password)
 
         rows = []
         passrows = []
@@ -107,72 +106,92 @@ def write_passwords(cont, format_, seedval=None, dest='.'):
             if passrow:
                 passrows.append(passrow)
 
-        contest_code = context['contest_code']
-
-        filename = os.path.join(dest, 'accounts_{contest_code}.txt').format(**context)
+        filename = os.path.join(dest, 'accounts_{}.txt'.format(cont.code))
         print("Writing to", filename, file=stderr)
         with io.open(filename, 'w', encoding='utf-8') as f:
             for row in rows:
+                if any(set('\t\n') & set(part) for part in row): raise PasswordException("Only spaces allowed as whitespace in display names.")
                 print(u'\t'.join(row), file=f)
 
-        # TODO maybe use some jinja/django templating here...
+    write_passwords(passrows, dest=dest, seedval=' or '.join({str(x) for x in [seedval, seed] if x is not None}), code=cont.code, title=cont.title)
 
-        filename = os.path.join(dest, 'logins_{contest_code}_table.html').format(**context)
-        print("Writing to", filename, file=stderr)
-        with open(filename, 'w') as f:
-            accounts = []
-            for index, (university, display, login, password) in enumerate(passrows):
-                accounts.append(dedent('''\
-                    <tr class="pass-entry">
-                    <td>{university}</td>
-                    <td>{display}</td>
-                    <td><code>{login}</code></td>
-                    <td><code>{password}</code></td>
-                    </tr>
-                ''').format(
-                    university=university,
-                    display=display,
-                    login=login,
-                    password=password
-                ))
+def write_passwords(accounts, dest='.', **context):
+    logins = [login for type_, display, login, password in accounts]
+    displays = [display for type_, display, login, password in accounts]
+    if len(set(logins)) != len(logins): raise PasswordException("Duplicate logins!")
+    if len(set(displays)) != len(displays): raise PasswordException("Duplicate display names!")
 
-            context['accounts'] = '\n'.join(accounts)
-            with open(os.path.join(script_path, 'data', 'contest_template', 'pc2', 'logins_table.html')) as of:
-                f.write(of.read().format(**context))
+    def clean_account(account):
+        type_, display, login, password = account
+        if isinstance(type_, int): type_ = ''
+        return html.escape(type_), html.escape(display), html.escape(login), html.escape(password)
 
-        filename = os.path.join(dest, 'logins_{contest_code}_boxes.html').format(**context)
-        print("Writing to", filename, file=stderr)
-        with open(filename, 'w') as f:
-            accounts = []
-            for index, (university, display, login, password) in enumerate(passrows):
-                accounts.append(dedent('''\
-                <strong>{display}</strong> <small><em>({contest_code})</em></small><br>
-                <small>{university}</small>
-                <table class="team-details table table-condensed table-bordered"><tbody>
-                <tr><td>Login name</td><td><code>{login}</code></td></tr>
-                <tr><td>Password</td><td><code>{password}</code></td></tr>
-                </tbody></table>
-                ''').format(
-                    university=university,
-                    display=display,
-                    login=login,
-                    password=password,
-                    **context
-                ))
+    accounts = [clean_account(account) for account in accounts]
 
-            PER_ROW = 3
-            account_rows = []
-            row = []
-            for account in accounts:
-                row.append('<td style="width: %.6f%%">%s</td>' % (100. / PER_ROW, account))
-                if len(row) == PER_ROW:
-                    account_rows.append(row)
-                    row = []
-            if row:
+    # TODO maybe use some jinja/django templating here...
+    if not context.get('code'): context['code'] = ''
+    if not context.get('title'): context['title'] = ''
+    context['for_code'] = 'FOR {}'.format(context['code']) if context['code'] else ''
+    context['for_title'] = 'FOR {}'.format(context['title']) if context['title'] else ''
+    context['_code'] = '_' + context['code'] if context['code'] else ''
+    context['pcode'] = '(' + context['code'] + ')' if context['code'] else ''
+    context['ptitle'] = '(' + context['title'] + ')' if context['title'] else ''
+
+    filename = os.path.join(dest, 'logins{_code}_table.html'.format(**context))
+    print("Writing to", filename, file=stderr)
+    with open(filename, 'w') as f:
+        rows = []
+        for index, (type_, display, login, password) in enumerate(accounts):
+            rows.append(dedent('''\
+                <tr class="pass-entry">
+                <td>{type}</td>
+                <td>{display}</td>
+                <td><code>{login}</code></td>
+                <td><code>{password}</code></td>
+                </tr>
+            ''').format(
+                type=type_,
+                display=display,
+                login=login,
+                password=password
+            ))
+
+        context['accounts'] = '\n'.join(rows)
+        with open(os.path.join(script_path, 'data', 'contest_template', 'logins_table.html')) as of:
+            f.write(of.read().format(**context))
+
+    filename = os.path.join(dest, 'logins{_code}_boxes.html'.format(**context))
+    print("Writing to", filename, file=stderr)
+    with open(filename, 'w') as f:
+        entries = []
+        for index, (type_, display, login, password) in enumerate(accounts):
+            entries.append(dedent('''\
+            <strong>{display}</strong> <small><em>{pcode}</em></small><br>
+            <small>{type}</small>
+            <table class="team-details table table-condensed table-bordered"><tbody>
+            <tr><td>Login name</td><td><code>{login}</code></td></tr>
+            <tr><td>Password</td><td><code>{password}</code></td></tr>
+            </tbody></table>
+            ''').format(
+                type=type_,
+                display=display,
+                login=login,
+                password=password,
+                **context
+            ))
+
+        PER_ROW = 3
+        account_rows = []
+        row = []
+        for account in entries:
+            row.append('<td style="width: %.6f%%">%s</td>' % (100. / PER_ROW, account))
+            if len(row) == PER_ROW:
                 account_rows.append(row)
+                row = []
+        if row:
+            account_rows.append(row)
 
-            context['accounts'] = '\n'.join('<tr>%s</tr>\n' % '\n'.join(row) for row in account_rows)
-            with open(os.path.join(script_path, 'data', 'contest_template', 'pc2', 'logins_boxes.html')) as of:
-                f.write(of.read().format(**context))
-    else:
-        raise PasswordException("Unsupported format: {}".format(format_))
+        context['accounts'] = '\n'.join('<tr>%s</tr>\n' % '\n'.join(row) for row in account_rows)
+        with open(os.path.join(script_path, 'data', 'contest_template', 'logins_boxes.html')) as of:
+            f.write(of.read().format(**context))
+

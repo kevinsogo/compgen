@@ -2,11 +2,13 @@ from collections import defaultdict
 from itertools import combinations
 from random import Random
 from string import digits
-from sys import stderr
+from sys import stdout, stderr
+import html
 import os.path
 
-from .utils import *
+from .contest_details import *
 from .iutils import *
+from .utils import *
 
 
 class SeatingError(Exception): ...
@@ -94,6 +96,7 @@ class Seating:
 
     def assign(self, groups, seedval=0):
         seating = list(map(list, self.seating))
+        seedval = seedval or 0
 
         if sum(groups) > sum(ch != '.' for row in seating for ch in row):
             raise SeatingError('More people than seats')
@@ -125,14 +128,16 @@ class Seating:
         best_sid = None
         IT = 1111
         for it in range(IT):
-            sid = seedval ^ it
+            sid = seedval ^ it**2
             assignment, cost = attempt_assignment(sid, seats, pair_cost, groups)
             if best_cost > cost:
                 best_cost = cost
                 best_assignment = assignment
                 best_sid = sid
-                print('Got a cost of', cost)
-                if best_cost == 0: break
+                print('Got a badness of', cost, file=stderr)
+                if best_cost == 0:
+                    print("We're done!", file=stderr)
+                    break
 
         # TODO construct the grid here
         grid = [['.']*len(row) for row in seating]
@@ -147,6 +152,71 @@ class Seating:
         for gr, (i, j) in best_assignment:
             grid[i][j] = gr
         return grid, best_sid
+
+    def write(self, team_schools, targetfile, seedval=None, **context):
+        group_teams = [ts['teams'] for ts in team_schools]
+
+        grid, seed = self.assign(list(map(len, group_teams)), seedval=seedval)
+
+        rand = Random(seed) # lol reuse seed
+
+        for teams in group_teams: rand.shuffle(teams)
+
+        school_of_team = {team: ts['school'] for ts in team_schools for team in ts['teams']}
+
+        # TODO maybe use some jinja/django templating here...
+        def make_table():
+            seat = 0
+            for i in range(len(grid)):
+                yield "    <tr>"
+                for j in range(len(grid[i])):
+                    if isinstance(grid[i][j], int):
+                        assert 0 <= grid[i][j] < len(group_teams)
+                        team_name = group_teams[grid[i][j]].pop()
+                        school_name = school_of_team[team_name]
+                        if isinstance(school_name, int): school_name = ''
+                        yield """
+                                <td class='fullcol info' style='vertical-align: middle; text-align: center; line-height: 1.2'>
+                                <!-- -->
+                                        <span style='font-size: 70%'>{seat}</span>
+                                    <br><span style='font-size: 72%'><strong>{team_name}</strong></span>
+                                    <br><emph><span style='font-size: 52%'>{school_name}</span></emph></td>
+                                <!-- -->
+                                <!--
+                                <span style='font-size: 70%'>{seat}</span>
+                                <br><emph><span style='font-size: 100%'>{school_name}</span></emph></td>
+                                <!-- -->
+                                """.format(
+                                seat='Seat no. {}'.format(seat),
+                                team_name=html.escape(team_name),
+                                school_name=html.escape(school_name),
+                            )
+                        seat += 1
+                    elif grid[i][j] in {'*', '#'}:
+                        yield "        <td class='fullcol active'><small>{seat}</small></td>".format(
+                                seat='({})'.format(seat),
+                            )
+                        seat += 1
+                    else:
+                        assert grid[i][j] == '.'
+                        yield "        <td class='emptycol'><small>&nbsp;</small></td>"
+                yield "    </tr>"
+
+        context.update({
+            "seedval": ' or '.join({str(x) for x in [seedval, seed] if x is not None}),
+            "table": '\n'.join(make_table()),
+        })
+
+        # TODO maybe use some jinja/django templating here...
+        if not context.get('code'): context['code'] = ''
+        if not context.get('title'): context['title'] = ''
+        context['for_code'] = 'FOR {}'.format(context['code']) if context['code'] else ''
+        context['for_title'] = 'FOR {}'.format(context['title']) if context['title'] else ''
+        context['code'] = '(' + context['code'] + ')' if context['code'] else ''
+        context['ptitle'] = '(' + context['title'] + ')' if context['title'] else ''
+        with open(os.path.join(script_path, 'data', 'seating.html')) as of:
+            targetfile.write(of.read().format(**context))
+
 
 def attempt_assignment(seed, nodes, edge_cost, groups):
     assert sum(groups) <= len(nodes)
@@ -191,7 +261,6 @@ def attempt_assignment(seed, nodes, edge_cost, groups):
             # return swap
             node_of[ii], node_of[jj] = node_of[jj], node_of[ii]
 
-    # print(get_cost(), get_cost(edge_cost))
     return list(zip(group_of, node_of)), get_cost(edge_cost)
 
 def compactify(const):
@@ -215,78 +284,23 @@ def compactify(const):
     return grid
 
 
-
-def write_seating(contest, format_, seedval=None, dest='.'):
-    # ignore format_ for now...
+def write_seating(contest, seedval=None, dest='.'):
 
     with open(contest.seating) as f: seating = Seating.load(f)
 
-    group_teams = [ts['teams'] for ts in contest.team_schools]
-    groups = list(map(len, group_teams))
-
-    teams = sum(group_teams, [])
-    assert len(set(teams)) == len(teams) # just checking
-
     if seedval is None:
+        assert len(set(contest.teams)) == len(contest.teams) # just checking
+        assert contest.teams == [t for ts in contest.team_schools for t in ts['teams']]
         seedval = 0
-        for idx, ch in enumerate(repr((contest.title, contest.code, teams))):
+        for idx, ch in enumerate(repr((contest.title, contest.code, contest.teams))):
             seedval = ((seedval * 123 + idx) * 22 + ord(ch)) % (10**6 + 3)
 
-    grid, seed = seating.assign(groups, seedval=seedval)
-
-    rand = Random(seed) # lol reuse seed
-
-    for teams in group_teams: rand.shuffle(teams)
-
-
-    school_of_team = {team: ts['school'] for ts in contest.team_schools for team in ts['teams']}
-
-    def make_table():
-        seat = 0
-        for i in range(len(grid)):
-            yield "    <tr>"
-            for j in range(len(grid[i])):
-                if isinstance(grid[i][j], int):
-                    assert 0 <= grid[i][j] < len(group_teams)
-                    team_name = group_teams[grid[i][j]].pop()
-                    yield """
-                            <td class='fullcol info' style='vertical-align: middle; text-align: center; line-height: 1.2'>
-                            <!-- -->
-                                    <span style='font-size: 70%'>{seat}</span>
-                                <br><span style='font-size: 72%'><strong>{team_name}</strong></span>
-                                <br><emph><span style='font-size: 52%'>{school_name}</span></emph></td>
-                            <!-- -->
-                            <!--
-                            <span style='font-size: 70%'>{seat}</span>
-                            <br><emph><span style='font-size: 100%'>{school_name}</span></emph></td>
-                            <!-- -->
-                            """.format(
-                            seat='Seat no. {}'.format(seat),
-                            team_name=team_name,
-                            school_name=school_of_team[team_name],
-                        )
-                    seat += 1
-                elif grid[i][j] in {'*', '#'}:
-                    yield "        <td class='fullcol active'><small>{seat}</small></td>".format(
-                            seat='({})'.format(seat),
-                        )
-                    seat += 1
-                else:
-                    assert grid[i][j] == '.'
-                    yield "        <td class='emptycol'><small>&nbsp;</small></td>"
-            yield "    </tr>"
-
-    context = {
-        "seedval": seed,
-        "table": '\n'.join(make_table()),
-        "contest_code": contest.code,
-    }
-
-    filename = os.path.join(dest, 'seating_{contest_code}.html').format(**context)
+    filename = os.path.join(dest, 'seating_{}.html').format(contest.code)
     print("Writing to", filename, file=stderr)
-    with open(os.path.join(script_path, 'data', 'contest_template', 'pc2', 'seating.html')) as of:
-        with open(filename, 'w') as f:
-            f.write(of.read().format(**context))
+    with open(filename, 'w') as f:
+        seating.write(contest.team_schools, f, seedval, code=contest.code, title=contest.title)
+
+
 
         
 
@@ -397,3 +411,29 @@ def handle_args(seating_p):
         sz = max(len(str(v)) for row in grid for v in row)
         for row in grid:
             print(*(str(v).rjust(sz) for v in row))
+
+
+    write_p = subparsers.add_parser('write', help='Assign seats to a list of teams')
+    write_p.add_argument('teams', help='JSON file containing the team and school details')
+    write_p.add_argument('-s', '--seed', type=int, help='Initial seed to use')
+    write_p.add_argument('-c', '--code', '--contest-code', help='Contest code')
+    write_p.add_argument('-t', '--title', '--contest-title', help='Contest title')
+
+    @set_handler(write_p, stderr)
+    def write_p(format_, args):
+        with open(args.seating_file) as f: seating = Seating.load(f)
+        with open(args.teams) as f: team_schools = ContestDetails.get_team_schools(json.load(f))
+
+        print(file=stderr)
+        print('.'*30, file=stderr)
+        print('Writing the seating arrangement to stdout... Pipe the output to a file if you wish.', file=stderr)
+        print('.'*30, file=stderr)
+        print(file=stderr)
+
+        seating.write(team_schools, stdout, seedval=args.seed, code=args.code, title=args.title)
+
+        print(file=stderr)
+        print('.'*30, file=stderr)
+        print('Done writing the seating arrangement to stdout. Pipe the output to a file if you wish.', file=stderr)
+        print('.'*30, file=stderr)
+        print(file=stderr)

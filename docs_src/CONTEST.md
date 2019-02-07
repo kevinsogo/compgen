@@ -27,7 +27,7 @@ Most fields should be self-explanatory, but here are things to keep in mind:
 
 - The `code` field is preferred to not contain any special characters. A folder with that name will be created later.
 
-- Each entry in the `langs` field contains a list of allowed programming languages can be a string denoting the language code name or a dictionary containing additional details (like in `cpp` above). The missing fields will have predefined defaults which can be seen in `contest_langs.json`.  
+- Each entry in the `langs` field (list of allowed programming languages) can be a string denoting the language code name or a dictionary containing additional details (like in `cpp` above). The missing fields will have predefined defaults which can be seen in `contest_langs.json`.  
 
 - The `problems` field contains a list of folders representing the problems. Each of these folders must contain a `details.json` file.  
 
@@ -37,6 +37,7 @@ Most fields should be self-explanatory, but here are things to keep in mind:
 
 - The `teams` field is also a bit special: you can group teams according to their university. See `examples/contest.json` for an example.
 
+- The `teams`, `judges`, etc., fields can also contain a string pointing to a separate `.json` file which contains the list. This is useful if you want to pregenerate them with a different program.
 
 ## kg kontest
 
@@ -54,7 +55,7 @@ A working example is provided in `examples/contest.json`. You can run these to t
 
 ```bash
 cd examples
-kg kontest pc2 contest.json
+kg kontest pc2 contest.json   # add -m if you want.
 ```
 
 This will create the folder `kgkompiled/EXAMPLECONTEST` from the two example problems.
@@ -62,10 +63,10 @@ This will create the folder `kgkompiled/EXAMPLECONTEST` from the two example pro
 
 ## Loading to PC2
 
-To load everything to PC2, run the following:
+To load everything to PC2 at the first time you run a server, run the following:
 
 ```bash
-pc2server --load path/to/CDP/config/contest.yaml
+bin/pc2server --load path/to/CDP/config/contest.yaml
 ```
 
 Alternatively, run the server normally, and in the admin, go to the *Import Config* tab and load `contest.yaml` there.
@@ -75,7 +76,7 @@ If you wish to update an existing PC2 contest, run `kg kontest` again, and then 
 
 ## Additional settings  
 
-There are a couple of other options that I couldn't find a way to set automatically. You'll have to set them manually for now. You need to be an admin to do these.
+There are a couple of other options that I couldn't find a way to set automatically. You'll have to set them manually for now. You need to be an admin to do them.
 
 - Update the *Maximum output size* under *Settings*. This is set to a very low 512Kb by default. I suggest 40000Kb. Be sure to click the *Update* button.
 

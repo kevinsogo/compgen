@@ -8,6 +8,6 @@ setup(name='KompGen',
       author='Kevin Atienza',
       author_email='kevin.charles.atienza@gmail.com',
       packages=['kg', 'kg.diff', 'kg.black_magic'],
-      package_data={'kg': ['data/*.json', 'data/template/*', 'data/contest_template/pc2/*'], 'kg.diff': ['templates/*']},
+      package_data={'kg': ['data/*', 'data/template/*', 'data/contest_template/*', 'data/contest_template/pc2/*'], 'kg.diff': ['templates/*']},
       # TODO add 'natsort' as a dependency
      )

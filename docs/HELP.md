@@ -6,7 +6,7 @@
 
 - Write unit tests.  
 
-- Support more formats: Kattis, CodeChef, DOM?. 
+- Support more formats: Kattis, CodeChef, DOM?.  
 
 
 
@@ -25,6 +25,8 @@
 - Use python's `timeit` to check the running time of solutions, instead of `/usr/bin/time`.
 
 - Use a YAML library.
+
+- Use Jinja templating.
 
 - Consider using the Kattis format as the base. (far future backwards-incompatible version.)
 

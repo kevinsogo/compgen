@@ -1,6 +1,7 @@
 from collections import defaultdict
 from datetime import datetime
 from functools import wraps
+from html.parser import HTMLParser
 from operator import attrgetter
 from string import ascii_letters, ascii_uppercase, digits
 from subprocess import Popen, PIPE, CalledProcessError
@@ -775,6 +776,7 @@ contest_p.add_argument('format', help='Contest format to compile to')
 contest_p.add_argument('config', help='JSON file containing the contest configuration')
 contest_p.add_argument('-m', '--make-all', action='store_true', help='Run "kg make all" in all problems')
 contest_p.add_argument('-ns', '--no-seating', action='store_true', help='Skip the creation of the seating arrangement')
+contest_p.add_argument('-s', '--seed', type=int, help='Initial seed to use')
 
 def problem_letters():
     for l in count(1):
@@ -789,10 +791,22 @@ def kg_contest(format_, args):
     if not is_same_format(format_, 'kg'):
         raise CommandException("You can't use '{}' format to 'kontest'.".format(format_))
 
+    if args.format != 'pc2':
+        raise CommandException("Unsupported contest format: {}".format(args.format))
+
+    # TODO possibly use a yaml library here, but for now this will do.
+    # It might be a hassle to add another dependency.
+    contest = ContestDetails.from_loc(args.config)
+
+    seedval = args.seed
+    if seedval is None:
+        seedval = 0
+        accounts = [(key, account) for key in ['leaderboards', 'admins', 'judges', 'teams', 'feeders'] for account in getattr(contest, key)]
+        for idx, ch in enumerate(ch for account in accounts + [contest.title, contest.code] for ch in repr(account)):
+            seedval = ((seedval * 123 + idx) * 22 + ord(ch)) % (10**6 + 3)
+
+
     if args.format == 'pc2':
-        # TODO possibly use a yaml library here, but for now this will do.
-        # It might be a hassle to add another dependency.
-        contest = ContestDetails.from_loc(args.config)
 
         # identify key folders
         contest_folder = os.path.join('kgkompiled', contest.code)
@@ -942,18 +956,16 @@ def kg_contest(format_, args):
                     copied += 2
                 print("Copied", copied, "files")
 
+    print()
+    print('-'*42)
+    print('Making passwords')
+    write_passwords_format(contest, args.format, seedval=seedval, dest=contest_folder)
+
+    if not args.no_seating and contest.seating:
         print()
         print('-'*42)
-        print('Making passwords')
-        write_passwords(contest, 'pc2', dest=contest_folder)
-
-        if not args.no_seating and contest.seating:
-            print()
-            print('-'*42)
-            print('Writing seating arrangement')
-            write_seating(contest, 'pc2', dest=contest_folder)
-    else:
-        raise CommandException("Unsupported contest format: {}".format(args.format))
+        print('Writing seating arrangement')
+        write_seating(contest, seedval=seedval, dest=contest_folder)
 
 
 
@@ -964,6 +976,56 @@ def kg_contest(format_, args):
 
 handle_args(subparsers.add_parser('seating', help='Manage seating arrangements'))
 
+
+
+
+
+passwords_p = subparsers.add_parser('passwords', help='Assign passwords to a list of teams')
+passwords_p.add_argument('teams', help='JSON file containing the team and school details')
+passwords_p.add_argument('-s', '--seed', type=int, help='Initial seed to use')
+passwords_p.add_argument('-c', '--code', '--contest-code', help='Contest code')
+passwords_p.add_argument('-t', '--title', '--contest-title', help='Contest title')
+passwords_p.add_argument('-a', '--account-format', default='team{idx}', help='Account name format')
+
+@set_handler(passwords_p, stderr)
+def passwords_p(format_, args):
+    with open(args.teams) as f: team_schools = ContestDetails.get_team_schools(json.load(f))
+
+    print(file=stderr)
+    print('.'*30, file=stderr)
+    print('Writing the passwords to stdout... Pipe the output to a file if you wish.', file=stderr)
+    print('.'*30, file=stderr)
+    print(file=stderr)
+
+    team_names = [team for ts in team_schools for team in ts['teams']]
+    passwords, seed = create_passwords(team_names, seedval=args.seed)
+
+    def get_team_schools():
+        for ts in team_schools:
+            for idx, team in enumerate(ts['teams'], 1):
+                yield ts['school'], team, idx
+
+    def get_accounts():
+        for idx, (school_name, team_name, school_idx) in enumerate(get_team_schools(), 1):
+            account = args.account_format.format(
+                    idx=idx,
+                    school_idx=school_idx,
+                    school_name=school_name,
+                    team_name=team_name,
+                    first1=team_name.split()[0][0],
+                    first=team_name.split()[0],
+                    last1=team_name.split()[-1][0],
+                    last=team_name.split()[-1],
+                )
+            yield school_name, team_name, account, passwords[team_name]
+
+    write_passwords(list(get_accounts()), 'kgkompiled', seedval=' or '.join({str(x) for x in [args.seed, seed] if x is not None}), code=args.code, title=args.title)
+
+    print(file=stderr)
+    print('.'*30, file=stderr)
+    print('Done writing the passwords to stdout. Pipe the output to a file if you wish.', file=stderr)
+    print('.'*30, file=stderr)
+    print(file=stderr)
 
 
 
