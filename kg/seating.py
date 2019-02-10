@@ -188,15 +188,13 @@ class Seating:
                                 <br><emph><span style='font-size: 100%'>{school_name}</span></emph></td>
                                 <!-- -->
                                 """.format(
-                                seat='Seat no. {}'.format(seat),
+                                seat=f'Seat no. {seat}',
                                 team_name=html.escape(team_name),
                                 school_name=html.escape(school_name),
                             )
                         seat += 1
                     elif grid[i][j] in {'*', '#'}:
-                        yield "        <td class='fullcol active'><small>{seat}</small></td>".format(
-                                seat='({})'.format(seat),
-                            )
+                        yield f"        <td class='fullcol active'><small>({seat})</small></td>"
                         seat += 1
                     else:
                         assert grid[i][j] == '.'
@@ -211,8 +209,8 @@ class Seating:
         # TODO maybe use some jinja/django templating here...
         if not context.get('code'): context['code'] = ''
         if not context.get('title'): context['title'] = ''
-        context['for_code'] = 'FOR {}'.format(context['code']) if context['code'] else ''
-        context['for_title'] = 'FOR {}'.format(context['title']) if context['title'] else ''
+        context['for_code'] = f"FOR {context['code']}" if context['code'] else ''
+        context['for_title'] = f"FOR {context['title']}" if context['title'] else ''
         context['code'] = '(' + context['code'] + ')' if context['code'] else ''
         context['ptitle'] = '(' + context['title'] + ')' if context['title'] else ''
         with open(os.path.join(script_path, 'data', 'seating.html')) as of:
@@ -291,7 +289,7 @@ def write_seating(contest, seedval=None, dest='.'):
 
     if seedval is None: seedval = randrange(10**6)
 
-    filename = os.path.join(dest, 'seating_{}.html').format(contest.code)
+    filename = os.path.join(dest, f'seating_{contest.code}.html')
     print("Writing to", filename, file=stderr)
     with open(filename, 'w') as f:
         seating.write(contest.team_schools, f, seedval, code=contest.code, title=contest.title)
@@ -309,7 +307,7 @@ def seating_args(seating_p):
 
     @set_handler(gen_p)
     def kg_seating_gen(format_, args):
-        print('Making a {} x {} grid with seating width {}...'.format(args.rows, args.cols, args.width))
+        print(f'Making a {args.rows} x {args.cols} grid with seating width {args.width}...')
         seating = Seating.gen(args.rows, args.cols, args.width)
         with open(args.seating_file, 'w') as f: seating.dump(f)
 
@@ -324,7 +322,7 @@ def seating_args(seating_p):
         with open(args.seating_file) as f: seating = Seating.load(f)
 
         ch = args.char
-        if ch in digits: raise ValueError("Cannot write digits in seating grid: {}".format(ch))
+        if ch in digits: raise ValueError(f"Cannot write digits in seating grid: {ch}")
         rowr = t_sequence_ranges(args.rows)
         colr = t_sequence_ranges(args.cols)
         written = 0
@@ -358,7 +356,7 @@ def seating_args(seating_p):
     def kg_seating_force(format_, args):
         with open(args.seating_file) as f: seating = Seating.load(f)
 
-        if args.power not in (digits + '.#'): raise ValueError("Power must be a digit, #, or dot. {}".format(args.power))
+        if args.power not in (digits + '.#'): raise ValueError(f"Power must be a digit, #, or dot. {args.power}")
         const = defaultdict()
         gconst = seating.find_constraints(args.char)
         for i in range(len(gconst)):
@@ -399,7 +397,7 @@ def seating_args(seating_p):
 
         grid, sid = seating.assign(groups)
 
-        print('FINAL GRID (seed={}):'.format(sid), file=stderr)
+        print(f'FINAL GRID (seed={sid}):', file=stderr)
         sz = max(len(str(v)) for row in grid for v in row)
         for row in grid:
             print(*(str(v).rjust(sz) for v in row))

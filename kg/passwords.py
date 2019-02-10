@@ -7,12 +7,12 @@ from textwrap import dedent
 
 script_path = os.path.dirname(os.path.realpath(__file__))
 
-class PasswordException(Exception): ...
+class PasswordError(Exception): ...
 
 def create_passwords(accounts, seedval=None):
     accounts = list(accounts)
     if len(set(accounts)) != len(accounts):
-        raise PasswordException("Duplicate accounts!")
+        raise PasswordError("Duplicate accounts!")
 
     PASSWORD_LETTERS = 'ABCDEFGHJKLMNOPRSTUVWXYZ'
     VOWELS = set('AEIOUY')
@@ -44,7 +44,7 @@ def create_passwords(accounts, seedval=None):
 def write_passwords_format(cont, format_, seedval=None, dest='.'):
 
     if format_ != 'pc2':
-        raise PasswordException(f"Unsupported format: {format_}")
+        raise PasswordError(f"Unsupported format: {format_}")
 
     accounts = [(key, account) for key in ['leaderboards', 'admins', 'judges', 'teams', 'feeders'] for account in getattr(cont, key)]
     passwords, seed = create_passwords(accounts, seedval=seedval)
@@ -107,7 +107,7 @@ def write_passwords_format(cont, format_, seedval=None, dest='.'):
         print("Writing to", filename, file=stderr)
         with io.open(filename, 'w', encoding='utf-8') as f:
             for row in rows:
-                if any(set('\t\n') & set(part) for part in row): raise PasswordException("Only spaces allowed as whitespace in display names.")
+                if any(set('\t\n') & set(part) for part in row): raise PasswordError("Only spaces allowed as whitespace in display names.")
                 print(u'\t'.join(row), file=f)
 
     write_passwords(passrows, dest=dest, seedval=' or '.join({str(x) for x in [seedval, seed] if x is not None}), code=cont.code, title=cont.title)
@@ -115,8 +115,8 @@ def write_passwords_format(cont, format_, seedval=None, dest='.'):
 def write_passwords(accounts, dest='.', **context):
     logins = [login for type_, display, login, password in accounts]
     displays = [display for type_, display, login, password in accounts]
-    if len(set(logins)) != len(logins): raise PasswordException("Duplicate logins!")
-    if len(set(displays)) != len(displays): raise PasswordException("Duplicate display names!")
+    if len(set(logins)) != len(logins): raise PasswordError("Duplicate logins!")
+    if len(set(displays)) != len(displays): raise PasswordError("Duplicate display names!")
 
     def clean_account(account):
         type_, display, login, password = account

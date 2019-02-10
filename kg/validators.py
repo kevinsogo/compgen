@@ -1,4 +1,5 @@
 from collections import deque
+from decimal import Decimal
 from functools import wraps
 from string import digits
 from sys import stderr
@@ -20,7 +21,7 @@ class Interval:
         super(Interval, self).__init__()
 
     def __and__(self, other):
-        if not isinstance(other, Interval): raise TypeError("Cannot merge {} with {}".format(self.__class__.__name__, other.__class__.__name__))
+        if not isinstance(other, Interval): raise TypeError(f"Cannot merge {self.__class__.__name__} with {other.__class__.__name__}")
         return Interval(max(self.l, other.l), min(self.r, other.r))
 
     def __len__(self):
@@ -30,10 +31,10 @@ class Interval:
         return self.l <= x <= self.r
 
     def __repr__(self):
-        return '{}({}, {})'.format(self.__class__.__name__, repr(self.l), repr(self.r))
+        return f'{self.__class__.__name__}({self.l}, {self.r})'
 
     def __str__(self):
-        return '[{}, {}]'.format(self.l, self.r)
+        return f'[{self.l}, {self.r}]'
 
 
 EOF = ''
@@ -56,7 +57,7 @@ class Bounds:
                 if a is None: return b
                 if b is None: return a
                 if not (isinstance(a, Interval) and isinstance(b, Interval)):
-                    raise Exception("Conflict for attribute {} in merging!".format(attr))
+                    raise ValidationError(f"Conflict for attribute {attr} in merging!")
                 return a & b
             m[attr] = combine(getattr(self, attr, None), getattr(other, attr, None))
         return Bounds(m)
@@ -65,7 +66,7 @@ class Bounds:
 _int_re = re.compile(r'0|(?:-?[1-9]\d*)$')
 intchars = set('-' + digits)
 
-def strict_int(x, *args):
+def strict_int(x, *args): ### @@ if False {
     ''' Check if the string x is a valid integer token, and that it satisfies certain constraints.
 
     Sample usage:
@@ -74,26 +75,62 @@ def strict_int(x, *args):
     strict_int(x, 5, 8) # checks if x is in the closed interval [5, 8]
     strict_int(x, interval) # check if  is in the Interval 'interval'
     '''
+    ## @@ }
     if not _int_re.match(x):
-        raise Exception("Expected integer literal, got: {}".format(repr(x)))
+        raise ValidationError(f"Expected integer literal, got: {repr(x)}")
+    if args == ['str']: return x
+    x = int(x)
+    _check_range(x, *args, type="Integer")
+    return x
+
+def _check_range(x, *args, type="Number"):
     if len(args) == 2:
-        x = int(x)
         l, r = args
-        if not (l <= x <= r):
-            raise Exception("Integer {} not in [{}, {}]".format(x, l, r))
+        if not (l <= x <= r): raise ValidationError(f"{type} {x} not in [{l}, {r}]")
     elif len(args) == 1:
         if args[0] == 'str': return x
-        x = int(x)
         r, = args
         if isinstance(r, Interval):
-            if x not in r:
-                raise Exception("Integer {} not in {}".format(x, r))
+            if x not in r: raise ValidationError(f"{type} {x} not in {r}")
         else:
-            if not (0 <= x < r):
-                raise Exception("Integer {} not in [0, {})".format(x, r))
+            if not (0 <= x < r): raise ValidationError(f"{type} {x} not in [0, {r})")
     else:
-        raise Exception("Invalid arguments to strict_int: {}".format(args))
+        raise ValidationError(f"Invalid arguments for range check: {args}")
     return x
+
+_real_re = re.compile(r'-?(?:0?|(?:[1-9]\d*))(?:\.\d*)?$')
+_real_neg_zero_re = re.compile(r'-0(?:\.0*)')
+realchars = intchars | {'.'}
+
+def strict_real(x, *args, max_places=None, places=None, negzero=False, dotlead=False, dottrail=False):
+    if not _real_re.match(x):
+        raise ValidationError(f"Expected real literal, got: {repr(x)}")
+    if not negzero and _real_neg_zero_re.match(x):
+        raise ValidationError(f"Real negative zero not allowed: {repr(x)}")
+    if not dotlead and x.startswith('.'):
+        raise ValidationError(f"Real with leading dot not allowed.")
+    if not dottrail and x.endswith('.'):
+        raise ValidationError(f"Real with trailing dot not allowed.")
+
+    pl = len(x) - 1 - x.find('.')
+    if max_places is not None:
+        if pl > max_places: raise ValidationErrorf(f"Decimal place count of {x} exceeds {max_places}")
+
+    if places is not None:
+        pl = len(x) - 1 - x.index('.')
+        if isinstance(places, Interval):
+            if pl not in Interval: raise ValidationError(f"Decimal place count of {x} not in {places}")
+        else:
+            if pl != places: raise ValidationError(f"Decimal place count of {x} not equal to {places}")
+
+    if args == ['str']: return x
+    x = Decimal(x)
+    _check_range(x, *args, type="Real")
+    return x
+
+
+
+
 
 _GET = None
 ### @@ if locals().get('WITH_GET', True) {
@@ -199,35 +236,35 @@ class StrictStream(object):
         return self._buff[0]
 
     @save_on_label
-    def read_until(self, ends, charset=None, maxn=None, include_end=False):
+    def read_until(self, ends, *, charset=None, maxn=None, include_end=False, _called="token"):
         maxn = self._get(maxn)
         if maxn is None: maxn = float('inf')
-        if maxn < 0: raise ValueError("maxn must be nonnegative: {}".format(maxn))
+        if maxn < 0: raise ValueError(f"maxn must be nonnegative: {maxn}")
         if not isinstance(charset, set): charset = set(charset or ())
         res = []
         while self._peek_char() not in ends:
-            if charset and self._peek_char() not in charset: raise StreamError("Invalid character detected: {}".format(charname(self._peek_char())))
-            if len(res) >= maxn: raise StreamError("Took too many characters! Expected at most {}".format(maxn))
+            if charset and self._peek_char() not in charset: raise StreamError(f"Invalid character for {_called} detected: {charname(self._peek_char())}")
+            if len(res) >= maxn: raise StreamError(f"Took too many characters! Expected at most {maxn}")
             res.append(self._next_char())
         if include_end: res.append(self._next_char())
         return ''.join(res)
 
     @save_on_label
     def read_line(self, eof=False, maxn=None, include_end=False):
-        return self.read_until(['\n'] + ([EOF] if eof else []), maxn=maxn, include_end=include_end)
+        return self.read_until(['\n'] + ([EOF] if eof else []), maxn=maxn, include_end=include_end, _called="line")
 
     @save_on_label
-    def read_token(self, charset=None, regex=None, maxn=None, other_ends=[], include_end=False): # optimize this. 
-        tok = self.read_until([EOF, ' ', '\t', '\n'] + other_ends, charset=charset, maxn=maxn, include_end=include_end)
+    def read_token(self, charset=None, regex=None, maxn=None, other_ends=[], include_end=False, _called="token"): # optimize this. 
+        tok = self.read_until([EOF, ' ', '\t', '\n'] + other_ends, charset=charset, maxn=maxn, include_end=include_end, _called=_called)
         if regex is not None and not re.match('^' + regex + '$', tok):
-            raise StreamError("Expected token with regex {}, got {}".format(repr(regex), repr(tok)))
+            raise StreamError(f"Expected token with regex {repr(regex)}, got {repr(tok)}")
         return tok
 
     @save_on_label
     @listify
     def do_multiple(self, f, n, *a, **kw):
         n = self._get(n)
-        if n < 0: raise ValueError("n must be nonnegative: {}".format(n))
+        if n < 0: raise ValueError(f"n must be nonnegative: {n}")
         sep = ''.join(kw.pop('sep', ' '))
         end = kw.pop('end', '')
         for i in range(n):
@@ -238,10 +275,15 @@ class StrictStream(object):
 
     def read_ints(self, *a, **kw): return self.do_multiple(self.read_int, *a, **kw)
     def read_tokens(self, *a, **kw): return self.do_multiple(self.read_token, *a, **kw)
+    def read_reals(self, *a, **kw): return self.do_multiple(self.read_real, *a, **kw)
 
     @save_on_label
     def read_int(self, *a, **kw):
-        return strict_int(self.read_token(charset=intchars), *map(self._get, a), **kw)
+        return strict_int(self.read_token(charset=intchars, _called="int"), *map(self._get, a), **kw)
+
+    @save_on_label
+    def read_real(self, *a, **kw):
+        return strict_real(self.read_token(charset=realchars, _called="real"), *map(self._get, a), **kw)
 
     def read_space(self): return self.read_char(' ')
     def read_eoln(self): return self.read_char('\n') # ubuntu only (I think).
@@ -251,7 +293,7 @@ class StrictStream(object):
     @save_on_label
     def read_char(self, ch):
         if self._next_char() != ch:
-            raise StreamError("Expected {}, got {}".format(charname(ch), charname(self.last)))
+            raise StreamError(f"Expected {charname(ch)}, got {charname(self.last)}")
 
     # convenience
     def read_int_eoln(self, *a, **kw):
@@ -262,6 +304,14 @@ class StrictStream(object):
         res = self.read_ints(*a, **kw); self.read_eoln(); return res
     def read_ints_space(self, *a, **kw):
         res = self.read_ints(*a, **kw); self.read_space(); return res
+    def read_real_eoln(self, *a, **kw):
+        res = self.read_real(*a, **kw); self.read_eoln(); return res
+    def read_real_space(self, *a, **kw):
+        res = self.read_real(*a, **kw); self.read_space(); return res
+    def read_reals_eoln(self, *a, **kw):
+        res = self.read_reals(*a, **kw); self.read_eoln(); return res
+    def read_reals_space(self, *a, **kw):
+        res = self.read_reals(*a, **kw); self.read_space(); return res
     def read_token_eoln(self, *a, **kw):
         res = self.read_token(*a, **kw); self.read_eoln(); return res
     def read_token_space(self, *a, **kw):
@@ -296,6 +346,14 @@ class _Read:
         def op(label=''): yield self.ss.read_ints(*a, **_add_label(kw, label))
         return _Read(self.ss, self, op)
 
+    def real(self, *a, **kw):
+        def op(label=''): yield self.ss.read_real(*a, **_add_label(kw, label))
+        return _Read(self.ss, self, op)
+
+    def reals(self, *a, **kw):
+        def op(label=''): yield self.ss.read_reals(*a, **_add_label(kw, label))
+        return _Read(self.ss, self, op)
+
     def token(self, *a, **kw):
         def op(label=''): yield self.ss.read_token(*a, **_add_label(kw, label))
         return _Read(self.ss, self, op)
@@ -306,8 +364,7 @@ class _Read:
 
     def char(self, *a, **kw):
         def op():
-            return self.ss.read_char(*a, **kw)
-            yield
+            return self.ss.read_char(*a, **kw); yield
         return _Read(self.ss, self, op)
 
     def label(self, label):
@@ -325,7 +382,7 @@ class _Read:
     
 def _add_label(kw, label):
     if label:
-        if 'label' in kw: raise StreamError("Duplicate label: {} {}".format(label, kw['label']))
+        if 'label' in kw: raise StreamError(f"Duplicate label: {label} {kw['label']}")
         kw['label'] = label
     return kw
 

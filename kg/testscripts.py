@@ -7,7 +7,7 @@ from .iutils import *
 from .programs import *
 from .utils import *
 
-class TestScriptException(Exception): ...
+class TestScriptError(Exception): ...
 
 def find_matches(cmd, generators):
     for prog in generators:
@@ -20,9 +20,9 @@ def parse_generator(name, *args, generators, relpath=None):
     else:
         progs = list(find_matches(name, generators))
         if len(progs) >= 2:
-            raise TestScriptException(f"{name} matches {len(progs)} programs! Please ensure that the base names of generators are unique.")
+            raise TestScriptError(f"{name} matches {len(progs)} programs! Please ensure that the base names of generators are unique.")
         elif not progs:
-            raise TestScriptException(f"Couldn't find program {name} (from testscript)")
+            raise TestScriptError(f"Couldn't find program {name} (from testscript)")
         else:
             [prog] = progs
             return prog, args
@@ -33,7 +33,7 @@ def run_testscript(inputs, testscript, generators, *, relpath=None):
     filecount, gens = parse_testscript(testscript, generators, relpath=relpath)
     files = list(islice(inputs, filecount))
     if len(files) < filecount:
-        raise TestScriptException(f"{filecount} files needed but only {len(files)} input files found.")
+        raise TestScriptError(f"{filecount} files needed but only {len(files)} input files found.")
 
     got_files = set()
     for gen, args, single, target, otarget in gens:
@@ -62,7 +62,7 @@ def run_testscript(inputs, testscript, generators, *, relpath=None):
                 touch_container(sfile)
                 if os.path.exists(sfile):
                     if not os.path.isfile(sfile):
-                        raise TestScriptException(f"Temp file {sfile} exists and is not a file! Please clear temp/")
+                        raise TestScriptError(f"Temp file {sfile} exists and is not a file! Please clear temp/")
                     else:
                         os.remove(sfile)
 
@@ -95,9 +95,9 @@ def parse_testscript(testscript, generators, *, relpath=None):
 
     def validate_target(index):
         if index in found:
-            raise TestScriptException(f"Duplicate target index found: {index}")
+            raise TestScriptError(f"Duplicate target index found: {index}")
         if index < 1:
-            raise TestScriptException(f"Target index must be positive. Got {index}")
+            raise TestScriptError(f"Target index must be positive. Got {index}")
         found.add(index)
 
     gens = {}
@@ -110,10 +110,10 @@ def parse_testscript(testscript, generators, *, relpath=None):
         try:
             prog, *args, pipe, target = parts
         except ValueError as exc:
-            raise TestScriptException(f"Invalid testscript line: {repr(line)}")
+            raise TestScriptError(f"Invalid testscript line: {repr(line)}")
 
         if pipe != '>':
-            raise TestScriptException(f'Testscript line must end with "> $" "> {{file/s}}": {repr(line)}') from exc
+            raise TestScriptError(f'Testscript line must end with "> $" "> {{file/s}}": {repr(line)}') from exc
 
         gen, args = parse_generator(prog, *args, generators=generators, relpath=relpath)
 
@@ -132,15 +132,15 @@ def parse_testscript(testscript, generators, *, relpath=None):
                 return
 
             if not (target.startswith('{') and target.endswith('}')):
-                raise TestScriptException(f"Invalid target file sequence: {repr(target)}")
+                raise TestScriptError(f"Invalid target file sequence: {repr(target)}")
             indices = list_t_sequence(target[1:-1])
             if not indices:
-                raise TestScriptException(f"Empty file sequence: {target}")
+                raise TestScriptError(f"Empty file sequence: {target}")
             for index in indices:
                 validate_target(index)
             dupseq, *rargs = args
             if list(t_sequence(dupseq)) != indices:
-                raise TestScriptException(f"First argument of multifile generator must generate the same sequence as target. '{dupseq}' != '{target}'")
+                raise TestScriptError(f"First argument of multifile generator must generate the same sequence as target. '{dupseq}' != '{target}'")
             gens[min(indices)] = gen, args, False, indices, target
 
         process()
@@ -152,7 +152,7 @@ def parse_testscript(testscript, generators, *, relpath=None):
         gens[index] = gen, args, True, index, '$'
 
     if not all(i == target for i, target in enumerate(sorted(found), 1)):
-        raise TestScriptException("Some test files missing from the sequence. They must generate 1, 2, 3, ...")
+        raise TestScriptError("Some test files missing from the sequence. They must generate 1, 2, 3, ...")
 
     return len(found), [value for key, value in sorted(gens.items())]
 

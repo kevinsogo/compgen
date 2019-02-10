@@ -10,7 +10,7 @@ def _merge_dicts(d, *others):
     d = d.copy()
     for o in others:
         for k, v in o.items():
-            if k in d: raise Exception("duplicate key: {}".format(k))
+            if k in d: raise ValueError(f"duplicate key: {k}")
             d[k] = v
     return d
 
@@ -45,7 +45,7 @@ class ChkStream(object):
                     for tok in line.strip().split():
                         yield tok
         else:
-            raise Exception("Invalid Stream type: {}".format(type_))
+            raise ValueError(f"Invalid Stream type: {type_}")
 
         self._seq = naive_iter()
 
@@ -108,7 +108,7 @@ class Checker(object):
         sdata = args
         if not sdata: sdata = 'lines',
         if len(sdata) == 1: sdata = sdata*3
-        if len(sdata) != 3: raise Exception("Invalid args: {}".format(args))
+        if len(sdata) != 3: raise ValueError(f"Invalid args: {args}")
         intype, outtype, judgetype = sdata
         no_extra_chars = kwargs.pop('no_extra_chars', False)
         def _set_checker(checker):
@@ -214,7 +214,7 @@ def _check_generic(checker, input_path, output_path, judge_path, **kwargs):
 _platforms = {}
 def _register_platform(name):
     def reg(f):
-        assert name not in _platforms, "{} registered twice!".format(name)
+        assert name not in _platforms, f"{name} registered twice!"
         _platforms[name] = f
         return f
     return reg
@@ -292,7 +292,7 @@ def write_xml_verdict(verdict, message, result_file):
 @_register_platform('pg')
 @_register_platform('pc2')
 def _check_local(checker, title='', file=stdout, help=None):
-    desc = help or CURR_PLATFORM + ('judge for the problem' + (' "{}"'.format(title) if title else ''))
+    desc = help or CURR_PLATFORM + (' judge for the problem' + (f' "{title}"' if title else ''))
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('input_path', help='input file path')
     parser.add_argument('output_path', help="contestant's file path")
@@ -313,8 +313,8 @@ def _check_local(checker, title='', file=stdout, help=None):
 
     if verbose:
         if args.extra_args:
-            print("{:>2} Received extra args {}... ignoring them.".format(tc_id, args.extra_args), file=file)
-        print("{:>2} Checking the output...".format(tc_id), file=file)
+            print(f"{tc_id:>2} Received extra args {args.extra_args}... ignoring them.", file=file)
+        print(f"{tc_id:>2} Checking the output...", file=file)
 
     verdict, score, message = _check_generic(checker,
             input_path=args.input_path,
@@ -327,15 +327,15 @@ def _check_local(checker, title='', file=stdout, help=None):
         )
 
     if verbose:
-        print("{:>2} Result:  {}".format(tc_id, verdict), file=file)
-        print("{:>2} on HR:   {}".format(tc_id, _hr_verdict_name[verdict]), file=file)
-        print("{:>2} Score:   {}".format(tc_id, score), file=file)
-        if message: print("{:>2} Message: {}".format(tc_id, message), file=file)
+        print(f"{tc_id:>2} Result:  {verdict}", file=file)
+        print(f"{tc_id:>2} on HR:   {_hr_verdict_name[verdict]}", file=file)
+        print(f"{tc_id:>2} Score:   {score}", file=file)
+        if message: print(f"{tc_id:>2} Message: {message}", file=file)
     else:
-        print("{:>2} Score={} {}".format(tc_id, score, verdict), file=file)
+        print(f"{tc_id:>2} Score={score} {verdict}", file=file)
 
     if args.result_file:
-        if verbose: print("{:>2} Writing result to {}...".format(tc_id, args.result_file), file=file)
+        if verbose: print(f"{tc_id:>2} Writing result to {args.result_file}...", file=file)
         write_xml_verdict(verdict, message, args.result_file)
 
     exit(_polygon_rcode[verdict])
@@ -347,7 +347,7 @@ def minimum_score(scores, mn=0.0, mx=1.0, exc=Fail):
         if score is None:
             raise exc("The checker returned a score of 'None'.")
         if not (mn <= score <= mx):
-            raise exc("Invalid score: {}. It must be in the interval [{}, {}].".format(score, mn, mx))
+            raise exc(f"Invalid score: {score}. It must be in the interval [{mn}, {mx}].")
         m = min(m, score)
         if m == mn: break # we can stop now
     return m
@@ -394,8 +394,8 @@ set_multi_checker = chk.set_multi_checker
 ###     @set write = True
 ### @@}
 
-valid_subtasks = None ### @replace None, str(sorted(details.valid_subtasks))
-subtasks_files = None ### @replace None, '[{}\n]'.format(''.join('\n    (({}, {}), {}),'.format(*x) for x in subtasks_files))
+valid_subtasks = None ### @replace None, sorted(details.valid_subtasks)
+subtasks_files = None ### @replace None, f"[{''.join('\n    (({}, {}), {}),'.format(*x) for x in subtasks_files)}\n]"
 
 if valid_subtasks:
     ...
