@@ -4,14 +4,13 @@ from functools import wraps
 from html.parser import HTMLParser
 from operator import attrgetter
 from random import randrange
+from shutil import copyfile
 from string import ascii_letters, ascii_uppercase, digits
 from subprocess import Popen, PIPE, CalledProcessError
 from sys import *
 import argparse
 import os.path
-import pathlib
 import re
-import subprocess
 import tempfile
 import zipfile
 
@@ -27,13 +26,6 @@ from .programs import *
 from .seating import *
 from .testscripts import *
 from .utils import *
-
-
-def touch_container(file):
-    ''' ensures that the folder containing "file" exists, possibly creating the nested directory path to it '''
-    dirname = os.path.dirname(file)
-    if not os.path.exists(dirname): print('Creating folder:', dirname)
-    pathlib.Path(dirname).mkdir(parents=True, exist_ok=True)
 
 
 class CommandException(Exception): ...
@@ -80,8 +72,8 @@ def convert_formats(src, dest):
     for (srci, srco), (dsti, dsto) in zip(src_format.thru_io(), dest_format.thru_expected_io()):
         touch_container(dsti)
         touch_container(dsto)
-        subprocess.run(['cp', srci, dsti], check=True)
-        subprocess.run(['cp', srco, dsto], check=True)
+        copyfile(srci, dsti)
+        copyfile(srco, dsto)
         copied += 2
     print("Copied", copied, "files")
 
@@ -110,7 +102,7 @@ def convert_sequence(src, dest):
     print("Copying now...")
     for srcf, destf in format_.thru_io():
         touch_container(destf)
-        subprocess.run(['cp', srcf, destf], check=True)
+        copyfile(srcf, destf)
         copied += 1
     print("Copied", copied, "files")
 
@@ -312,33 +304,34 @@ def kg_test(format_, args):
 
     # also print subtask grades
 
-    validator = Program.from_args(args.validator_file, args.validator_command)
-    detector = None
-    if validator:
-        detector = detector_from_validator(validator)
-        assert detector
-        print("Found a validator.", end=' ')
-    elif details.subtask_detector:
-        print("Found a detector in {}.".format(details.source), end=' ')
-        detector = details.subtask_detector
-    if detector:
-        print('Proceeding with subtask grading...')
-        # find subtask list
-        subtasks = args.subtasks or list(map(str, details.valid_subtasks))
-        if validator and not subtasks: # subtask list required for detectors from validator
-            raise CommandException("Missing subtask list (for subtask grading)")
-        subtasks_of, all_subtasks, inputs = get_subtasks(subtasks, detector, format_)
-        # normal grading
-        min_score = {sub: 1 for sub in all_subtasks}
-        for index, input_, correct in scoresheet:
-            for sub in subtasks_of[input_]:
-                min_score[sub] = min(min_score[sub], correct)
+    if details.valid_subtasks:
+        validator = Program.from_args(args.validator_file, args.validator_command)
+        detector = None
+        if validator:
+            detector = detector_from_validator(validator)
+            assert detector
+            print("Found a validator.", end=' ')
+        elif details.subtask_detector:
+            print("Found a detector in {}.".format(details.source), end=' ')
+            detector = details.subtask_detector
+        if detector:
+            print('Proceeding with subtask grading...')
+            # find subtask list
+            subtasks = args.subtasks or list(map(str, details.valid_subtasks))
+            if validator and not subtasks: # subtask list required for detectors from validator
+                raise CommandException("Missing subtask list (for subtask grading)")
+            subtasks_of, all_subtasks, inputs = get_subtasks(subtasks, detector, format_)
+            # normal grading
+            min_score = {sub: 1 for sub in all_subtasks}
+            for index, input_, correct in scoresheet:
+                for sub in subtasks_of[input_]:
+                    min_score[sub] = min(min_score[sub], correct)
 
-        print()
-        print('.'*42)
-        print('SUBTASK REPORT:')
-        for sub in natsorted(all_subtasks):
-            print("Subtask {}: Score = {:.3f}".format(str(sub).rjust(3), float(min_score[sub])))
+            print()
+            print('.'*42)
+            print('SUBTASK REPORT:')
+            for sub in natsorted(all_subtasks):
+                print("Subtask {}: Score = {:.3f}".format(str(sub).rjust(3), float(min_score[sub])))
 
 
 
@@ -398,8 +391,8 @@ def _kg_make(format_, args):
     details = Details.from_format_loc(format_, args.details, relpath=args.loc)
     kg_make(args.makes, args.loc, format_, details, validation=args.validation, checks=args.checks)
 
-def kg_make(makes, loc, format_, details, validation=False, checks=False):
-    makes = set(makes)
+def kg_make(omakes, loc, format_, details, validation=False, checks=False):
+    makes = set(omakes)
     valid_makes = {'all', 'inputs', 'outputs', 'subtasks'}
     if not (makes <= valid_makes):
         raise CommandException("Unknown make param(s): {}".format(' '.join(sorted(makes - valid_makes))))
@@ -424,13 +417,7 @@ def kg_make(makes, loc, format_, details, validation=False, checks=False):
             validator = details.validator
             validator.do_compile()
 
-        for filename, gen, fargs in parse_testscript(fmt.thru_expected_inputs(), script, details.generators, relpath=loc):
-            print('GENERATING', filename)
-            touch_container(filename)
-            gen.do_compile()
-            with open(filename, 'w') as file:
-                gen.do_run(*fargs, stdout=file)
-
+        for filename in run_testscript(fmt.thru_expected_inputs(), script, details.generators, relpath=loc):
             if validation:
                 with open(filename) as file:
                     validator.do_run(stdin=file)
@@ -451,7 +438,7 @@ def kg_make(makes, loc, format_, details, validation=False, checks=False):
         print('~~ '*14)
         print('MAKING SUBTASKS...')
         if not details.valid_subtasks:
-            if 'subtasks' in makes:
+            if 'subtasks' in omakes:
                 raise Exception("valid_subtasks list required if you wish to make subtasks")
             else:
                 print("no valid_subtasks found, so actually, subtasks will not be made. move along.")
@@ -875,7 +862,7 @@ def kg_contest(format_, args):
                 srcf = os.path.join(problem_loc, 'kgkompiled', 'pc2', os.path.basename(src.filename))
                 targf = os.path.join(cdp_config, code, targ, os.path.basename(src.filename))
                 touch_container(targf)
-                subprocess.run(['cp', srcf, targf], check=True)
+                copyfile(srcf, targf)
                 problem_env[letter][name] = os.path.abspath(targf)
 
         def yaml_lang(lang):
@@ -930,7 +917,8 @@ def kg_contest(format_, args):
             source = penv['details'].model_solution.filename
             target = os.path.join(cdp_config, code, 'submissions', 'accepted', os.path.basename(source))
             touch_container(target)
-            subprocess.run(['cp', source, target], check=True)
+
+            copyfile(source, target)
 
             print("Copying data for {}...".format(code))
             try:
@@ -947,8 +935,8 @@ def kg_contest(format_, args):
                 for (srci, srco), (dsti, dsto) in zip(src_format.thru_io(), dest_format.thru_expected_io()):
                     touch_container(dsti)
                     touch_container(dsto)
-                    subprocess.run(['cp', srci, dsti], check=True)
-                    subprocess.run(['cp', srco, dsto], check=True)
+                    copyfile(srci, dsti)
+                    copyfile(srco, dsto)
                     copied += 2
                 print("Copied", copied, "files")
 

@@ -22,5 +22,4 @@ def distribute(rand, new_case, casemakers, *args):
     return group_into(T, rand.shuff(casemakers))
 
 if __name__ == '__main__':
-    index, *args = argv[1:]
-    write_to_file(print_to_file, (many_cases, distribute, int(index)), args, stdout)
+    write_to_files(print_to_file, (many_cases, distribute), *argv[1:])

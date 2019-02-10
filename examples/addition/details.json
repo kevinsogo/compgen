@@ -6,7 +6,8 @@
     "generators": [
         "single_case.py",
         "multi_case.py",
-        "multi_case_lazy.py"
+        "multi_case_lazy.py",
+        "multi_case_eager.py"
     ],
     "other_programs": [
         "formatter.py"

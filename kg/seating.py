@@ -7,8 +7,8 @@ import html
 import os.path
 
 from .contest_details import *
-from .iutils import *
 from .utils import *
+from .iutils import *
 
 
 class SeatingError(Exception): ...

@@ -22,6 +22,8 @@
 
 - Add compatibility warning for validators: Don't return 42 since that's the success code for the pc2/kattis format.
 
+- For kg kontest, instead of relpath, "go to directory and run there".
+
 - Allow non-kg formats in `kg kontest`. Its entry in `problems` could basically contain the `details.json`, at least those which are required. 
 
 - Interactive editor for seating arrangements. (maybe, kcvajgf.github.io, also maybe vue.js or something.)

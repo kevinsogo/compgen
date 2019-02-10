@@ -174,7 +174,7 @@ There are a few more advanced usages and features (will document soon!), but thi
 The testscript file contains instructions on how to generate all the tests. It looks like this:
 
 ```bash
-{{ addition/testscript }}
+{{ templates/testscript }}
 ```
 
 The programs used will be taken from `generators` in `details.json`; in this case, `single_case.py` and `multi_case_lazy.py`. They can be in any language. A `!` at the beginning means "run this bash command as is". Comments begin with `#`. 
