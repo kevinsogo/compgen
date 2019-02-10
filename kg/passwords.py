@@ -23,11 +23,11 @@ def create_passwords(accounts, seedval=None):
         fku fcu fqu hor slt jap wop kik kyk kyc kyq dyk dyq dyc kkk jyz prk prc prq mic mik miq myc myk myq guc guk guq giz gzz
         sex sxx sxi sxe sxy xxx wac wak waq wck pot thc vaj vjn nut std lsd poo azn pcp dmn orl anl ans muf mff phk phc phq xtc
         tok toc toq mlf rac rak raq rck sac sak saq pms nad ndz nds wtf sol sob fob sfu abu alh wag gag ggo pta pot tot put tut
-        tet naz nzi xex cex shi xxi
+        tet naz nzi xex cex shi xxi fak fac
     '''.upper().strip().split())
     if seedval is None: seedval = randrange(10**6)
 
-    print("Using seed {}".format(seedval), file=stderr)
+    print(f"Using seed {seedval}", file=stderr)
     rand = Random(seedval)
 
     def make_chunk():
@@ -44,7 +44,7 @@ def create_passwords(accounts, seedval=None):
 def write_passwords_format(cont, format_, seedval=None, dest='.'):
 
     if format_ != 'pc2':
-        raise PasswordException("Unsupported format: {}".format(format_))
+        raise PasswordException(f"Unsupported format: {format_}")
 
     accounts = [(key, account) for key in ['leaderboards', 'admins', 'judges', 'teams', 'feeders'] for account in getattr(cont, key)]
     passwords, seed = create_passwords(accounts, seedval=seedval)
@@ -58,28 +58,28 @@ def write_passwords_format(cont, format_, seedval=None, dest='.'):
 
             for idx, scoreboard in enumerate(cont.leaderboards, 1):
                 display = scoreboard
-                account = 'board{}'.format(idx)
+                account = f'scoreboard{idx}'
                 password = passwords['leaderboards', scoreboard]
                 type_ = '[Scoreboard]'
                 yield ('1', account, display, password, '', 'false', 'true', str(1000 + idx), '', 'true'), (type_, display, account, password)
 
             for idx, admin in enumerate(cont.admins, 1):
                 display = admin
-                account = 'administrator{}'.format(idx)
+                account = f'administrator{idx}'
                 password = passwords['admins', admin]
                 type_ = '[Administrator]'
                 yield ('1', account, display, password, '', 'false', 'true', str(1000 + idx), '', 'true'), (type_, display, account, password)
 
             for idx, judge in enumerate(cont.judges, 1):
                 display = 'Judge ' + judge
-                account = 'judge{}'.format(idx)
+                account = f'judge{idx}'
                 password = passwords['judges', judge]
                 type_ = '[Judge]'
                 yield ('1', account, display, password, '', 'false', 'true', str(1000 + idx), '', 'false'), (type_, display, account, password)
 
             for idx, feeder in enumerate(cont.feeders, 1):
                 display = feeder
-                account = 'feeder{}'.format(idx)
+                account = f'feeder{idx}'
                 password = passwords['feeders', feeder]
                 type_ = '[Feeder]'
                 yield ('1', account, display, password, '', 'false', 'true', str(1000 + idx), '', 'true'), (type_, display, account, password)
@@ -91,7 +91,7 @@ def write_passwords_format(cont, format_, seedval=None, dest='.'):
 
             for idx, (school_name, team_name) in enumerate(team_schools(), 1):
                 display = team_name
-                account = 'team{}'.format(idx)
+                account = f'team{idx}'
                 password = passwords['teams', team_name]
                 type_= school_name
                 yield ('1', account, display, password, '', 'true', 'true', str(1000 + idx), '', 'false'), (type_, display, account, password)
@@ -103,7 +103,7 @@ def write_passwords_format(cont, format_, seedval=None, dest='.'):
             if passrow:
                 passrows.append(passrow)
 
-        filename = os.path.join(dest, 'accounts_{}.txt'.format(cont.code))
+        filename = os.path.join(dest, f'accounts_{cont.code}.txt')
         print("Writing to", filename, file=stderr)
         with io.open(filename, 'w', encoding='utf-8') as f:
             for row in rows:
@@ -128,54 +128,43 @@ def write_passwords(accounts, dest='.', **context):
     # TODO maybe use some jinja/django templating here...
     if not context.get('code'): context['code'] = ''
     if not context.get('title'): context['title'] = ''
-    context['for_code'] = 'FOR {}'.format(context['code']) if context['code'] else ''
-    context['for_title'] = 'FOR {}'.format(context['title']) if context['title'] else ''
-    context['_code'] = '_' + context['code'] if context['code'] else ''
-    context['pcode'] = '(' + context['code'] + ')' if context['code'] else ''
-    context['ptitle'] = '(' + context['title'] + ')' if context['title'] else ''
+    for_code = context['for_code'] = f"FOR {context['code']}" if context['code'] else ''
+    for_title = context['for_title'] = f"FOR {context['title']}" if context['title'] else ''
+    _code = context['_code'] = '_' + context['code'] if context['code'] else ''
+    pcode = context['pcode'] = '(' + context['code'] + ')' if context['code'] else ''
+    ptitle = context['ptitle'] = '(' + context['title'] + ')' if context['title'] else ''
 
-    filename = os.path.join(dest, 'logins{_code}_table.html'.format(**context))
+    filename = os.path.join(dest, f'logins{_code}_table.html')
     print("Writing to", filename, file=stderr)
     with open(filename, 'w') as f:
         rows = []
         for index, (type_, display, login, password) in enumerate(accounts):
-            rows.append(dedent('''\
+            rows.append(dedent(f'''\
                 <tr class="pass-entry">
-                <td>{type}</td>
+                <td>{type_}</td>
                 <td>{display}</td>
                 <td><code>{login}</code></td>
                 <td><code>{password}</code></td>
                 </tr>
-            ''').format(
-                type=type_,
-                display=display,
-                login=login,
-                password=password
-            ))
+            '''))
 
         context['accounts'] = '\n'.join(rows)
         with open(os.path.join(script_path, 'data', 'contest_template', 'logins_table.html')) as of:
             f.write(of.read().format(**context))
 
-    filename = os.path.join(dest, 'logins{_code}_boxes.html'.format(**context))
+    filename = os.path.join(dest, f'logins{_code}_boxes.html')
     print("Writing to", filename, file=stderr)
     with open(filename, 'w') as f:
         entries = []
         for index, (type_, display, login, password) in enumerate(accounts):
-            entries.append(dedent('''\
+            entries.append(dedent(f'''\
             <strong>{display}</strong> <small><em>{pcode}</em></small><br>
-            <small>{type}</small>
+            <small>{type_}</small>
             <table class="team-details table table-condensed table-bordered"><tbody>
             <tr><td>Login name</td><td><code>{login}</code></td></tr>
             <tr><td>Password</td><td><code>{password}</code></td></tr>
             </tbody></table>
-            ''').format(
-                type=type_,
-                display=display,
-                login=login,
-                password=password,
-                **context
-            ))
+            '''))
 
         PER_ROW = 3
         account_rows = []

@@ -297,11 +297,7 @@ def write_seating(contest, seedval=None, dest='.'):
         seating.write(contest.team_schools, f, seedval, code=contest.code, title=contest.title)
 
 
-
-        
-
-
-def handle_args(seating_p):
+def seating_args(seating_p):
     seating_p.add_argument('seating_file', help='seating file')
     subparsers = seating_p.add_subparsers(help='which operation to perform', dest='operation')
     subparsers.required = True
@@ -312,7 +308,7 @@ def handle_args(seating_p):
     gen_p.add_argument('width', type=int, nargs='?', default=0, help='how far to disallow seating same-school students')
 
     @set_handler(gen_p)
-    def gen_p(format_, args):
+    def kg_seating_gen(format_, args):
         print('Making a {} x {} grid with seating width {}...'.format(args.rows, args.cols, args.width))
         seating = Seating.gen(args.rows, args.cols, args.width)
         with open(args.seating_file, 'w') as f: seating.dump(f)
@@ -324,7 +320,7 @@ def handle_args(seating_p):
     set_p.add_argument('cols', help='t-sequence of columns')
 
     @set_handler(set_p)
-    def set_p(format_, args):
+    def kg_seating_set(format_, args):
         with open(args.seating_file) as f: seating = Seating.load(f)
 
         ch = args.char
@@ -359,7 +355,7 @@ def handle_args(seating_p):
         return a + c, b + d
 
     @set_handler(force_p)
-    def force_p(format_, args):
+    def kg_seating_force(format_, args):
         with open(args.seating_file) as f: seating = Seating.load(f)
 
         if args.power not in (digits + '.#'): raise ValueError("Power must be a digit, #, or dot. {}".format(args.power))
@@ -393,7 +389,7 @@ def handle_args(seating_p):
     assign_p.add_argument('groups', nargs='+', help='Group data')
 
     @set_handler(assign_p)
-    def assign_p(format_, args):
+    def kg_seating_assign(format_, args):
         with open(args.seating_file) as f: seating = Seating.load(f)
 
         groups = []
@@ -416,7 +412,7 @@ def handle_args(seating_p):
     write_p.add_argument('-t', '--title', '--contest-title', help='Contest title')
 
     @set_handler(write_p, stderr)
-    def write_p(format_, args):
+    def kg_seating_write(format_, args):
         with open(args.seating_file) as f: seating = Seating.load(f)
         with open(args.teams) as f: team_schools = ContestDetails.get_team_schools(json.load(f))
 

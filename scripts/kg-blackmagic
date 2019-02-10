@@ -22,7 +22,7 @@ def lines():
         yield line.rstrip('\n')
 
 lines = list(lines())
-for fmt in 'local', 'kg', 'pg', 'hr':
+for fmt in 'local', 'kg', 'pg', 'hr', 'pc2':
     print('@@@@@@@@@@@@ trying', fmt)
     for line in compile_lines(lines,
         load_module=load_module,

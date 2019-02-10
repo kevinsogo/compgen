@@ -970,11 +970,14 @@ def kg_contest(format_, args):
 ##########################################
 # manage seating arrangements
 
-handle_args(subparsers.add_parser('seating', help='Manage seating arrangements'))
+seating_args(subparsers.add_parser('seating', help='Manage seating arrangements'))
 
 
 
 
+
+##########################################
+# Generate passwords
 
 passwords_p = subparsers.add_parser('passwords', help='Assign passwords to a list of teams')
 passwords_p.add_argument('teams', help='JSON file containing the team and school details')
@@ -984,7 +987,7 @@ passwords_p.add_argument('-t', '--title', '--contest-title', help='Contest title
 passwords_p.add_argument('-a', '--account-format', default='team{idx}', help='Account name format')
 
 @set_handler(passwords_p)
-def passwords_p(format_, args):
+def kg_passwords(format_, args):
     with open(args.teams) as f: team_schools = ContestDetails.get_team_schools(json.load(f))
 
     team_names = [team for ts in team_schools for team in ts['teams']]

@@ -15,5 +15,6 @@
     ],
     "checker": "checker.py",
     "valid_subtasks": [1, 2, 3],
-    "subtasks_files": "subtasks.json"
+    "subtasks_files": "subtasks.json",
+    "version": "0.2"
 }

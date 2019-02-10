@@ -13,5 +13,6 @@
     ],
     "valid_subtasks": [1, 2, 3],
     "subtasks_files": "subtasks.json",
-    "time_limit": 2
+    "time_limit": 2,
+    "version": "0.2"
 }

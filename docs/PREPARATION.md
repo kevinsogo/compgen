@@ -64,11 +64,12 @@ The metadata about the problem can be found in `details.json`. It looks like thi
     ],
     "checker": "checker.py",
     "valid_subtasks": [1, 2, 3],
-    "subtasks_files": "subtasks.json"
+    "subtasks_files": "subtasks.json",
+    "version": "0.2"
 }
 ```
 
-Please update them with the correct values. If your problem doesn't have subtasks, simply remove `valid_subtasks` (or turn it into the empty list). 
+Please update them with the correct values. If your problem doesn't have subtasks, simply remove `valid_subtasks` (or turn it into the empty list).  
 
 The `checker` field may be omitted. It defaults to a simple diff check. There are also a couple of builtin checks: enter `!diff.exact`, `!diff.tokens`, `!diff.real_abs_rel_1e_6`, etc., as the `checker`. (more to come soon...)
 

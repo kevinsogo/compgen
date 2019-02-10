@@ -16,5 +16,6 @@
     "judge_data_maker": "solution_len_only.py",
     "valid_subtasks": [1, 2, 3],
     "subtasks_files": "subtasks.json",
-    "time_limit": 3
+    "time_limit": 3,
+    "version": "0.2"
 }

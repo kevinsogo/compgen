@@ -1,4 +1,4 @@
-# comments go here
+# comments start with hash (#)
 
 # you can run an arbitrary command via "!"
 ! cat sample.in > $

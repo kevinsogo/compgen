@@ -21,5 +21,6 @@
         "For a custom checker template, see:",
         "examples/templates/checker_generic_template.py"
     ],
-    "time_limit": 3
+    "time_limit": 3,
+    "version": "0.2"
 }

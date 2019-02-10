@@ -14,9 +14,19 @@
 
 - Allow running several solutions at once.  
 
+- Add colors for output. (Colorama seems cool)
+
+- Use Python f strings
+
+- Use bare * for some
+
 - Add compatibility warning for validators: Don't return 42 since that's the success code for the pc2/kattis format.
 
 - Allow non-kg formats in `kg kontest`. Its entry in `problems` could basically contain the `details.json`, at least those which are required. 
+
+- Interactive editor for seating arrangements. (maybe, kcvajgf.github.io, also maybe vue.js or something.)
+
+- groupInto -> chunk, as per lodash. Also find other things there.
 
 - Support for stress testing. `kg.stresses`, I guess.
 
