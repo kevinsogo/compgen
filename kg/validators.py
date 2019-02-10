@@ -75,7 +75,7 @@ def strict_int(x, *args): ### @@ if False {
     strict_int(x, 5, 8) # checks if x is in the closed interval [5, 8]
     strict_int(x, interval) # check if  is in the Interval 'interval'
     '''
-    ## @@ }
+    ### @@ }
     if not _int_re.match(x):
         raise ValidationError(f"Expected integer literal, got: {repr(x)}")
     if args == ['str']: return x

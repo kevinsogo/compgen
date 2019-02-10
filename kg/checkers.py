@@ -395,7 +395,7 @@ set_multi_checker = chk.set_multi_checker
 ### @@}
 
 valid_subtasks = None ### @replace None, sorted(details.valid_subtasks)
-subtasks_files = None ### @replace None, f"[{''.join('\n    (({}, {}), {}),'.format(*x) for x in subtasks_files)}\n]"
+subtasks_files = None ### @replace None, '[{}\n]'.format(''.join('\n    (({}, {}), {}),'.format(*x) for x in subtasks_files))
 
 if valid_subtasks:
     ...
