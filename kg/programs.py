@@ -4,6 +4,8 @@ import subprocess
 from collections import defaultdict
 import json
 
+class ExtProgramError(Exception): ...
+
 script_path = os.path.dirname(os.path.realpath(__file__))
 with open(os.path.join(script_path, 'data', 'langs.json')) as f:
     langs = json.load(f)
@@ -40,7 +42,7 @@ class Program:
         self._compiled = True
 
     def do_run(self, *args, input=None, stdin=None, stdout=None, stderr=None, time=False, check=True):
-        if not self._compiled: raise Exception("Compile the program first")
+        if not self._compiled: raise ExtProgramError("Compile the program first")
         command = self.run + list(args)
         if time and os.name != 'nt': command = ['/usr/bin/time', '-f' 'TIME %es %Us %Ss'] + command
         kwargs = dict(input=input, stdin=stdin, stdout=stdout, stderr=stderr, check=check)
@@ -52,10 +54,10 @@ class Program:
         return os.path.splitext(os.path.basename(self.filename))[0] == abbr
 
     def __str__(self):
-        return "<{}\n    {}\n    {}\n    {}\n>".format(self.__class__.__name__, self.filename, self.compile, self.run)
+        return f"<{self.__class__.__name__}\n    {self.filename}\n    {self.compile}\n    {self.run}\n>"
 
     def __repr__(self):
-        return "{}({}, {}, {})".format(self.__class__.__name__, repr(self.filename), repr(self.compile), repr(self.run))
+        return f"{self.__class__.__name__}({repr(self.filename)}, {repr(self.compile)}, {repr(self.run)})"
 
 
     @classmethod
@@ -67,16 +69,16 @@ class Program:
             elif len(arg) == 3:
                 filename, compile_, run = arg
             else:
-                raise Exception("Cannot understand program data: {}".format(str(arg)))
+                raise ExtProgramError("Cannot understand program data: {}".format(str(arg)))
         elif isinstance(arg, str):
             lang = infer_lang(arg)
             if not lang:
-                raise Exception("Cannot infer language: {}".format(str(arg)))
+                raise ExtProgramError("Cannot infer language: {}".format(str(arg)))
             filename = arg
             compile_ = langs[lang]['compile']
             run = langs[lang]['run']
         else:
-            raise Exception("Unknown program type: {}".format(repr(arg)))
+            raise ExtProgramError("Unknown program type: {}".format(repr(arg)))
 
         return cls(filename, compile_.split(), run.split(), relpath=relpath)
 

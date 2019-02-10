@@ -3,6 +3,7 @@ from sys import stdout, stderr
 import base64, re, zlib
 
 from kg.utils import *
+from kg.iutils import *
 
 from .commands import *
 from .exceptions import *
@@ -39,7 +40,7 @@ def get_directive_type(line):
         match = pattern.match(line)
         if match: return pattern, match, directive, message
 
-    raise Exception("Unmatched line by any syntax rule! This shouldn't happen. {}".format(line))
+    assert False, f"Unmatched line by any syntax rule! This shouldn't happen. {line}"
 
 command_re = re.compile(r'\s*([-_A-Za-z0-9]+) (.*)$')
 
@@ -47,9 +48,9 @@ CLOSE = '### @@ }'
 
 def get_command(command):
     match = command_re.match(command + ' ')
-    if match is None: raise ValueError("Invalid command: {}".format(repr(command)))
+    if match is None: raise ValueError(f"Invalid command: {repr(command)}")
     command_name, args = match.groups()
-    if command_name not in COMMANDS: raise ValueError("Unknown command name: {} ({})".format(repr(command_name), repr(command)))
+    if command_name not in COMMANDS: raise ValueError(f"Unknown command name: {repr(command_name)} ({repr(command)})")
     res = COMMANDS[command_name](command_name, args)
     return res
 
@@ -98,14 +99,14 @@ class Parsed:
                     lineno = p.end_lineno
                     yield p
                 elif directive == Directive.BAD:
-                    raise ParseException(module_loc, lineno, "{} ... {}".format(message, line))
+                    raise ParseException(module_loc, lineno, f"{message} ... {line}")
                 elif directive == Directive.COULD_BE_BAD:
-                    print("[{} line {}] WARNING: {} ... {}".format(module_loc, lineno, message, line), file=stderr)
+                    warn_print(f"[{module_loc} line {lineno}] WARNING: {message} ... {line}", file=stderr)
                     yield line
                 elif directive == Directive.ECHO:
                     yield line
                 else:
-                    raise Exception("Unmatched line by any syntax rule! This shouldn't happen. {}".format(line))
+                    assert False, f"Unmatched line by any syntax rule! This shouldn't happen. {line}"
 
         self.children = list(get_children())
         self.end_lineno = lineno
@@ -144,7 +145,7 @@ add_context(strong={
 
 def compile_lines(lines, **context):
     for key, valuem in strong_context.items():
-        if key in context: raise ValueError("Reserved context key: '{}'".format(key))
+        if key in context: raise ValueError(f"Reserved context key: '{key}'")
         context[key] = valuem(context)
 
     for key, valuem in weak_context.items():
@@ -160,6 +161,6 @@ def compile_lines(lines, **context):
 
     if context['compress']:
         enc = base64.b64encode(zlib.compress('\n'.join(get_lines()).encode('utf-8'), level=9))
-        yield "import base64,zlib;exec(zlib.decompress(base64.b64decode({})).decode('utf-8'))".format(repr(enc))
+        yield f"import base64,zlib;exec(zlib.decompress(base64.b64decode({repr(enc)})).decode('utf-8'))"
     else:
         yield from get_lines()

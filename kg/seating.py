@@ -135,9 +135,9 @@ class Seating:
                 best_cost = cost
                 best_assignment = assignment
                 best_sid = sid
-                print('Got a badness of', cost, file=stderr)
+                info_print('Got a badness of', cost, file=stderr)
                 if best_cost == 0:
-                    print("We're done!", file=stderr)
+                    info_print("We're done!", file=stderr)
                     break
 
         # TODO construct the grid here
@@ -290,7 +290,7 @@ def write_seating(contest, seedval=None, dest='.'):
     if seedval is None: seedval = randrange(10**6)
 
     filename = os.path.join(dest, f'seating_{contest.code}.html')
-    print("Writing to", filename, file=stderr)
+    info_print("Writing to", filename, file=stderr)
     with open(filename, 'w') as f:
         seating.write(contest.team_schools, f, seedval, code=contest.code, title=contest.title)
 
@@ -307,7 +307,7 @@ def seating_args(seating_p):
 
     @set_handler(gen_p)
     def kg_seating_gen(format_, args):
-        print(f'Making a {args.rows} x {args.cols} grid with seating width {args.width}...')
+        info_print(f'Making a {args.rows} x {args.cols} grid with seating width {args.width}...')
         seating = Seating.gen(args.rows, args.cols, args.width)
         with open(args.seating_file, 'w') as f: seating.dump(f)
 
@@ -397,7 +397,7 @@ def seating_args(seating_p):
 
         grid, sid = seating.assign(groups)
 
-        print(f'FINAL GRID (seed={sid}):', file=stderr)
+        info_print(f'FINAL GRID (seed={sid}):', file=stderr)
         sz = max(len(str(v)) for row in grid for v in row)
         for row in grid:
             print(*(str(v).rjust(sz) for v in row))
@@ -414,16 +414,16 @@ def seating_args(seating_p):
         with open(args.seating_file) as f: seating = Seating.load(f)
         with open(args.teams) as f: team_schools = ContestDetails.get_team_schools(json.load(f))
 
-        print(file=stderr)
-        print('.'*30, file=stderr)
-        print('Writing the seating arrangement to stdout... Pipe the output to a file if you wish.', file=stderr)
-        print('.'*30, file=stderr)
-        print(file=stderr)
+        decor_print(file=stderr)
+        decor_print('.'*30, file=stderr)
+        beginfo_print('Writing the seating arrangement to stdout... We recommend piping the output to a file.', file=stderr)
+        decor_print('.'*30, file=stderr)
+        decor_print(file=stderr)
 
         seating.write(team_schools, stdout, seedval=args.seed, code=args.code, title=args.title)
 
-        print(file=stderr)
-        print('.'*30, file=stderr)
-        print('Done writing the seating arrangement to stdout. Pipe the output to a file if you wish.', file=stderr)
-        print('.'*30, file=stderr)
-        print(file=stderr)
+        decor_print(file=stderr)
+        decor_print('.'*30, file=stderr)
+        succ_print('Done writing the seating arrangement to stdout. We recommend piping the output to a file.', file=stderr)
+        decor_print('.'*30, file=stderr)
+        decor_print(file=stderr)

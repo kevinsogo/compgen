@@ -5,6 +5,7 @@ import re
 
 from .exceptions import *
 
+from kg.iutils import *
 
 class CommandException(CompileException): ...
 
@@ -39,13 +40,13 @@ copy_context = set()
 
 def add_context(strong={}, weak={}, copy=set()):
     for key, value in strong.items():
-        if key in strong_context: raise ValueError("Duplicate key in strong_context: {}".format(key))
+        if key in strong_context: raise ValueError(f"Duplicate key in strong_context: {key}")
         strong_context[key] = functools.partial(_realize, value)
     for key, value in weak.items():
-        if key in weak_context: raise ValueError("Duplicate key in weak_context: {}".format(key))
+        if key in weak_context: raise ValueError(f"Duplicate key in weak_context: {key}")
         weak_context[key] = functools.partial(_realize, value)
     for key in copy:
-        if key in copy_context: raise ValueError("Duplicate key in copy_context: {}".format(key))
+        if key in copy_context: raise ValueError(f"Duplicate key in copy_context: {key}")
         copy_context.add(key)
 
 add_context(weak={'indent': ''})
@@ -71,7 +72,7 @@ def try_run(expr, parsed, command, context):
     try:
         return command(expr, context)
     except Exception as exc:
-        raise EvalException.for_parsed(parsed, "An exception occurred while running {} via {}: {}".format(repr(expr), command.__name__, str(exc))) from exc
+        raise EvalException.for_parsed(parsed, f"An exception occurred while running {repr(expr)} via {command.__name__}: {str(exc)}") from exc
 
 
 class Command:
@@ -81,14 +82,14 @@ class Command:
         super(Command, self).__init__()
 
     def expect(self, parsed, ct, lines):
-        if ct < 0: raise ValueError("Invalid count to expect: {}".format(ct))
+        if ct < 0: raise ValueError(f"Invalid count to expect: {ct}")
         found = 0
         for wline, line in lines:
             if line.strip():
                 found += 1
-                if found > ct: raise CompileException.for_parsed(parsed, "Expected {} line(s) but found more inside @{}".format(ct, self.name))
+                if found > ct: raise CompileException.for_parsed(parsed, f"Expected {ct} line(s) but found more inside @{self.name}")
                 yield wline, line
-        if found < ct: raise CompileException.for_parsed(parsed, "Expected {} line(s) but found {} inside @{}".format(ct, found, self.name))
+        if found < ct: raise CompileException.for_parsed(parsed, f"Expected {ct} line(s) but found {found} inside @{self.name}")
 
 
 @set_command('begin', strong={'begin': True})
@@ -106,7 +107,7 @@ class Begin(Command):
 class If(Command):
     def __call__(self, parsed, context):
         # evaluate an expression and write the children if True (or truthy)
-        # print('@if: evaluating', repr(self.args))
+        # info_print('@if: evaluating', repr(self.args))
         if try_run(self.args, parsed, eval, context):
             yield from parsed.compile_children(context)
 
@@ -127,10 +128,10 @@ class For(Command):
         if not all(labels): raise CommandException.for_parsed(parsed, "Invalid left-side assignment for @for: blank labels")
 
         expr = self.args[index + 4:]
-        # print('@for: evaluating', repr(expr))
+        # info_print('@for: evaluating', repr(expr))
         for value in try_run(expr, parsed, eval, context):
             if not is_tuple: value = [value]
-            if len(labels) != len(value): raise EvalException.for_parsed(parsed, "Invalid assignment for @for: differing lengths: left {} vs right {}".format(len(labels), len(value)))
+            if len(labels) != len(value): raise EvalException.for_parsed(parsed, f"Invalid assignment for @for: differing lengths: left {len(labels)} vs right {len(value)}")
             for label, val in zip(labels, value):
                 context[label] = val
             yield from parsed.compile_children(context)
@@ -140,7 +141,7 @@ class For(Command):
 class While(Command):
     def __call__(self, parsed, context):
         # write an expression multiple times.
-        # print('@while: evaluating', repr(self.args))
+        # info_print('@while: evaluating', repr(self.args))
         while try_run(self.args, parsed, eval, context):
             yield from parsed.compile_children(context)
 
@@ -149,7 +150,7 @@ class While(Command):
 class Replace(Command):
     def __call__(self, parsed, context):
         # replace text in every line inside.
-        # print('@replace: evaluating', repr(self.args))
+        # info_print('@replace: evaluating', repr(self.args))
         source, target = map(str, try_run(self.args, parsed, eval, context))
         for wline, line in parsed.compile_children(context):
             yield wline, line.replace(source, target)
@@ -160,7 +161,7 @@ class Set(Command):
     def __call__(self, parsed, context):
         # set a variable inside the current context.
         # Note that the parent context (from the importing file) is unaffected.
-        # print('@set: executing', repr(self.args))
+        # info_print('@set: executing', repr(self.args))
         try_run(self.args, parsed, exec, context)
         [] = self.expect(parsed, 0, parsed.compile_children(context))
         return []
@@ -181,10 +182,10 @@ class Set(Command):
 class Import(Command):
     def __call__(self, parsed, context):
         # import a file recursively.
-        if self.args.strip(): raise CommandException.for_parsed(parsed, "Unsupported @import args: {}".format(self.args))
+        if self.args.strip(): raise CommandException.for_parsed(parsed, f"Unsupported @import args: {self.args}")
         [(wline, line)] = self.expect(parsed, 1, parsed.compile_children(context))
         import_extracted = extract_import(line)
-        if not import_extracted: raise CommandException.for_parsed(parsed, "Unsupported import line: {}".format(line))
+        if not import_extracted: raise CommandException.for_parsed(parsed, f"Unsupported import line: {line}")
         nindent, module = import_extracted
         yield from context['import'](parsed, nindent, module, context)
 
@@ -203,11 +204,11 @@ def _import(parent, indent, module, context):
 
     # update 'imported'
     if imported[module_id] != [module]:
-        print('skipping duplicate import', module)
+        info_print('skipping duplicate import', module)
         return
 
     # now, actually import
-    print('expanding import of {} (interpreted as module {})'.format(module, module_id))
+    info_print(f'expanding import of {module} (interpreted as module {module_id})')
     lines = context['load_module'](module_id)
 
     # give __name__ a unique name so the program knows in context that it is being pasted somewhere.
@@ -224,9 +225,9 @@ def _import(parent, indent, module, context):
 
     # recurse to import file
     import_extras = context['import_extras']
-    yield process_context("# BLACK_MAGIC start import {}".format(module), ncontext)
-    if import_extras: yield process_context('{name}, __name__ = __name__, "{name}"'.format(name=name), ncontext)
+    yield process_context(f"# BLACK_MAGIC start import {module}", ncontext)
+    if import_extras: yield process_context(f'{name}, __name__ = __name__, "{name}"', ncontext)
     yield from context['parse_lines'](lines, module_id).compile(ncontext)
-    if import_extras: yield process_context('__name__ = {name}'.format(name=name), ncontext)
-    if import_extras: yield process_context('del {name}'.format(name=name), ncontext)
-    yield process_context("# BLACK_MAGIC end import {}".format(module), ncontext)
+    if import_extras: yield process_context(f'__name__ = {name}', ncontext)
+    if import_extras: yield process_context(f'del {name}', ncontext)
+    yield process_context(f"# BLACK_MAGIC end import {module}", ncontext)

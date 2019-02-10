@@ -2,7 +2,7 @@ class CompileException(Exception):
     def __init__(self, module_loc, lineno, message):
         self.module_loc = module_loc
         self.lineno = lineno
-        super(CompileException, self).__init__("[{} Line {}] {}".format(module_loc, lineno, message))
+        super(CompileException, self).__init__(f"[{module_loc} Line {lineno}] {message}")
 
     @classmethod
     def for_parsed(cls, parsed, message):

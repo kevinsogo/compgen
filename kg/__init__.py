@@ -33,7 +33,6 @@ class CommandException(Exception): ...
 
 
 
-
 ##########################################
 
 # TODO use the 'logging' library
@@ -57,7 +56,7 @@ convert_p.add_argument('--to', nargs=2, help='destination format and location', 
 @set_handler(convert_p)
 def kg_convert(format_, args):
     if args.main_command == 'convert':
-        print("You spelled 'konvert' incorrectly. I'll let it slide for now.", file=stderr)
+        info_print("You spelled 'konvert' incorrectly. I'll let it slide for now.", file=stderr)
     
     convert_formats(args.fr, args.to)
 
@@ -68,14 +67,14 @@ def convert_formats(src, dest):
     dest_format = get_format(argparse.Namespace(format=dformat, loc=dloc, input=None, output=None), write='io')
 
     copied = 0
-    print("Copying now...")
+    info_print("Copying now...")
     for (srci, srco), (dsti, dsto) in zip(src_format.thru_io(), dest_format.thru_expected_io()):
         touch_container(dsti)
         touch_container(dsto)
         copyfile(srci, dsti)
         copyfile(srco, dsto)
         copied += 2
-    print("Copied", copied, "files")
+    succ_print("Copied", copied, "files")
 
 
 
@@ -91,7 +90,7 @@ convert2_p.add_argument('--to', help='destination file pattern', required=True)
 @set_handler(convert2_p)
 def kg_convert2(format_, args):
     if args.main_command == 'convertsequence':
-        print("You spelled 'konvertsequence' incorrectly. I'll let it slide for now.", file=stderr)
+        info_print("You spelled 'konvertsequence' incorrectly. I'll let it slide for now.", file=stderr)
 
     convert_sequence(args.fr, args.to)
 
@@ -99,12 +98,12 @@ def convert_sequence(src, dest):
     format_ = get_format(argparse.Namespace(format=None, loc=None, input=src, output=dest), read='i', write='o')
 
     copied = 0
-    print("Copying now...")
+    info_print("Copying now...")
     for srcf, destf in format_.thru_io():
         touch_container(destf)
         copyfile(srcf, destf)
         copied += 1
-    print("Copied", copied, "files")
+    succ_print("Copied", copied, "files")
 
 
 
@@ -164,19 +163,21 @@ def get_subtasks(subtasks, detector, format_, relpath=None):
             result = detector.do_run(*subtasks, stdin=f, stdout=PIPE)
         subtasks_of[input_] = set(result.stdout.decode('utf-8').split())
         if not subtasks_of[input_]:
-            raise CommandException("No subtasks found for {}".format(input_))
+            raise CommandException(f"No subtasks found for {input_}")
         if subtset and not (subtasks_of[input_] <= subtset):
             raise CommandException("Found invalid subtasks! {}".format(' '.join(sorted(subtasks_of[input_] - subtset))))
 
         all_subtasks |= subtasks_of[input_]
-        print("Subtasks found for {}: {}".format(input_, ' '.join(sorted(subtasks_of[input_]))))
+        info_print(f"Subtasks found for {input_}:", end=' ')
+        key_print(*sorted(subtasks_of[input_]))
 
-    print("Distinct subtasks found: {}".format(' '.join(sorted(all_subtasks))))
+    info_print("Distinct subtasks found:", end=' ')
+    key_print(*sorted(all_subtasks))
 
     if subtset:
         assert all_subtasks <= subtset
         if all_subtasks != subtset:
-            print('Warning: Some subtasks not found: {}'.format(' '.join(sorted(subtset - all_subtasks))), file=stderr)
+            warn_print('Warning: Some subtasks not found:', *sorted(subtset - all_subtasks), file=stderr)
 
     return subtasks_of, all_subtasks, inputs
 
@@ -219,11 +220,11 @@ def generate_outputs(format_, data_maker, judge, model_solution):
         touch_container(output_)
         with open(input_) as inp:
             with open(output_, 'w') as outp:
-                print('WRITING', input_, '-->', output_)
+                print(info_text('WRITING', input_, '-->'), key_text(output_))
                 try:
                     data_maker.do_run(stdin=inp, stdout=outp, time=True)
                 except CalledProcessError as cpe:
-                    print(f"The data_maker raised an error for {input_}", file=stderr)
+                    err_print(f"The data_maker raised an error for {input_}", file=stderr)
                     exit(cpe.returncode)
 
         # check with judge if they are the same
@@ -231,7 +232,7 @@ def generate_outputs(format_, data_maker, judge, model_solution):
             try:
                 judge.do_run(input_, output_, output_)
             except CalledProcessError as cpe:
-                print(f"The judge did not accept {output_}", file=stderr)
+                err_print(f"The judge did not accept {output_}", file=stderr)
                 exit(cpe.returncode)
 
 
@@ -277,11 +278,11 @@ def kg_test(format_, args):
         def check_correct():
             with tempfile.NamedTemporaryFile(delete=False) as tmp:
                 with open(input_) as inp:
-                    print(str(index).rjust(3), 'CHECKING AGAINST', input_)
+                    info_print("File", str(index).rjust(3), 'CHECKING AGAINST', input_)
                     try:
                         solution.do_run(stdin=inp, stdout=tmp, time=True)
                     except CalledProcessError:
-                        print('The solution issued a runtime error...')
+                        err_print('The solution issued a runtime error...')
                         return False
 
                 jargs = [input_, tmp.name, output_]
@@ -293,16 +294,20 @@ def kg_test(format_, args):
         correct = check_correct()
         total += 1
         corrects += correct
-        print(str(index).rjust(3), 'correct' if correct else 'WRONG' + '!'*11)
+        if correct:
+            succ_print("File", str(index).rjust(3), 'correct')
+        else:
+            err_print("File", str(index).rjust(3), 'WRONG' + '!'*11)
         scoresheet.append((index, input_, correct))
 
-    print()
-    print('.'*42)
-    print('{} out of {} correct'.format(corrects, total))
-    print('.'*42)
-    print()
+    decor_print()
+    decor_print('.'*42)
+    (succ_print if corrects == total else err_print)(str(corrects), end=' ')
+    (succ_print if corrects == total else info_print)(f'out of {total} files correct')
+    decor_print('.'*42)
+    decor_print()
 
-    # also print subtask grades
+    # also print fsk grades
 
     if details.valid_subtasks:
         validator = Program.from_args(args.validator_file, args.validator_command)
@@ -310,12 +315,12 @@ def kg_test(format_, args):
         if validator:
             detector = detector_from_validator(validator)
             assert detector
-            print("Found a validator.", end=' ')
+            info_print("Found a validator.", end=' ')
         elif details.subtask_detector:
-            print("Found a detector in {}.".format(details.source), end=' ')
+            info_print(f"Found a detector in {details.source}.", end=' ')
             detector = details.subtask_detector
         if detector:
-            print('Proceeding with subtask grading...')
+            info_print('Proceeding with subtask grading...')
             # find subtask list
             subtasks = args.subtasks or list(map(str, details.valid_subtasks))
             if validator and not subtasks: # subtask list required for detectors from validator
@@ -327,11 +332,16 @@ def kg_test(format_, args):
                 for sub in subtasks_of[input_]:
                     min_score[sub] = min(min_score[sub], correct)
 
-            print()
-            print('.'*42)
-            print('SUBTASK REPORT:')
+            decor_print()
+            decor_print('.'*42)
+            beginfo_print('SUBTASK REPORT:')
             for sub in natsorted(all_subtasks):
-                print("Subtask {}: Score = {:.3f}".format(str(sub).rjust(3), float(min_score[sub])))
+                print(
+                        info_text("Subtask ="),
+                        key_text(str(sub).rjust(3)),
+                        info_text(": Score = "),
+                        (succ_text if min_score[sub] == 1 else err_text)(f"{float(min_score[sub]):.3f}"),
+                        sep='')
 
 
 
@@ -362,11 +372,11 @@ def kg_run(format_, args):
     solution.do_compile()
     for input_ in format_.thru_inputs():
         with open(input_) as inp:
-            print('RUNNING FOR', input_, file=stderr)
+            info_print('RUNNING FOR', input_, file=stderr)
             try:
                 solution.do_run(stdin=inp, time=True)
             except CalledProcessError:
-                print('The solution issued a runtime error...', file=stderr)
+                err_print('The solution issued a runtime error...', file=stderr)
 
 
 
@@ -402,9 +412,9 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
         validation = checks = True
 
     if 'inputs' in makes:
-        print()
-        print('~~ '*14)
-        print('MAKING INPUTS...' + ("WITH VALIDATION..." if validation else 'WITHOUT VALIDATION'))
+        decor_print()
+        decor_print('~~ '*14)
+        beginfo_print('MAKING INPUTS...' + ("WITH VALIDATION..." if validation else 'WITHOUT VALIDATION'))
         if not details.testscript:
             raise CommandException("Missing testscript")
 
@@ -422,26 +432,26 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
                 with open(filename) as file:
                     validator.do_run(stdin=file)
 
-        print('DONE MAKING INPUTS.')
+        succ_print('DONE MAKING INPUTS.')
 
     if 'outputs' in makes:
-        print()
-        print('~~ '*14)
-        print('MAKING OUTPUTS...' + ("WITH CHECKER..." if checks else 'WITHOUT CHECKER'))
+        decor_print()
+        decor_print('~~ '*14)
+        beginfo_print('MAKING OUTPUTS...' + ("WITH CHECKER..." if checks else 'WITHOUT CHECKER'))
         fmt = get_format_from_type(format_, loc, read='i', write='o')
         generate_outputs(fmt, details.judge_data_maker, details.checker if checks else Program.noop(), details.model_solution)
 
-        print('DONE MAKING OUTPUTS.')
+        succ_print('DONE MAKING OUTPUTS.')
 
     if 'subtasks' in makes:
-        print()
-        print('~~ '*14)
-        print('MAKING SUBTASKS...')
+        decor_print()
+        decor_print('~~ '*14)
+        beginfo_print('MAKING SUBTASKS...')
         if not details.valid_subtasks:
             if 'subtasks' in omakes:
-                raise Exception("valid_subtasks list required if you wish to make subtasks")
+                raise CommandException("valid_subtasks list required if you wish to make subtasks")
             else:
-                print("no valid_subtasks found, so actually, subtasks will not be made. move along.")
+                info_print("no valid_subtasks found, so actually, subtasks will not be made. move along.")
         else:
             subjson = details.subtasks_files
             if not subjson:
@@ -458,11 +468,11 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
             # iterate through inputs, run our detector against them
             subtasks_of, all_subtasks, inputs = get_subtasks(subtasks, detector, get_format_from_type(format_, loc, read='i'), relpath=loc)
 
-            print('WRITING TO {}'.format(subjson))
+            info_print('WRITING TO {}'.format(subjson))
             with open(subjson, 'w') as f:
                 f.write('[\n' + '\n'.join('    {},'.format(str(list(x))) for x in construct_subs_files(subtasks_of, inputs)).rstrip(',') + '\n]')
 
-            print('DONE MAKING SUBTASKS.')
+            succ_print('DONE MAKING SUBTASKS.')
 
 
 def construct_subs_files(subtasks_of, inputs):
@@ -490,7 +500,7 @@ qs = [
 ]
 @set_handler(q_p)
 def kg_q(format_, args):
-    import random; print(random.choice(qs))
+    import random; succ_print(random.choice(qs))
 
 
 
@@ -519,7 +529,7 @@ def kg_init(format_, args):
     src = os.path.join(script_path, 'data', 'template')
     dest = os.path.join(args.loc, prob)
 
-    print('The destination folder will be', dest)
+    info_print('The destination folder will be', dest)
     if os.path.exists(dest):
         raise CommandException("The folder already exists!")
 
@@ -537,7 +547,7 @@ def kg_init(format_, args):
                 if inp.endswith('details.json'): d %= env # so that we can write the title in the json.
                 outpf.write(d)
 
-    print('DONE!')
+    succ_print('DONE!')
 
 
 
@@ -560,7 +570,7 @@ compile_p.add_argument('-C', '--compress', action='store_true', help='compress t
 @set_handler(compile_p)
 def _kg_compile(format_, args):
     if args.main_command == 'compile':
-        print("You spelled 'kompile' incorrectly. I'll let it slide for now.", file=stderr)
+        info_print("You spelled 'kompile' incorrectly. I'll let it slide for now.", file=stderr)
 
     kg_compile(
         format_,
@@ -612,11 +622,11 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
     @listify
     def load_module(module_id):
         if module_id not in locations:
-            raise CommandException("Couldn't find module {}! (Add it to other_programs?)".format(module_id))
+            raise CommandException(f"Couldn't find module {module_id}! (Add it to other_programs?)")
         with open(locations[module_id]) as f:
             for line in f:
                 if not line.endswith('\n'):
-                    print('Warning:', locations[module_id], "doesn't end with a new line")
+                    warn_print('Warning:', locations[module_id], "doesn't end with a new line")
                 yield line.rstrip('\n')
 
     def get_module_id(module, context):
@@ -626,7 +636,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                 nmodule = 'kg' + nmodule
 
         if nmodule.startswith('.'):
-            print("Warning: Ignoring relative import for {}".format(module), file=stderr)
+            warn_print(f"Warning: Ignoring relative import for {module}", file=stderr)
             nmodule = nmodule.lstrip('.')
 
         return nmodule
@@ -645,9 +655,9 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
             ('pc2', 'PC2', False, [details.validator, details.checker]),
         ]:
         if fmt not in target_formats: continue
-        print()
-        print('.. '*14)
-        print('Compiling for {} ({})'.format(fmt, name))
+        decor_print()
+        decor_print('.. '*14)
+        beginfo_print('Compiling for {} ({})'.format(fmt, name))
         dest_folder = os.path.join(loc, 'kgkompiled', fmt)
         to_translate = {g.filename for g in to_translate if g and get_module(g.filename)}
         targets = {}
@@ -657,12 +667,12 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
             target = os.path.join(dest_folder, os.path.basename(filename))
             targets[module] = target
             if target in found_targets:
-                print("Warning: Files have the same destination file ({}): {} and {}".format(target, found_targets[targets], filename), file=stderr)
+                warn_print("Warning: Files have the same destination file ({}): {} and {}".format(target, found_targets[targets], filename), file=stderr)
             found_targets[target] = filename
 
         for filename in natsorted(to_translate):
             module = get_module(filename)
-            print('[{}] converting {} to {}'.format(module, filename, targets[module]))
+            info_print(f'[{module}] converting {filename} to {targets[module]}')
             touch_container(targets[module])
             lines = list(compile_lines(load_module(module),
                     module_id=module,
@@ -683,7 +693,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                     assert not line.endswith('\n')
                     if not shebanged and not line.startswith('#!'):
                         shebang_line = "#!/usr/bin/env python3"
-                        print('adding shebang line {}'.format(repr(shebang_line)))
+                        info_print('adding shebang line {}'.format(repr(shebang_line)))
                         print(shebang_line, file=f)
                     shebanged = True
                     print(line, file=f)
@@ -696,7 +706,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
             module = get_module(filename)
 
             target = os.path.join(dest_folder, 'hr.pastable.version.' + os.path.basename(filename))
-            print('[{}] writing snippet version of {} to {}'.format(module, filename, target))
+            info_print(f'[{module}] writing snippet version of {filename} to {target}')
             touch_container(target)
             lines = list(compile_lines(load_module(module),
                     module_id=module,
@@ -718,7 +728,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                     print(line, file=f)
 
             target = os.path.join(dest_folder, 'hr.subtasks.only.' + os.path.basename(filename))
-            print('[{}] writing the subtasks snippet of {} to {}'.format(module, filename, target))
+            info_print(f'[{module}] writing the subtasks snippet of {filename} to {target}')
             touch_container(target)
             lines = list(compile_lines(load_module(module),
                     module_id=module,
@@ -741,7 +751,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
 
         # copy over the files
         if copy_files:
-            print('copying test data from', loc, 'to', dest_folder, '...')
+            info_print('copying test data from', loc, 'to', dest_folder, '...')
             convert_formats(
                     (format_, loc),
                     (fmt, dest_folder),
@@ -749,7 +759,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
 
         if fmt == 'hr':
             zipname = os.path.join(dest_folder, 'upload_this_to_hackerrank.zip')
-            print('making zip for HackerRank...', zipname)
+            info_print('making zip for HackerRank...', zipname)
             def get_arcname(filename):
                 assert os.path.samefile(dest_folder, os.path.commonpath([dest_folder, filename]))
                 return os.path.relpath(filename, start=dest_folder)
@@ -758,9 +768,9 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                     for fl in inp, outp:
                         zipf.write(fl, arcname=get_arcname(fl))
 
-        print('Done for {} ({})'.format(fmt, name))
+        succ_print('Done for {} ({})'.format(fmt, name))
 
-    print('.. '*14)
+    decor_print('.. '*14)
 
 
 
@@ -783,7 +793,7 @@ def problem_letters():
 @set_handler(contest_p)
 def kg_contest(format_, args):
     if args.main_command == 'contest':
-        print("You spelled 'kontest' incorrectly. I'll let it slide for now.", file=stderr)
+        info_print("You spelled 'kontest' incorrectly. I'll let it slide for now.", file=stderr)
 
     if not is_same_format(format_, 'kg'):
         raise CommandException("You can't use '{}' format to 'kontest'.".format(format_))
@@ -838,17 +848,17 @@ def kg_contest(format_, args):
                 code += str(found_codes[code])
             else:
                 found_codes[code] = 1
-            print()
-            print('-'*42)
-            print("Getting problem {} (from {})".format(repr(code), problem_loc))
+            decor_print()
+            decor_print('-'*42)
+            beginfo_print(f"Getting problem {repr(code)} (from {problem_loc})")
 
             if args.make_all:
-                print('Running "kg make all"...')
+                info_print('Running "kg make all"...')
                 kg_make(['all'], problem_loc, format_, details)
 
             time_limit = int(round(details.time_limit))
             if time_limit != details.time_limit:
-                raise ValueError("The time limit must be an integer for PC2: {} {}".format(problem_loc, time_limit))
+                raise ValueError(f"The time limit must be an integer for PC2: {problem_loc} {time_limit}")
 
             letters.append(letter)
             problem_env[letter] = {
@@ -857,7 +867,7 @@ def kg_contest(format_, args):
                 'letter': letter,
                 'problem_code': code,
                 'title': details.title,
-                'letter_title': '{}: {}'.format(letter, details.title),
+                'letter_title': f'{letter}: {details.title}',
                 'time_limit': time_limit,
             }
 
@@ -894,11 +904,11 @@ def kg_contest(format_, args):
         env['yaml_langs'] = '\n'.join(map(yaml_lang, contest.langs))
         env['yaml_problems'] = '\n'.join(map(yaml_problem, letters))
 
-        print()
-        print('-'*42)
-        print('Writing contest config files')
+        decor_print()
+        decor_print('-'*42)
+        beginfo_print('Writing contest config files')
         for file in ['contest.yaml', 'problemset.yaml']:
-            print('Writing', file)
+            info_print('Writing', file)
             source = os.path.join(contest_template, file)
             target = os.path.join(cdp_config, file)
             touch_container(target)
@@ -906,15 +916,15 @@ def kg_contest(format_, args):
                 with open(target, 'w') as target_f:
                     target_f.write(source_f.read().format(**env))
 
-        print()
-        print('-'*42)
-        print('Writing problem files')
+        decor_print()
+        decor_print('-'*42)
+        beginfo_print('Writing problem files')
         for letter in letters:
             penv = dict(env)
             penv.update(problem_env[letter])
             code = penv['problem_code']
             for file in ['problem.yaml', os.path.join('problem_statement', 'problem.tex')]:
-                print('Writing', file, 'for', code)
+                info_print('Writing', file, 'for', code)
                 source = os.path.join(contest_template, os.path.basename(file))
                 target = os.path.join(cdp_config, code, file)
                 touch_container(target)
@@ -922,14 +932,14 @@ def kg_contest(format_, args):
                     with open(target, 'w') as target_f:
                         target_f.write(source_f.read().format(**penv))
 
-            print("Copying model solution")
+            info_print("Copying model solution")
             source = penv['details'].model_solution.filename
             target = os.path.join(cdp_config, code, 'submissions', 'accepted', os.path.basename(source))
             touch_container(target)
 
             copyfile(source, target)
 
-            print("Copying data for {}...".format(code))
+            info_print("Copying data for {}...".format(code))
             try:
                 src_format = KGFormat(penv['problem_loc'], read='io')
             except FormatException as exc:
@@ -938,7 +948,7 @@ def kg_contest(format_, args):
                     os.path.join(cdp_config, code, 'data', 'secret'),
                     os.path.join(ext_data, code),
                 ]:
-                print("Copying to", data_loc)
+                info_print("Copying to", data_loc)
                 dest_format = KGFormat(write='io', tests_folder=data_loc)
                 copied = 0
                 for (srci, srco), (dsti, dsto) in zip(src_format.thru_io(), dest_format.thru_expected_io()):
@@ -947,17 +957,18 @@ def kg_contest(format_, args):
                     copyfile(srci, dsti)
                     copyfile(srco, dsto)
                     copied += 2
-                print("Copied", copied, "files")
+                succ_print("Copied", copied, "files")
 
-    print()
-    print('-'*42)
-    print('Making passwords')
+    decor_print()
+    decor_print('-'*42)
+    beginfo_print('Making passwords')
     write_passwords_format(contest, args.format, seedval=seedval, dest=contest_folder)
+    succ_print('Done passwords')
 
     if not args.no_seating and contest.seating:
-        print()
-        print('-'*42)
-        print('Writing seating arrangement')
+        decor_print()
+        decor_print('-'*42)
+        beginfo_print('Writing seating arrangement')
         write_seating(contest, seedval=seedval, dest=contest_folder)
 
 
@@ -1009,7 +1020,9 @@ def kg_passwords(format_, args):
                 )
             yield school_name, team_name, account, passwords[team_name]
 
+    beginfo_print(f'Writing passwords for {len(team_names)} teams')
     write_passwords(list(get_accounts()), 'kgkompiled', seedval=' or '.join({str(x) for x in [args.seed, seed] if x is not None}), code=args.code, title=args.title)
+    succ_print(f'Passwords done')
 
 
 
@@ -1018,8 +1031,13 @@ def kg_passwords(format_, args):
 ##########################################
 def main(format='kg'):
     args = parser.parse_args()
-    logf = args.default_file
-    print('\n' + '='*42 + '\n', file=logf)
-    args.handler(format, args)
-    print('\n' + '='*42 + '\n', file=logf)
-    print('THE COMMAND FINISHED SUCCESSFULLY.', file=logf)
+    logf = stderr
+    try:
+        logf = args.default_file
+        decor_print('\n' + '='*42 + '\n', file=logf)
+        args.handler(format, args)
+        decor_print('\n' + '='*42 + '\n', file=logf)
+        succ_print('THE COMMAND FINISHED SUCCESSFULLY.', file=logf)
+    except Exception:
+        err_print('THE COMMAND FAILED.', file=logf)
+        raise

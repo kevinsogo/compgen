@@ -8,6 +8,8 @@ chmod +x setup.sh docs_src/makedocs scripts/*
 # python setup
 pip3 install -U setuptools
 pip3 install -U natsort
+pip3 install -U colorama
+pip3 install -U termcolor
 
 python3 setup.py install
 

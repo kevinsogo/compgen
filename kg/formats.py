@@ -6,6 +6,8 @@ from itertools import count
 
 from natsort import natsorted
 
+from .iutils import *
+
 class InferError(Exception): ...
 class FormatError(Exception): ...
 
@@ -47,7 +49,7 @@ class Format:
         if len(self.inputs) != len(self.outputs) and read and write:
 
             if self.outputs and len(self.inputs) != len(self.outputs):
-                print(f"Warning: cannot match files {inputg} to corresponding files {outputg} (unequal number of matched files). Attempt to write anyway? [y/N]", file=stderr, end=' ')
+                warn_print(f"Warning: cannot match files {inputg} to corresponding files {outputg} (unequal number of matched files). Attempt to write anyway? [y/N]", file=stderr, end=' ')
                 if input() == 'y':
                     if 'i' in read:
                         assert (read, write) == ('i', 'o')
@@ -83,18 +85,18 @@ class Format:
                 try:
                     outputf = self.infer_i_to_o(inputf)
                 except InferError as e:
-                    raise FormatError("Can't infer output file name for {}!".format(inputf)) from e
+                    raise FormatError(f"Can't infer output file name for {inputf}!") from e
                 if outputf not in self.outputs:
-                    raise FormatError("Cannot find match for {} ... expected {}".format(inputf, outputf))
+                    raise FormatError(f"Cannot find match for {inputf} ... expected {outputf}")
                 self.i_to_o[inputf] = outputf
 
             for outputf in self.outputs:
                 try:
                     inputf = self.infer_o_to_i(outputf)
                 except InferError as e:
-                    raise FormatError("Can't infer input file name for {}!".format(outputf)) from e
+                    raise FormatError(f"Can't infer input file name for {outputf}!") from e
                 if inputf not in self.inputs:
-                    raise FormatError("Cannot find match for {} ... expected {}".format(outputf, inputf))
+                    raise FormatError(f"Cannot find match for {outputf} ... expected {inputf}")
                 self.o_to_i[outputf] = inputf
 
             assert set(self.o_to_i) <= self.outputs
@@ -102,12 +104,12 @@ class Format:
             if len(self.o_to_i) < len(self.outputs):
                 missing = sorted(self.outputs - set(self.o_to_i))
                 missing = ', '.join(missing) if len(missing) <= 5 else ', '.join(missing[:5] + '...')
-                raise FormatError("Cannot match these output files to input files: {}".format(missing))
+                raise FormatError(f"Cannot match these output files to input files: {missing}")
 
             if len(self.i_to_o) < len(self.inputs):
                 missing = sorted(self.inputs - set(self.i_to_o))
                 missing = ', '.join(missing) if len(missing) <= 5 else ', '.join(missing[:5] + '...')
-                raise FormatError("Cannot match these input files to output files: {}".format(missing))
+                raise FormatError(f"Cannot match these input files to output files: {missing}")
 
             for inputf in self.inputs:
                 if inputf != self.o_to_i[self.i_to_o[inputf]]:
@@ -139,7 +141,7 @@ class Format:
     def _join_parts(self, pat, *p):
         if pat is None: raise InferError("Cannot join: missing pattern.")
         parts = pat.split('*')
-        if len(parts) != len(p) + 1: raise InferError("Cannot perform inference: unequal number of '*' parts in {} and {}.".format(self.inputg, self.outputg))
+        if len(parts) != len(p) + 1: raise InferError(f"Cannot perform inference: unequal number of '*' parts in {self.inputg} and {self.outputg}.")
         return ''.join(a + b for a, b in zip(parts, list(p) + ['']))
 
     def _join_iparts(self, *p):
@@ -159,13 +161,13 @@ class Format:
             if self.inputg is not None:
                 _check_simple(self.inputg, 'input')
                 pat = '(.*)'.join(self.inputg.replace('\\', '\\\\').replace('.', r'\.').split('*'))
-                # print('Interpreting {} as regex: {}'.format(self.inputg, pat))
+                # info_print(f'Interpreting {self.inputg} as regex: {pat}')
                 self._i_re = re.compile('^' + pat + r'\Z')
 
             if self.outputg is not None:
                 _check_simple(self.outputg, 'output')
                 pat = '(.*)'.join(self.outputg.replace('\\', '\\\\').replace('.', r'\.').split('*'))
-                # print('Interpreting {} as regex: {}'.format(self.outputg, pat))
+                # info_print(f'Interpreting {self.outputg} as regex: {pat}')
                 self._o_re = re.compile('^' + pat + r'\Z')
 
             self._checked = True
@@ -219,7 +221,7 @@ class HRFormat(Format):
         for inputf, ex in zip(natsorted(self.inputs), self.expected_parts()):
             expinpf = self._join_iparts(*ex)
             if inputf != expinpf:
-                raise FormatError("Expected {} but got {}".format(expinpf, inputf))
+                raise FormatError(f"Expected {expinpf} but got {inputf}")
 
     @classmethod
     def expected_parts(cls):
@@ -238,7 +240,7 @@ class PGFormat(Format):
         for inputf, ex in zip(natsorted(self.inputs), self.expected_parts()):
             expinpf = self._join_iparts(*ex)
             if inputf != expinpf:
-                raise FormatError("Expected {} but got {}".format(expinpf, inputf))
+                raise FormatError(f"Expected {expinpf} but got {inputf}")
 
     @classmethod
     def expected_parts(cls):
@@ -256,7 +258,7 @@ class KGFormat(Format):
         for inputf, ex in zip(natsorted(self.inputs), self.expected_parts()):
             expinpf = self._join_iparts(*ex)
             if inputf != expinpf:
-                raise FormatError("Expected {} but got {}".format(expinpf, inputf))
+                raise FormatError(f"Expected {expinpf} but got {inputf}")
 
     @classmethod
     def expected_parts(cls):
@@ -272,7 +274,7 @@ def get_format(args, read='', write=''):
         if args.format in formats:
             return formats[args.format](args.loc, read=read, write=write)
         else:
-            raise ValueError('Unrecognized format: {}'.format(args.format))
+            raise ValueError(f'Unrecognized format: {args.format}')
 
 def get_format_from_type(format, loc, read='', write=''):
     return formats[format](loc, read=read, write=write)

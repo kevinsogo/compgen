@@ -76,7 +76,7 @@ class Details(object):
         # check for extra keys
         for key in self.details:
             if key not in valid_keys:
-                raise ValueError("Key {} invalid in details.json. If you wish to add extra data, place it under 'comments' or 'extras'".format(repr(key)))
+                raise ValueError(f"Key {repr(key)} invalid in details.json. If you wish to add extra data, place it under 'comments' or 'extras'")
 
         super(Details, self).__init__()
 

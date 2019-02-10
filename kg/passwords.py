@@ -5,6 +5,8 @@ from random import Random, randrange
 from sys import stderr
 from textwrap import dedent
 
+from .iutils import *
+
 script_path = os.path.dirname(os.path.realpath(__file__))
 
 class PasswordError(Exception): ...
@@ -27,7 +29,7 @@ def create_passwords(accounts, seedval=None):
     '''.upper().strip().split())
     if seedval is None: seedval = randrange(10**6)
 
-    print(f"Using seed {seedval}", file=stderr)
+    info_print(f"Using seed {seedval}", file=stderr)
     rand = Random(seedval)
 
     def make_chunk():
@@ -104,7 +106,7 @@ def write_passwords_format(cont, format_, seedval=None, dest='.'):
                 passrows.append(passrow)
 
         filename = os.path.join(dest, f'accounts_{cont.code}.txt')
-        print("Writing to", filename, file=stderr)
+        info_print("Writing to", filename, file=stderr)
         with io.open(filename, 'w', encoding='utf-8') as f:
             for row in rows:
                 if any(set('\t\n') & set(part) for part in row): raise PasswordError("Only spaces allowed as whitespace in display names.")
@@ -135,7 +137,7 @@ def write_passwords(accounts, dest='.', **context):
     ptitle = context['ptitle'] = '(' + context['title'] + ')' if context['title'] else ''
 
     filename = os.path.join(dest, f'logins{_code}_table.html')
-    print("Writing to", filename, file=stderr)
+    info_print("Writing to", filename, file=stderr)
     with open(filename, 'w') as f:
         rows = []
         for index, (type_, display, login, password) in enumerate(accounts):
@@ -153,7 +155,7 @@ def write_passwords(accounts, dest='.', **context):
             f.write(of.read().format(**context))
 
     filename = os.path.join(dest, f'logins{_code}_boxes.html')
-    print("Writing to", filename, file=stderr)
+    info_print("Writing to", filename, file=stderr)
     with open(filename, 'w') as f:
         entries = []
         for index, (type_, display, login, password) in enumerate(accounts):

@@ -29,7 +29,7 @@ def parse_generator(name, *args, generators, relpath=None):
 
 
 def run_testscript(inputs, testscript, generators, *, relpath=None):
-    print("PARSING TESTSCRIPT")
+    info_print("PARSING TESTSCRIPT")
     filecount, gens = parse_testscript(testscript, generators, relpath=relpath)
     files = list(islice(inputs, filecount))
     if len(files) < filecount:
@@ -41,7 +41,7 @@ def run_testscript(inputs, testscript, generators, *, relpath=None):
             # single file, outputs to stdout
             assert 1 <= target <= filecount
             filename = files[target - 1]
-            print(f'[o={otarget} t={target}] GENERATING {filename}')
+            print(info_text(f'[o={otarget} t={target}] GENERATING'), key_text(filename))
             touch_container(filename)
             gen.do_compile()
             with open(filename, 'w') as file:
@@ -50,14 +50,14 @@ def run_testscript(inputs, testscript, generators, *, relpath=None):
             yield filename
         else:
             # replace the first part
-            print(f'[o={otarget}] GENERATING MULTIPLE')
+            info_print(f'[o={otarget}] GENERATING MULTIPLE')
             dupseq, *rargs = args
             dupseq = ':' + dupseq
             args = dupseq, *rargs
             sfilenames = list(file_sequence(dupseq))
 
             # clear temp
-            print('    Preparing temp/ folder...')
+            info_print('    Preparing temp/ folder...')
             for sfile in sfilenames:
                 touch_container(sfile)
                 if os.path.exists(sfile):
@@ -71,7 +71,7 @@ def run_testscript(inputs, testscript, generators, *, relpath=None):
             assert len(sfilenames) == len(target)
             for sfile, t in zip(sfilenames, target):
                 tfile = files[t - 1]
-                print(f"[o={otarget} t={t}] Moving {sfile} to {tfile}")
+                print(info_text(f"[o={otarget} t={t}] Moving {sfile} to"), key_text(tfile))
                 touch_container(tfile)
                 if os.path.exists(tfile):
                     os.remove(tfile)
