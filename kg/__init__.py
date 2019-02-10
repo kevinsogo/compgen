@@ -547,6 +547,7 @@ def kg_init(format_, args):
 # compile source codes for upload
 
 compile_p = subparsers.add_parser('kompile', aliases=['compile'], help='preprocess python source codes to be ready to upload')
+compile_p.add_argument('formats', nargs='*', help='contest formats to compile to (default ["hr", "pg", "pc2"])')
 compile_p.add_argument('-l', '--loc', default='.', help='location of files/package')
 compile_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
 compile_p.add_argument('-S', '--shift-left', action='store_true', help=
@@ -564,24 +565,32 @@ def _kg_compile(format_, args):
     kg_compile(
         format_,
         Details.from_format_loc(format_, args.details),
-        'hr', 'pg', 'pc2',
+        *(args.formats or ['hr', 'pg', 'pc2']),
         loc=args.loc,
         shift_left=args.shift_left,
         compress=args.compress,
         )
 
 def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, compress=False):
+    valid_formats = {'hr', 'pg', 'pc2'}
+    if not set(target_formats) <= valid_formats:
+        raise CommandException(f"Invalid formats: {set(target_formats) - valid_formats}")
     if not is_same_format(format_, 'kg'):
-        raise CommandException("You can't use '{}' format to 'kompile'.".format(format_))
+        raise CommandException(f"You can't use '{format_}' format to 'kompile'.")
 
     # TODO clear kgkompiled first, or at least the target directory
 
     # locate all necessary files
 
     # kg libs
-    locations = {}
-    for kg_lib in 'generators validators checkers utils'.split():
-        locations['kg.' + kg_lib] = os.path.join(script_path, kg_lib + '.py')
+    locations = {
+        'kg.generators': 'generators.py',
+        'kg.validators': 'validators.py',
+        'kg.checkers': 'checkers.py',
+        'kg.utils': 'utils.py',
+        'kg.graphs': os.path.join('graphs', '__init__.py'),
+    }
+    locations = {lib: os.path.join(script_path, path) for lib, path in locations.items()}
     kg_libs = set(locations)
 
     # current files

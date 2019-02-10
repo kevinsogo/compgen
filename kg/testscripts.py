@@ -73,8 +73,9 @@ def run_testscript(inputs, testscript, generators, *, relpath=None):
                 tfile = files[t - 1]
                 print(f"[o={otarget} t={t}] Moving {sfile} to {tfile}")
                 touch_container(tfile)
-                copyfile(sfile, tfile)
-                os.remove(sfile)
+                if os.path.exists(tfile):
+                    os.remove(tfile)
+                os.rename(sfile, tfile)
                 got_files.add(tfile)
                 yield tfile
 

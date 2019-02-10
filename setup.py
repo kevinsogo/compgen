@@ -7,7 +7,17 @@ setup(name='KompGen',
       description='Utilities for programming contests',
       author='Kevin Atienza',
       author_email='kevin.charles.atienza@gmail.com',
-      packages=['kg', 'kg.diff', 'kg.black_magic'],
-      package_data={'kg': ['data/*', 'data/template/*', 'data/contest_template/*', 'data/contest_template/pc2/*'], 'kg.diff': ['templates/*']},
+      packages=['kg', 'kg.diff', 'kg.black_magic', 'kg.graphs'],
+      package_data={
+        'kg': [
+            'data/*',
+            'data/template/*',
+            'data/contest_template/*',
+            'data/contest_template/pc2/*'
+        ],
+        'kg.diff': [
+            'templates/*',
+        ],
+    },
       # TODO add 'natsort' as a dependency
-     )
+ )
