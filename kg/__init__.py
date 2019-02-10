@@ -223,7 +223,7 @@ def generate_outputs(format_, data_maker, judge, model_solution):
                 try:
                     data_maker.do_run(stdin=inp, stdout=outp, time=True)
                 except CalledProcessError as cpe:
-                    print("The data_maker raised an error for {}".format(input_), file=stderr)
+                    print(f"The data_maker raised an error for {input_}", file=stderr)
                     exit(cpe.returncode)
 
         # check with judge if they are the same
@@ -231,7 +231,7 @@ def generate_outputs(format_, data_maker, judge, model_solution):
             try:
                 judge.do_run(input_, output_, output_)
             except CalledProcessError as cpe:
-                print("The judge did not accept {}".format(output_), file=stderr)
+                print(f"The judge did not accept {output_}", file=stderr)
                 exit(cpe.returncode)
 
 
@@ -625,7 +625,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
     # get subtasks files
     subjson = details.subtasks_files
     subtasks_files = []
-    if subjson:
+    if details.valid_subtasks:
         with open(subjson) as f:
             subtasks_files = json.load(f)
 
