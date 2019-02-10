@@ -519,7 +519,7 @@ valid_problemcode = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$')
 @set_handler(init_p)
 def kg_init(format_, args):
     if not is_same_format(format_, 'kg'):
-        raise CommandException("You can't use '{}' format to 'init'.".format(format_))
+        raise CommandException(f"You can't use '{format_}' format to 'init'.")
   
     prob = args.problemcode
 
@@ -529,7 +529,7 @@ def kg_init(format_, args):
     src = os.path.join(script_path, 'data', 'template')
     dest = os.path.join(args.loc, prob)
 
-    info_print('The destination folder will be', dest)
+    print(info_text('The destination folder will be'), key_text(dest))
     if os.path.exists(dest):
         raise CommandException("The folder already exists!")
 

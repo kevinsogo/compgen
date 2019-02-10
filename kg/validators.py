@@ -236,7 +236,8 @@ class StrictStream(object):
         return self._buff[0]
 
     @save_on_label
-    def read_until(self, ends, *, charset=None, maxn=None, include_end=False, _called="token"):
+    def read_until(self, ends, *, charset=None, n=None, maxn=None, include_end=False, _called="token"):
+        n = self._get(n)
         maxn = self._get(maxn)
         if maxn is None: maxn = float('inf')
         if maxn < 0: raise ValueError(f"maxn must be nonnegative: {maxn}")
@@ -244,18 +245,20 @@ class StrictStream(object):
         res = []
         while self._peek_char() not in ends:
             if charset and self._peek_char() not in charset: raise StreamError(f"Invalid character for {_called} detected: {charname(self._peek_char())}")
-            if len(res) >= maxn: raise StreamError(f"Took too many characters! Expected at most {maxn}")
+            if n is not None and len(res) > n: raise StreamError(f"Expected exactly {n} characters, got more.")
+            if len(res) > maxn: raise StreamError(f"Took too many characters! Expected at most {maxn}")
             res.append(self._next_char())
+        if n is not None and len(res) != n: raise StreamError(f"Expected exactly {n} characters, got {len(res)}")
         if include_end: res.append(self._next_char())
         return ''.join(res)
 
     @save_on_label
-    def read_line(self, eof=False, maxn=None, include_end=False):
+    def read_line(self, *, eof=False, maxn=None, include_end=False):
         return self.read_until(['\n'] + ([EOF] if eof else []), maxn=maxn, include_end=include_end, _called="line")
 
     @save_on_label
-    def read_token(self, charset=None, regex=None, maxn=None, other_ends=[], include_end=False, _called="token"): # optimize this. 
-        tok = self.read_until([EOF, ' ', '\t', '\n'] + other_ends, charset=charset, maxn=maxn, include_end=include_end, _called=_called)
+    def read_token(self, regex=None, *, n=None, charset=None, maxn=None, other_ends=[], include_end=False, _called="token"): # optimize this. 
+        tok = self.read_until([EOF, ' ', '\t', '\n'] + other_ends, charset=charset, n=n, maxn=maxn, include_end=include_end, _called=_called)
         if regex is not None and not re.match('^' + regex + '$', tok):
             raise StreamError(f"Expected token with regex {repr(regex)}, got {repr(tok)}")
         return tok
