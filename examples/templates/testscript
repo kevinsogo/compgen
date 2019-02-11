@@ -1,4 +1,4 @@
-# comments go here
+# comments are prefixed with hash (#)
 
 ! cat {loc}{sep}sample.in > $
 single_case 10 10 > $
