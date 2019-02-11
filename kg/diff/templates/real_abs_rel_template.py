@@ -9,7 +9,7 @@ from itertools import zip_longest
 from decimal import Decimal as D, InvalidOperation
 from kg.checkers import * ### @keep @import
 
-EPS = 0 ### @replace 0, "D('1e-{}')".format(prec)
+EPS = 0 ### @replace 0, f"D('1e-{prec}')"
 
 EPS *= 1+D('1e-5') # add some leniency
 @set_checker()
@@ -26,7 +26,7 @@ def checker(input_file, output_file, judge_file, **kwargs):
                 try:
                     err = error(D(v1), D(v2)) ### @replace "error", "abs_rel_error" if has_rel else "abs_error"
                 except InvalidOperation:
-                    raise WA("Unequal tokens that are not numbers: {} != {}".format(repr(v1), repr(v2)))
+                    raise WA(f"Unequal tokens that are not numbers: {repr(v1)} != {repr(v2)}")
                 worst = max(worst, err)
                 if err > EPS:
                     print('Found an error of', worst) ### @keep @if format != 'hr'

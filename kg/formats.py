@@ -113,11 +113,8 @@ class Format:
 
             for inputf in self.inputs:
                 if inputf != self.o_to_i[self.i_to_o[inputf]]:
-                    raise FormatError("{} -> {} doesn't point back! Instead, it points to {}".format(
-                            inputf,
-                            self.i_to_o[inputf],
-                            self.o_to_i[self.i_to_o[inputf]],
-                        ))
+                    raise FormatError(f"{inputf} -> {self.i_to_o[inputf]} doesn't point back! "
+                            f"Instead, it points to {self.o_to_i[self.i_to_o[inputf]]}")
 
             assert set(self.o_to_i) == set(self.i_to_o.values()) == self.outputs
             assert set(self.i_to_o) == set(self.o_to_i.values()) == self.inputs

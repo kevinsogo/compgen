@@ -166,7 +166,7 @@ def get_subtasks(subtasks, detector, format_, relpath=None):
         if not subtasks_of[input_]:
             raise CommandException(f"No subtasks found for {input_}")
         if subtset and not (subtasks_of[input_] <= subtset):
-            raise CommandException("Found invalid subtasks! {}".format(' '.join(sorted(subtasks_of[input_] - subtset))))
+            raise CommandException("Found invalid subtasks!" + ' '.join(sorted(subtasks_of[input_] - subtset)))
 
         all_subtasks |= subtasks_of[input_]
         info_print(f"Subtasks found for {input_}:", end=' ')
@@ -948,7 +948,7 @@ def kg_contest(format_, args):
 
             copyfile(source, target)
 
-            info_print(f"Copying data for {code}...".format(code))
+            info_print(f"Copying data for {code}...")
             try:
                 src_format = KGFormat(penv['problem_loc'], read='io')
             except FormatException as exc:
