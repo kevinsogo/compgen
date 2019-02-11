@@ -14,6 +14,7 @@ import re
 import tempfile
 import zipfile
 
+from jinja2 import Template
 from natsort import natsorted
 
 from .black_magic import *
@@ -30,6 +31,8 @@ from .utils.hr import *
 
 
 class CommandException(Exception): ...
+
+VERSION = "0.2"
 
 
 
@@ -510,8 +513,13 @@ def kg_q(format_, args):
 
 init_p = subparsers.add_parser('init', help='create a new problem, formatted kg-style')
 
-init_p.add_argument('problemcode', help='what to init. (all, inputs, etc.)')
+init_p.add_argument('problemcode', help='Problem code. Must not contain special characters.')
 init_p.add_argument('-l', '--loc', default='.', help='where to make the problem')
+init_p.add_argument('-t', '--title', help='Problem title. (Default is generated from problemcode)')
+init_p.add_argument('-s', '--subtasks', type=int, default=0, help='Number of subtasks. (0 if binary)')
+init_p.add_argument('-m', '--minimal', action='store_true', help="Only put the essentials.")
+init_p.add_argument('-c', '--checker', action='store_true', help="Include a checker")
+init_p.add_argument('-tl', '--time-limit', type=int, default=2, help='Time limit.')
 
 valid_problemcode = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$')
 
@@ -532,19 +540,36 @@ def kg_init(format_, args):
     if os.path.exists(dest):
         raise CommandException("The folder already exists!")
 
+    if args.subtasks < 0:
+        raise CommandException("Subtask count must be >= 0")
+
+    touch_dir(dest)
+
     env = {
-        'problemtitle': ' '.join(re.split(r'[-_. ]+', prob)).title().strip(),
+        'problem_title': args.title or ' '.join(re.split(r'[-_. ]+', prob)).title().strip(),
+        'minimal': args.minimal,
+        'checker': args.checker,
+        'subtasks': args.subtasks,
+        'subtask_list': list(range(1, args.subtasks + 1)),
+        'time_limit': args.time_limit,
+        "version": VERSION,
     }
 
     fmt = Format(os.path.join(src, '*'), os.path.join(dest, '*'), read='i', write='o')
     for inp, outp in fmt.thru_io():
         if not os.path.isfile(inp): continue
-        touch_container(outp)
         with open(inp) as inpf:
+            res = inpf.read()
+        if os.path.splitext(inp)[1] == '.j2':
+            res = Template(res).render(**env)
+            outp, ext = os.path.splitext(outp)
+            assert ext == '.j2'
+        touch_container(outp)
+        if res.strip('\n'):
+            info_print(f'Writing {os.path.basename(outp)}')
+            if not res.endswith('\n'): res += '\n'
             with open(outp, 'w') as outpf:
-                d = inpf.read()
-                if inp.endswith('details.json'): d %= env # so that we can write the title in the json.
-                outpf.write(d)
+                outpf.write(res)
 
     succ_print('DONE!')
 

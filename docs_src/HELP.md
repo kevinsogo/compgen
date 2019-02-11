@@ -10,11 +10,9 @@
 
 - Allow running several solutions at once.  
 
-- Add colors for output. (Colorama seems cool)
+- Use Jinja templating for makedocs, seating and passwods
 
-- Use Python f strings
-
-- Use bare * for some
+- Use bare *
 
 - Enclose "@importables" in blocks and only expose the good functions. Maybe automate this with kg kompile.
 
@@ -35,8 +33,6 @@
 - Use python's `timeit` to check the running time of solutions, instead of `/usr/bin/time`.
 
 - Use a YAML library.
-
-- Use Jinja templating.
 
 - Consider using the Kattis format as the base. (far future backwards-incompatible version.)
 

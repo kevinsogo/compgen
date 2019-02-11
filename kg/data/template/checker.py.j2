@@ -1,0 +1,20 @@
+{% if checker %}from kg.checkers import * ### @import
+
+@set_checker(no_extra_chars=True)
+def check_solution(input_file, output_file, judge_file, **kwargs):
+    ... # write your grader here
+{% if not minimal %}
+    # Raise this if the answer is incorrect
+    # raise WA("The contestant's output is incorrect!")
+    
+    # Raise this if the judge data is incorrect, or if the checking fails for some reason other than WA
+    # Any other exception type raised will be considered equivalent to Fail.
+    # Any 'Fail' verdict must be investigated since it indicates a problem with the checker/data/etc.
+    # raise Fail("The judge data is incorrect. Fix it!")
+
+    # the return value is the score, and must be a value between 0.0 and 1.0
+{% endif %}
+    return 1.0 
+
+if __name__ == '__main__': chk()
+{% endif %}

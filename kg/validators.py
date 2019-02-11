@@ -231,8 +231,9 @@ class StrictStream(object):
         return key ### @ if not locals().get('WITH_GET', True)
 
     # TODO learn how to buffer idiomatically...
+    buffer_size = 10**5
     def _buffer(self):
-        if not self._buff: self._buff += self.file.read(10**5) or [EOF, BAD]
+        if not self._buff: self._buff += self.file.read(self.buffer_size) or [EOF, BAD]
 
     def _next_char(self):
         self._buffer()
@@ -247,6 +248,7 @@ class StrictStream(object):
 
     @save_on_label
     def read_until(self, ends, *, charset=None, n=None, maxn=None, include_end=False, _called="token"):
+        ends = set(ends)
         n = self._get(n)
         maxn = self._get(maxn)
         if maxn is None: maxn = float('inf')

@@ -1,4 +1,4 @@
-# comments start with hash (#)
+{% if not minimal %}# comments start with hash (#)
 
 # you can run an arbitrary command via "!"
 ! cat sample.in > $
@@ -10,3 +10,4 @@ single_case 10 1000 > $
 single_case 10 10000 > $
 
 # only '$'s allowed, unlike in Polygon's more flexible format.
+{% endif %}
