@@ -63,11 +63,11 @@ Most fields should be self-explanatory, but here are things to keep in mind:
 
 - `judge_count` can be replaced by `judges` which should be a list of judge names. The same is true with the other `*_count` fields.
 
-- The `teams` field is also a bit special: you can group teams according to their university. See `examples/contest.json` for an example.
+- The `teams` field is also a bit special: you can group teams/contestants by university/school. See `examples/contest.json` for an example.
 
 - The `teams`, `judges`, etc., fields can also contain a string pointing to a separate `.json` file which contains the list. This is useful if you want to pregenerate them with a different program.
 
-## kg kontest
+## Compiling to PC2-readable format
 
 The next step is to run `kg kontest pc2 path/to/contest.json`. This will create a folder `kgkompiled/[contestcode]`. It will contain (among other things) `contest.yaml`, which can be loaded by PC2.  
 
@@ -77,13 +77,13 @@ A couple of things to keep in mind:
 
     I suggest placing the `ALLDATA` folder in `/home/[user]/[contestcode]/ALLDATA` to make it simple. And then in the admin, go to the *Problems* tab, click *Set Judge's Data Path*, and paste the absolute path to `ALLDATA` there.  
 
-- `kg kontest` expects that the command `kg make all` has been run for every problem. If you want to force run `kg make all` across all problems, pass the `-m` option to `kg kontest`.
+- `kg kontest` expects that `kg make all` has been run for every problem. If you want to force run `kg make all` across all problems, pass the `-m` option to `kg kontest`.
 
 A working example is provided in `examples/contest.json`. You can run these to test it:
 
 ```bash
 cd examples
-kg kontest pc2 contest.json   # add -m if you want.
+kg kontest pc2 contest.json   # add -m if you want
 ```
 
 This will create the folder `kgkompiled/EXAMPLECONTEST` from the two example problems.
@@ -91,7 +91,7 @@ This will create the folder `kgkompiled/EXAMPLECONTEST` from the two example pro
 
 ## Loading to PC2
 
-To load everything to PC2 at the first time you run a server, run the following:
+To load everything to PC2 the first time you run a server, run the following:
 
 ```bash
 bin/pc2server --load path/to/CDP/config/contest.yaml
@@ -102,7 +102,7 @@ Alternatively, run the server normally, and in the admin, go to the *Import Conf
 If you wish to update an existing PC2 contest, run `kg kontest` again, and then load `contest.yaml` from *Import Config* again. The `--load` method cannot be used to update.
 
 
-## Additional settings  
+## Additional PC2 settings  
 
 There are a couple of other options that I couldn't find a way to set automatically. You'll have to set them manually for now. You need to be an admin to do them.
 

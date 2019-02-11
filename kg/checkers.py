@@ -111,6 +111,10 @@ class Checker(object):
         if len(sdata) != 3: raise ValueError(f"Invalid args: {args}")
         intype, outtype, judgetype = sdata
         no_extra_chars = kwargs.pop('no_extra_chars', False)
+        valid_fields = ['input', 'output', 'judge']
+        if isinstance(no_extra_chars, bool):
+            no_extra_chars = valid_fields if no_extra_chars else []
+        if not set(no_extra_chars) <= set(valid_fields): raise ValueError(f"Invalid no_extra_chars argument: {repr(no_extra_chars)}")
         def _set_checker(checker):
             def _checker(inp, outp, judgep, *args, **kwargs):
                 inp = ChkStream(inp, intype)
@@ -118,9 +122,9 @@ class Checker(object):
                 judgep = ChkStream(judgep, judgetype)
                 result = checker(inp, outp, judgep, *args, **kwargs)
                 if no_extra_chars:
-                    if inp.has_next(): raise Fail("Extra characters at the end of the input file!")
-                    if outp.has_next(): raise WA("Extra characters at the end of the output file.")
-                    if judgep.has_next(): raise Fail("Extra characters at the end of the judge file!")
+                    if 'input' in no_extra_chars and inp.has_next(): raise Fail("Extra characters at the end of the input file!")
+                    if 'output' in no_extra_chars and outp.has_next(): raise WA("Extra characters at the end of the output file.")
+                    if 'judge' in no_extra_chars and judgep.has_next(): raise Fail("Extra characters at the end of the judge file!")
                 return result
             self.checker = _checker
             return checker
