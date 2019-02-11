@@ -11,7 +11,7 @@ script_path = os.path.dirname(os.path.realpath(__file__))
 
 class PasswordError(Exception): ...
 
-def create_passwords(accounts, seedval=None):
+def create_passwords(accounts, *, seedval=None):
     accounts = list(accounts)
     if len(set(accounts)) != len(accounts):
         raise PasswordError("Duplicate accounts!")
@@ -43,7 +43,7 @@ def create_passwords(accounts, seedval=None):
 
     return {account: make_password() for account in accounts}, seedval
 
-def write_passwords_format(cont, format_, seedval=None, dest='.'):
+def write_passwords_format(cont, format_, *, seedval=None, dest='.'):
 
     if format_ != 'pc2':
         raise PasswordError(f"Unsupported format: {format_}")
@@ -114,7 +114,7 @@ def write_passwords_format(cont, format_, seedval=None, dest='.'):
 
     write_passwords(passrows, dest=dest, seedval=' or '.join({str(x) for x in [seedval, seed] if x is not None}), code=cont.code, title=cont.title)
 
-def write_passwords(accounts, dest='.', **context):
+def write_passwords(accounts, *, dest='.', **context):
     logins = [login for type_, display, login, password in accounts]
     displays = [display for type_, display, login, password in accounts]
     if len(set(logins)) != len(logins): raise PasswordError("Duplicate logins!")

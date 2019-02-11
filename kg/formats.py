@@ -161,13 +161,13 @@ class Format:
             if self.inputg is not None:
                 _check_simple(self.inputg, 'input')
                 pat = '(.*)'.join(self.inputg.replace('\\', '\\\\').replace('.', r'\.').split('*'))
-                # info_print(f'Interpreting {self.inputg} as regex: {pat}')
+                # info_print(f'Interpreting {self.inputg} as regex: {pat}', file=stderr)
                 self._i_re = re.compile('^' + pat + r'\Z')
 
             if self.outputg is not None:
                 _check_simple(self.outputg, 'output')
                 pat = '(.*)'.join(self.outputg.replace('\\', '\\\\').replace('.', r'\.').split('*'))
-                # info_print(f'Interpreting {self.outputg} as regex: {pat}')
+                # info_print(f'Interpreting {self.outputg} as regex: {pat}', file=stderr)
                 self._o_re = re.compile('^' + pat + r'\Z')
 
             self._checked = True

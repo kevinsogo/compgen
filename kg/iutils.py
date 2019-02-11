@@ -67,4 +67,3 @@ def decor_text(*a, **kw): return ctext(*a, color=DECOR, **kw)
 KEY = 'green'
 def key_print(*a, **kw): cprint(*a, color=KEY, **kw)
 def key_text(*a, **kw): return ctext(*a, color=KEY, **kw)
-

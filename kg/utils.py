@@ -52,13 +52,13 @@ r_int = r'0|(?:-?[1-9]\d*)'
 r_sint = r'[+-](?:0|(?:[1-9]\d*))'
 
 patterns = [
-    r'(?P<start>{r_int})(?:(?:\.\.)|-)(?P<end>{r_int})\((?P<step>{r_sint})\)',
-    r'(?P<start>{r_int})(?:(?:\.\.)|-)(?P<end>{r_int})',
-    r'(?P<start>{r_int})\((?P<step>{r_sint})\)',
-    r'(?P<start>{r_int})',
+    rf'(?P<start>{r_int})(?:(?:\.\.)|-)(?P<end>{r_int})\((?P<step>{r_sint})\)',
+    rf'(?P<start>{r_int})(?:(?:\.\.)|-)(?P<end>{r_int})',
+    rf'(?P<start>{r_int})\((?P<step>{r_sint})\)',
+    rf'(?P<start>{r_int})',
 ]
 
-patterns = [re.compile(('^' + pat + '$').format(r_int=r_int, r_sint=r_sint)) for pat in patterns]
+patterns = [re.compile('^' + pat + '$') for pat in patterns]
 
 def _t_range_args(s):
     for pat in patterns:

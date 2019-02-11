@@ -102,8 +102,18 @@ _real_re = re.compile(r'-?(?:0?|(?:[1-9]\d*))(?:\.\d*)?$')
 _real_neg_zero_re = re.compile(r'-0(?:\.0*)')
 realchars = intchars | {'.'}
 
-def strict_real(x, *args, max_places=None, places=None, negzero=False, dotlead=False, dottrail=False):
-    if not _real_re.match(x):
+def strict_real(x, *args, max_places=None, places=None, negzero=False, dotlead=False, dottrail=False): ### @@ if False {
+    ''' Check if the string x is a valid real token, and that it satisfies certain constraints.
+
+    It receives the same arguments as strict_int, and also receives the following in addition:
+
+    places: If it is an integer, then x must have exactly 'places' after the decimal point.
+    negzero: If True, then "negative zero", like, -0.0000, is not allowed. (default False)
+    dotlead: If True, then a leading dot, like, ".420", is not allowed. (default False)
+    dottrail: If True, then a trailing dot, like, "420.", is not allowed. (default False)
+    '''
+    ### @@ }
+    if not _real_re.match(x) and x != '.':
         raise ValidationError(f"Expected real literal, got: {repr(x)}")
     if not negzero and _real_neg_zero_re.match(x):
         raise ValidationError(f"Real negative zero not allowed: {repr(x)}")
@@ -390,7 +400,7 @@ def _add_label(kw, label):
     return kw
 
 
-def validator(suppress_eof_warning=False):
+def validator(*, suppress_eof_warning=False):
     def _validator(f):
         @wraps(f)
         def new_f(file, *args, **kwargs):

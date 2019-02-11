@@ -70,6 +70,7 @@ def run_testscript(inputs, testscript, generators, *, relpath=None):
             gen.do_run(*args)
             assert len(sfilenames) == len(target)
             for sfile, t in zip(sfilenames, target):
+                assert 1 <= t <= len(files)
                 tfile = files[t - 1]
                 print(info_text(f"[o={otarget} t={t}] Moving {sfile} to"), key_text(tfile))
                 touch_container(tfile)

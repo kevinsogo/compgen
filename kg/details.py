@@ -54,25 +54,6 @@ class Details(object):
         for key in ['testscript', 'subtasks_files']:
             setattr(self, key, attach_relpath(relpath, getattr(self, key)))
 
-        # TODO move this check to the appropriate place, e.g., only when subtasks_files is actually accessed
-        # if self.subtasks_files and os.path.isfile(self.subtasks_files):
-        #     with open(self.subtasks_files) as f:
-        #         ff = f.read()
-        #     if ff.strip():
-        #         subf = json.loads(ff)
-        #         found_files = set()
-        #         for low, high, subs in subf:
-        #             if low > high: raise ValueError("Invalid range in subtasks_files: {} {}".format(low, high))
-        #             for idx in range(low, high + 1):
-        #                 if idx in found_files: raise ValueError("File {} appears multiple times in subtasks_files: {}".format(idx))
-        #                 found_files.add(idx)
-
-        #             if not subs:
-        #                 raise ValueError("Empty list of subtasks in subtasks_files")
-
-        #             if not (set(subs) <= set(self.valid_subtasks)):
-        #                 raise ValueError("Invalid subtasks found in subtasks_files: {}".format(' '.join(sorted(set(subs) - set(self.valid_subtasks)))))
-
         # check for extra keys
         for key in self.details:
             if key not in valid_keys:
@@ -94,6 +75,30 @@ class Details(object):
         if is_same_format(fmt, 'kg'):
             details = cls.from_loc(loc, relpath=relpath) or details
         return details
+
+    def load_subtasks_files(self):
+        if self.subtasks_files and os.path.isfile(self.subtasks_files):
+            with open(self.subtasks_files) as f:
+                subf = json.load(f)
+            found_files = set()
+            for low, high, subs in subf:
+                if low > high: raise ValueError(f"Invalid range in subtasks_files: {low} {high}")
+                for idx in range(low, high + 1):
+                    if idx in found_files: raise ValueError(f"File {idx} appears multiple times in subtasks_files")
+                    found_files.add(idx)
+
+                if not subs:
+                    raise ValueError("Empty list of subtasks in subtasks_files")
+
+                if not (set(subs) <= set(self.valid_subtasks)):
+                    raise ValueError(f"Invalid subtasks found in subtasks_files:" + ' '.join(sorted(set(subs) - set(self.valid_subtasks))))
+
+            return subf
+
+    def dump_subtasks_files(self, subtasks_files):
+        print('hoy', self.subtasks_files, self.subtasks_files)
+        with open(self.subtasks_files, 'w') as f:
+            f.write('[\n' + '\n'.join(f'    {list(x)},' for x in subtasks_files).rstrip(',') + '\n]')
 
     def _maybe_prog(self, v, key=None):
         # special parsing for checker

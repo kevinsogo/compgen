@@ -135,7 +135,7 @@ class Seating:
                 best_cost = cost
                 best_assignment = assignment
                 best_sid = sid
-                info_print('Got a badness of', cost, file=stderr)
+                info_print('Got a seating badness of', cost, file=stderr)
                 if best_cost == 0:
                     info_print("We're done!", file=stderr)
                     break
@@ -307,7 +307,7 @@ def seating_args(seating_p):
 
     @set_handler(gen_p)
     def kg_seating_gen(format_, args):
-        info_print(f'Making a {args.rows} x {args.cols} grid with seating width {args.width}...')
+        info_print(f'Making a {args.rows} x {args.cols} grid with seating width {args.width}...', file=stderr)
         seating = Seating.gen(args.rows, args.cols, args.width)
         with open(args.seating_file, 'w') as f: seating.dump(f)
 

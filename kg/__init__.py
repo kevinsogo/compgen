@@ -6,7 +6,7 @@ from operator import attrgetter
 from random import randrange
 from shutil import copyfile
 from string import ascii_letters, ascii_uppercase, digits
-from subprocess import Popen, PIPE, CalledProcessError
+from subprocess import PIPE, CalledProcessError
 from sys import *
 import argparse
 import os.path
@@ -336,12 +336,11 @@ def kg_test(format_, args):
             decor_print('.'*42)
             beginfo_print('SUBTASK REPORT:')
             for sub in natsorted(all_subtasks):
-                print(
-                        info_text("Subtask ="),
-                        key_text(str(sub).rjust(3)),
-                        info_text(": Score = "),
-                        (succ_text if min_score[sub] == 1 else err_text)(f"{float(min_score[sub]):.3f}"),
-                        sep='')
+                print(info_text("Subtask ="),
+                      key_text(str(sub).rjust(3)),
+                      info_text(": Score = "),
+                      (succ_text if min_score[sub] == 1 else err_text)(f"{float(min_score[sub]):.3f}"),
+                      sep='')
 
 
 
@@ -396,7 +395,7 @@ make_p.add_argument('--checks', action='store_true', help="Check the output file
 @set_handler(make_p)
 def _kg_make(format_, args):
     if not is_same_format(format_, 'kg'):
-        raise CommandException("You can't use '{}' format to 'make'.".format(format_))
+        raise CommandException(f"You can't use '{format_}' format to 'make'.")
 
     details = Details.from_format_loc(format_, args.details, relpath=args.loc)
     kg_make(args.makes, args.loc, format_, details, validation=args.validation, checks=args.checks)
@@ -405,7 +404,7 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
     makes = set(omakes)
     valid_makes = {'all', 'inputs', 'outputs', 'subtasks'}
     if not (makes <= valid_makes):
-        raise CommandException("Unknown make param(s): {}".format(' '.join(sorted(makes - valid_makes))))
+        raise CommandException(f"Unknown make param(s): {ctext(*sorted(makes - valid_makes))}")
 
     if 'all' in makes:
         makes |= valid_makes
@@ -453,9 +452,8 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
             else:
                 info_print("no valid_subtasks found, so actually, subtasks will not be made. move along.")
         else:
-            subjson = details.subtasks_files
-            if not subjson:
-                raise CommandException("A 'subtasks_files' entry in {} is required at this step.".format(details.source))
+            if not details.subtasks_files:
+                raise CommandException(f"A 'subtasks_files' entry in {details.source} is required at this step.")
 
             detector = details.subtask_detector
             if not detector: raise CommandException("Missing detector/validator")
@@ -468,9 +466,8 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
             # iterate through inputs, run our detector against them
             subtasks_of, all_subtasks, inputs = get_subtasks(subtasks, detector, get_format_from_type(format_, loc, read='i'), relpath=loc)
 
-            info_print('WRITING TO {}'.format(subjson))
-            with open(subjson, 'w') as f:
-                f.write('[\n' + '\n'.join('    {},'.format(str(list(x))) for x in construct_subs_files(subtasks_of, inputs)).rstrip(',') + '\n]')
+            info_print(f'WRITING TO {details.subtasks_files}')
+            details.dump_subtasks_files(construct_subs_files(subtasks_of, inputs))
 
             succ_print('DONE MAKING SUBTASKS.')
 
@@ -500,7 +497,7 @@ qs = [
 ]
 @set_handler(q_p)
 def kg_q(format_, args):
-    import random; succ_print(random.choice(qs))
+    import random; key_print(random.choice(qs))
 
 
 
@@ -645,8 +642,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
     subjson = details.subtasks_files
     subtasks_files = []
     if details.valid_subtasks:
-        with open(subjson) as f:
-            subtasks_files = json.load(f)
+        subtasks_files = details.load_subtasks_files()
 
     # convert to various formats
     for fmt, name, copy_files, to_translate in [
@@ -657,7 +653,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
         if fmt not in target_formats: continue
         decor_print()
         decor_print('.. '*14)
-        beginfo_print('Compiling for {} ({})'.format(fmt, name))
+        beginfo_print(f'Compiling for {fmt} ({name})')
         dest_folder = os.path.join(loc, 'kgkompiled', fmt)
         to_translate = {g.filename for g in to_translate if g and get_module(g.filename)}
         targets = {}
@@ -667,7 +663,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
             target = os.path.join(dest_folder, os.path.basename(filename))
             targets[module] = target
             if target in found_targets:
-                warn_print("Warning: Files have the same destination file ({}): {} and {}".format(target, found_targets[targets], filename), file=stderr)
+                warn_print(f"Warning: Files have the same destination file ({target}): {found_targets[targets]} and {filename}", file=stderr)
             found_targets[target] = filename
 
         for filename in natsorted(to_translate):
@@ -693,7 +689,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                     assert not line.endswith('\n')
                     if not shebanged and not line.startswith('#!'):
                         shebang_line = "#!/usr/bin/env python3"
-                        info_print('adding shebang line {}'.format(repr(shebang_line)))
+                        info_print(f'adding shebang line {repr(shebang_line)}')
                         print(shebang_line, file=f)
                     shebanged = True
                     print(line, file=f)
@@ -768,7 +764,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                     for fl in inp, outp:
                         zipf.write(fl, arcname=get_arcname(fl))
 
-        succ_print('Done for {} ({})'.format(fmt, name))
+        succ_print(f'Done for {fmt} ({name})')
 
     decor_print('.. '*14)
 
@@ -796,10 +792,10 @@ def kg_contest(format_, args):
         info_print("You spelled 'kontest' incorrectly. I'll let it slide for now.", file=stderr)
 
     if not is_same_format(format_, 'kg'):
-        raise CommandException("You can't use '{}' format to 'kontest'.".format(format_))
+        raise CommandException(f"You can't use '{format_}' format to 'kontest'.")
 
     if args.format != 'pc2':
-        raise CommandException("Unsupported contest format: {}".format(args.format))
+        raise CommandException(f"Unsupported contest format: {args.format}")
 
     # TODO possibly use a yaml library here, but for now this will do.
     # It might be a hassle to add another dependency.
@@ -850,10 +846,12 @@ def kg_contest(format_, args):
                 found_codes[code] = 1
             decor_print()
             decor_print('-'*42)
-            beginfo_print(f"Getting problem {repr(code)} (from {problem_loc})")
+            print(beginfo_text("Getting problem"), key_text(repr(code)), beginfo_text(f"(from {problem_loc})"))
 
             if args.make_all:
                 info_print('Running "kg make all"...')
+                if details.valid_subtasks:
+                    warn_print("Warning: The problem has subtasks, but 'pc2' contests only support binary tasks. Ignoring subtasks.")
                 kg_make(['all'], problem_loc, format_, details)
 
             time_limit = int(round(details.time_limit))
@@ -939,11 +937,11 @@ def kg_contest(format_, args):
 
             copyfile(source, target)
 
-            info_print("Copying data for {}...".format(code))
+            info_print(f"Copying data for {code}...".format(code))
             try:
                 src_format = KGFormat(penv['problem_loc'], read='io')
             except FormatException as exc:
-                raise CommandException("No tests found for '{}'. Please run 'kg make all' to generate the files, or call 'kg kontest' with the '-m' option.".format(penv['problem_loc'])) from exc
+                raise CommandException(f"No tests found for '{penv['problem_loc']}'. Please run 'kg make all' to generate the files, or call 'kg kontest' with the '-m' option.") from exc
             for data_loc in [
                     os.path.join(cdp_config, code, 'data', 'secret'),
                     os.path.join(ext_data, code),
