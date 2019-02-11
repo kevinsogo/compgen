@@ -16,6 +16,8 @@
 
 - Use bare * for some
 
+- Enclose "@importables" in blocks and only expose the good functions. Maybe automate this with kg kompile.
+
 - Add compatibility warning for validators: Don't return 42 since that's the success code for the pc2/kattis format.
 
 - For kg kontest, instead of relpath, "go to directory and run there".

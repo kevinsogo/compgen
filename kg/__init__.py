@@ -26,6 +26,7 @@ from .programs import *
 from .seating import *
 from .testscripts import *
 from .utils import *
+from .utils.hr import *
 
 
 class CommandException(Exception): ...
@@ -594,7 +595,9 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
         'kg.generators': 'generators.py',
         'kg.validators': 'validators.py',
         'kg.checkers': 'checkers.py',
-        'kg.utils': 'utils.py',
+        'kg.utils': os.path.join('utils', '__init__.py'),
+        'kg.utils.hr': os.path.join('utils', 'hr.py'),
+        'kg.utils.utils': os.path.join('utils', 'utils.py'),
         'kg.graphs': os.path.join('graphs', '__init__.py'),
     }
     locations = {lib: os.path.join(script_path, path) for lib, path in locations.items()}
@@ -695,6 +698,14 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                     print(line, file=f)
 
         # TODO for hackerrank, check that the last file for each subtask is unique to that subtask.
+        if fmt == 'hr' and details.valid_subtasks:
+            try:
+                hr_parse_subtasks(details.valid_subtasks, details.load_subtasks_files())
+            except HRError:
+                err_print("Warning: HackerRank parsing of subtasks failed.")
+                raise
+
+
 
         if fmt == 'hr' and details.checker and get_module(details.checker.filename): # snippets for hackerrank upload.
             # pastable version of grader

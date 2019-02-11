@@ -96,7 +96,6 @@ class Details(object):
             return subf
 
     def dump_subtasks_files(self, subtasks_files):
-        print('hoy', self.subtasks_files, self.subtasks_files)
         with open(self.subtasks_files, 'w') as f:
             f.write('[\n' + '\n'.join(f'    {list(x)},' for x in subtasks_files).rstrip(',') + '\n]')
 

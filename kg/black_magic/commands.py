@@ -182,12 +182,14 @@ class Set(Command):
 class Import(Command):
     def __call__(self, parsed, context):
         # import a file recursively.
-        if self.args.strip(): raise CommandException.for_parsed(parsed, f"Unsupported @import args: {self.args}")
+        module_id = None
+        if self.args.strip():
+            module_id = try_run(self.args.strip(), parsed, eval, context)
         [(wline, line)] = self.expect(parsed, 1, parsed.compile_children(context))
         import_extracted = extract_import(line)
         if not import_extracted: raise CommandException.for_parsed(parsed, f"Unsupported import line: {line}")
         nindent, module = import_extracted
-        yield from context['import'](parsed, nindent, module, context)
+        yield from context['import'](parsed, nindent, module, context, module_id=module_id)
 
 import_line = re.compile(r'^(?P<indent>\s*)from\s+(?P<module>[.A-Za-z0-9_]+)\s+import\s*\*\s*$')
 
@@ -195,8 +197,9 @@ def extract_import(line):
     match = import_line.match(line)
     if match: return match['indent'], match['module']
 
-def _import(parent, indent, module, context):
-    module_id = context['get_module_id'](module, context)
+def _import(parent, indent, module, context, *, module_id=None):
+    if module_id is None:
+        module_id = context['get_module_id'](module, context)
 
     # import once only
     imported = context['imported']
@@ -225,9 +228,9 @@ def _import(parent, indent, module, context):
 
     # recurse to import file
     import_extras = context['import_extras']
-    yield process_context(f"# BLACK_MAGIC start import {module}", ncontext)
+    yield process_context(f"# BLACK_MAGIC start import {module_id} (as {module})", ncontext)
     if import_extras: yield process_context(f'{name}, __name__ = __name__, "{name}"', ncontext)
     yield from context['parse_lines'](lines, module_id).compile(ncontext)
     if import_extras: yield process_context(f'__name__ = {name}', ncontext)
     if import_extras: yield process_context(f'del {name}', ncontext)
-    yield process_context(f"# BLACK_MAGIC end import {module}", ncontext)
+    yield process_context(f"# BLACK_MAGIC end import {module_id} (as {module})", ncontext)

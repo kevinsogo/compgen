@@ -390,6 +390,7 @@ set_multi_checker = chk.set_multi_checker
 
 ### @@if format == 'hr' {
 
+from .utils.hr import * ### @import
 ### @@if subtasks_only {
 ###     @set write = True
 ### @@}
@@ -408,22 +409,7 @@ if valid_subtasks:
     # set the weight of the file to be the number of points for the subtask.
     # set the weight of the remaining files to be 0.  
 
-    import json
-    subtasks_of = {}
-    last_file_of = {subtask: -1 for subtask in valid_subtasks}
-
-    for (left, right), subtasks in subtasks_files:
-        ensure(0 <= left <= right <= 99, "range (%s %s) is invalid" % (left, right))
-        ensure(len(set(subtasks)) == len(subtasks), "duplicate subtasks in list: %s" % subtasks)
-        ensure(set(subtasks) <= set(valid_subtasks), "subtask list invalid: %s. allowed = %s" % (subtasks, valid_subtasks))
-        for idx in range(left, right + 1):
-            ensure(idx not in subtasks_of, "%s has already appeared!" % idx)
-            subtasks_of[idx] = subtasks
-            for subtask in subtasks:
-                last_file_of[subtask] = max(last_file_of[subtask], idx)
-
-    ensure(min(last_file_of.values()) >= 0, "some subtasks weren't represented by any files!")
-    ensure(len(set(last_file_of.values())) == len(last_file_of), "The last file of any subtask must be unique to that subtask!!")
+    subtasks_of, last_file_of = hr_parse_subtasks(valid_subtasks, subtasks_files, compiled=False) ### @replace False, True
 
     def clear_tmp(filename):
         try:

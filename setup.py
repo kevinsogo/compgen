@@ -7,7 +7,7 @@ setup(name='KompGen',
       description='Utilities for programming contests',
       author='Kevin Atienza',
       author_email='kevin.charles.atienza@gmail.com',
-      packages=['kg', 'kg.diff', 'kg.black_magic', 'kg.graphs'],
+      packages=['kg', 'kg.diff', 'kg.black_magic', 'kg.graphs', 'kg.utils'],
       package_data={
         'kg': [
             'data/*',
