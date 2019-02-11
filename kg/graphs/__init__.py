@@ -20,7 +20,7 @@ def is_connected(nodes, edges):
     return len(vis) == len(nodes)
 
 def is_simple(nodes, edges):
-    nodes = set()
+    nodes = set(nodes)
     found_edges = set()
     for a, b in edges:
         if a not in nodes: raise ValueError(f"Invalid node: {a}")
@@ -28,3 +28,4 @@ def is_simple(nodes, edges):
         if a > b: a, b = b, a
         if a == b or (a, b) in found_edges: return False
         found_edges.add((a, b))
+    return True

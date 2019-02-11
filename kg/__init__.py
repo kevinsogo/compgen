@@ -429,6 +429,7 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
 
         for filename in run_testscript(fmt.thru_expected_inputs(), script, details.generators, relpath=loc):
             if validation:
+                info_print('Validating', filename)
                 with open(filename) as file:
                     validator.do_run(stdin=file)
 
