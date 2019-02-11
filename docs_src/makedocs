@@ -66,11 +66,11 @@ for location, target, rel_loc in get_templates():
     for found in find_refs(s):
         ref = repr(found)
         if len(ref) > 30*2+3: ref = ref[:30] + '...' + ref[-30:]
-        print('WARNING: reference {} not found'.format(ref))
+        print(f'WARNING: reference {ref} not found')
 
     with open(target, 'w') as f:
-        print("<!-- NOTE TO CONTRIBUTORS: PLEASE DON'T EDIT THIS FILE. -->".format(rel_loc), file=f)
-        print("<!-- Edit docs_src/{} instead, then run './makedocs'. -->\n\n".format(rel_loc), file=f)
+        print("<!-- NOTE TO CONTRIBUTORS: PLEASE DON'T EDIT THIS FILE. -->", file=f)
+        print(f"<!-- Edit docs_src/{rel_loc} instead, then run './makedocs'. -->\n\n", file=f)
         f.write(s)
 
     # TODO possibly use a templating engine here instead of ad-hoc code

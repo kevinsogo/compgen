@@ -5,9 +5,9 @@ def get_sequence(file, exc=Exception):
         m = int(next(file).rstrip())
         b = list(map(int, next(file).rstrip().split(' ')))
     except Exception as e:
-        raise ParseError("Failed to get a sequence: " + str(e)) from e
+        raise ParseError("Failed to get a sequence") from e
     ensure(m >= 0, exc("Invalid length"))
-    ensure(len(b) == m, exc("Expected {} numbers but got {}".format(m, len(b))))
+    ensure(len(b) == m, exc(f"Expected {m} numbers but got {len(b)}"))
     return b
 
 def check_valid(a, b, exc=Exception):

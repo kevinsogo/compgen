@@ -16,6 +16,9 @@ args = parser.parse_args()
 
 prog = Program.from_args(None, args.command)
 
+def dec(s):
+    return s.decode('utf-8').rstrip('\n')
+
 inp = stdin.read()
 prog.do_compile()
 coll_out = ''
@@ -24,8 +27,8 @@ for sub in args.subs:
     res = prog.do_run(sub, input=inp.encode('utf-8'), stderr=PIPE, stdout=PIPE, check=False)
     if res.returncode == 0:
         print(sub)
-        if res.stdout: coll_out += '[for subtask {}]\n{}\n'.format(sub, res.stdout.decode('utf-8').rstrip('\n'))
-        if res.stderr: coll_err += '[for subtask {}]\n{}\n'.format(sub, res.stderr.decode('utf-8').rstrip('\n'))
+        if res.stdout: coll_out += f"[for subtask {sub}]\n{dec(res.stdout)}\n"
+        if res.stderr: coll_err += f"[for subtask {sub}]\n{dec(res.stderr)}\n"
 
 LEN = 1000
 if coll_out:
