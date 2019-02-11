@@ -263,8 +263,8 @@ class StrictStream(object):
         return ''.join(res)
 
     @save_on_label
-    def read_line(self, *, eof=False, maxn=None, include_end=False):
-        return self.read_until(['\n'] + ([EOF] if eof else []), maxn=maxn, include_end=include_end, _called="line")
+    def read_line(self, *, eof=False, charset=None, n=None, maxn=None, include_end=False):
+        return self.read_until(['\n'] + ([EOF] if eof else []), charset=charset, n=n, maxn=maxn, include_end=include_end, _called="line")
 
     @save_on_label
     def read_token(self, regex=None, *, n=None, charset=None, maxn=None, other_ends=[], include_end=False, _called="token"): # optimize this. 

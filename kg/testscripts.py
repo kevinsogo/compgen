@@ -22,7 +22,7 @@ def parse_generator(name, *args, generators, relpath=None):
         if len(progs) >= 2:
             raise TestScriptError(f"{name} matches {len(progs)} programs! Please ensure that the base names of generators are unique.")
         elif not progs:
-            raise TestScriptError(f"Couldn't find program {name} (from testscript)")
+            raise TestScriptError(f"Couldn't find program {name} (from testscript). It should be in 'generators'")
         else:
             [prog] = progs
             return prog, args

@@ -7,12 +7,11 @@ try:
 except ImportError: 
     ...
 else:
+    colorama.init()
     try:
         from termcolor import colored
     except ImportError:
         ...
-    else:
-        colorama.init()
 
 
 
