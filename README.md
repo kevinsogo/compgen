@@ -14,7 +14,9 @@ Only works for Ubuntu (and probably some other Unix-based systems) for now.
 
 1. Run `bash setup.sh`. If it prints `DONE`, then it was successful. Make sure you have `python3` and `pip3`.  
 
-    *Note:* Among other things, it installs a bunch of python packages. Feel free to modify `setup.sh` if you don't want to install globally, e.g., if you want to use virtualenv or something. 
+    *Note:* Among other things, it installs a bunch of python packages (via `setuptools`). Feel free to modify `setup.sh` if you don't want to install globally, e.g., if you want to use virtualenv or something. 
+
+    If it issues errors for you, please read `setup.sh` and try to find a way to run each line somehow.
 
 2. Add the `scripts/` folder to your `$PATH` variable so you can run the scripts anywhere.
 

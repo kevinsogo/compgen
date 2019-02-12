@@ -19,5 +19,10 @@ setup(name='KompGen',
             'templates/*',
         ],
     },
-      # TODO add 'natsort' as a dependency
+    install_requires=[
+        'natsort',
+        'colorama',
+        'termcolor',
+        'Jinja2',
+    ],
  )

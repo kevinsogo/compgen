@@ -14,6 +14,10 @@
 
 - Use bare *
 
+- Force load subtasks for kg test, otherwise we load from details.subtasks_files
+
+- Add `help` and `description` in subparsers.
+
 - Enclose "@importables" in blocks and only expose the good functions. Maybe automate this with kg kompile.
 
 - Add compatibility warning for validators: Don't return 42 since that's the success code for the pc2/kattis format.
@@ -113,65 +117,7 @@ This includes some disorganized ideas, TODOs, notes...
 
     allow "[]", "{}" and possibly "none" (add "[]" in-code).
 
-- Implement polygon-style autonumbering and rearrangement.
-
-        Future ideas:
-
-        ! cat sample.in > 1
-        single_case 10 10 > 2
-        single_case 10 100 > 3
-        single_case 10 1000 > $
-        single_case 10 10000 > $
-        multi_case [5-8,10] 10 1000 > {5-8,10}
-        multi_case_lazy 0 10 20 > $
-        multi_case_lazy 1 10 20 > $
-        multi_case_lazy 2 10 20 > $
-        multi_case_lazy 3 10 20 > $
-
-        ... no templating (at least for now)
-        ... replicate the way polygon tests work. (dollars and stuff)
-
-        formats:
-        12
-        {3,5-7,11}
-        {3,5-7,9..11} # either way is fine
-        {3,5-7,9..11,15..} # 15 to infinity
-        {3,5-7,9..11,15..+2} # 15 to infinity, incrementing by 2
-
-        [] or {} both allowable.
-
-        command > files
-
-        becomes
-
-        transformed_command > files
-        for each file in files; validate file.
-
-
-
 - Add freemarker templating (could be an optional dependency), so we can emulate the Polygon system.
-
-        multi_case [5-8,10] 10 1000 > {5-8,10}
-
-        no templating (at least for now)
-        replicate the way polygon tests work. (dollars and stuff)
-
-        Formats:
-
-        12
-        {3,5-7,11}
-        {3,5-7,9..11} # either way is fine
-        {3,5-7,9..11,15..} # 15 to infinity
-        {3,5-7,9..11,15..+2} # 15 to infinity, incrementing by 2
-
-        [] or {} both allowable.
-
-        command > files
-
-        # becomes
-
-        transformed_command > files # for each file in files; validate file.
-
 
 - Cleaning up of kg.generators
 
@@ -188,7 +134,6 @@ This includes some disorganized ideas, TODOs, notes...
         write_to_files(argv[1], print_to_file, random_cases, argv[2:])
 
         write_to_files(filenames(argv[1]), print_to_file, random_cases, argv[2:])
-
 
 
 
