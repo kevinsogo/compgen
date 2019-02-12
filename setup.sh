@@ -5,6 +5,8 @@ set -e
 # make scripts executable
 chmod +x setup.sh docs_src/makedocs scripts/*
 
+# TODO install pip3 here?
+
 # install setuptools
 pip3 install -U setuptools
 

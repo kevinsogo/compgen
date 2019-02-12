@@ -277,7 +277,7 @@ There are a few more advanced usages and features (will document soon!), but thi
 The testscript file contains instructions on how to generate all the tests. It looks like this:
 
 ```bash
-# comments go here
+# comments are prefixed with hash (#)
 
 ! cat {loc}{sep}sample.in > $
 single_case 10 10 > $

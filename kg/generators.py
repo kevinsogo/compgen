@@ -146,6 +146,7 @@ def write_to_files(print_to_file, make, filenames, *args, validate=None):
 
     rand = XRandom(_make_seed(args))
     filenames = iter(filenames)
+    filecount = 0
     for index, case in enumerate(make(rand, *args)):
         try:
             filename = next(filenames)
@@ -154,3 +155,5 @@ def write_to_files(print_to_file, make, filenames, *args, validate=None):
         print("GENERATOR Writing to", filename, file=stderr) ### @if False
         with open(filename, 'w') as file:
             _write_with_validate(print_to_file, file, case, validate=validate)
+        filecount += 1
+    print("GENERATED", filecount, "FILES", file=stderr) ### @if False

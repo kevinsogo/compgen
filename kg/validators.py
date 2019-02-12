@@ -65,6 +65,7 @@ class Bounds:
 
 _int_re = re.compile(r'0|(?:-?[1-9]\d*)$')
 intchars = set('-' + digits)
+EOLN = '\n'
 
 def strict_int(x, *args): ### @@ if False {
     ''' Check if the string x is a valid integer token, and that it satisfies certain constraints.
@@ -94,6 +95,8 @@ def _check_range(x, *args, type="Number"):
             if x not in r: raise ValidationError(f"{type} {x} not in {r}")
         else:
             if not (0 <= x < r): raise ValidationError(f"{type} {x} not in [0, {r})")
+    elif len(args) == 0:
+        pass
     else:
         raise ValidationError(f"Invalid arguments for range check: {args}")
     return x
@@ -257,20 +260,20 @@ class StrictStream(object):
         res = []
         while self._peek_char() not in ends:
             if charset and self._peek_char() not in charset: raise StreamError(f"Invalid character for {_called} detected: {charname(self._peek_char())}")
+            res.append(self._next_char())
             if n is not None and len(res) > n: raise StreamError(f"Expected exactly {n} characters, got more.")
             if len(res) > maxn: raise StreamError(f"Took too many characters! Expected at most {maxn}")
-            res.append(self._next_char())
         if n is not None and len(res) != n: raise StreamError(f"Expected exactly {n} characters, got {len(res)}")
         if include_end: res.append(self._next_char())
         return ''.join(res)
 
     @save_on_label
     def read_line(self, *, eof=False, charset=None, n=None, maxn=None, include_end=False):
-        return self.read_until(['\n'] + ([EOF] if eof else []), charset=charset, n=n, maxn=maxn, include_end=include_end, _called="line")
+        return self.read_until([EOLN] + ([EOF] if eof else []), charset=charset, n=n, maxn=maxn, include_end=include_end, _called="line")
 
     @save_on_label
     def read_token(self, regex=None, *, n=None, charset=None, maxn=None, other_ends=[], include_end=False, _called="token"): # optimize this. 
-        tok = self.read_until([EOF, ' ', '\t', '\n'] + other_ends, charset=charset, n=n, maxn=maxn, include_end=include_end, _called=_called)
+        tok = self.read_until([EOF, ' ', '\t', EOLN] + other_ends, charset=charset, n=n, maxn=maxn, include_end=include_end, _called=_called)
         if regex is not None and not re.match('^' + regex + '$', tok):
             raise StreamError(f"Expected token with regex {repr(regex)}, got {repr(tok)}")
         return tok
@@ -301,7 +304,7 @@ class StrictStream(object):
         return strict_real(self.read_token(charset=realchars, _called="real"), *map(self._get, a), **kw)
 
     def read_space(self): return self.read_char(' ')
-    def read_eoln(self): return self.read_char('\n') # ubuntu only (I think).
+    def read_eoln(self): return self.read_char(EOLN) # ubuntu only (I think).
     def read_eof(self): return self.read_char(EOF)
 
     # TODO call this 'expect_char' (or something. check testlib. don't necessarily follow), and make _next_char public
@@ -311,6 +314,8 @@ class StrictStream(object):
             raise StreamError(f"Expected {charname(ch)}, got {charname(self.last)}")
 
     # convenience
+    def read_line_eoln(self, *a, **kw):
+        res = self.read_line(*a, **kw); self.read_eoln(); return res
     def read_int_eoln(self, *a, **kw):
         res = self.read_int(*a, **kw); self.read_eoln(); return res
     def read_int_space(self, *a, **kw):
@@ -353,6 +358,15 @@ class _Read:
         if self.op:
             yield from self.op()
 
+    def consume(self):
+        return list(self)
+
+    __call__ = consume
+
+    def line(self, *a, **kw):
+        def op(label=''): yield self.ss.read_line(*a, **_add_label(kw, label))
+        return _Read(self.ss, self, op)
+
     def int(self, *a, **kw):
         def op(label=''): yield self.ss.read_int(*a, **_add_label(kw, label))
         return _Read(self.ss, self, op)
@@ -391,7 +405,7 @@ class _Read:
     @property
     def space(self): return self.char(' ')
     @property
-    def eoln(self): return self.char('\n')
+    def eoln(self): return self.char(EOLN)
     @property
     def eof(self): return self.char(EOF)
     
