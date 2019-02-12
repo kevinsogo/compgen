@@ -12,7 +12,7 @@ Only works for Ubuntu (and probably some other Unix-based systems) for now.
 
 # Setup
 
-1. Run `bash setup.sh`. If it prints `DONE`, then it was successful. Make sure you have `python3` and `pip3`.  
+1. Run `bash setup.sh` as root or superuser (sudo). If it prints `DONE`, then it was successful. Make sure you have `python3` and `pip3`.  
 
     *Note:* Among other things, it installs a bunch of python packages (via `setuptools`). Feel free to modify `setup.sh` if you don't want to install globally, e.g., if you want to use virtualenv or something. 
 
