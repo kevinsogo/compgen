@@ -19,21 +19,18 @@ def infer_lang(filename):
     base, ext = os.path.splitext(filename)
     return lang_of_ending.get(ext)
 
-def attach_relpath(relpath, path):
-    if not relpath or not path or path.startswith('!') or os.path.isabs(path):
-        return path
-    else:
-        return os.path.join(relpath, path)
-
 class Program:
     def __init__(self, filename, compile_, run, *, relpath=None):
         if not filename: raise ValueError("Filename cannot be empty")
-        self.filename = attach_relpath(relpath, filename)
+        if not run: raise ValueError("A program cannot have an empty run command")
+        self.relpath = relpath
+        self.filename = filename
+        self.rel_filename = attach_relpath(relpath, filename)
         env = {
             'loc': relpath,
             'sep': os.sep,
-            'filename': self.filename,
-            'raw_filename': filename,
+            'filename': filename,
+            'rel_filename': self.rel_filename,
             'filename_base': os.path.splitext(os.path.basename(filename))[0],
         }
         self.compile = env['compile'] = [p.format(**env) for p in compile_]
@@ -41,16 +38,17 @@ class Program:
         self._compiled = False
         super(Program, self).__init__()
 
-    def do_compile(self):
-        if self.compile: subprocess.run(self.compile, check=True)
+    def do_compile(self, **kwargs):
+        if self.compile:
+            kwargs.setdefault('cwd', self.relpath)
+            kwargs.setdefault('check', True)
+            subprocess.run(self.compile, **kwargs)
         self._compiled = True
 
-    def do_run(self, *args, input=None, stdin=None, stdout=None, stderr=None, time=False, check=True):
+    def do_run(self, *args, time=False, **kwargs):
         if not self._compiled: raise ExtProgramError("Compile the program first")
         command = self.run + list(args)
-        kwargs = dict(input=input, stdin=stdin, stdout=stdout, stderr=stderr, check=check)
-        if not input: kwargs.pop('input')
-        if not stdin: kwargs.pop('stdin')
+        kwargs.setdefault('cwd', self.relpath)
         if time:
             start_time = timel.time()
             if os.name != 'nt': command = ['/usr/bin/time', '-f' 'ELAPSED TIME %esec %Usec %Ssec'] + command

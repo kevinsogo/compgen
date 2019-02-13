@@ -2,6 +2,8 @@ import json
 import os.path
 import re
 
+from .iutils import *
+
 script_path = os.path.dirname(os.path.realpath(__file__))
 with open(os.path.join(script_path, 'data', 'contest_defaults.json')) as f:
     defaults = json.load(f)
@@ -24,6 +26,7 @@ class ContestDetails(object):
     def __init__(self, details={}, source=None):
         self.details = details
         self.source = source
+        self.relpath = os.path.dirname(os.path.abspath(source)) if source is not None else None
 
         # data validation
         for key in ['title', 'code', 'duration', 'scoreboard_freeze_length', 'site_password', 'problems', 'seating']:
@@ -46,7 +49,7 @@ class ContestDetails(object):
                     raise ValueError("{} and {} cannot appear simultaneously".format(key_list, key_count))
                 value_list = self.details[key_list]
                 if isinstance(value_list, str): # open as a possible json file
-                    with open(value_list) as f:
+                    with open(attach_relpath(self.relpath, value_list)) as f:
                         value_list = json.load(f)
                 if not isinstance(value_list, list):
                     raise ValueError("{} must be a list: got {}".format(key_list, type(value_list)))
@@ -101,6 +104,15 @@ class ContestDetails(object):
     def from_loc(cls, loc):
         with open(loc) as f:
             return cls(json.load(f), source=loc)
+
+    @property
+    def rel_problems(self):
+        return [attach_relpath(self.relpath, prob) for prob in self.problems]
+
+    @property
+    def rel_seating(self):
+        return attach_relpath(self.relpath, self.seating)
+    
 
     def serialize(self):
         ... # not implemented yet. returns a dict to be json'ed

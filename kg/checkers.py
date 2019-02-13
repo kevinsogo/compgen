@@ -194,25 +194,33 @@ def _check_generic(checker, input_path, output_path, judge_path, **kwargs):
             'output_path': output_path,
             'judge_path': judge_path,
         })
-    with open(input_path) as input_file:
-        with open(output_path) as output_file:
-            with open(judge_path) as judge_file:
-                try:
-                    score = checker(input_file, output_file, judge_file, **kwargs)
-                    return Verdict.AC, score, ""
-                except ParseError as exc:
-                    e, verdict = exc, Verdict.PAE
-                    if kwargs.get('verbose'): traceback.print_exc()
-                except WA as exc:
-                    e, verdict = exc, Verdict.WA
-                    if kwargs.get('verbose'): traceback.print_exc()
-                except Fail as exc:
-                    e, verdict = exc, Verdict.FAIL
-                    if kwargs.get('verbose'): traceback.print_exc()
-                except Exception as exc:
-                    e, verdict = exc, Verdict.EXC
-                    if kwargs.get('verbose'): traceback.print_exc()
-                return verdict, getattr(e, 'score', 0.0), str(e)
+    try:
+        input_file = open(input_path)
+        output_file = open(output_path)
+        judge_file = open(judge_path)
+    except Exception as exc:
+        e, verdict = exc, Verdict.EXC
+        if kwargs.get('verbose'): traceback.print_exc()
+    else:
+        with input_file:
+            with output_file:
+                with judge_file:
+                    try:
+                        score = checker(input_file, output_file, judge_file, **kwargs)
+                        return Verdict.AC, score, ""
+                    except ParseError as exc:
+                        e, verdict = exc, Verdict.PAE
+                        if kwargs.get('verbose'): traceback.print_exc()
+                    except WA as exc:
+                        e, verdict = exc, Verdict.WA
+                        if kwargs.get('verbose'): traceback.print_exc()
+                    except Fail as exc:
+                        e, verdict = exc, Verdict.FAIL
+                        if kwargs.get('verbose'): traceback.print_exc()
+                    except Exception as exc:
+                        e, verdict = exc, Verdict.EXC
+                        if kwargs.get('verbose'): traceback.print_exc()
+    return verdict, getattr(e, 'score', 0.0), str(e)
 
 
 _platforms = {}

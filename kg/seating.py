@@ -285,7 +285,7 @@ def compactify(const):
 
 def write_seating(contest, seedval=None, dest='.'):
 
-    with open(contest.seating) as f: seating = Seating.load(f)
+    with open(contest.rel_seating) as f: seating = Seating.load(f)
 
     if seedval is None: seedval = randrange(10**6)
 

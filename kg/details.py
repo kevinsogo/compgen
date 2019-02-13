@@ -14,7 +14,6 @@ def detector_from_validator(validator, relpath=None):
     if validator:
         return Program("!fromvalidator", validator.compile, ["kg-subtasks", "-c"] + validator.run + ["--"], relpath=relpath)
 
-
 class Details(object):
     def __init__(self, details={}, source=None, relpath=None):
         self.details = details

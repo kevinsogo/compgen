@@ -54,15 +54,16 @@ def run_testscript(inputs, testscript, generators, *, relpath=None):
             dupseq, *rargs = args
             dupseq = ':' + dupseq
             args = dupseq, *rargs
-            sfilenames = list(file_sequence(dupseq))
+            sfilenames = [attach_relpath(relpath, sfile) for sfile in file_sequence(dupseq)]
 
             # clear temp
-            info_print('    Preparing temp/ folder...')
+            temp_folder = attach_relpath(relpath, os.path.join('temp', ''))
+            info_print(f'    Preparing the {temp_folder} folder...')
             for sfile in sfilenames:
                 touch_container(sfile)
                 if os.path.exists(sfile):
                     if not os.path.isfile(sfile):
-                        raise TestScriptError(f"Temp file {sfile} exists and is not a file! Please clear temp/")
+                        raise TestScriptError(f"Temp file {sfile} exists and is not a file! Please clear {temp_folder}")
                     else:
                         os.remove(sfile)
 
@@ -74,8 +75,7 @@ def run_testscript(inputs, testscript, generators, *, relpath=None):
                 tfile = files[t - 1]
                 print(info_text(f"[o={otarget} t={t}] Moving {sfile} to"), key_text(tfile))
                 touch_container(tfile)
-                if os.path.exists(tfile):
-                    os.remove(tfile)
+                if os.path.exists(tfile): os.remove(tfile)
                 os.rename(sfile, tfile)
                 got_files.add(tfile)
                 yield tfile

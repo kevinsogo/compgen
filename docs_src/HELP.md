@@ -12,6 +12,8 @@
 
 - Allow running several solutions at once.  
 
+- Use `os.path.normcase` (or something similar) on filenames parsed from details.json and similar places, so it could be interpreted properly in the correct OS.
+
 - Use Jinja templating for makedocs, seating and passwods
 
 - Use bare *

@@ -31,7 +31,7 @@ from .utils import *
 from .utils.hr import *
 
 
-class CommandException(Exception): ...
+class CommandError(Exception): ...
 
 VERSION = "0.2"
 
@@ -119,7 +119,7 @@ def convert_sequence(src, dest):
 
 subtasks_p = subparsers.add_parser('subtasks', help='detect the subtasks of input files. you need either a detector or a validator.')
 subtasks_p.add_argument('-F', '--format', '--fmt', help='format of data')
-subtasks_p.add_argument('-l', '--loc', default='.', help='location of files/package (if format is given)')
+subtasks_p.add_argument('-l', '--loc', default='.', help='location to run commands on')
 subtasks_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
 subtasks_p.add_argument('-i', '--input', help='input file pattern')
 subtasks_p.add_argument('-o', '--output', help='output file pattern')
@@ -145,12 +145,12 @@ def kg_subtasks(format_, args):
     # try detector from details
     if not detector: detector = details.subtask_detector
     # can't build any detector!
-    if not detector: raise CommandException("Missing detector/validator")
+    if not detector: raise CommandError("Missing detector/validator")
     # find subtask list
     subtasks = args.subtasks or list(map(str, details.valid_subtasks))
 
     if validator and not subtasks: # subtask list required for detectors from validator
-        raise CommandException("Missing subtask list")
+        raise CommandError("Missing subtask list")
 
     get_subtasks(subtasks, detector, format_)
 
@@ -168,9 +168,9 @@ def get_subtasks(subtasks, detector, format_, relpath=None):
             result = detector.do_run(*subtasks, stdin=f, stdout=PIPE)
         subtasks_of[input_] = set(result.stdout.decode('utf-8').split())
         if not subtasks_of[input_]:
-            raise CommandException(f"No subtasks found for {input_}")
+            raise CommandError(f"No subtasks found for {input_}")
         if subtset and not (subtasks_of[input_] <= subtset):
-            raise CommandException("Found invalid subtasks!" + ' '.join(sorted(subtasks_of[input_] - subtset)))
+            raise CommandError("Found invalid subtasks!" + ' '.join(sorted(subtasks_of[input_] - subtset)))
 
         all_subtasks |= subtasks_of[input_]
         info_print(f"Subtasks found for {input_}:", end=' ')
@@ -196,7 +196,7 @@ def get_subtasks(subtasks, detector, format_, relpath=None):
 gen_p = subparsers.add_parser('gen', help='generate output files for some given input files.')
 
 gen_p.add_argument('-F', '--format', '--fmt', help='format of data')
-gen_p.add_argument('-l', '--loc', default='.', help='location of files/package (if format is given)')
+gen_p.add_argument('-l', '--loc', default='.', help='location to run commands on')
 gen_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
 gen_p.add_argument('-i', '--input', help='input file pattern')
 gen_p.add_argument('-o', '--output', help='output file pattern')
@@ -218,12 +218,12 @@ def kg_gen(format_, args):
         judge_data_maker = details.judge_data_maker
     judge = Program.from_args(args.judge_file, args.judge_command) or details.checker
 
-    if not judge: raise CommandException("Missing judge")
+    if not judge: raise CommandError("Missing judge")
 
     generate_outputs(format_, judge_data_maker, model_solution, judge=judge)
 
 def generate_outputs(format_, data_maker, model_solution, *, judge=None):
-    if not data_maker: raise CommandException("Missing solution")
+    if not data_maker: raise CommandError("Missing solution")
     data_maker.do_compile()
     if judge: judge.do_compile()
     if model_solution and model_solution != data_maker: model_solution.do_compile()
@@ -236,7 +236,7 @@ def generate_outputs(format_, data_maker, model_solution, *, judge=None):
                     data_maker.do_run(stdin=inp, stdout=outp, time=True)
                 except CalledProcessError as cpe:
                     err_print(f"The data_maker raised an error for {input_}", file=stderr)
-                    raise CommandException(f"The data_maker raised an error for {input_}") from cpe
+                    raise CommandError(f"The data_maker raised an error for {input_}") from cpe
 
         if judge and model_solution:
             @contextlib.contextmanager
@@ -251,14 +251,14 @@ def generate_outputs(format_, data_maker, model_solution, *, judge=None):
                                 model_solution.do_run(stdin=inp, stdout=tmp, time=True)
                             except CalledProcessError as cpe:
                                 err_print(f"The model_solution raised an error for {input_}", file=stderr)
-                                raise CommandException(f"The model_solution raised an error for {input_}") from cpe
+                                raise CommandError(f"The model_solution raised an error for {input_}") from cpe
                         yield tmp.name
             with model_output() as model_out:
                 try:
-                    judge.do_run(input_, model_out, output_)
+                    judge.do_run(*map(os.path.abspath, (input_, model_out, output_)))
                 except CalledProcessError as cpe:
                     err_print(f"The judge did not accept {output_}", file=stderr)
-                    raise CommandException(f"The judge did not accept {output_}") from cpe
+                    raise CommandError(f"The judge did not accept {output_}") from cpe
 
 
 
@@ -270,7 +270,7 @@ def generate_outputs(format_, data_maker, model_solution, *, judge=None):
 test_p = subparsers.add_parser('test', help='test a program against given input and output files.')
 
 test_p.add_argument('-F', '--format', '--fmt', help='format of data')
-test_p.add_argument('-l', '--loc', default='.', help='location of files/package (if format is given)')
+test_p.add_argument('-l', '--loc', default='.', help='location to run commands on')
 test_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
 test_p.add_argument('-i', '--input', help='input file pattern')
 test_p.add_argument('-o', '--output', help='output file pattern')
@@ -290,10 +290,10 @@ def kg_test(format_, args):
     details = Details.from_format_loc(args.format, args.details, relpath=args.loc)
 
     solution = Program.from_args(args.file, args.command) or details.model_solution
-    if not solution: raise CommandException("Missing solution")
+    if not solution: raise CommandError("Missing solution")
 
     judge = Program.from_args(args.judge_file, args.judge_command) or details.checker
-    if not judge: raise CommandException("Missing judge")
+    if not judge: raise CommandError("Missing judge")
 
     solution.do_compile()
     judge.do_compile()
@@ -310,7 +310,7 @@ def kg_test(format_, args):
                         err_print('The solution issued a runtime error...')
                         return False
 
-                jargs = [input_, tmp.name, output_]
+                jargs = list(map(os.path.abspath, (input_, tmp.name, output_)))
                 if not args.judge_strict:
                     jargs += ['-c', solution.filename, '-t', str(index), '-v']
 
@@ -349,7 +349,7 @@ def kg_test(format_, args):
             # find subtask list
             subtasks = args.subtasks or list(map(str, details.valid_subtasks))
             if validator and not subtasks: # subtask list required for detectors from validator
-                raise CommandException("Missing subtask list (for subtask grading)")
+                raise CommandError("Missing subtask list (for subtask grading)")
             subtasks_of, all_subtasks, inputs = get_subtasks(subtasks, detector, format_)
             # normal grading
             min_score = {sub: 1 for sub in all_subtasks}
@@ -377,7 +377,7 @@ def kg_test(format_, args):
 run_p = subparsers.add_parser('run', help='run a program against a set of input files, and print the result to stdout.')
 
 run_p.add_argument('-F', '--format', '--fmt', help='format of data')
-run_p.add_argument('-l', '--loc', default='.', help='location of files/package (if format is given)')
+run_p.add_argument('-l', '--loc', default='.', help='location to run commands on')
 run_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
 run_p.add_argument('-i', '--input', help='input file pattern')
 run_p.add_argument('-o', '--output', help='output file pattern')
@@ -391,7 +391,7 @@ def kg_run(format_, args):
     details = Details.from_format_loc(args.format, args.details, relpath=args.loc)
 
     solution = Program.from_args(args.file, args.command) or details.judge_data_maker
-    if not solution: raise CommandException("Missing solution")
+    if not solution: raise CommandError("Missing solution")
 
     solution.do_compile()
     for input_ in format_.thru_inputs():
@@ -412,7 +412,7 @@ def kg_run(format_, args):
 make_p = subparsers.add_parser('make', help='create all test data and validate.')
 
 make_p.add_argument('makes', nargs='+', help='what to make. (all, inputs, etc.)')
-make_p.add_argument('-l', '--loc', default='.', help='location of files/package')
+make_p.add_argument('-l', '--loc', default='.', help='location to run commands on')
 make_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
 make_p.add_argument('-V', '--validation', action='store_true', help="Validate the input files against the validators")
 make_p.add_argument('-C', '--checks', action='store_true', help="Check the output file against the checker")
@@ -420,7 +420,7 @@ make_p.add_argument('-C', '--checks', action='store_true', help="Check the outpu
 @set_handler(make_p)
 def _kg_make(format_, args):
     if not is_same_format(format_, 'kg'):
-        raise CommandException(f"You can't use '{format_}' format to 'make'.")
+        raise CommandError(f"You can't use '{format_}' format to 'make'.")
 
     details = Details.from_format_loc(format_, args.details, relpath=args.loc)
     kg_make(args.makes, args.loc, format_, details, validation=args.validation, checks=args.checks)
@@ -429,7 +429,7 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
     makes = set(omakes)
     valid_makes = {'all', 'inputs', 'outputs', 'subtasks'}
     if not (makes <= valid_makes):
-        raise CommandException(f"Unknown make param(s): {ctext(*sorted(makes - valid_makes))}")
+        raise CommandError(f"Unknown make param(s): {ctext(*sorted(makes - valid_makes))}")
 
     if 'all' in makes:
         makes |= valid_makes
@@ -440,7 +440,7 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
         decor_print('~~ '*14)
         beginfo_print('MAKING INPUTS...' + ("WITH VALIDATION..." if validation else 'WITHOUT VALIDATION'))
         if not details.testscript:
-            raise CommandException("Missing testscript")
+            raise CommandError("Missing testscript")
 
         with open(details.testscript) as scrf:
             script = scrf.read()
@@ -474,20 +474,20 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
         beginfo_print('MAKING SUBTASKS...')
         if not details.valid_subtasks:
             if 'subtasks' in omakes:
-                raise CommandException("valid_subtasks list required if you wish to make subtasks")
+                raise CommandError("valid_subtasks list required if you wish to make subtasks")
             else:
                 info_print("no valid_subtasks found, so actually, subtasks will not be made. move along.")
         else:
             if not details.subtasks_files:
-                raise CommandException(f"A 'subtasks_files' entry in {details.source} is required at this step.")
+                raise CommandError(f"A 'subtasks_files' entry in {details.source} is required at this step.")
 
             detector = details.subtask_detector
-            if not detector: raise CommandException("Missing detector/validator")
+            if not detector: raise CommandError("Missing detector/validator")
 
             # find subtask list
             subtasks = list(map(str, details.valid_subtasks))
             if details.validator and not subtasks: # subtask list required for detectors from validator
-                raise CommandException("Missing subtask list")
+                raise CommandError("Missing subtask list")
 
             # iterate through inputs, run our detector against them
             subtasks_of, all_subtasks, inputs = get_subtasks(subtasks, detector, get_format_from_type(format_, loc, read='i'), relpath=loc)
@@ -547,22 +547,22 @@ valid_problemcode = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$')
 @set_handler(init_p)
 def kg_init(format_, args):
     if not is_same_format(format_, 'kg'):
-        raise CommandException(f"You can't use '{format_}' format to 'init'.")
+        raise CommandError(f"You can't use '{format_}' format to 'init'.")
   
     prob = args.problemcode
 
     if not valid_problemcode.match(prob):
-        raise CommandException("No special characters allowed for the problem code, and the first and last characters must be a letter or a digit.")
+        raise CommandError("No special characters allowed for the problem code, and the first and last characters must be a letter or a digit.")
 
     src = os.path.join(script_path, 'data', 'template')
     dest = os.path.join(args.loc, prob)
 
     print(info_text('The destination folder will be'), key_text(dest))
     if os.path.exists(dest):
-        raise CommandException("The folder already exists!")
+        raise CommandError("The folder already exists!")
 
     if args.subtasks < 0:
-        raise CommandException("Subtask count must be >= 0")
+        raise CommandError("Subtask count must be >= 0")
 
     touch_dir(dest)
 
@@ -603,7 +603,7 @@ def kg_init(format_, args):
 
 compile_p = subparsers.add_parser('kompile', aliases=['compile'], help='preprocess python source codes to be ready to upload')
 compile_p.add_argument('formats', nargs='*', help='contest formats to compile to (default ["hr", "pg", "pc2"])')
-compile_p.add_argument('-l', '--loc', default='.', help='location of files/package')
+compile_p.add_argument('-l', '--loc', default='.', help='location to run commands on')
 compile_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
 compile_p.add_argument('-S', '--shift-left', action='store_true', help=
                                 'compress the program by reducing the indentation size from 4 spaces to 1 tab. '
@@ -629,9 +629,9 @@ def _kg_compile(format_, args):
 def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, compress=False):
     valid_formats = {'hr', 'pg', 'pc2'}
     if not set(target_formats) <= valid_formats:
-        raise CommandException(f"Invalid formats: {set(target_formats) - valid_formats}")
+        raise CommandError(f"Invalid formats: {set(target_formats) - valid_formats}")
     if not is_same_format(format_, 'kg'):
-        raise CommandException(f"You can't use '{format_}' format to 'kompile'.")
+        raise CommandError(f"You can't use '{format_}' format to 'kompile'.")
 
     # TODO clear kgkompiled first, or at least the target directory
 
@@ -669,7 +669,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
     @listify
     def load_module(module_id):
         if module_id not in locations:
-            raise CommandException(f"Couldn't find module {module_id}! (Add it to other_programs?)")
+            raise CommandError(f"Couldn't find module {module_id}! (Add it to other_programs?)")
         with open(locations[module_id]) as f:
             for line in f:
                 if not line.endswith('\n'):
@@ -850,10 +850,10 @@ def kg_contest(format_, args):
         info_print("You spelled 'kontest' incorrectly. I'll let it slide for now.", file=stderr)
 
     if not is_same_format(format_, 'kg'):
-        raise CommandException(f"You can't use '{format_}' format to 'kontest'.")
+        raise CommandError(f"You can't use '{format_}' format to 'kontest'.")
 
     if args.format != 'pc2':
-        raise CommandException(f"Unsupported contest format: {args.format}")
+        raise CommandError(f"Unsupported contest format: {args.format}")
 
     # TODO possibly use a yaml library here, but for now this will do.
     # It might be a hassle to add another dependency.
@@ -871,7 +871,7 @@ def kg_contest(format_, args):
         contest_template = os.path.join(script_path, 'data', 'contest_template', 'pc2')
 
         # construct template environment
-        if not contest.site_password: raise CommandException("site_password required for PC2")
+        if not contest.site_password: raise CommandError("site_password required for PC2")
         env = {
             "datetime_created": datetime.now(),
             "title": contest.title,
@@ -893,7 +893,7 @@ def kg_contest(format_, args):
         found_codes = {}
         problem_env = {}
         letters = []
-        for letter, problem_loc in zip(problem_letters(), contest.problems):
+        for letter, problem_loc in zip(problem_letters(), contest.rel_problems):
             details = Details.from_format_loc(format_, os.path.join(problem_loc, 'details.json'), relpath=problem_loc)
 
             code_raw = os.path.basename(problem_loc)
@@ -991,7 +991,7 @@ def kg_contest(format_, args):
                         target_f.write(source_f.read().format(**penv))
 
             info_print("Copying model solution")
-            source = penv['details'].model_solution.filename
+            source = penv['details'].model_solution.rel_filename
             target = os.path.join(cdp_config, code, 'submissions', 'accepted', os.path.basename(source))
             touch_container(target)
 
@@ -1001,7 +1001,7 @@ def kg_contest(format_, args):
             try:
                 src_format = KGFormat(penv['problem_loc'], read='io')
             except FormatException as exc:
-                raise CommandException(f"No tests found for '{penv['problem_loc']}'. Please run 'kg make all' to generate the files, or call 'kg kontest' with the '-m' option.") from exc
+                raise CommandError(f"No tests found for '{penv['problem_loc']}'. Please run 'kg make all' to generate the files, or call 'kg kontest' with the '-m' option.") from exc
             for data_loc in [
                     os.path.join(cdp_config, code, 'data', 'secret'),
                     os.path.join(ext_data, code),

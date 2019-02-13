@@ -14,6 +14,11 @@ else:
         ...
 
 
+def attach_relpath(relpath, path):
+    if not relpath or not path or path.startswith('!'):
+        return path
+    else:
+        return os.path.join(relpath, path)
 
 def set_handler(parser, default_file=stdout):
     def _set_handler(handler):

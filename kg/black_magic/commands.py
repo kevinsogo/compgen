@@ -7,9 +7,9 @@ from .exceptions import *
 
 from kg.iutils import *
 
-class CommandException(CompileException): ...
+class CommandError(CompileError): ...
 
-class EvalException(CommandException): ...
+class EvalError(CommandError): ...
 
 
 
@@ -72,7 +72,7 @@ def try_run(expr, parsed, command, context):
     try:
         return command(expr, context)
     except Exception as exc:
-        raise EvalException.for_parsed(parsed, f"An exception occurred while running {repr(expr)} via {command.__name__}: {str(exc)}") from exc
+        raise EvalError.for_parsed(parsed, f"An exception occurred while running {repr(expr)} via {command.__name__}: {str(exc)}") from exc
 
 
 class Command:
@@ -87,9 +87,9 @@ class Command:
         for wline, line in lines:
             if line.strip():
                 found += 1
-                if found > ct: raise CompileException.for_parsed(parsed, f"Expected {ct} line(s) but found more inside @{self.name}")
+                if found > ct: raise CompileError.for_parsed(parsed, f"Expected {ct} line(s) but found more inside @{self.name}")
                 yield wline, line
-        if found < ct: raise CompileException.for_parsed(parsed, f"Expected {ct} line(s) but found {found} inside @{self.name}")
+        if found < ct: raise CompileError.for_parsed(parsed, f"Expected {ct} line(s) but found {found} inside @{self.name}")
 
 
 @set_command('begin', strong={'begin': True})
@@ -100,7 +100,7 @@ class Begin(Command):
             context['begin'] = False
             yield from parsed.compile_children(context)
         else:
-            raise CommandException.for_parsed(parsed, "Cannot 'begin' if not in the beginning of the file")
+            raise CommandError.for_parsed(parsed, "Cannot 'begin' if not in the beginning of the file")
 
 
 @set_command('if')
@@ -119,19 +119,19 @@ class For(Command):
         try:
             index = self.args.find(' in ')
         except ValueError as exc:
-            raise CommandException.for_parsed(parsed, "Cannot parse @for: ' in ' not found!") from exc
+            raise CommandError.for_parsed(parsed, "Cannot parse @for: ' in ' not found!") from exc
         to_assign = self.args[:index].strip()
         is_tuple = ',' in to_assign
         labels = [label.strip() for label in to_assign.split(',')]
         if labels[-1] == '': labels.pop()
-        if not labels: raise CommandException.for_parsed(parsed, "Invalid left-side assignment for @for: empty")
-        if not all(labels): raise CommandException.for_parsed(parsed, "Invalid left-side assignment for @for: blank labels")
+        if not labels: raise CommandError.for_parsed(parsed, "Invalid left-side assignment for @for: empty")
+        if not all(labels): raise CommandError.for_parsed(parsed, "Invalid left-side assignment for @for: blank labels")
 
         expr = self.args[index + 4:]
         # info_print('@for: evaluating', repr(expr))
         for value in try_run(expr, parsed, eval, context):
             if not is_tuple: value = [value]
-            if len(labels) != len(value): raise EvalException.for_parsed(parsed, f"Invalid assignment for @for: differing lengths: left {len(labels)} vs right {len(value)}")
+            if len(labels) != len(value): raise EvalError.for_parsed(parsed, f"Invalid assignment for @for: differing lengths: left {len(labels)} vs right {len(value)}")
             for label, val in zip(labels, value):
                 context[label] = val
             yield from parsed.compile_children(context)
@@ -187,7 +187,7 @@ class Import(Command):
             module_id = try_run(self.args.strip(), parsed, eval, context)
         [(wline, line)] = self.expect(parsed, 1, parsed.compile_children(context))
         import_extracted = extract_import(line)
-        if not import_extracted: raise CommandException.for_parsed(parsed, f"Unsupported import line: {line}")
+        if not import_extracted: raise CommandError.for_parsed(parsed, f"Unsupported import line: {line}")
         nindent, module = import_extracted
         yield from context['import'](parsed, nindent, module, context, module_id=module_id)
 

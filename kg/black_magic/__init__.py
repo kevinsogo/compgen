@@ -8,7 +8,7 @@ from kg.iutils import *
 from .commands import *
 from .exceptions import *
 
-class ParseException(CompileException): ...
+class ParseError(CompileError): ...
 
 
 class Directive(Enum):
@@ -67,7 +67,7 @@ class Parsed:
         try:
             self.command = get_command(command)
         except ValueError as exc:
-            raise ParseException(module_loc, lineno, "Unable to parse command") from exc
+            raise ParseError(module_loc, lineno, "Unable to parse command") from exc
         del command
 
         # collect children, until closing line (which must exist)
@@ -77,7 +77,7 @@ class Parsed:
                 try:
                     lineno, line = next(lines)
                 except StopIteration as exc:
-                    raise ParseException(module_loc, lineno, "Consumed all lines before parsing everything. Bracket mismatch.")
+                    raise ParseError(module_loc, lineno, "Consumed all lines before parsing everything. Bracket mismatch.")
 
                 pattern, match, directive, message = get_directive_type(line)
                 if directive == Directive.KEEP:
@@ -99,7 +99,7 @@ class Parsed:
                     lineno = p.end_lineno
                     yield p
                 elif directive == Directive.BAD:
-                    raise ParseException(module_loc, lineno, f"{message} ... {line}")
+                    raise ParseError(module_loc, lineno, f"{message} ... {line}")
                 elif directive == Directive.COULD_BE_BAD:
                     warn_print(f"[{module_loc} line {lineno}] WARNING: {message} ... {line}", file=stderr)
                     yield line
@@ -129,7 +129,7 @@ def parse_lines(lines, module_loc):
     parsed = Parsed('begin', elines, module_loc, lineno=1)
     try:
         lineno, line = next(elines)
-        raise ParseException(module_loc, +lineno, "Parsed only a prefix. Bracket mismatch.")
+        raise ParseError(module_loc, +lineno, "Parsed only a prefix. Bracket mismatch.")
     except StopIteration:
         return parsed
 

@@ -4,7 +4,7 @@ from sys import stderr
 
 from .utils import * ### @import
 
-class GeneratorException(Exception): ...
+class GeneratorError(Exception): ...
 
 @listify
 def group_into(v, seq):
@@ -107,7 +107,7 @@ class DistribCase:
     def __getitem__(self, index):
         def get(rand, *args):
             groups = self.lazy(rand, *args)
-            if not (0 <= index < len(groups)): raise GeneratorException(f"Invalid index: {index} out of {len(groups)} groups")
+            if not (0 <= index < len(groups)): raise GeneratorError(f"Invalid index: {index} out of {len(groups)} groups")
             return self.realize(groups[index])
         return get
 
@@ -156,7 +156,7 @@ def write_to_files(print_to_file, make, filenames, *args, validate=None):
         try:
             filename = next(filenames)
         except StopIteration:
-            raise GeneratorException(f"Not enough files! Need more than {index}")
+            raise GeneratorError(f"Not enough files! Need more than {index}")
         print("GENERATOR Writing to", filename, file=stderr) ### @if False
         with open(filename, 'w') as file:
             _write_with_validate(print_to_file, file, case, validate=validate)
