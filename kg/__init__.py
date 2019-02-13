@@ -200,8 +200,8 @@ gen_p.add_argument('-l', '--loc', default='.', help='location of files/package (
 gen_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
 gen_p.add_argument('-i', '--input', help='input file pattern')
 gen_p.add_argument('-o', '--output', help='output file pattern')
-gen_p.add_argument('-c', '--command', nargs='+', help='solution command')
-gen_p.add_argument('-f', '--file', help='solution file')
+gen_p.add_argument('-c', '--command', nargs='+', help='solution/data_maker command')
+gen_p.add_argument('-f', '--file', help='solution/data_maker file')
 gen_p.add_argument('-jc', '--judge-command', nargs='+', help='judge command')
 gen_p.add_argument('-jf', '--judge-file', help='judge file')
 
@@ -211,17 +211,22 @@ def kg_gen(format_, args):
     format_ = get_format(args, read='i', write='o')
     details = Details.from_format_loc(args.format, args.details, relpath=args.loc)
 
-    solution = Program.from_args(args.file, args.command) or details.judge_data_maker
+    judge_data_maker = Program.from_args(args.file, args.command)
+    model_solution = None
+    if not judge_data_maker:
+        model_solution = details.model_solution
+        judge_data_maker = details.judge_data_maker
     judge = Program.from_args(args.judge_file, args.judge_command) or details.checker
 
-    generate_outputs(format_, solution, details.model_solution, judge)
-
-def generate_outputs(format_, data_maker, model_solution, judge=None):
-    if not data_maker: raise CommandException("Missing solution")
     if not judge: raise CommandException("Missing judge")
+
+    generate_outputs(format_, judge_data_maker, model_solution, judge=judge)
+
+def generate_outputs(format_, data_maker, model_solution, *, judge=None):
+    if not data_maker: raise CommandException("Missing solution")
     data_maker.do_compile()
     if judge: judge.do_compile()
-    if model_solution != data_maker: model_solution.do_compile()
+    if model_solution and model_solution != data_maker: model_solution.do_compile()
     for input_, output_ in format_.thru_io():
         touch_container(output_)
         with open(input_) as inp:
@@ -233,7 +238,7 @@ def generate_outputs(format_, data_maker, model_solution, judge=None):
                     err_print(f"The data_maker raised an error for {input_}", file=stderr)
                     raise CommandException(f"The data_maker raised an error for {input_}") from cpe
 
-        if judge:
+        if judge and model_solution:
             @contextlib.contextmanager
             def model_output():
                 if model_solution == data_maker:
@@ -459,7 +464,7 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
         decor_print('~~ '*14)
         beginfo_print('MAKING OUTPUTS...' + ("WITH CHECKER..." if checks else 'WITHOUT CHECKER'))
         fmt = get_format_from_type(format_, loc, read='i', write='o')
-        generate_outputs(fmt, details.judge_data_maker, details.model_solution, details.checker if checks else None)
+        generate_outputs(fmt, details.judge_data_maker, details.model_solution, judge=details.checker if checks else None)
 
         succ_print('DONE MAKING OUTPUTS.')
 
