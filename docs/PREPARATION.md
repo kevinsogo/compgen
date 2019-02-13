@@ -50,7 +50,7 @@ The metadata about the problem can be found in `details.json`. It looks like thi
 ```json
 {
     "title": "Find the Sum Extreme",
-    "model_solution": ["sol.cpp", "g++ {filename} -o sol", "./sol"],
+    "model_solution": ["sol.cpp", "g++ {filename} -o sol.exe", "./sol.exe"],
     "validator": "validator.py",
     "testscript": "testscript",
     "generators": [
@@ -95,7 +95,7 @@ def print_to_file(file, cases):
     print(len(cases), file=file)
     for arr in cases:
         print(len(arr), file=file)
-        print(*arr, sep=' ', file=file)
+        print(*arr, file=file)
 ```
 
 This is not strictly required&mdash;indeed, you may remove it altogether from `details.json`&mdash;but is recommended anyway since it is good practice. For example, it makes it easier if you want to change the input/output format; you don't have to update all generators.
@@ -303,7 +303,11 @@ This is similar to Polygon's testscript system, though more limited since you ha
 
 # Custom checkers
 
-The most general template for custom checkers is the following:
+A checker grades the output of a solution. Most of the time, a `diff` check, comparing the output file and the judge file, is enough, but there are times when a custom checker is needed, e.g., for problems with multiple outputs.
+
+If your problem doesn't require a custom checker, you may skip this section for now and learn it later.
+
+The general template for custom checkers is the following:
 
 ```python
 from kg.checkers import * ### @import

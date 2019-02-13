@@ -196,7 +196,7 @@ Say you have created a bunch of problems and you would now like to easily upload
 
 2. Run `kg kontest pc2 path/to/contest.json`. Here, `pc2` indicates the format. For now, only `pc2` is supported, but this may change in the future.  
 
-    In the case of `pc2`, this will create a folder containing (among other things) `contest.yaml`, which can be loaded by PC2. It also contains randomly generated passwords for all accounts.  
+    In the case of `pc2`, this will create a folder in `kgkompiled` containing (among other things) `contest.yaml`, which can be loaded by PC2. It also contains randomly generated passwords for all accounts.  
 
 More details can be found [here](docs/CONTEST.md), which includes additional things you need to do, like configuring settings that can't be set automatically due to technical limitations (mostly theirs).  
 

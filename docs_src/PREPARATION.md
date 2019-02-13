@@ -190,7 +190,11 @@ This is similar to Polygon's testscript system, though more limited since you ha
 
 # Custom checkers
 
-The most general template for custom checkers is the following:
+A checker grades the output of a solution. Most of the time, a `diff` check, comparing the output file and the judge file, is enough, but there are times when a custom checker is needed, e.g., for problems with multiple outputs.
+
+If your problem doesn't require a custom checker, you may skip this section for now and learn it later.
+
+The general template for custom checkers is the following:
 
 ```python
 {{ templates/checker_generic_template.py }}

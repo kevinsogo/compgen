@@ -237,7 +237,7 @@ _hr_verdict_name = {
 
 ### @@if format == 'hr' {
 @_register_platform('hr')
-def _check_hr(checker, t_obj, r_obj, print_message=False):
+def _check_hr(checker, t_obj, r_obj, *, print_message=False):
     if t_obj.testcase_signal:
         message = ""
         r_obj.result = False

@@ -8,6 +8,8 @@
 
 # Others 
 
+- Prefix all generators (templates, examples) with `gen_`. Would be a nice convention to have.
+
 - Allow running several solutions at once.  
 
 - Use Jinja templating for makedocs, seating and passwods

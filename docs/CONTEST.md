@@ -117,7 +117,7 @@ There are a couple of other options that I couldn't find a way to set automatica
 
 ## Practice contest
 
-If you wish to hold a practice round, create another `contest.json` file (say `practice_contest.json`) and perform the same steps above. Give it a different contest code. You may load it under a different *Profile*.
+If you wish to hold a practice round, create another `contest.json` file (say `practice_contest.json`) and perform the same steps above. Give it a different contest code. (You may load it under a different PC2 *Profile*.)
 
 
 
