@@ -25,6 +25,11 @@ class XRandom(Random):
         x = list(x)
         self.shuffle(x)
         return x
+    def randinterval(self, a, b):
+        while True:
+            x = self.randint(a, b)
+            y = self.randint(a, b)
+            if x <= y: return x, y
 
 
 # some hash on a sequence of integers. Don't change this! This is used by seed computation based on command line args.  

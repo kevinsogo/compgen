@@ -25,4 +25,4 @@ setup(name='KompGen',
         'termcolor',
         'Jinja2',
     ],
- )
+)

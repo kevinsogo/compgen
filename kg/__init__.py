@@ -9,6 +9,7 @@ from string import ascii_letters, ascii_uppercase, digits
 from subprocess import PIPE, CalledProcessError
 from sys import *
 import argparse
+import contextlib
 import os.path
 import re
 import tempfile
@@ -213,13 +214,14 @@ def kg_gen(format_, args):
     solution = Program.from_args(args.file, args.command) or details.judge_data_maker
     judge = Program.from_args(args.judge_file, args.judge_command) or details.checker
 
-    generate_outputs(format_, solution, judge, details.model_solution)
+    generate_outputs(format_, solution, details.model_solution, judge)
 
-def generate_outputs(format_, data_maker, judge, model_solution):
+def generate_outputs(format_, data_maker, model_solution, judge=None):
     if not data_maker: raise CommandException("Missing solution")
     if not judge: raise CommandException("Missing judge")
     data_maker.do_compile()
-    judge.do_compile()
+    if judge: judge.do_compile()
+    if model_solution != data_maker: model_solution.do_compile()
     for input_, output_ in format_.thru_io():
         touch_container(output_)
         with open(input_) as inp:
@@ -229,15 +231,29 @@ def generate_outputs(format_, data_maker, judge, model_solution):
                     data_maker.do_run(stdin=inp, stdout=outp, time=True)
                 except CalledProcessError as cpe:
                     err_print(f"The data_maker raised an error for {input_}", file=stderr)
-                    exit(cpe.returncode)
+                    raise CommandException(f"The data_maker raised an error for {input_}") from cpe
 
-        # check with judge if they are the same
-        if model_solution == data_maker:
-            try:
-                judge.do_run(input_, output_, output_)
-            except CalledProcessError as cpe:
-                err_print(f"The judge did not accept {output_}", file=stderr)
-                exit(cpe.returncode)
+        if judge:
+            @contextlib.contextmanager
+            def model_output():
+                if model_solution == data_maker:
+                    yield output_
+                else:
+                    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                        info_print(f"Running model solution on {input_}")
+                        with open(input_) as inp:
+                            try:
+                                model_solution.do_run(stdin=inp, stdout=tmp, time=True)
+                            except CalledProcessError as cpe:
+                                err_print(f"The model_solution raised an error for {input_}", file=stderr)
+                                raise CommandException(f"The model_solution raised an error for {input_}") from cpe
+                        yield tmp.name
+            with model_output() as model_out:
+                try:
+                    judge.do_run(input_, model_out, output_)
+                except CalledProcessError as cpe:
+                    err_print(f"The judge did not accept {output_}", file=stderr)
+                    raise CommandException(f"The judge did not accept {output_}") from cpe
 
 
 
@@ -393,8 +409,8 @@ make_p = subparsers.add_parser('make', help='create all test data and validate.'
 make_p.add_argument('makes', nargs='+', help='what to make. (all, inputs, etc.)')
 make_p.add_argument('-l', '--loc', default='.', help='location of files/package')
 make_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
-make_p.add_argument('--validation', action='store_true', help="Validate the input files against the validators")
-make_p.add_argument('--checks', action='store_true', help="Check the output file against the checker")
+make_p.add_argument('-V', '--validation', action='store_true', help="Validate the input files against the validators")
+make_p.add_argument('-C', '--checks', action='store_true', help="Check the output file against the checker")
 
 @set_handler(make_p)
 def _kg_make(format_, args):
@@ -443,7 +459,7 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
         decor_print('~~ '*14)
         beginfo_print('MAKING OUTPUTS...' + ("WITH CHECKER..." if checks else 'WITHOUT CHECKER'))
         fmt = get_format_from_type(format_, loc, read='i', write='o')
-        generate_outputs(fmt, details.judge_data_maker, details.checker if checks else Program.noop(), details.model_solution)
+        generate_outputs(fmt, details.judge_data_maker, details.model_solution, details.checker if checks else None)
 
         succ_print('DONE MAKING OUTPUTS.')
 
@@ -875,7 +891,8 @@ def kg_contest(format_, args):
         for letter, problem_loc in zip(problem_letters(), contest.problems):
             details = Details.from_format_loc(format_, os.path.join(problem_loc, 'details.json'), relpath=problem_loc)
 
-            code = os.path.basename(problem_loc)
+            code_raw = os.path.basename(problem_loc)
+            code = ''.join(code_raw.split('._-')) # TODO check if this is necessary.
             if code in found_codes:
                 found_codes[code] += 1
                 code += str(found_codes[code])
@@ -900,6 +917,7 @@ def kg_contest(format_, args):
                 'problem_loc': problem_loc,
                 'details': details,
                 'letter': letter,
+                'problem_code_raw': code_raw,
                 'problem_code': code,
                 'title': details.title,
                 'letter_title': f'{letter}: {details.title}',

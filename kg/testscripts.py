@@ -36,12 +36,12 @@ def run_testscript(inputs, testscript, generators, *, relpath=None):
         raise TestScriptError(f"{filecount} files needed but only {len(files)} input files found.")
 
     got_files = set()
-    for gen, args, single, target, otarget in gens:
+    for gen, args, single, target, otarget, src_line in gens:
         if single:
             # single file, outputs to stdout
             assert 1 <= target <= filecount
             filename = files[target - 1]
-            print(info_text(f'[o={otarget} t={target}] GENERATING'), key_text(filename))
+            print(info_text(f'[o={otarget} t={target}] GENERATING'), key_text(filename), info_text(f'(from {repr(src_line)})'))
             touch_container(filename)
             gen.do_compile()
             with open(filename, 'w') as file:
@@ -50,7 +50,7 @@ def run_testscript(inputs, testscript, generators, *, relpath=None):
             yield filename
         else:
             # replace the first part
-            info_print(f'[o={otarget}] GENERATING MULTIPLE')
+            info_print(f'[o={otarget}] GENERATING MULTIPLE (from {repr(src_line)})')
             dupseq, *rargs = args
             dupseq = ':' + dupseq
             args = dupseq, *rargs
@@ -81,11 +81,6 @@ def run_testscript(inputs, testscript, generators, *, relpath=None):
                 yield tfile
 
     assert got_files == set(files)
-
-
-
-
-
 
 
 def parse_testscript(testscript, generators, *, relpath=None):
@@ -121,7 +116,7 @@ def parse_testscript(testscript, generators, *, relpath=None):
 
         def process():
             if target == '$':
-                later.append((gen, args))
+                later.append((gen, args, line))
                 return
 
             try:
@@ -130,7 +125,7 @@ def parse_testscript(testscript, generators, *, relpath=None):
                 ...
             else:
                 validate_target(index)
-                gens[index] = gen, args, True, index, target
+                gens[index] = gen, args, True, index, target, line
                 return
 
             if not (target.startswith('{') and target.endswith('}')):
@@ -143,15 +138,15 @@ def parse_testscript(testscript, generators, *, relpath=None):
             dupseq, *rargs = args
             if list(t_sequence(dupseq)) != indices:
                 raise TestScriptError(f"First argument of multifile generator must generate the same sequence as target. '{dupseq}' != '{target}'")
-            gens[min(indices)] = gen, args, False, indices, target
+            gens[min(indices)] = gen, args, False, indices, target, line
 
         process()
 
     # assign dollars
-    for gen, args in later:
+    for gen, args, src_line in later:
         index = mex()
         validate_target(index)
-        gens[index] = gen, args, True, index, '$'
+        gens[index] = gen, args, True, index, '$', src_line
 
     if not all(i == target for i, target in enumerate(sorted(found), 1)):
         raise TestScriptError("Some test files missing from the sequence. They must generate 1, 2, 3, ...")
