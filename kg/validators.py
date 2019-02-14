@@ -219,12 +219,13 @@ def save_on_label(func):
         return res
     return with_label
 
-class StrictStream(object):
+class StrictStream:
     def __init__(self, file):
         self.last = None
         self.file = file
         self._buff = deque()
         self._found = {}
+        super().__init__()
 
     def __getitem__(self, key):
         return self._found[key]

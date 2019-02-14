@@ -15,9 +15,10 @@ def _merge_dicts(d, *others):
     return d
 
 
-class ParseError(Exception): pass
-class WA(Exception): pass
-class Fail(Exception): pass
+class CheckerError(Exception): ...
+class ParseError(CheckerError): ...
+class WA(CheckerError): ...
+class Fail(CheckerError): ...
 
 
 class Verdict:
@@ -31,11 +32,10 @@ class Verdict:
     FAIL = "Checker failed" # deliberate failures, e.g. if the test data is detected as incorrect.
 
 
-class ChkStream(object):
-    def __init__(self, stream, type_, *, failwith=None):
+class ChkStream:
+    def __init__(self, stream, type_):
         self.type = type_
         self.base_stream = stream # file-like object
-        self.failwith = failwith
         if type_ == 'lines':
             def naive_iter():
                 for line in stream.readlines():
@@ -53,13 +53,7 @@ class ChkStream(object):
         super().__init__()
 
     def __next__(self):
-        try:
-            return next(self._seq)
-        except StopIteration:
-            if self.failwith:
-                raise self.failwith
-            else:
-                raise
+        return next(self._seq)
 
     def has_next(self):
         try:
@@ -86,7 +80,7 @@ class _SN:
     aggregate = 'aggregate'
     iterator = 'iterator'
 
-class Checker(object):
+class Checker:
     def __init__(self):
         self._vals = {}
         for name in [_SN.get_one_input,
@@ -124,9 +118,9 @@ class Checker(object):
         if not set(no_extra_chars) <= set(valid_fields): raise ValueError(f"Invalid no_extra_chars argument: {repr(no_extra_chars)}")
         def _set_checker(checker):
             def _checker(inp, outp, judgep, *args, **kwargs):
-                inp = ChkStream(inp, intype, failwith=Fail("Input file fully read but expected more"))
-                outp = ChkStream(outp, outtype, failwith=ParseError("Output file fully read but expected more"))
-                judgep = ChkStream(judgep, judgetype, failwith=Fail("Judge file fully read but expected more"))
+                inp = ChkStream(inp, intype)
+                outp = ChkStream(outp, outtype)
+                judgep = ChkStream(judgep, judgetype)
                 result = checker(inp, outp, judgep, *args, **kwargs)
                 if no_extra_chars:
                     if 'input' in no_extra_chars and inp.has_next(): raise Fail("Extra characters at the end of the input file!")
@@ -154,34 +148,50 @@ class Checker(object):
         get_output_from_input = self._vals[_SN.get_output_from_input]
         get_judge_data_from_input = self._vals[_SN.get_judge_data_from_input]
 
-        inp = get_one_input(input_file, **_merge_dicts({'exc': Fail}, kwargs))
-        outp = get_output_from_input(output_file, inp, **_merge_dicts({'exc': ParseError}, kwargs))
-        judgep = get_judge_data_from_input(judge_file, inp, **_merge_dicts({'exc': Fail}, kwargs))
+        inp = get_one_input(input_file, exc=Fail, **kwargs)
+        outp = get_output_from_input(output_file, inp, exc=ParseError, **kwargs)
+        judgep = get_judge_data_from_input(judge_file, inp, exc=Fail, **kwargs)
         return check_test_case(inp, outp, judgep, **kwargs)
 
     def _check_multi(self, check_test_case, input_f, output_f, judge_f, **kwargs):
         get_one_input = self._vals[_SN.get_one_input]
         get_output_from_input = self._vals[_SN.get_output_from_input]
         get_judge_data_from_input = self._vals[_SN.get_judge_data_from_input]
-        aggregate = self._vals.get(_SN.aggregate, minimum_score)
-        iterator = self._vals.get(_SN.iterator, iterate_with_casecount)
 
-        class It(object):
+        def catch_spec_as(exc):
+            def _catch(f):
+                @functools.wraps(f)
+                def _wrapped(*a, **kw):
+                    try:
+                        return f(*a, **kw)
+                    except StopIteration as st:
+                        raise exc from st
+                return _wrapped
+            return _catch
+
+        aggregate = catch_spec_as(Fail("aggregate function failed"))(self._vals.get(_SN.aggregate, minimum_score))
+        iterator = catch_spec_as(Fail("iterator function failed"))(self._vals.get(_SN.iterator, iterate_with_casecount))
+
+        class It:
             @staticmethod
+            @catch_spec_as(Fail("check_test_case failed"))
             def get_score(inp, outp, judgep, **kw):
-                return check_test_case(inp, outp, judgep, **_merge_dicts(kw, kwargs))
+                return check_test_case(inp, outp, judgep, **kw, **kwargs)
 
             @staticmethod
+            @catch_spec_as(Fail("Input file fully read but expected more"))
             def next_input(**kw):
-                return get_one_input(input_f, **_merge_dicts(kw, {'exc': Fail}, kwargs))
+                return get_one_input(input_f, **kw, exc=Fail, **kwargs)
 
             @staticmethod
+            @catch_spec_as(ParseError("Output file fully read but expected more"))
             def next_output(inp, **kw):
-                return get_output_from_input(output_f, inp, **_merge_dicts(kw, {'exc': ParseError}, kwargs))
+                return get_output_from_input(output_f, inp, **kw, exc=ParseError, **kwargs)
 
             @staticmethod
+            @catch_spec_as(Fail("Judge file fully read but expected more"))
             def next_judge_data(inp, **kw):
-                return get_judge_data_from_input(judge_f, inp, **_merge_dicts(kw, {'exc': Fail}, kwargs))
+                return get_judge_data_from_input(judge_f, inp, **kw, exc=Fail, **kwargs)
 
             input_file = input_f
             output_file = output_f
@@ -196,35 +206,28 @@ def _check_generic(checker, input_path, output_path, judge_path, **kwargs):
         return Verdict.RTE, 0.0, "The solution didn't return a 0 exit code (maybe... because EXITCODE.TXT exists)."
     ### @@}
 
-    kwargs.update({
-            'input_path': input_path,
-            'output_path': output_path,
-            'judge_path': judge_path,
-        })
+    kwargs.update({ 'input_path': input_path, 'output_path': output_path, 'judge_path': judge_path })
 
     def handle_exc_verdict(exc, verdict):
         if kwargs.get('verbose'): traceback.print_exc()
         return verdict, getattr(exc, 'score', 0.0), str(exc)
 
     try:
-        input_file = open(input_path)
-        output_file = open(output_path)
-        judge_file = open(judge_path)
+        input_file, output_file, judge_file = map(open, (input_path, output_path, judge_path))
     except Exception as exc:
         return handle_exc_verdict(exc, Verdict.EXC)
-    else:
-        with input_file, output_file, judge_file:
-            try:
-                score = checker(input_file, output_file, judge_file, **kwargs)
-                return Verdict.AC, score, ""
-            except ParseError as exc:
-                return handle_exc_verdict(exc, Verdict.PAE)
-            except WA as exc:
-                return handle_exc_verdict(exc, Verdict.WA)
-            except Fail as exc:
-                return handle_exc_verdict(exc, Verdict.FAIL)
-            except Exception as exc:
-                return handle_exc_verdict(exc, Verdict.EXC)
+    with input_file, output_file, judge_file:
+        try:
+            score = checker(input_file, output_file, judge_file, **kwargs)
+            return Verdict.AC, score, ""
+        except ParseError as exc:
+            return handle_exc_verdict(exc, Verdict.PAE)
+        except WA as exc:
+            return handle_exc_verdict(exc, Verdict.WA)
+        except Fail as exc:
+            return handle_exc_verdict(exc, Verdict.FAIL)
+        except Exception as exc:
+            return handle_exc_verdict(exc, Verdict.EXC)
 
 
 _platforms = {}
@@ -267,8 +270,7 @@ def _check_hr(checker, t_obj, r_obj, *, print_message=False):
         r_obj.result = verdict == Verdict.AC
         r_obj.message = _hr_verdict_name[verdict]
 
-    if print_message and message:
-        print(message, file=stderr)
+    if print_message and message: print(message, file=stderr)
 ### @@ }
 
 _polygon_rcode = {
@@ -328,8 +330,7 @@ def _check_local(checker, title='', file=stdout, help=None):
     tc_id = args.tc_id or ''
 
     if verbose:
-        if args.extra_args:
-            print(f"{tc_id:>2} Received extra args {args.extra_args}... ignoring them.", file=file)
+        if args.extra_args: print(f"{tc_id:>2} Received extra args {args.extra_args}... ignoring them.", file=file)
         print(f"{tc_id:>2} Checking the output...", file=file)
 
     verdict, score, message = _check_generic(checker,
