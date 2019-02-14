@@ -225,6 +225,8 @@ tests/
 
 This also means that the folders `tests/` and `kgkompiled/` may be freely deleted if you're trying to free up space. They can always be regenerated from the other files.
 
+Feel free to include/exclude other files depending on your needs.
+
 
 
 # Contributing

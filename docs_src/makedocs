@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
 
-
 from sys import stderr
 import os.path
 from glob import glob
 import re
 
+from kg.iutils import *
+
 here = os.path.dirname(os.path.abspath(__file__))
+
 
 
 template_suffix = '.md'
 
 goods = ['.py', '.java', '.cpp', '.md', '.json', 'testscript']
-print('only loading files with ending', goods)
+print(info_text('only loading files with ending'), key_text(goods))
 
 # replace
 def get_replacements():
@@ -22,7 +24,8 @@ def get_replacements():
             for pathname in sorted(glob(os.path.join(base, '*'))):
                 if os.path.isfile(pathname) and any(pathname.endswith(x) for x in goods):
                     with open(pathname) as f:
-                        yield re.compile(r'{{\s*' + os.path.join(example, os.path.basename(pathname)) + r'\s*}}'), f.read().strip('\n')
+                        yield (re.compile(r'{{\s*' + os.path.join(example, os.path.basename(pathname)) + r'\s*}}'),
+                               f.read().strip('\n'))
 
 
 replacements = list(get_replacements())
@@ -39,7 +42,7 @@ def get_templates():
 
 
 for location, target, rel_loc in get_templates():
-    print('COMPILING', location, 'TO', target)
+    info_print('COMPILING', location, 'TO', target)
     with open(location) as f:
         s = f.read()
 
@@ -66,7 +69,7 @@ for location, target, rel_loc in get_templates():
     for found in find_refs(s):
         ref = repr(found)
         if len(ref) > 30*2+3: ref = ref[:30] + '...' + ref[-30:]
-        print(f'WARNING: reference {ref} not found')
+        warn_print(f'WARNING: reference {ref} not found')
 
     with open(target, 'w') as f:
         print("<!-- NOTE TO CONTRIBUTORS: PLEASE DON'T EDIT THIS FILE. -->", file=f)

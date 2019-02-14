@@ -77,7 +77,8 @@ class Parsed:
                 try:
                     lineno, line = next(lines)
                 except StopIteration as exc:
-                    raise ParseError(module_loc, lineno, "Consumed all lines before parsing everything. Bracket mismatch.")
+                    raise ParseError(module_loc, lineno,
+                            "Consumed all lines before parsing everything. Bracket mismatch.")
 
                 pattern, match, directive, message = get_directive_type(line)
                 if directive == Directive.KEEP:
@@ -110,7 +111,7 @@ class Parsed:
 
         self.children = list(get_children())
         self.end_lineno = lineno
-        super(Parsed, self).__init__()
+        super().__init__()
 
     # TODO implement pretty_print again
 

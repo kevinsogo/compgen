@@ -18,7 +18,7 @@ class Interval:
     def __init__(self, l, r):
         self.l = l
         self.r = r
-        super(Interval, self).__init__()
+        super().__init__()
 
     def __and__(self, other):
         if not isinstance(other, Interval): raise TypeError(f"Cannot merge {self.__class__.__name__} with {other.__class__.__name__}")
@@ -46,7 +46,7 @@ class Bounds:
             for name, value in bounds.items():
                 self._attrs.append(name)
                 setattr(self, name, value)
-        super(Bounds, self).__init__()
+        super().__init__()
 
     def __and__(self, other):
         ''' Combine two Bounds objects together. Merges intervals for conflicting attributes.
@@ -164,7 +164,7 @@ class _GET:
 class GET(_GET):
     def __init__(self, label):
         self.label = label
-        super(GET, self).__init__()
+        super().__init__()
 
     def __call__(self, ss):
         return ss[self.label]
@@ -173,7 +173,7 @@ class _OP(_GET):
     def __init__(self, a, b):
         self.a = a
         self.b = b
-        super(_OP, self).__init__()
+        super().__init__()
 
 class _ADD(_OP):
     def __call__(g, ss): return ss._get(g.a)+ss._get(g.b)
@@ -250,16 +250,17 @@ class StrictStream(object):
         return self._buff[0]
 
     @save_on_label
-    def read_until(self, ends, *, charset=None, n=None, maxn=None, include_end=False, _called="token"):
+    def read_until(self, ends, *, charset=(), n=None, maxn=None, include_end=False, _called="token"):
         ends = set(ends)
         n = self._get(n)
         maxn = self._get(maxn)
         if maxn is None: maxn = float('inf')
         if maxn < 0: raise ValueError(f"maxn must be nonnegative: {maxn}")
-        if not isinstance(charset, set): charset = set(charset or ())
+        charset = set(charset)
         res = []
         while self._peek_char() not in ends:
-            if charset and self._peek_char() not in charset: raise StreamError(f"Invalid character for {_called} detected: {charname(self._peek_char())}")
+            if charset and self._peek_char() not in charset:
+                raise StreamError(f"Invalid character for {_called} detected: {charname(self._peek_char())}")
             res.append(self._next_char())
             if n is not None and len(res) > n: raise StreamError(f"Expected exactly {n} characters, got more.")
             if len(res) > maxn: raise StreamError(f"Took too many characters! Expected at most {maxn}")
@@ -268,12 +269,12 @@ class StrictStream(object):
         return ''.join(res)
 
     @save_on_label
-    def read_line(self, *, eof=False, charset=None, n=None, maxn=None, include_end=False):
-        return self.read_until([EOLN] + ([EOF] if eof else []), charset=charset, n=n, maxn=maxn, include_end=include_end, _called="line")
+    def read_line(self, *, eof=False, _called="line", **kwargs):
+        return self.read_until([EOLN] + ([EOF] if eof else []), _called=_called, **kwargs)
 
     @save_on_label
-    def read_token(self, regex=None, *, n=None, charset=None, maxn=None, other_ends=[], include_end=False, _called="token"): # optimize this. 
-        tok = self.read_until([EOF, ' ', '\t', EOLN] + other_ends, charset=charset, n=n, maxn=maxn, include_end=include_end, _called=_called)
+    def read_token(self, regex=None, *, other_ends=[], _called="token", **kwargs): # optimize this. 
+        tok = self.read_until([EOF, ' ', '\t', EOLN] + other_ends, _called=_called, **kwargs)
         if regex is not None and not re.match('^' + regex + '$', tok):
             raise StreamError(f"Expected token with regex {repr(regex)}, got {repr(tok)}")
         return tok
@@ -310,36 +311,24 @@ class StrictStream(object):
     # TODO call this 'expect_char' (or something. check testlib. don't necessarily follow), and make _next_char public
     @save_on_label
     def read_char(self, ch):
-        if self._next_char() != ch:
-            raise StreamError(f"Expected {charname(ch)}, got {charname(self.last)}")
+        if self._next_char() != ch: raise StreamError(f"Expected {charname(ch)}, got {charname(self.last)}")
 
     # convenience
-    def read_line_eoln(self, *a, **kw):
-        res = self.read_line(*a, **kw); self.read_eoln(); return res
-    def read_int_eoln(self, *a, **kw):
-        res = self.read_int(*a, **kw); self.read_eoln(); return res
-    def read_int_space(self, *a, **kw):
-        res = self.read_int(*a, **kw); self.read_space(); return res
-    def read_ints_eoln(self, *a, **kw):
-        res = self.read_ints(*a, **kw); self.read_eoln(); return res
-    def read_ints_space(self, *a, **kw):
-        res = self.read_ints(*a, **kw); self.read_space(); return res
-    def read_real_eoln(self, *a, **kw):
-        res = self.read_real(*a, **kw); self.read_eoln(); return res
-    def read_real_space(self, *a, **kw):
-        res = self.read_real(*a, **kw); self.read_space(); return res
-    def read_reals_eoln(self, *a, **kw):
-        res = self.read_reals(*a, **kw); self.read_eoln(); return res
-    def read_reals_space(self, *a, **kw):
-        res = self.read_reals(*a, **kw); self.read_space(); return res
-    def read_token_eoln(self, *a, **kw):
-        res = self.read_token(*a, **kw); self.read_eoln(); return res
-    def read_token_space(self, *a, **kw):
-        res = self.read_token(*a, **kw); self.read_space(); return res
-    def read_tokens_eoln(self, *a, **kw):
-        res = self.read_tokens(*a, **kw); self.read_eoln(); return res
-    def read_tokens_space(self, *a, **kw):
-        res = self.read_tokens(*a, **kw); self.read_space(); return res
+    def __getattr__(self, name):
+        if not name.startswith('read_'): return
+        for tail in ['_eoln', '_eof', '_space']:
+            if name.endswith(tail):
+                head = name[:-len(tail)]
+                break
+        else:
+            raise AttributeError
+        def convenience(self, *a, **kw):
+            res = getattr(self, head)(*a, **kw)
+            getattr(self, 'read' + tail)()
+            return res
+        convenience.__name__ = name
+        setattr(self.__class__, name, convenience)
+        return getattr(self, name)
 
     @property
     def read(self): return _Read(self)
@@ -350,46 +339,28 @@ class _Read:
         self.ss = ss
         self.parent = parent
         self.op = op
-        super(_Read, self).__init__()
+        super().__init__()
 
     def __iter__(self):
-        if self.parent:
-            yield from self.parent
-        if self.op:
-            yield from self.op()
+        if self.parent: yield from self.parent
+        if self.op: yield from self.op()
 
     def consume(self):
         return list(self)
 
     __call__ = consume
 
-    def line(self, *a, **kw):
-        def op(label=''): yield self.ss.read_line(*a, **_add_label(kw, label))
-        return _Read(self.ss, self, op)
+    def _make_chain(name):
+        def chain(self, *a, **kw):
+            def op(label=''): yield getattr(self.ss, 'read_' + name)(*a, **_add_label(kw, label))
+            return _Read(self.ss, self, op)
+        chain.__name__ = name
+        return chain
 
-    def int(self, *a, **kw):
-        def op(label=''): yield self.ss.read_int(*a, **_add_label(kw, label))
-        return _Read(self.ss, self, op)
+    for _chain in ['line', 'int', 'ints', 'real', 'reals', 'token', 'tokens']:
+        exec(f'{_chain} = _make_chain({repr(_chain)})') # evil hack for now
 
-    def ints(self, *a, **kw):
-        def op(label=''): yield self.ss.read_ints(*a, **_add_label(kw, label))
-        return _Read(self.ss, self, op)
-
-    def real(self, *a, **kw):
-        def op(label=''): yield self.ss.read_real(*a, **_add_label(kw, label))
-        return _Read(self.ss, self, op)
-
-    def reals(self, *a, **kw):
-        def op(label=''): yield self.ss.read_reals(*a, **_add_label(kw, label))
-        return _Read(self.ss, self, op)
-
-    def token(self, *a, **kw):
-        def op(label=''): yield self.ss.read_token(*a, **_add_label(kw, label))
-        return _Read(self.ss, self, op)
-
-    def tokens(self, *a, **kw):
-        def op(label=''): yield self.ss.read_tokens(*a, **_add_label(kw, label))
-        return _Read(self.ss, self, op)
+    del _make_chain, _chain
 
     def char(self, *a, **kw):
         def op():

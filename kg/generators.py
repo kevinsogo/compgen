@@ -67,7 +67,7 @@ class DistribCase:
         self.make = make
         self.distribute = distribute
         self.single_case = single_case
-        super(DistribCase, self).__init__()
+        super().__init__()
 
     def lazy(self, rand, *args):
         casemakers = []

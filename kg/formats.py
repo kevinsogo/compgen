@@ -12,14 +12,16 @@ class InferError(Exception): ...
 class FormatError(Exception): ...
 
 def _check_simple(x, name):
-    if any(r'\*' in part for part in os.path.split(x)): raise FormatError(f"Invalid {name} pattern: {x} ... cannot handle patterns with {invalid}")
+    if any(r'\*' in part for part in os.path.split(x)):
+        raise FormatError(f"Invalid {name} pattern: {x} ... cannot handle patterns with {invalid}")
 
 class Format:
     def __init__(self, inputg=None, outputg=None, read='', write=''):
         if not read and not write: raise FormatError("read and write modes cannot both be empty")
         if not(set(read) <= set('io')): raise FormatError(f"Unknown read mode: {read}")
         if not(set(write) <= set('io')): raise FormatError(f"Unknown write mode: {write}")
-        if set(read) & set(write): raise FormatError(f"You cannot read and write at the same time: {''.join(sorted(set(read) & set(write)))}")
+        if set(read) & set(write):
+            raise FormatError(f"You cannot read and write at the same time: {''.join(sorted(set(read) & set(write)))}")
 
         self._checked = False
         self._i_re = None
@@ -34,7 +36,8 @@ class Format:
         self.o_to_i = {}
 
         if self.inputs and self.inputs == self.outputs:
-            raise FormatError(f"Invalid patterns: {repr(inputg or '')} {repr(outputg or '')} ... They match the same files.")
+            raise FormatError(f"Invalid patterns: {repr(inputg or '')} {repr(outputg or '')} "
+                    "... They match the same files.")
 
         # clean up outputs.
 
@@ -49,7 +52,8 @@ class Format:
         if len(self.inputs) != len(self.outputs) and read and write:
 
             if self.outputs and len(self.inputs) != len(self.outputs):
-                warn_print(f"Warning: cannot match files {inputg} to corresponding files {outputg} (unequal number of matched files). Attempt to write anyway? [y/N]", file=stderr, end=' ')
+                warn_print(f"Warning: cannot match files {inputg} to corresponding files {outputg} "
+                        "(unequal number of matched files). Attempt to write anyway? [y/N]", file=stderr, end=' ')
                 if input() == 'y':
                     if 'i' in read:
                         assert (read, write) == ('i', 'o')
@@ -74,10 +78,12 @@ class Format:
 
 
         if self.inputs & self.outputs:
-            raise FormatError(f"Invalid patterns: {repr(inputg or '')} {repr(outputg or '')} ... Some files match both.")
+            raise FormatError(f"Invalid patterns: {repr(inputg or '')} {repr(outputg or '')} ... "
+                    "Some files match both.")
 
         if set(read) == set('io') and len(self.inputs) != len(self.outputs):
-            raise FormatError(f"Invalid patterns: {repr(inputg or '')} {repr(outputg or '')} ... unequal number of files matched.")
+            raise FormatError(f"Invalid patterns: {repr(inputg or '')} {repr(outputg or '')} ... "
+                    "unequal number of files matched.")
 
         if read and set(read + write) == set('io'):
             # now, need to match
@@ -119,7 +125,7 @@ class Format:
             assert set(self.o_to_i) == set(self.i_to_o.values()) == self.outputs
             assert set(self.i_to_o) == set(self.o_to_i.values()) == self.inputs
 
-        super(Format, self).__init__()
+        super().__init__()
 
     def _infer_parts(self, g, _re, f):
         if _re is None: raise InferError("Cannot infer: missing pattern.")
@@ -138,7 +144,9 @@ class Format:
     def _join_parts(self, pat, *p):
         if pat is None: raise InferError("Cannot join: missing pattern.")
         parts = pat.split('*')
-        if len(parts) != len(p) + 1: raise InferError(f"Cannot perform inference: unequal number of '*' parts in {self.inputg} and {self.outputg}.")
+        if len(parts) != len(p) + 1:
+            raise InferError("Cannot perform inference: unequal number of '*' parts in "
+                    f"{self.inputg} and {self.outputg}.")
         return ''.join(a + b for a, b in zip(parts, list(p) + ['']))
 
     def _join_iparts(self, *p):
@@ -211,7 +219,7 @@ def set_format(short, *names):
 @set_format('hr', 'hackerrank')
 class HRFormat(Format):
     def __init__(self, loc='.', read='', write=''):
-        super(HRFormat, self).__init__(
+        super().__init__(
                 os.path.join(loc, 'input', 'input*.txt'),
                 os.path.join(loc, 'output', 'output*.txt'),
             read=read, write=write)
@@ -230,7 +238,7 @@ class HRFormat(Format):
 @set_format('pg', 'polygon')
 class PGFormat(Format):
     def __init__(self, loc='.', read='', write=''):
-        super(PGFormat, self).__init__(
+        super().__init__(
                 os.path.join(loc, 'tests', '*'),
                 os.path.join(loc, 'tests', '*.a'),
             read=read, write=write)
@@ -248,7 +256,7 @@ class PGFormat(Format):
 @set_format('kg', 'kompgen')
 class KGFormat(Format):
     def __init__(self, loc='.', read='', write='', tests_folder='tests'):
-        super(KGFormat, self).__init__(
+        super().__init__(
                 os.path.join(loc, tests_folder, '*.in'),
                 os.path.join(loc, tests_folder, '*.ans'),
             read=read, write=write)

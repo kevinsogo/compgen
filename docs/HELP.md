@@ -16,6 +16,10 @@
 
 - Allow running several solutions at once.  
 
+- Rename HELP.md.
+
+- Use `isclose` for abs and rel grading. remove abs_error and abs_rel_error
+
 - Use `os.path.normcase` (or something similar) on filenames parsed from details.json and similar places, so it could be interpreted properly in the correct OS.
 
 - Use Jinja templating for makedocs, seating and passwods
@@ -94,7 +98,6 @@
 
     - A lot of the scripts also rely on Ubuntu command-y things.  
 
-
 # To consider  
 
 This includes some disorganized ideas, TODOs, notes...
@@ -102,6 +105,16 @@ This includes some disorganized ideas, TODOs, notes...
 - Use gitlab's "Issues" feature and write these things there instead.  
 
 - Add `### @@ if False { ... }` around bulky docstrings.
+
+- pass stuff via default values, like:
+
+```
+@new_case
+def make(rand, x=x):
+    ...
+```
+
+new_case kwargs can still be passed as info.
 
 - Interactors/interactive tasks. (Supported everywhere except HackerRank.) (maybe it's now time for me to learn Python coroutines...)
 

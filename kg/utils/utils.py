@@ -21,7 +21,7 @@ def ensure(condition, message=None, exc=Exception):
             ...
         if isinstance(message, str):
             message = exc(message)
-        raise message or exc()
+        raise message or exc
 
 
 def apply_after(g, name=None):

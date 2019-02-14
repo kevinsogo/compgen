@@ -7,7 +7,7 @@ from random import randrange
 from shutil import copyfile
 from string import ascii_letters, ascii_uppercase, digits
 from subprocess import PIPE, CalledProcessError
-from sys import *
+from sys import stdin, stdout, stderr
 import argparse
 import contextlib
 import os.path
@@ -54,9 +54,12 @@ subparsers.required = True
 ##########################################
 # convert one format to another
 
-convert_p = subparsers.add_parser('konvert', aliases=['convert'], help='Convert test data from one format to another')
-convert_p.add_argument('--from', nargs=2, help='source format and location', dest='fr', metavar=('FROM_FORMAT', 'FROM_FOLDER'), required=True)
-convert_p.add_argument('--to', nargs=2, help='destination format and location', metavar=('TO_FORMAT', 'TO_FOLDER'), required=True)
+convert_p = subparsers.add_parser('konvert', aliases=['convert'],
+                                             help='Convert test data from one format to another')
+convert_p.add_argument('--from', nargs=2, help='source format and location', dest='fr',
+                                 metavar=('FROM_FORMAT', 'FROM_FOLDER'), required=True)
+convert_p.add_argument('--to',   nargs=2, help='destination format and location',
+                                 metavar=('TO_FORMAT', 'TO_FOLDER'), required=True)
 
 @set_handler(convert_p)
 def kg_convert(format_, args):
@@ -88,7 +91,8 @@ def convert_formats(src, dest):
 ##########################################
 # convert one file sequence to another
 
-convert2_p = subparsers.add_parser('konvertsequence', aliases=['convertsequence'], help='Convert a file sequence with a certain pattern to another.')
+convert2_p = subparsers.add_parser('konvertsequence', aliases=['convertsequence'],
+                                                      help='Convert a file sequence with a certain pattern to another.')
 convert2_p.add_argument('--from', help='source file pattern', dest='fr', required=True)
 convert2_p.add_argument('--to', help='destination file pattern', required=True)
 
@@ -117,7 +121,8 @@ def convert_sequence(src, dest):
 ##########################################
 # detect subtasks
 
-subtasks_p = subparsers.add_parser('subtasks', help='detect the subtasks of input files. you need either a detector or a validator.')
+subtasks_p = subparsers.add_parser('subtasks', help='detect the subtasks of input files. '
+                                                    'you need either a detector or a validator.')
 subtasks_p.add_argument('-F', '--format', '--fmt', help='format of data')
 subtasks_p.add_argument('-l', '--loc', default='.', help='location to run commands on')
 subtasks_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
@@ -204,6 +209,7 @@ gen_p.add_argument('-c', '--command', nargs='+', help='solution/data_maker comma
 gen_p.add_argument('-f', '--file', help='solution/data_maker file')
 gen_p.add_argument('-jc', '--judge-command', nargs='+', help='judge command')
 gen_p.add_argument('-jf', '--judge-file', help='judge file')
+# TODO Add "clear matched" option, but explicitly ask if delete them?
 
 @set_handler(gen_p)
 def kg_gen(format_, args):
@@ -220,23 +226,22 @@ def kg_gen(format_, args):
 
     if not judge: raise CommandError("Missing judge")
 
-    generate_outputs(format_, judge_data_maker, model_solution, judge=judge)
+    generate_outputs(format_, judge_data_maker, model_solution=model_solution, judge=judge)
 
-def generate_outputs(format_, data_maker, model_solution, *, judge=None):
+def generate_outputs(format_, data_maker, *, model_solution=None, judge=None):
     if not data_maker: raise CommandError("Missing solution")
     data_maker.do_compile()
     if judge: judge.do_compile()
     if model_solution and model_solution != data_maker: model_solution.do_compile()
     for input_, output_ in format_.thru_io():
         touch_container(output_)
-        with open(input_) as inp:
-            with open(output_, 'w') as outp:
-                print(info_text('WRITING', input_, '-->'), key_text(output_))
-                try:
-                    data_maker.do_run(stdin=inp, stdout=outp, time=True)
-                except CalledProcessError as cpe:
-                    err_print(f"The data_maker raised an error for {input_}", file=stderr)
-                    raise CommandError(f"The data_maker raised an error for {input_}") from cpe
+        with open(input_) as inp, open(output_, 'w') as outp:
+            print(info_text('WRITING', input_, '-->'), key_text(output_))
+            try:
+                data_maker.do_run(stdin=inp, stdout=outp, time=True)
+            except CalledProcessError as cpe:
+                err_print(f"The data_maker raised an error for {input_}", file=stderr)
+                raise CommandError(f"The data_maker raised an error for {input_}") from cpe
 
         if judge and model_solution:
             @contextlib.contextmanager
@@ -278,7 +283,9 @@ test_p.add_argument('-c', '--command', nargs='+', help='solution command')
 test_p.add_argument('-f', '--file', help='solution file')
 test_p.add_argument('-jc', '--judge-command', nargs='+', help='judge command')
 test_p.add_argument('-jf', '--judge-file', help='judge file')
-test_p.add_argument('-js', '--judge-strict', action='store_true', help=argparse.SUPPRESS)# help="whether the checker is a bit too strict and doesn't work if extra arguments are given to it")
+test_p.add_argument('-js', '--judge-strict-args', action='store_true',
+                                                  help="whether the checker is strict and doesn't work if "
+                                                       "extra arguments are given to it")
 test_p.add_argument('-s', '--subtasks', default=[], nargs='+', help='list of subtasks')
 test_p.add_argument('-vc', '--validator-command', nargs='+', help='validator command, for subtask grading')
 test_p.add_argument('-vf', '--validator-file', help='validator file, for subtask grading')
@@ -311,7 +318,7 @@ def kg_test(format_, args):
                         return False
 
                 jargs = list(map(os.path.abspath, (input_, tmp.name, output_)))
-                if not args.judge_strict:
+                if not args.judge_strict_args:
                     jargs += ['-c', solution.filename, '-t', str(index), '-v']
 
                 return judge.do_run(*jargs, check=False).returncode == 0
@@ -332,8 +339,7 @@ def kg_test(format_, args):
     decor_print('.'*42)
     decor_print()
 
-    # also print fsk grades
-
+    # also print subtask grades
     if details.valid_subtasks:
         validator = Program.from_args(args.validator_file, args.validator_command)
         detector = None
@@ -342,8 +348,8 @@ def kg_test(format_, args):
             assert detector
             info_print("Found a validator.", end=' ')
         elif details.subtask_detector:
-            info_print(f"Found a detector in {details.source}.", end=' ')
             detector = details.subtask_detector
+            info_print(f"Found a detector in {details.source}.", end=' ')
         if detector:
             info_print('Proceeding with subtask grading...')
             # find subtask list
@@ -464,7 +470,10 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
         decor_print('~~ '*14)
         beginfo_print('MAKING OUTPUTS...' + ("WITH CHECKER..." if checks else 'WITHOUT CHECKER'))
         fmt = get_format_from_type(format_, loc, read='i', write='o')
-        generate_outputs(fmt, details.judge_data_maker, details.model_solution, judge=details.checker if checks else None)
+        generate_outputs(
+                fmt, details.judge_data_maker,
+                model_solution=details.model_solution,
+                judge=details.checker if checks else None)
 
         succ_print('DONE MAKING OUTPUTS.')
 
@@ -490,7 +499,8 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
                 raise CommandError("Missing subtask list")
 
             # iterate through inputs, run our detector against them
-            subtasks_of, all_subtasks, inputs = get_subtasks(subtasks, detector, get_format_from_type(format_, loc, read='i'), relpath=loc)
+            subtasks_of, all_subtasks, inputs = get_subtasks(
+                    subtasks, detector, get_format_from_type(format_, loc, read='i'), relpath=loc)
 
             info_print(f'WRITING TO {details.subtasks_files}')
             details.dump_subtasks_files(construct_subs_files(subtasks_of, inputs))
@@ -552,7 +562,8 @@ def kg_init(format_, args):
     prob = args.problemcode
 
     if not valid_problemcode.match(prob):
-        raise CommandError("No special characters allowed for the problem code, and the first and last characters must be a letter or a digit.")
+        raise CommandError("No special characters allowed for the problem code, "
+                "and the first and last characters must be a letter or a digit.")
 
     src = os.path.join(script_path, 'data', 'template')
     dest = os.path.join(args.loc, prob)
@@ -601,14 +612,17 @@ def kg_init(format_, args):
 ##########################################
 # compile source codes for upload
 
-compile_p = subparsers.add_parser('kompile', aliases=['compile'], help='preprocess python source codes to be ready to upload')
+compile_p = subparsers.add_parser('kompile', aliases=['compile'],
+                                             help='preprocess python source codes to be ready to upload')
 compile_p.add_argument('formats', nargs='*', help='contest formats to compile to (default ["hr", "pg", "pc2"])')
 compile_p.add_argument('-l', '--loc', default='.', help='location to run commands on')
 compile_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
-compile_p.add_argument('-S', '--shift-left', action='store_true', help=
-                                'compress the program by reducing the indentation size from 4 spaces to 1 tab. '
-                                'Use at your own risk. (4 is hardcoded because it is the indentation level of the "kg" module.')
-compile_p.add_argument('-C', '--compress', action='store_true', help='compress the program by actually compressing it. Use at your own risk.')
+compile_p.add_argument('-S', '--shift-left', action='store_true',
+                                help='compress the program by reducing the indentation size from 4 spaces to 1 tab. '
+                                'Use at your own risk. (4 is hardcoded because it is the indentation level of the '
+                                '"kg" module.')
+compile_p.add_argument('-C', '--compress', action='store_true',
+                                help='compress the program by actually compressing it. Use at your own risk.')
 # TODO add option for format to "compile" to. No need for now since there are only a few,
 #      but later on this will eat up a lot of memory otherwise.
 
@@ -651,7 +665,8 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
     kg_libs = set(locations)
 
     # current files
-    all_local = [details.validator, details.checker, details.model_solution] + details.generators + details.other_programs
+    all_local = [details.validator, details.checker, details.model_solution] + (
+            details.generators + details.other_programs)
 
     @memoize
     def get_module(filename):
@@ -673,7 +688,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
         with open(locations[module_id]) as f:
             for line in f:
                 if not line.endswith('\n'):
-                    warn_print('Warning:', locations[module_id], "doesn't end with a new line")
+                    warn_print('Warning:', locations[module_id], "doesn't end with a new line.")
                 yield line.rstrip('\n')
 
     def get_module_id(module, context):
@@ -713,7 +728,8 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
             target = os.path.join(dest_folder, os.path.basename(filename))
             targets[module] = target
             if target in found_targets:
-                warn_print(f"Warning: Files have the same destination file ({target}): {found_targets[targets]} and {filename}", file=stderr)
+                warn_print(f"Warning: Files have the same destination file ({target}): "
+                           f"{found_targets[targets]} and {filename}", file=stderr)
             found_targets[target] = filename
 
         for filename in natsorted(to_translate):
@@ -776,7 +792,8 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                     compress=compress,
                 ))
             with open(target, 'w') as f:
-                print("# NOTE: THIS SCRIPT IS MEANT TO BE PASTED TO HACKERRANK'S CUSTOM CHECKER, NOT RUN ON ITS OWN.", file=f)
+                print("# NOTE: THIS SCRIPT IS MEANT TO BE PASTED TO HACKERRANK'S CUSTOM CHECKER, NOT RUN ON ITS OWN.",
+                        file=f)
                 for line in lines:
                     assert not line.endswith('\n')
                     print(line, file=f)
@@ -825,6 +842,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
         succ_print(f'Done for {fmt} ({name})')
 
     decor_print('.. '*14)
+
 
 
 
@@ -910,7 +928,8 @@ def kg_contest(format_, args):
             if args.make_all:
                 info_print('Running "kg make all"...')
                 if details.valid_subtasks:
-                    warn_print("Warning: The problem has subtasks, but 'pc2' contests only support binary tasks. Ignoring subtasks.")
+                    warn_print("Warning: The problem has subtasks, but 'pc2' contests only support binary tasks. "
+                            "Ignoring subtasks.")
                 kg_make(['all'], problem_loc, format_, details)
 
             time_limit = int(round(details.time_limit))
@@ -970,9 +989,8 @@ def kg_contest(format_, args):
             source = os.path.join(contest_template, file)
             target = os.path.join(cdp_config, file)
             touch_container(target)
-            with open(source) as source_f:
-                with open(target, 'w') as target_f:
-                    target_f.write(source_f.read().format(**env))
+            with open(source) as source_f, open(target, 'w') as target_f:
+                target_f.write(source_f.read().format(**env))
 
         decor_print()
         decor_print('-'*42)
@@ -986,9 +1004,8 @@ def kg_contest(format_, args):
                 source = os.path.join(contest_template, os.path.basename(file))
                 target = os.path.join(cdp_config, code, file)
                 touch_container(target)
-                with open(source) as source_f:
-                    with open(target, 'w') as target_f:
-                        target_f.write(source_f.read().format(**penv))
+                with open(source) as source_f, open(target, 'w') as target_f:
+                    target_f.write(source_f.read().format(**penv))
 
             info_print("Copying model solution")
             source = penv['details'].model_solution.rel_filename
@@ -1001,7 +1018,8 @@ def kg_contest(format_, args):
             try:
                 src_format = KGFormat(penv['problem_loc'], read='io')
             except FormatException as exc:
-                raise CommandError(f"No tests found for '{penv['problem_loc']}'. Please run 'kg make all' to generate the files, or call 'kg kontest' with the '-m' option.") from exc
+                raise CommandError(f"No tests found for '{penv['problem_loc']}'. Please run 'kg make all' "
+                        "to generate the files, or call 'kg kontest' with the '-m' option.") from exc
             for data_loc in [
                     os.path.join(cdp_config, code, 'data', 'secret'),
                     os.path.join(ext_data, code),
@@ -1079,7 +1097,9 @@ def kg_passwords(format_, args):
             yield school_name, team_name, account, passwords[team_name]
 
     beginfo_print(f'Writing passwords for {len(team_names)} teams')
-    write_passwords(list(get_accounts()), 'kgkompiled', seedval=' or '.join({str(x) for x in [args.seed, seed] if x is not None}), code=args.code, title=args.title)
+    write_passwords(list(get_accounts()), 'kgkompiled',
+            seedval=' or '.join({str(x) for x in [args.seed, seed] if x is not None}),
+            code=args.code, title=args.title)
     succ_print(f'Passwords done')
 
 

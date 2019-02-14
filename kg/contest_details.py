@@ -78,14 +78,15 @@ class ContestDetails(object):
         # check for extra keys
         for key in self.details:
             if key not in valid_keys:
-                raise ValueError("Key {} invalid in contest.json. If you wish to add extra data, place it under 'comments' or 'extras'".format(repr(key)))
+                raise ValueError(f"Key {repr(key)} invalid in contest.json. If you wish to add extra data, "
+                        "place it under 'comments' or 'extras'")
 
-        super(ContestDetails, self).__init__()
+        super().__init__()
 
     @classmethod
     def get_team_schools(cls, teamf):
         if not isinstance(teamf, list):
-            raise ValueError("The team and school data must be a list: got {}".format(type(teamf)))
+            raise ValueError(f"The team and school data must be a list: got {type(teamf)}")
         team_schools = []
         schooli = 0
         for teamo in teamf:

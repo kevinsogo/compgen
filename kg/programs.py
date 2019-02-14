@@ -36,14 +36,16 @@ class Program:
         self.compile = env['compile'] = [p.format(**env) for p in compile_]
         self.run = [p.format(**env) for p in run]
         self._compiled = False
-        super(Program, self).__init__()
+        super().__init__()
 
     def do_compile(self, **kwargs):
         if self.compile:
+            info_print(f"Compiling {self.filename}", file=stderr)
             kwargs.setdefault('cwd', self.relpath)
             kwargs.setdefault('check', True)
             subprocess.run(self.compile, **kwargs)
         self._compiled = True
+        return self
 
     def do_run(self, *args, time=False, **kwargs):
         if not self._compiled: raise ExtProgramError("Compile the program first")
@@ -65,10 +67,19 @@ class Program:
         return os.path.splitext(os.path.basename(self.filename))[0] == abbr
 
     def __str__(self):
-        return f"<{self.__class__.__name__}\n    {self.filename}\n    {self.compile}\n    {self.run}\n>"
+        return (f"<{self.__class__.__name__}\n"
+                f"    {self.filename}\n"
+                f"    {self.compile}\n"
+                f"    {self.run}\n"
+                f"    at relpath {self.relpath}\n"
+                 ">")
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({repr(self.filename)}, {repr(self.compile)}, {repr(self.run)})"
+        return (f"{self.__class__.__name__}("
+                f"{repr(self.filename)}, "
+                f"{repr(self.compile)}, "
+                f"{repr(self.run)}, "
+                f"relpath={self.relpath})")
 
 
     @classmethod

@@ -72,14 +72,15 @@ def try_run(expr, parsed, command, context):
     try:
         return command(expr, context)
     except Exception as exc:
-        raise EvalError.for_parsed(parsed, f"An exception occurred while running {repr(expr)} via {command.__name__}: {str(exc)}") from exc
+        raise EvalError.for_parsed(parsed,
+                f"An exception occurred while running {repr(expr)} via {command.__name__}: {str(exc)}") from exc
 
 
 class Command:
     def __init__(self, name, args):
         self.name = name
         self.args = args
-        super(Command, self).__init__()
+        super().__init__()
 
     def expect(self, parsed, ct, lines):
         if ct < 0: raise ValueError(f"Invalid count to expect: {ct}")
@@ -87,9 +88,11 @@ class Command:
         for wline, line in lines:
             if line.strip():
                 found += 1
-                if found > ct: raise CompileError.for_parsed(parsed, f"Expected {ct} line(s) but found more inside @{self.name}")
+                if found > ct:
+                    raise CompileError.for_parsed(parsed, f"Expected {ct} line(s) but found more inside @{self.name}")
                 yield wline, line
-        if found < ct: raise CompileError.for_parsed(parsed, f"Expected {ct} line(s) but found {found} inside @{self.name}")
+        if found < ct:
+            raise CompileError.for_parsed(parsed, f"Expected {ct} line(s) but found {found} inside @{self.name}")
 
 
 @set_command('begin', strong={'begin': True})
@@ -131,7 +134,9 @@ class For(Command):
         # info_print('@for: evaluating', repr(expr))
         for value in try_run(expr, parsed, eval, context):
             if not is_tuple: value = [value]
-            if len(labels) != len(value): raise EvalError.for_parsed(parsed, f"Invalid assignment for @for: differing lengths: left {len(labels)} vs right {len(value)}")
+            if len(labels) != len(value):
+                raise EvalError.for_parsed(parsed,
+                        f"Invalid assignment for @for: differing lengths: left {len(labels)} vs right {len(value)}")
             for label, val in zip(labels, value):
                 context[label] = val
             yield from parsed.compile_children(context)

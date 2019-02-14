@@ -20,7 +20,8 @@ def parse_generator(name, *args, generators, relpath=None):
     else:
         progs = list(find_matches(name, generators))
         if len(progs) >= 2:
-            raise TestScriptError(f"{name} matches {len(progs)} programs! Please ensure that the base names of generators are unique.")
+            raise TestScriptError(f"{name} matches {len(progs)} programs! Please ensure that the base names of "
+                    "generators are unique.")
         elif not progs:
             raise TestScriptError(f"Couldn't find program {name} (from testscript). It should be in 'generators'")
         else:
@@ -41,11 +42,11 @@ def run_testscript(inputs, testscript, generators, *, relpath=None):
             # single file, outputs to stdout
             assert 1 <= target <= filecount
             filename = files[target - 1]
-            print(info_text(f'[o={otarget} t={target}] GENERATING'), key_text(filename), info_text(f'(from {repr(src_line)})'))
+            print(info_text(f'[o={otarget} t={target}] GENERATING'), key_text(filename),
+                    info_text(f'(from {repr(src_line)})'))
             touch_container(filename)
-            gen.do_compile()
             with open(filename, 'w') as file:
-                gen.do_run(*args, stdout=file)
+                gen.do_compile().do_run(*args, stdout=file)
             got_files.add(filename)
             yield filename
         else:
@@ -64,11 +65,9 @@ def run_testscript(inputs, testscript, generators, *, relpath=None):
                 if os.path.exists(sfile):
                     if not os.path.isfile(sfile):
                         raise TestScriptError(f"Temp file {sfile} exists and is not a file! Please clear {temp_folder}")
-                    else:
-                        os.remove(sfile)
+                    os.remove(sfile)
 
-            gen.do_compile()
-            gen.do_run(*args)
+            gen.do_compile().do_run(*args)
             assert len(sfilenames) == len(target)
             for sfile, t in zip(sfilenames, target):
                 assert 1 <= t <= len(files)
@@ -137,7 +136,8 @@ def parse_testscript(testscript, generators, *, relpath=None):
                 validate_target(index)
             dupseq, *rargs = args
             if list(t_sequence(dupseq)) != indices:
-                raise TestScriptError(f"First argument of multifile generator must generate the same sequence as target. '{dupseq}' != '{target}'")
+                raise TestScriptError("First argument of multifile generator must generate the same sequence as target. "
+                        f"'{dupseq}' != '{target}'")
             gens[min(indices)] = gen, args, False, indices, target, line
 
         process()

@@ -19,13 +19,13 @@ def create_passwords(accounts, *, seedval=None):
     PASSWORD_LETTERS = 'ABCDEFGHJKLMNOPRSTUVWXYZ'
     VOWELS = set('AEIOUY')
     BLACKLIST = set('''
-        yak yac pek pec ass fuc fuk fuq god gad omg not qum qoq qoc qok coq koq kik utn fux fck coc cok coq kox koc kok koq cac
-        cak caq kac kak kaq pac bad lus pak ded dic die kil dik diq dix dck pns psy fag fgt ngr nig cnt knt sht dsh twt bch cum
-        clt kum klt suc suk suq sck lic lik liq lck jiz jzz gay gey gei gai vag vgn sjv fap prn jew joo gvr pus pis pss snm tit
-        fku fcu fqu hor slt jap wop kik kyk kyc kyq dyk dyq dyc kkk jyz prk prc prq mic mik miq myc myk myq guc guk guq giz gzz
-        sex sxx sxi sxe sxy xxx wac wak waq wck pot thc vaj vjn nut std lsd poo azn pcp dmn orl anl ans muf mff phk phc phq xtc
-        tok toc toq mlf rac rak raq rck sac sak saq pms nad ndz nds wtf sol sob fob sfu abu alh wag gag ggo pta pot tot put tut
-        tet naz nzi xex cex shi xxi fak fac
+        yak yac pek pec ass fuc fuk fuq god gad omg not qum qoq qoc qok coq koq kik utn fux fck coc cok coq kox koc
+        kok koq cac cak caq kac kak kaq pac bad lus pak ded dic die kil dik diq dix dck pns psy fag fgt ngr nig cnt
+        knt sht dsh twt bch cum clt kum klt suc suk suq sck lic lik liq lck jiz jzz gay gey gei gai vag vgn sjv fap
+        prn jew joo gvr pus pis pss snm tit fku fcu fqu hor slt jap wop kik kyk kyc kyq dyk dyq dyc kkk jyz prk prc
+        prq mic mik miq myc myk myq guc guk guq giz gzz sex sxx sxi sxe sxy xxx wac wak waq wck pot thc vaj vjn nut
+        std lsd poo azn pcp dmn orl anl ans muf mff phk phc phq xtc tok toc toq mlf rac rak raq rck sac sak saq pms
+        nad ndz nds wtf sol sob fob sfu abu alh wag gag ggo pta pot tot put tut tet naz nzi xex cex shi xxi fak fac
     '''.upper().strip().split())
     if seedval is None: seedval = randrange(10**6)
 
@@ -48,13 +48,15 @@ def write_passwords_format(cont, format_, *, seedval=None, dest='.'):
     if format_ != 'pc2':
         raise PasswordError(f"Unsupported format: {format_}")
 
-    accounts = [(key, account) for key in ['leaderboards', 'admins', 'judges', 'teams', 'feeders'] for account in getattr(cont, key)]
+    accounts = [(key, account)
+            for key in ['leaderboards', 'admins', 'judges', 'teams', 'feeders'] for account in getattr(cont, key)]
     passwords, seed = create_passwords(accounts, seedval=seedval)
 
     if format_ == 'pc2':
         def get_rows():
             for row in [
-                ('site', 'account', 'displayname', 'password', 'group', 'permdisplay', 'permlogin', 'externalid', 'alias', 'permpassword'),
+                    ('site', 'account', 'displayname', 'password', 'group', 'permdisplay', 'permlogin', 'externalid',
+                    'alias', 'permpassword'),
             ]:
                 yield row, None
 
@@ -63,28 +65,32 @@ def write_passwords_format(cont, format_, *, seedval=None, dest='.'):
                 account = f'scoreboard{idx}'
                 password = passwords['leaderboards', scoreboard]
                 type_ = '[Scoreboard]'
-                yield ('1', account, display, password, '', 'false', 'true', str(1000 + idx), '', 'true'), (type_, display, account, password)
+                yield (('1', account, display, password, '', 'false', 'true', str(1000 + idx), '', 'true'),
+                        (type_, display, account, password))
 
             for idx, admin in enumerate(cont.admins, 1):
                 display = admin
                 account = f'administrator{idx}'
                 password = passwords['admins', admin]
                 type_ = '[Administrator]'
-                yield ('1', account, display, password, '', 'false', 'true', str(1000 + idx), '', 'true'), (type_, display, account, password)
+                yield (('1', account, display, password, '', 'false', 'true', str(1000 + idx), '', 'true'),
+                        (type_, display, account, password))
 
             for idx, judge in enumerate(cont.judges, 1):
                 display = 'Judge ' + judge
                 account = f'judge{idx}'
                 password = passwords['judges', judge]
                 type_ = '[Judge]'
-                yield ('1', account, display, password, '', 'false', 'true', str(1000 + idx), '', 'false'), (type_, display, account, password)
+                yield (('1', account, display, password, '', 'false', 'true', str(1000 + idx), '', 'false'),
+                        (type_, display, account, password))
 
             for idx, feeder in enumerate(cont.feeders, 1):
                 display = feeder
                 account = f'feeder{idx}'
                 password = passwords['feeders', feeder]
                 type_ = '[Feeder]'
-                yield ('1', account, display, password, '', 'false', 'true', str(1000 + idx), '', 'true'), (type_, display, account, password)
+                yield (('1', account, display, password, '', 'false', 'true', str(1000 + idx), '', 'true'),
+                        (type_, display, account, password))
             
             def team_schools():
                 for ts in cont.team_schools:
@@ -96,7 +102,8 @@ def write_passwords_format(cont, format_, *, seedval=None, dest='.'):
                 account = f'team{idx}'
                 password = passwords['teams', team_name]
                 type_= school_name
-                yield ('1', account, display, password, '', 'true', 'true', str(1000 + idx), '', 'false'), (type_, display, account, password)
+                yield (('1', account, display, password, '', 'true', 'true', str(1000 + idx), '', 'false'),
+                        (type_, display, account, password))
 
         rows = []
         passrows = []
@@ -109,10 +116,13 @@ def write_passwords_format(cont, format_, *, seedval=None, dest='.'):
         info_print("Writing to", filename, file=stderr)
         with io.open(filename, 'w', encoding='utf-8') as f:
             for row in rows:
-                if any(set('\t\n') & set(part) for part in row): raise PasswordError("Only spaces allowed as whitespace in display names.")
+                if any(set('\t\n') & set(part) for part in row):
+                    raise PasswordError("Only spaces allowed as whitespace in display names.")
                 print(u'\t'.join(row), file=f)
 
-    write_passwords(passrows, dest=dest, seedval=' or '.join({str(x) for x in [seedval, seed] if x is not None}), code=cont.code, title=cont.title)
+    write_passwords(passrows,
+            seedval=' or '.join({str(x) for x in [seedval, seed] if x is not None}),
+            dest=dest, code=cont.code, title=cont.title)
 
 def write_passwords(accounts, *, dest='.', **context):
     logins = [login for type_, display, login, password in accounts]

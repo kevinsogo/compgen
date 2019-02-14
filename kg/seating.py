@@ -26,7 +26,7 @@ class Seating:
     def __init__(self, seating, *constraints):
         self.constraints = constraints
         self.seating = seating
-        super(Seating, self).__init__()
+        super().__init__()
 
     @classmethod
     def load(cls, f):
@@ -99,11 +99,9 @@ class Seating:
         
         if seedval is None: seedval = randrange(10**6)
 
-        if sum(groups) > sum(ch != '.' for row in seating for ch in row):
-            raise SeatingError('More people than seats')
-
         # prepare
         seats = [(i, j) for i, row in enumerate(seating) for j, ch in enumerate(row) if ch != '.' and ch != '#']
+        if sum(groups) > len(seats): raise SeatingError('More people than seats')
 
         pair_cost = defaultdict(int)
         dcost = {d: 10**int(d) for d in digits}
@@ -177,7 +175,8 @@ class Seating:
                         school_name = school_of_team[team_name]
                         if isinstance(school_name, int): school_name = ''
                         yield """
-                                <td class='fullcol info' style='vertical-align: middle; text-align: center; line-height: 1.2'>
+                                <td class='fullcol info'
+                                    style='vertical-align: middle; text-align: center; line-height: 1.2'>
                                 <!-- -->
                                         <span style='font-size: 70%'>{seat}</span>
                                     <br><span style='font-size: 72%'><strong>{team_name}</strong></span>
@@ -416,7 +415,8 @@ def seating_args(seating_p):
 
         decor_print(file=stderr)
         decor_print('.'*30, file=stderr)
-        beginfo_print('Writing the seating arrangement to stdout... We recommend piping the output to a file.', file=stderr)
+        beginfo_print('Writing the seating arrangement to stdout... We recommend piping the output to a file.',
+                file=stderr)
         decor_print('.'*30, file=stderr)
         decor_print(file=stderr)
 
@@ -424,6 +424,7 @@ def seating_args(seating_p):
 
         decor_print(file=stderr)
         decor_print('.'*30, file=stderr)
-        succ_print('Done writing the seating arrangement to stdout. We recommend piping the output to a file.', file=stderr)
+        succ_print('Done writing the seating arrangement to stdout. We recommend piping the output to a file.',
+                file=stderr)
         decor_print('.'*30, file=stderr)
         decor_print(file=stderr)

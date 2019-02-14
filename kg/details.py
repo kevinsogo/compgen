@@ -12,7 +12,9 @@ valid_keys = set(defaults) | {"comments", "extras"}
 
 def detector_from_validator(validator, relpath=None):
     if validator:
-        return Program("!fromvalidator", validator.compile, ["kg-subtasks", "-c"] + validator.run + ["--"], relpath=relpath)
+        return Program("!fromvalidator", validator.compile,
+                ["kg-subtasks", "-c"] + validator.run + ["--"],
+                relpath=relpath)
 
 class Details(object):
     def __init__(self, details={}, source=None, relpath=None):
@@ -56,9 +58,10 @@ class Details(object):
         # check for extra keys
         for key in self.details:
             if key not in valid_keys:
-                raise ValueError(f"Key {repr(key)} invalid in details.json. If you wish to add extra data, place it under 'comments' or 'extras'")
+                raise ValueError(f"Key {repr(key)} invalid in details.json. If you wish to add extra data, "
+                        "place it under 'comments' or 'extras'")
 
-        super(Details, self).__init__()
+        super().__init__()
 
     @classmethod
     def from_loc(cls, loc, relpath=None):
@@ -90,7 +93,8 @@ class Details(object):
                     raise ValueError("Empty list of subtasks in subtasks_files")
 
                 if not (set(subs) <= set(self.valid_subtasks)):
-                    raise ValueError(f"Invalid subtasks found in subtasks_files:" + ' '.join(sorted(set(subs) - set(self.valid_subtasks))))
+                    raise ValueError(f"Invalid subtasks found in subtasks_files:" +
+                            ' '.join(sorted(set(subs) - set(self.valid_subtasks))))
 
             return subf
 
