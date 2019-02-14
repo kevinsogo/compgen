@@ -32,9 +32,10 @@ class Verdict:
 
 
 class ChkStream(object):
-    def __init__(self, stream, type_):
+    def __init__(self, stream, type_, *, failwith=None):
         self.type = type_
         self.base_stream = stream # file-like object
+        self.failwith = failwith
         if type_ == 'lines':
             def naive_iter():
                 for line in stream.readlines():
@@ -49,10 +50,16 @@ class ChkStream(object):
 
         self._seq = naive_iter()
 
-        super(ChkStream, self).__init__()
+        super().__init__()
 
     def __next__(self):
-        return next(self._seq)
+        try:
+            return next(self._seq)
+        except StopIteration:
+            if self.failwith:
+                raise self.failwith
+            else:
+                raise
 
     def has_next(self):
         try:
@@ -90,7 +97,7 @@ class Checker(object):
                      _SN.iterator,
                 ]:
             setattr(self, name, functools.partial(self._set, name))
-        super(Checker, self).__init__()
+        super().__init__()
 
     def _set(self, name, value):
         self._vals[name] = value
@@ -117,9 +124,9 @@ class Checker(object):
         if not set(no_extra_chars) <= set(valid_fields): raise ValueError(f"Invalid no_extra_chars argument: {repr(no_extra_chars)}")
         def _set_checker(checker):
             def _checker(inp, outp, judgep, *args, **kwargs):
-                inp = ChkStream(inp, intype)
-                outp = ChkStream(outp, outtype)
-                judgep = ChkStream(judgep, judgetype)
+                inp = ChkStream(inp, intype, failwith=Fail("Input file fully read but expected more"))
+                outp = ChkStream(outp, outtype, failwith=ParseError("Output file fully read but expected more"))
+                judgep = ChkStream(judgep, judgetype, failwith=Fail("Judge file fully read but expected more"))
                 result = checker(inp, outp, judgep, *args, **kwargs)
                 if no_extra_chars:
                     if 'input' in no_extra_chars and inp.has_next(): raise Fail("Extra characters at the end of the input file!")
@@ -194,33 +201,30 @@ def _check_generic(checker, input_path, output_path, judge_path, **kwargs):
             'output_path': output_path,
             'judge_path': judge_path,
         })
+
+    def handle_exc_verdict(exc, verdict):
+        if kwargs.get('verbose'): traceback.print_exc()
+        return verdict, getattr(exc, 'score', 0.0), str(exc)
+
     try:
         input_file = open(input_path)
         output_file = open(output_path)
         judge_file = open(judge_path)
     except Exception as exc:
-        e, verdict = exc, Verdict.EXC
-        if kwargs.get('verbose'): traceback.print_exc()
+        return handle_exc_verdict(exc, Verdict.EXC)
     else:
-        with input_file:
-            with output_file:
-                with judge_file:
-                    try:
-                        score = checker(input_file, output_file, judge_file, **kwargs)
-                        return Verdict.AC, score, ""
-                    except ParseError as exc:
-                        e, verdict = exc, Verdict.PAE
-                        if kwargs.get('verbose'): traceback.print_exc()
-                    except WA as exc:
-                        e, verdict = exc, Verdict.WA
-                        if kwargs.get('verbose'): traceback.print_exc()
-                    except Fail as exc:
-                        e, verdict = exc, Verdict.FAIL
-                        if kwargs.get('verbose'): traceback.print_exc()
-                    except Exception as exc:
-                        e, verdict = exc, Verdict.EXC
-                        if kwargs.get('verbose'): traceback.print_exc()
-    return verdict, getattr(e, 'score', 0.0), str(e)
+        with input_file, output_file, judge_file:
+            try:
+                score = checker(input_file, output_file, judge_file, **kwargs)
+                return Verdict.AC, score, ""
+            except ParseError as exc:
+                return handle_exc_verdict(exc, Verdict.PAE)
+            except WA as exc:
+                return handle_exc_verdict(exc, Verdict.WA)
+            except Fail as exc:
+                return handle_exc_verdict(exc, Verdict.FAIL)
+            except Exception as exc:
+                return handle_exc_verdict(exc, Verdict.EXC)
 
 
 _platforms = {}
