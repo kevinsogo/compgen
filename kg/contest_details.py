@@ -33,7 +33,7 @@ class ContestDetails(object):
             setattr(self, key, self.details.get(key, defaults.get(key)))
 
         if not (self.code and valid_contestcode.match(self.code)):
-            raise ValueError("Invalid contest code: {}".format(rep(self.code)))
+            raise ValueError(f"Invalid contest code: {repr(self.code)}")
 
         for key, long_name in [
                     ('team', 'team'),
@@ -46,19 +46,19 @@ class ContestDetails(object):
             key_count = key + '_count'
             if key_list in self.details:
                 if key_count in self.details:
-                    raise ValueError("{} and {} cannot appear simultaneously".format(key_list, key_count))
+                    raise ValueError(f"{key_list, } and {key_count} cannot appear simultaneously")
                 value_list = self.details[key_list]
                 if isinstance(value_list, str): # open as a possible json file
                     with open(attach_relpath(self.relpath, value_list)) as f:
                         value_list = json.load(f)
                 if not isinstance(value_list, list):
-                    raise ValueError("{} must be a list: got {}".format(key_list, type(value_list)))
+                    raise ValueError(f"{key_list, } must be a list: got {type(value_list)}")
             else:
                 value_count = self.details.get(key_count, defaults.get(key_count))
                 if not isinstance(value_count, int):
-                    raise ValueError("{} must be an int: got {}".format(key_count, type(value_count)))
+                    raise ValueError(f"{key_count, } must be an int: got {type(value_count)}")
                 if value_count < 0:
-                    raise ValueError("{} must be nonnegative: got {}".format(key_count, type(value_count)))
+                    raise ValueError(f"{key_count, } must be nonnegative: got {type(value_count)}")
                 value_list = [long_name + str(index) for index in range(1, value_count + 1)]
 
             if key == 'team':
@@ -97,7 +97,7 @@ class ContestDetails(object):
                     'teams': [teamo],
                 }
             elif not isinstance(teamo['school'], str):
-                raise ValueError("School must be a string, got {}".format(teamo['school']))
+                raise ValueError(f"School must be a string, got {teamo['school']}")
             team_schools.append(teamo)
         return team_schools
 

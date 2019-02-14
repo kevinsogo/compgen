@@ -27,12 +27,13 @@ Due to limitations in some online judges, we will have some restrictions/require
 
 
 
+
 # Creating a Problem
 
 Run this command:
 ```bash
-kg init problem_title
-kg init problem_title --subtasks 3  # if you have subtasks
+$ kg init problem_title
+$ kg init problem_title --subtasks 3  # if you have subtasks
 ```
 
 This will create a folder named `problem_title`. We will write everything related to this problem inside that folder. It will be prepopulated with templates/samples. 

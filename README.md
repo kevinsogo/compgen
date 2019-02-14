@@ -29,6 +29,14 @@ Only works for Ubuntu (and probably some other Unix-based systems) for now.
 # Useful scripts
 
 
+All commands here have further documentation which can be accessed via `--help`, e.g.,
+
+```bash
+$ kg --help  # general help
+$ kg some_command --help  # help for command 'some_command'
+```
+
+
 ## Convert files from one format to another
 
 ```bash
@@ -90,8 +98,8 @@ For the third command, the checker must accept three command line arguments `inp
 Special commands are available if you're using Polygon or HackerRank.
 
 ```bash
-kg-pg # Polygon
-kg-hr # HackerRank
+$ kg-pg # Polygon
+$ kg-hr # HackerRank
 ```
 
 This automatically detects the tests based on the corresponding format, so no need to pass `-i` and `-o` arguments. It receives an optional argument `--loc` which says where the test data is located. It defaults to the current folder.
@@ -102,7 +110,7 @@ This automatically detects the tests based on the corresponding format, so no ne
 Given a list of teams in JSON format in a file, say, `teams.json`, you can generate passwords for them using:
 
 ```bash
-kg passwords teams.json
+$ kg passwords teams.json
 ```
 
 This generates the files `kgkompiled/logins_*.html` which contain the same passwords in printable format. (Keep them safe!)
@@ -117,7 +125,7 @@ This uses [bootstrap](https://getbootstrap.com/) for styling, so the output woul
 Given a list of teams in, say, `teams.json`, and the seat layout in, say, `seating.txt`, you can assign seats to them using the following:
 
 ```bash
-kg seating seating.txt write teams.json > seating.html
+$ kg seating -f seating.txt write teams.json > seating.html
 ```
 
 The teams can be grouped by school. See the example in `examples/teams.json`. This is used so that students from the same school can be placed far from one another.

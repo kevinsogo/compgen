@@ -8,6 +8,7 @@ from shutil import copyfile
 from string import ascii_letters, ascii_uppercase, digits
 from subprocess import PIPE, CalledProcessError
 from sys import stdin, stdout, stderr
+from textwrap import dedent
 import argparse
 import contextlib
 import os.path
@@ -42,7 +43,26 @@ VERSION = "0.2"
 
 # TODO use the 'logging' library
 
-parser = argparse.ArgumentParser(description='There are many things you can do with this program.')
+parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=cformat_text(dedent('''\
+                Programming contest utilities.
+
+                Two main use cases are the following:
+
+                - For one-off scripting tasks, like testing a solution against a bunch of data.
+
+                    - (for problems) [*[kg convert]*], [*[kg subtasks]*], [*[kg gen]*], [*[kg test]*], [*[kg run]*]
+                    - (for contests) [*[kg seating]*], [*[kg passwords]*]
+
+                - For developing problems (writing generators, validators, checkers, etc.) from scratch.
+
+                    - (for problems) [*[kg init]*], [*[kg make]*], [*[kg gen]*]/[*[test]*]/[*[run]*], [*[kg kompile]*]
+                    - (for contests) [*[kg kontest]*]
+
+                See the individual --help texts for each command, e.g., [*[kg init --help]*].
+        ''')))
+parser.add_argument('--krazy', action='store_true', help=argparse.SUPPRESS)
 # TODO add 'verbose' option here
 subparsers = parser.add_subparsers(help='which operation to perform', dest='main_command')
 subparsers.required = True
@@ -54,8 +74,37 @@ subparsers.required = True
 ##########################################
 # convert one format to another
 
-convert_p = subparsers.add_parser('konvert', aliases=['convert'],
-                                             help='Convert test data from one format to another')
+convert_p = subparsers.add_parser('konvert',
+            aliases=['convert'],
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+               help='Convert test data from one format to another',
+        description=cformat_text(dedent('''\
+                Convert test data from one contest/judge system format to another.
+
+
+                $ [*[kg convert --from [src_fmt] [src_folder] --to [dest_fmt] [dest_folder]]*]
+
+
+                For example,
+
+                $ [*[kg convert --from polygon path/to/polygon-package --to hackerrank path/to/hr/i-o-folders]*]
+                $ [*[kg convert --from hackerrank path/to/hr/i-o-folders --to polygon path/to/polygon-package]*]
+
+                'polygon' and 'hackerrank' can be abbreviates as 'pg' and 'hr', respectively. There is also the
+                'kompgen'/'kg' format, which is the format used when creating a problem from scratch using KompGen.
+
+
+                A few details on the "formats":
+
+                -    Polygon I/O pairs look like:  tests/*           and  tests/*.a
+                - HackerRank I/O pairs look like:  input/input*.txt  and  output/output*.txt
+                -    KompGen I/O pairs look like:  tests/*.in        and  tests/*.ans
+
+                You can think of "kg convert" as similar to two calls to "kg convertsequence", one for the input
+                files, and another for the output files, with some additional validity checks (e.g., for HackerRank,
+                input/inputFOO.txt is rejected) and reindexing (e.g., Polygon starts at "1", e.g., tests/1, but
+                HackerRank starts at "00", e.g., input/input00.txt).
+        ''')))
 convert_p.add_argument('--from', nargs=2, help='source format and location', dest='fr',
                                  metavar=('FROM_FORMAT', 'FROM_FOLDER'), required=True)
 convert_p.add_argument('--to',   nargs=2, help='destination format and location',
@@ -91,8 +140,36 @@ def convert_formats(src, dest):
 ##########################################
 # convert one file sequence to another
 
-convert2_p = subparsers.add_parser('konvertsequence', aliases=['convertsequence'],
-                                                      help='Convert a file sequence with a certain pattern to another.')
+convert2_p = subparsers.add_parser('konvertsequence',
+            aliases=['convertsequence'],
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+               help='Convert a file sequence with a certain pattern to another',
+        description=cformat_text(dedent('''\
+                Convert a file sequence with a certain pattern to another.
+
+
+                $ [*[kg convertsequence --from [source_pattern] --to [target_pattern]]*]
+
+                This converts every file matched by [source_pattern] into a file that matches [target_pattern].
+
+                The output files will be inferred from the corresponding input files. "*" in patterns are
+                wildcards, and they will be matched automatically.
+
+
+                For example,
+
+                $ [*[kg convertsequence --from "input/input*.txt" --to "tests/0*.in"]*]
+
+                will convert input/input00.txt to tests/000.in, input/input11.txt to tests/011.in, etc.
+
+                Quotes are required (at least on Linux), otherwise bash will replace it with the
+                actual matched filenames. (not sure about Windows)
+
+
+                There can even be multiple "*"s in --to and --from. The only requirement is that they have an equal
+                number of "*"s. Parts matched by "*"s will be transferred to the corresponding "*" in the other
+                pattern.
+        ''')))
 convert2_p.add_argument('--from', help='source file pattern', dest='fr', required=True)
 convert2_p.add_argument('--to', help='destination file pattern', required=True)
 
@@ -121,8 +198,58 @@ def convert_sequence(src, dest):
 ##########################################
 # detect subtasks
 
-subtasks_p = subparsers.add_parser('subtasks', help='detect the subtasks of input files. '
-                                                    'you need either a detector or a validator.')
+subtasks_p = subparsers.add_parser('subtasks',
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+               help='Detect the subtasks of input files. You need either a detector or a validator.',
+        description=cformat_text(dedent('''\
+                Detect the subtasks of input files, for problems with subtasks.
+
+                You need either a detector program or a validator program.
+
+
+                $ [*[kg subtasks -i [input_pattern] -f [detector_program]]*]
+
+                This prints all subtasks of every file. [detector_program] must be a program that takes an input
+                from stdin and prints the distinct subtasks in which it is valid, as separate tokens in stdout.
+
+
+                $ [*[kg subtasks -i [input_pattern] -vf [validator_program]]*]
+
+                This is a bit slower but simpler. [validator_program] must be a program that takes an input from
+                stdin and the subtask name as the first command line argument, and exits with code 0 iff the input
+                is valid from that subtask.
+
+                This is useful if you want to automatically know which subtask each file belongs to; sometimes, a
+                file you generated may be intended for a subtask but actually violates the constraints, so this lets
+                you detect those cases.
+
+
+                For example,
+
+                $ [*[kg subtasks -i "tests/*.in" -f detector.java]*]
+                $ [*[kg subtasks -i "tests/*.in" -vf validator.cpp]*]
+
+                Quotes are required (at least on Linux), otherwise bash will replace it with the
+                actual matched filenames. (not sure about Windows)
+
+                The programming language of the detector/validator is inferred from the extension. You can also pass
+                a full command using -c or -vc, for example,
+
+                $ [*[kg subtasks -i "tests/*.in" -c pypy3 detector.py]*]
+                $ [*[kg subtasks -i "tests/*.in" -vc runhaskell validator.hs]*]
+
+
+                You can also run this for just one file, e.g.,
+
+                $ [*[kg subtasks -i data/sample.in -f detector.java]*]
+
+                There can even be multiple "*"s in -i.
+
+
+                If you wrote your problem using "kg init", then you may omit "-i" and "-f"; they will default to
+                the KompGen format ("tests/*.in"), and other details will be parsed from details.json, so
+                "kg subtasks" without options would just work. (You can still pass them of course.)
+        ''')))
 subtasks_p.add_argument('-F', '--format', '--fmt', help='format of data')
 subtasks_p.add_argument('-l', '--loc', default='.', help='location to run commands on')
 subtasks_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
@@ -198,7 +325,53 @@ def get_subtasks(subtasks, detector, format_, relpath=None):
 ##########################################
 # generate output data
 
-gen_p = subparsers.add_parser('gen', help='generate output files for some given input files.')
+gen_p = subparsers.add_parser('gen',
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+               help='Generate output files for some given input files',
+        description=cformat_text(dedent('''\
+                Generate output files for some given input files.
+
+
+                $ [*[kg gen -i [input_pattern] -o [output_pattern] -f [solution_program]]*]
+
+                This generates the files [output_pattern] by running [solution_program] for every file in
+                [input_pattern]. [solution_program] must be a program that takes an input from stdin and prints
+                the output files in stdout.
+
+                The output files will be inferred from the corresponding input files. "*" in patterns are
+                wildcards, and they will be matched automatically.
+
+
+                For example,
+
+                $ [*[kg gen -i "tests/*.in" -o "tests/*.ans" -f solution.java]*]
+
+                Here, input files "tests/*.in" will be converted to output files "tests/*.ans", with the part in
+                the "*" carrying over. For example, "tests/005.in" corresponds to "tests/005.ans".
+
+                Quotes are required (at least on Linux), otherwise bash will replace it with the
+                actual matched filenames. (not sure about Windows)
+
+                The programming language of the program is inferred from the extension. You can also pass a full
+                command using -c, for example,
+
+                $ [*[kg gen -i "tests/*.in" -o "tests/*.ans" -c pypy3 solution.py]*]
+
+
+                You can also run this for just one file, e.g.,
+
+                $ [*[kg gen -i data/sample.in -o data/temp.txt -f solution.cpp]*]
+
+                There can even be multiple "*"s in -i and -o. The only requirement is that they have an equal
+                number of "*"s. Parts matched by "*"s will be transferred to the corresponding "*" in the other
+                pattern.
+
+
+                If you wrote your problem using "kg init", then you may omit "-i", "-o" and "-f"; they will
+                default to the KompGen format ("tests/*.in" and "tests/*.ans"), and other details will be parsed
+                from details.json, so for example, "kg gen" without options would just work. (You can still pass
+                them of course.)
+        ''')))
 
 gen_p.add_argument('-F', '--format', '--fmt', help='format of data')
 gen_p.add_argument('-l', '--loc', default='.', help='location to run commands on')
@@ -272,7 +445,63 @@ def generate_outputs(format_, data_maker, *, model_solution=None, judge=None):
 ##########################################
 # generate output data
 
-test_p = subparsers.add_parser('test', help='test a program against given input and output files.')
+test_p = subparsers.add_parser('test',
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+               help='Test a program against given input and output files',
+        description=cformat_text(dedent('''\
+                Test a program against given input and output files.
+
+                $ [*[kg gen -i [input_pattern] -o [output_pattern] -f [solution_program]]*]
+
+                This runs [solution_program] for every file in [input_pattern], and compares it against the
+                corresponding files in [output_pattern]. [solution_program] must be a program that takes an
+                input from stdin and prints the output files in stdout.
+
+                The output files will be inferred from the corresponding input files. "*" in patterns are
+                wildcards, and they will be matched automatically.
+
+
+                For example,
+
+                $ [*[kg test -i "tests/*.in" -o "tests/*.ans" -f solution.java]*]
+
+                Here, input files "tests/*.in" will be matched with output files "tests/*.ans", with the part in
+                the "*" carrying over. For example, "tests/005.in" corresponds to "tests/005.ans".
+
+                Quotes are required (at least on Linux), otherwise bash will replace it with the
+                actual matched filenames. (not sure about Windows)
+
+                The programming language of the program is inferred from the extension. You can also pass a full
+                command using -c, for example,
+
+                $ [*[kg test -i "tests/*.in" -o "tests/*.ans" -c pypy3 solution.py]*]
+
+
+                You can also run this for just one file, e.g.,
+
+                $ [*[kg test -i data/sample.in -o data/temp.txt -f solution.cpp]*]
+
+                There can even be multiple "*"s in -i and -o. The only requirement is that they have an equal
+                number of "*"s. Parts matched by "*"s will be transferred to the corresponding "*" in the other
+                pattern.
+
+
+                If your program has a custom checker file, you may pass it via the -jf ("judge file") option.
+                For example,
+
+                $ [*[kg test -i "tests/*.in" -o "tests/*.ans" -f solution.java -jf checker.py]*]
+
+                Here, checker.py takes three command line arguments "input_path", "output_path" and "judge_path",
+                and exits with 0 iff the answer is correct. It may print anything in stdout/stderr.
+
+                You may also pass a full checker command via -jc, similar to -c for the solution file.
+
+
+                If you wrote your problem using "kg init", then you may omit "-i", "-o", "-f" and "-jf; they will
+                default to the KompGen format ("tests/*.in" and "tests/*.ans"), and other details will be parsed
+                from details.json, so for example, "kg test" without options would just work. (You can still pass
+                them of course.)
+        ''')))
 
 test_p.add_argument('-F', '--format', '--fmt', help='format of data')
 test_p.add_argument('-l', '--loc', default='.', help='location to run commands on')
@@ -380,7 +609,49 @@ def kg_test(format_, args):
 ##########################################
 # just run the solution
 
-run_p = subparsers.add_parser('run', help='run a program against a set of input files, and print the result to stdout.')
+run_p = subparsers.add_parser('run',
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+               help='Run a program against a set of input files, and print the result to stdout',
+        description=cformat_text(dedent('''\
+                Run a program against a set of input files, and print the result to stdout.
+
+
+                $ [*[kg run -i [input_pattern] -f [solution_program]]*]
+
+                This runs [solution_program] for every file in [input_pattern], and simply forwards its results
+                to everything to stdout and stderr.
+
+
+                For example,
+
+                $ [*[kg run -i "tests/*.in" -f solution.java]*]
+
+                Quotes are required (at least on Linux), otherwise bash will replace it with the
+                actual matched filenames. (not sure about Windows)
+
+                The programming language of the program is inferred from the extension. You can also pass a full
+                command using -c, for example,
+
+                $ [*[kg run -i "tests/*.in" -c pypy3 solution.py]*]
+
+
+                You can also run this for just one file, e.g.,
+
+                $ [*[kg run -i data/sample.in -f solution.cpp]*]
+
+                There can even be multiple "*"s in -i.
+
+
+                This is useful, for example, if you want to validate a bunch of test files:
+
+                $ [*[kg run -i "tests/*.in" -f validator.java]*]
+
+
+                If you wrote your problem using "kg init", then you may omit "-i", "-o", "-f" and "-jf; they will
+                default to the KompGen format ("tests/*.in" and "tests/*.ans"), and other details will be parsed
+                from details.json, so for example, "kg run" without options would just work. (You can still pass
+                them of course.)
+        ''')))
 
 run_p.add_argument('-F', '--format', '--fmt', help='format of data')
 run_p.add_argument('-l', '--loc', default='.', help='location to run commands on')
@@ -415,7 +686,45 @@ def kg_run(format_, args):
 ##########################################
 # make everything !!!
 
-make_p = subparsers.add_parser('make', help='create all test data and validate.')
+make_p = subparsers.add_parser('make',
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+               help='Create all test data (input+output files) and validate',
+        description=cformat_text(dedent('''\
+                Create all test data (input+output files), detect subtasks, and perform checks/validations.
+
+                This command is intended for problems created using "kg init". In that case, it will parse the
+                relevant information from the details.json file.
+
+
+                This generates input files from testscript and generator files:
+
+                $ [*[kg make inputs]*]
+                $ [*[kg make inputs --validation]*]  # if you want validation
+
+
+                This generates output files from input files (similar to "kg gen"):
+
+                $ [*[kg make outputs]*]
+                $ [*[kg make outputs --checks]*]  # if you want to run the checker
+
+
+                This detects the subtasks (similar to "kg subtask") and writes it to the "subtasks_files" file
+                in JSON format:
+
+                $ [*[kg make subtasks]*]
+
+
+                More usage examples:
+
+                $ [*[kg make all]*]  # does all of the above.
+                $ [*[kg make inputs outputs --checks]*]  # only inputs and outputs, no validation, with checker.
+
+                Other combinations are also allowed.
+
+
+                You will probably want to run "kg make all" after finalizing all files---generators, validator,
+                checker, etc.---and make sure it finishes without errors. (unless this takes too long...)
+        ''')))
 
 make_p.add_argument('makes', nargs='+', help='what to make. (all, inputs, etc.)')
 make_p.add_argument('-l', '--loc', default='.', help='location to run commands on')
@@ -525,7 +834,18 @@ def construct_subs_files(subtasks_of, inputs):
 
 
 ##########################################
-q_p = subparsers.add_parser('joke', help='Print a non-funny joke.')
+q_p = subparsers.add_parser('joke',
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+               help='Print a non-funny joke',
+        description=rand_cformat_text(dedent('''\
+                Print a non-funny joke.
+
+                Sorry, my sense of humor is very bad. I was never known as the funny person.
+
+                My friends make better jokes. Maybe you do too.
+
+                '''))
+                + cformat_text('[^[Any]^] [*[help]*] [#[would]#] [.[be].] [%[very]%] [@[much]@] [+[appreciated]+]...'))
 qs = [
     '10kg > 1kg > 100g > 10g > log > log log > sqrt log log > 1',
     'Spacewaker',
@@ -533,7 +853,8 @@ qs = [
 ]
 @set_handler(q_p)
 def kg_q(format_, args):
-    import random; key_print(random.choice(qs))
+    import random
+    key_print(random.choice(qs))
 
 
 
@@ -542,7 +863,44 @@ def kg_q(format_, args):
 ##########################################
 # make a new problem
 
-init_p = subparsers.add_parser('init', help='create a new problem, formatted kg-style')
+init_p = subparsers.add_parser('init',
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+               help='Create a new problem, formatted kg-style',
+        description=cformat_text(dedent('''\
+                Create a new problem, formatted KompGen-style.
+
+                Use this if you're planning to write everything from scratch (with the help of KompGen).
+
+
+                $ [*[kg init [problemname]]*]
+
+                This creates a folder [problemname] and prepopulates it with templates. [problemname]
+                should only have underscores, dashes, letters, and digits. 
+
+                It also accepts a few options. Examples:
+
+
+                Basic usage. set up a problem with code "my-problem".
+                $ [*[kg init my-problem]*]
+
+                Set the title. Can be changed later (in details.json)
+                $ [*[kg init my-problem --title "My Cool Problem"]*]
+
+                "Minimal" setup, i.e., fewer and shorter prepopulated files.
+                $ [*[kg init my-problem --minimal]*]
+            
+                Set up a problem with 5 subtasks.
+                $ [*[kg init my-problem --subtasks 5]*]
+                
+                Include a checker in the prepopulated files.
+                $ [*[kg init my-problem --checker]*]
+
+                Set the time limit to 7sec. Can be changed later (in details.json)
+                $ [*[kg init my-problem --time-limit 7]*]
+
+                You can also combine options, e.g.,
+                $ [*[kg init my-problem --subtasks 5 --minimal --checker -tl 7 -t "My Cool Problem"]*]
+        ''')))
 
 init_p.add_argument('problemcode', help='Problem code. Must not contain special characters.')
 init_p.add_argument('-l', '--loc', default='.', help='where to make the problem')
@@ -612,8 +970,42 @@ def kg_init(format_, args):
 ##########################################
 # compile source codes for upload
 
-compile_p = subparsers.add_parser('kompile', aliases=['compile'],
-                                             help='preprocess python source codes to be ready to upload')
+compile_p = subparsers.add_parser('kompile',
+        aliases=['compile'],
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+               help='Preprocess python source codes to be ready to upload',
+        description=cformat_text(dedent('''\
+                Preprocess python source codes to be ready to upload.
+
+                This command is intended for problems created using "kg init". In that case, it will parse the
+                relevant information from the details.json file.
+
+
+                The usage is very simple:
+
+                $ [*[kg kompile]*]
+
+
+                Explanation:
+
+                Python files written using KompGen usually imports from other files (and from the "kg" library
+                itself), but most contest/judge systems only accept single files. This command "inlines" the
+                imports automatically, so that the result is a single file. 
+
+                Any "import star" line ending with the string "### @import" will be replaced inline with the
+                code from that file. This works recursively.  
+
+                Only "kg" library commnds and files explicitly added in "details.json" will be inlined. So if you
+                are importing from a separate file, ensure that it is in "other_programs" (or "generators",
+                "model_solution", etc.)
+
+                Only Python files will be processed; it is left to the problem author to ensure that the non-python
+                programs written will be compatible with the contest system/judge they are using.
+
+                The generated files will be in "kgkompiled/".  
+
+                Other directives aside from "@import" are available; see the KompGen repo docs for more details.
+        ''')))
 compile_p.add_argument('formats', nargs='*', help='contest formats to compile to (default ["hr", "pg", "pc2"])')
 compile_p.add_argument('-l', '--loc', default='.', help='location to run commands on')
 compile_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
@@ -850,7 +1242,38 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
 ##########################################
 # compile a contest from a configuration file
 
-contest_p = subparsers.add_parser('kontest', aliases=['contest'], help='Compile a contest')
+contest_p = subparsers.add_parser('kontest',
+            aliases=['contest'],
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+               help='Compile a contest from a description JSON file',
+        description=cformat_text(dedent('''\
+                Compile a contest from a description JSON file.
+
+                This command is intended for contests whose problems are created using "kg init". In that case,
+                it will parse the relevant information from the corresponding details.json files.
+
+
+                $ [*[kg contest [format] [config_file]]*]
+
+                Here, [format] is the contest format (currently, only "pc2" is supported), and [config_file] is a
+                path to a json file containing the contest metadata. 
+
+                An example [config_file] can be seen in examples/contest.json.
+
+
+                In the case of pc2, this generates a folder in "kgkompiled/" containing the files relevant for the
+                contest (including seating arrangements [optional] and passwords) and which can be read by the PC^2
+                system. Loading it via PC^2 will automatically set up the whole contest. (Painless!)
+
+
+                This assumes that "kg make all" has been run for every problem. If you wish to run those
+                automatically as well, use
+
+                $ [*[kg contest [format] [config_file] --make-all]*]
+
+
+                See the KompGen repo docs for more details.
+        ''')))
 contest_p.add_argument('format', help='Contest format to compile to')
 contest_p.add_argument('config', help='JSON file containing the contest configuration')
 contest_p.add_argument('-m', '--make-all', action='store_true', help='Run "kg make all" in all problems')
@@ -1054,7 +1477,7 @@ def kg_contest(format_, args):
 ##########################################
 # manage seating arrangements
 
-seating_args(subparsers.add_parser('seating', help='Manage seating arrangements'))
+seating_args(subparsers)
 
 
 
@@ -1063,7 +1486,30 @@ seating_args(subparsers.add_parser('seating', help='Manage seating arrangements'
 ##########################################
 # Generate passwords
 
-passwords_p = subparsers.add_parser('passwords', help='Assign passwords to a list of teams')
+passwords_p = subparsers.add_parser('passwords',
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+               help='Assign passwords to a list of teams',
+        description=cformat_text(dedent('''\
+                Assign passwords to a list of teams.
+
+
+                $ [*[kg contest [teams_file]]*]
+
+                Here, [teams_file] is a path to a json file containing the team information. Outputs in
+                kgkompiled/.
+
+                It can simply contain a JSON list of strings denoting team names, like:
+
+                [*[[
+                    "Quiwarriors 1",
+                    "Quiwarriors 2",
+                    "Fuchsia Moth",
+                    "Re:Programmers"
+                ]]*]
+
+                They can also be grouped by school; see examples/teams.json for an example. The printable html
+                files generated in kgkompiled/ will include the school name in the output.
+        ''')))
 passwords_p.add_argument('teams', help='JSON file containing the team and school details')
 passwords_p.add_argument('-s', '--seed', type=int, help='Initial seed to use')
 passwords_p.add_argument('-c', '--code', '--contest-code', help='Contest code')
@@ -1109,6 +1555,7 @@ def kg_passwords(format_, args):
 ##########################################
 def main(format='kg'):
     args = parser.parse_args()
+    if args.krazy: set_krazy(True)
     logf = stderr
     try:
         logf = args.default_file

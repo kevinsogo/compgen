@@ -10,7 +10,9 @@
 
 
 
-# Others 
+# To consider  
+
+This includes some disorganized ideas, TODOs, notes...
 
 - Prefix all generators (templates, examples) with `gen_`. Would be a nice convention to have.
 
@@ -37,6 +39,12 @@
 - For kg kontest, instead of relpath, "go to directory and run there".
 
 - Allow non-kg formats in `kg kontest`. Its entry in `problems` could basically contain the `details.json`, at least those which are required. 
+
+- study setuptools versioning
+
+- kg-make-checker to return a standalone checker program from !diff.xxx, and that it can receive args. 
+
+- override lang commands on details.json
 
 - Interactive editor for seating arrangements. (maybe, kcvajgf.github.io, also maybe vue.js or something.)
 
@@ -98,10 +106,6 @@
 
     - A lot of the scripts also rely on Ubuntu command-y things.  
 
-# To consider  
-
-This includes some disorganized ideas, TODOs, notes...
-
 - Use gitlab's "Issues" feature and write these things there instead.  
 
 - Add `### @@ if False { ... }` around bulky docstrings.
@@ -127,6 +131,8 @@ new_case kwargs can still be passed as info.
 - Add more examples. (There are "TODO"s splattered in the docs and everywhere else. grep to find them all)
 
 - Add more templates.
+
+- Future backwards incompatible: use hashlib for hashing purposes (e.g. generating seeds from args)
 
 - use polygon multifile generator [at least support for this]
 

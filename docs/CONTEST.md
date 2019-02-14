@@ -79,11 +79,10 @@ A couple of things to keep in mind:
 
 - `kg kontest` expects that `kg make all` has been run for every problem. If you want to force run `kg make all` across all problems, pass the `-m` option to `kg kontest`.
 
-A working example is provided in `examples/contest.json`. You can run these to test it:
+A working example is provided in `examples/contest.json`. You can run this to test it:
 
 ```bash
-cd examples
-kg kontest pc2 contest.json   # add -m if you want
+$ kg kontest pc2 examples/contest.json   # add -m if you want
 ```
 
 This will create the folder `kgkompiled/EXAMPLECONTEST` from the two example problems.
@@ -94,7 +93,7 @@ This will create the folder `kgkompiled/EXAMPLECONTEST` from the two example pro
 To load everything to PC2 the first time you run a server, run the following:
 
 ```bash
-bin/pc2server --load path/to/CDP/config/contest.yaml
+$ bin/pc2server --load path/to/CDP/config/contest.yaml
 ```
 
 Alternatively, run the server normally, and in the admin, go to the *Import Config* tab and load `contest.yaml` there.

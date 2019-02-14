@@ -3,6 +3,8 @@ from itertools import combinations
 from random import Random, randrange
 from string import digits
 from sys import stdout, stderr
+from textwrap import dedent
+import argparse
 import html
 import os.path
 
@@ -294,8 +296,31 @@ def write_seating(contest, seedval=None, dest='.'):
         seating.write(contest.team_schools, f, seedval, code=contest.code, title=contest.title)
 
 
-def seating_args(seating_p):
-    seating_p.add_argument('seating_file', help='seating file')
+def seating_args(subparsers):
+    seating_p = subparsers.add_parser('seating',
+               help='Manage seating arrangements',
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=cformat_text(dedent('''\
+                Manage seating arrangements.
+
+                It takes the seating.txt file as the first argument and has several subcommands:
+
+                $ [*[kg seating -f [seating_file] gen]*]
+                $ [*[kg seating -f [seating_file] set]*]
+                $ [*[kg seating -f [seating_file] force]*]
+                $ [*[kg seating -f [seating_file] assign]*]
+                $ [*[kg seating -f [seating_file] write]*]
+
+                A sample [seating_file] can be seen in exasmples/seating.txt.
+
+
+                The write command is probably the most useful for you. See
+
+                $ [*[kg seating write --help]*]
+
+                for more details.
+        ''')))
+    seating_p.add_argument('-f', '--seating-file', default='seating.txt', help='seating file')
     subparsers = seating_p.add_subparsers(help='which operation to perform', dest='operation')
     subparsers.required = True
 
@@ -402,7 +427,38 @@ def seating_args(seating_p):
             print(*(str(v).rjust(sz) for v in row))
 
 
-    write_p = subparsers.add_parser('write', help='Assign seats to a list of teams')
+    write_p = subparsers.add_parser('write',
+               help='Assign seats to a list of teams',
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=cformat_text(dedent('''\
+                Assign seats to a list of teams.
+
+
+                $ [*[kg seating -f [seating_file] write [teams_file]]*]
+
+                It generates a pretty HTML file (in stdout) containing the seating assignment.
+
+                Here, [teams_file] is a path to a json file containing the team information. Outputs in
+                kgkompiled/.
+
+                It can simply contain a JSON list of strings denoting team names, like:
+
+                [*[[
+                    "Quiwarriors 1",
+                    "Quiwarriors 2",
+                    "Fuchsia Moth",
+                    "Re:Programmers"
+                ]]*]
+
+                They can also be grouped by school; see examples/teams.json for an example. The seating
+                algorithm will take this into account and try to place same-school teams far away from
+                each other (if the constraints are properly set in seating.txt).
+
+
+                Example usage:
+
+                $ [*[kg seating -f seating.txt write teams.json > seating.html]*]
+        ''')))
     write_p.add_argument('teams', help='JSON file containing the team and school details')
     write_p.add_argument('-s', '--seed', type=int, help='Initial seed to use')
     write_p.add_argument('-c', '--code', '--contest-code', help='Contest code')
