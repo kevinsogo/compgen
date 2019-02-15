@@ -331,7 +331,8 @@ def seating_args(subparsers):
 
     @set_handler(gen_p)
     def kg_seating_gen(format_, args):
-        info_print(f'Making a {args.rows} x {args.cols} grid with seating width {args.width}...', file=stderr)
+        info_print(f'Our seating file is {args.seating_file}', file=stderr)
+        info_print(f'Making a {args.rows} x {args.cols} grid with seating width {args.width} to {args.seating_file}...', file=stderr)
         seating = Seating.gen(args.rows, args.cols, args.width)
         with open(args.seating_file, 'w') as f: seating.dump(f)
 
@@ -343,6 +344,7 @@ def seating_args(subparsers):
 
     @set_handler(set_p)
     def kg_seating_set(format_, args):
+        info_print(f'Our seating file is {args.seating_file}', file=stderr)
         with open(args.seating_file) as f: seating = Seating.load(f)
 
         ch = args.char
@@ -378,6 +380,7 @@ def seating_args(subparsers):
 
     @set_handler(force_p)
     def kg_seating_force(format_, args):
+        info_print(f'Our seating file is {args.seating_file}', file=stderr)
         with open(args.seating_file) as f: seating = Seating.load(f)
 
         if args.power not in (digits + '.#'): raise ValueError(f"Power must be a digit, #, or dot. {args.power}")
@@ -412,6 +415,7 @@ def seating_args(subparsers):
 
     @set_handler(assign_p)
     def kg_seating_assign(format_, args):
+        info_print(f'Our seating file is {args.seating_file}', file=stderr)
         with open(args.seating_file) as f: seating = Seating.load(f)
 
         groups = []
@@ -466,6 +470,7 @@ def seating_args(subparsers):
 
     @set_handler(write_p, stderr)
     def kg_seating_write(format_, args):
+        info_print(f'Our seating file is {args.seating_file}', file=stderr)
         with open(args.seating_file) as f: seating = Seating.load(f)
         with open(args.teams) as f: team_schools = ContestDetails.get_team_schools(json.load(f))
 

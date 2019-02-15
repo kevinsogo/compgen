@@ -69,7 +69,12 @@ class Details(object):
         if not loc and os.path.isfile(details_file): loc = details_file
         if loc:
             with open(loc) as f:
-                return cls(json.load(f), source=loc, relpath=relpath)
+                try:
+                    loc_json = json.load(f)
+                except Exception:
+                    err_print(f"An exception occurred while trying to load {loc}...")
+                    raise
+            return cls(loc_json, source=loc, relpath=relpath)
 
     @classmethod
     def from_format_loc(cls, fmt, loc, relpath=None):

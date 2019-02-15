@@ -6,7 +6,7 @@ Use this library if you're one of the following:
 - You want to write a problem from scratch. (Bonus points if you want to write everything in Python.)
 - Somewhere in between.
 
-Only works for Ubuntu (and probably some other Unix-based systems) for now. 
+Intended for Ubuntu (and probably some other Unix-based systems) for now, although at least one person has managed to make it work in Windows. If you can't, feel free to ask for help :)
 
 
 

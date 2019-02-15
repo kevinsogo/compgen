@@ -50,12 +50,13 @@ parser = argparse.ArgumentParser(
 
                 Two main use cases are the following:
 
-                - For one-off scripting tasks, like testing a solution against a bunch of data.
+                - For one-off scripting tasks, e.g., testing a solution against a bunch of data.
 
-                    - (for problems) [*[kg convert]*], [*[kg subtasks]*], [*[kg gen]*], [*[kg test]*], [*[kg run]*]
+                    - (for problems) [*[kg subtasks]*], [*[kg gen]*], [*[kg test]*], [*[kg run]*]
                     - (for contests) [*[kg seating]*], [*[kg passwords]*]
+                    - (others) [*[kg convert]*], [*[kg convertsequence]*]
 
-                - For developing problems (writing generators, validators, checkers, etc.) from scratch.
+                - For developing problems from scratch (writing generators, validators, checkers, etc.)
 
                     - (for problems) [*[kg init]*], [*[kg make]*], [*[kg gen]*]/[*[test]*]/[*[run]*], [*[kg kompile]*]
                     - (for contests) [*[kg kontest]*]
@@ -90,7 +91,7 @@ convert_p = subparsers.add_parser('konvert',
                 $ [*[kg convert --from polygon path/to/polygon-package --to hackerrank path/to/hr/i-o-folders]*]
                 $ [*[kg convert --from hackerrank path/to/hr/i-o-folders --to polygon path/to/polygon-package]*]
 
-                'polygon' and 'hackerrank' can be abbreviates as 'pg' and 'hr', respectively. There is also the
+                'polygon' and 'hackerrank' can be abbreviated as 'pg' and 'hr', respectively. There is also the
                 'kompgen'/'kg' format, which is the format used when creating a problem from scratch using KompGen.
 
 
@@ -200,7 +201,7 @@ def convert_sequence(src, dest):
 
 subtasks_p = subparsers.add_parser('subtasks',
     formatter_class=argparse.RawDescriptionHelpFormatter,
-               help='Detect the subtasks of input files. You need either a detector or a validator.',
+               help='Detect the subtasks of input files',
         description=cformat_text(dedent('''\
                 Detect the subtasks of input files, for problems with subtasks.
 
@@ -246,8 +247,8 @@ subtasks_p = subparsers.add_parser('subtasks',
                 There can even be multiple "*"s in -i.
 
 
-                If you wrote your problem using "kg init", then you may omit "-i" and "-f"; they will default to
-                the KompGen format ("tests/*.in"), and other details will be parsed from details.json, so
+                If you wrote your problem using "kg init", then you may omit "-i", "-f" and "-vf"; they will default
+                to the KompGen format ("tests/*.in"), and other details will be parsed from details.json, so
                 "kg subtasks" without options would just work. (You can still pass them of course.)
         ''')))
 subtasks_p.add_argument('-F', '--format', '--fmt', help='format of data')
@@ -611,7 +612,7 @@ def kg_test(format_, args):
 
 run_p = subparsers.add_parser('run',
     formatter_class=argparse.RawDescriptionHelpFormatter,
-               help='Run a program against a set of input files, and print the result to stdout',
+               help='Run a program against input files (and print to stdout)',
         description=cformat_text(dedent('''\
                 Run a program against a set of input files, and print the result to stdout.
 
@@ -647,10 +648,9 @@ run_p = subparsers.add_parser('run',
                 $ [*[kg run -i "tests/*.in" -f validator.java]*]
 
 
-                If you wrote your problem using "kg init", then you may omit "-i", "-o", "-f" and "-jf; they will
-                default to the KompGen format ("tests/*.in" and "tests/*.ans"), and other details will be parsed
-                from details.json, so for example, "kg run" without options would just work. (You can still pass
-                them of course.)
+                If you wrote your problem using "kg init", then you may omit "-i" and "-f"; they will default to
+                the KompGen format ("tests/*.in"), and other details will be parsed from details.json, so
+                "kg run" without options would just work. (You can still pass them of course.)
         ''')))
 
 run_p.add_argument('-F', '--format', '--fmt', help='format of data')
@@ -995,12 +995,12 @@ compile_p = subparsers.add_parser('kompile',
                 Any "import star" line ending with the string "### @import" will be replaced inline with the
                 code from that file. This works recursively.  
 
-                Only "kg" library commnds and files explicitly added in "details.json" will be inlined. So if you
+                Only "kg" library commnds and files explicitly added in details.json will be inlined. So if you
                 are importing from a separate file, ensure that it is in "other_programs" (or "generators",
                 "model_solution", etc.)
 
-                Only Python files will be processed; it is left to the problem author to ensure that the non-python
-                programs written will be compatible with the contest system/judge they are using.
+                Only Python files will be processed; it is up to you to ensure that the non-python programs you
+                write will be compatible with the contest system/judge they are using.
 
                 The generated files will be in "kgkompiled/".  
 
@@ -1052,6 +1052,8 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
         'kg.utils.hr': os.path.join('utils', 'hr.py'),
         'kg.utils.utils': os.path.join('utils', 'utils.py'),
         'kg.graphs': os.path.join('graphs', '__init__.py'),
+        'kg.graphs.utils': os.path.join('graphs', 'utils.py'),
+        'kg.graphs.generators': os.path.join('graphs', 'generators.py'),
     }
     locations = {lib: os.path.join(script_path, path) for lib, path in locations.items()}
     kg_libs = set(locations)

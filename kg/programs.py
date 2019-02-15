@@ -35,20 +35,20 @@ class Program:
         }
         self.compile = env['compile'] = [p.format(**env) for p in compile_]
         self.run = [p.format(**env) for p in run]
-        self._compiled = False
+        self.compiled = False
         super().__init__()
 
-    def do_compile(self, **kwargs):
-        if self.compile:
+    def do_compile(self, *, force=False, **kwargs):
+        if (force or not self.compiled) and self.compile:
             info_print(f"Compiling {self.filename}", file=stderr)
             kwargs.setdefault('cwd', self.relpath)
             kwargs.setdefault('check', True)
             subprocess.run(self.compile, **kwargs)
-        self._compiled = True
+        self.compiled = True
         return self
 
     def do_run(self, *args, time=False, **kwargs):
-        if not self._compiled: raise ExtProgramError("Compile the program first")
+        if not self.compiled: raise ExtProgramError("Compile the program first")
         command = self.run + list(args)
         kwargs.setdefault('cwd', self.relpath)
         if time:
