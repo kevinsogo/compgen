@@ -62,6 +62,7 @@ class Program:
         if not self.compiled: raise ExtProgramError("Compile the program first")
         command = self.run + list(args)
         kwargs.setdefault('cwd', self.relpath)
+        kwargs.setdefault('check', True)
         if time:
             start_time = timel.time()
             if os.name != 'nt': command = ['/usr/bin/time', '-f' 'ELAPSED TIME %esec %Usec %Ssec'] + command

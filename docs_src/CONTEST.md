@@ -12,6 +12,8 @@ As mentioned in the README, there are two general steps.
 
 We will now explain these in more detail, including additional steps after running `kg kontest` to make sure your PC2 contest runs smoothly.
 
+*Note:* As of now, for `checker`s, only KompGen-using python programs are supported. (Will change in the future.)
+
 
 ## contest.json
 

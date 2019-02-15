@@ -6,6 +6,10 @@
 
 - Write unit tests.  
 
+- Handle non-kg checker for pc2 contest configuration.
+
+- Support pc2 input validator. (right now I can't get it to work. email thread with PC2 team.)
+
 - Support more formats: Kattis, CodeChef, DOM?.  
 
 

@@ -305,7 +305,11 @@ def get_subtasks(subtasks, detector, format_, relpath=None):
     for input_ in format_.thru_inputs():
         inputs.append(input_)
         with open(input_) as f:
-            result = detector.do_run(*subtasks, stdin=f, stdout=PIPE)
+            try:
+                result = detector.do_run(*subtasks, stdin=f, stdout=PIPE, check=True)
+            except CalledProcessError as cpe:
+                err_print(f"The detector raised an error for {input_}", file=stderr)
+                raise CommandError(f"The detector raised an error for {input_}") from cpe
         subtasks_of[input_] = set(result.stdout.decode('utf-8').split())
         if not subtasks_of[input_]:
             raise CommandError(f"No subtasks found for {input_}")
@@ -426,7 +430,7 @@ def generate_outputs(format_, data_maker, *, model_solution=None, judge=None):
         with open(input_) as inp, open(output_, 'w') as outp:
             print(info_text('WRITING', input_, '-->'), key_text(output_))
             try:
-                data_maker.do_run(stdin=inp, stdout=outp, time=True)
+                data_maker.do_run(stdin=inp, stdout=outp, time=True, check=True)
             except CalledProcessError as cpe:
                 err_print(f"The data_maker raised an error for {input_}", file=stderr)
                 raise CommandError(f"The data_maker raised an error for {input_}") from cpe
@@ -441,14 +445,14 @@ def generate_outputs(format_, data_maker, *, model_solution=None, judge=None):
                         info_print(f"Running model solution on {input_}")
                         with open(input_) as inp:
                             try:
-                                model_solution.do_run(stdin=inp, stdout=tmp, time=True)
+                                model_solution.do_run(stdin=inp, stdout=tmp, time=True, check=True)
                             except CalledProcessError as cpe:
                                 err_print(f"The model_solution raised an error for {input_}", file=stderr)
                                 raise CommandError(f"The model_solution raised an error for {input_}") from cpe
                         yield tmp.name
             with model_output() as model_out:
                 try:
-                    judge.do_run(*map(os.path.abspath, (input_, model_out, output_)))
+                    judge.do_run(*map(os.path.abspath, (input_, model_out, output_)), check=True)
                 except CalledProcessError as cpe:
                     err_print(f"The judge did not accept {output_}", file=stderr)
                     raise CommandError(f"The judge did not accept {output_}") from cpe
@@ -563,7 +567,7 @@ def kg_test(format_, args):
                 with open(input_) as inp:
                     info_print("File", str(index).rjust(3), 'CHECKING AGAINST', input_)
                     try:
-                        solution.do_run(stdin=inp, stdout=tmp, time=True)
+                        solution.do_run(stdin=inp, stdout=tmp, time=True, check=True)
                     except CalledProcessError:
                         err_print('The solution issued a runtime error...')
                         return False
@@ -703,9 +707,9 @@ def kg_run(format_, args):
         with open(input_) as inp:
             info_print('RUNNING FOR', input_, file=stderr)
             try:
-                solution.do_run(stdin=inp, time=True)
+                solution.do_run(stdin=inp, time=True, check=True)
             except CalledProcessError:
-                err_print('The solution issued a runtime error...', file=stderr)
+                err_print('The program issued a runtime error...', file=stderr)
 
 
 
@@ -798,7 +802,7 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
             if validation:
                 info_print('Validating', filename)
                 with open(filename) as file:
-                    validator.do_run(stdin=file)
+                    validator.do_run(stdin=file, check=True)
 
         succ_print('DONE MAKING INPUTS.')
 
@@ -1132,19 +1136,26 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
         subtasks_files = details.load_subtasks_files()
 
     # convert to various formats
-    for fmt, name, copy_files, to_translate in [
+    for fmt, name, copy_files, to_compile in [
             ('pg', 'Polygon', False, [details.validator, details.checker] + details.generators),
             ('hr', 'HackerRank', True, [details.checker]),
             ('pc2', 'PC2', False, [details.validator, details.checker]),
         ]:
         if fmt not in target_formats: continue
 
-        # TODO maybe copy non-python files. to_copy and to_translate
         decor_print()
         decor_print('.. '*14)
         beginfo_print(f'Compiling for {fmt} ({name})')
         dest_folder = os.path.join(loc, 'kgkompiled', fmt)
-        to_translate = {g.filename for g in to_translate if g and get_module(g.filename)}
+        to_translate = set()
+        to_copy = set()
+        for g in to_compile:
+            if not g: continue
+            if os.path.isfile(g.rel_filename):
+                (to_translate if get_module(g.rel_filename) else to_copy).add(g.rel_filename)
+            else:
+                warn_print(f"Warning: {g.rel_filename} (in details.json) is not a file.", file=stderr)
+
         targets = {}
         found_targets = {}
         for filename in to_translate:
@@ -1156,9 +1167,27 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                            f"{found_targets[targets]} and {filename}", file=stderr)
             found_targets[target] = filename
 
+        copy_targets = {}
+        for filename in to_copy:
+            target = os.path.join(dest_folder, os.path.basename(filename))
+            copy_targets[filename] = target
+            if target in found_targets:
+                warn_print(f"Warning: Files have the same destination file ({target}): "
+                           f"{found_targets[targets]} and {filename}", file=stderr)
+            found_targets[target] = filename
+
+        # copying
+        for filename in natsorted(to_copy):
+            target = copy_targets[filename]
+            info_print(f'[... non-python ...] converting {filename} to {target} (kopying only)', file=stderr)
+            touch_container(target)
+            with open(filename) as srcf, open(target, 'w') as targf:
+                targf.write(srcf.read())
+
+        # translating
         for filename in natsorted(to_translate):
             module = get_module(filename)
-            info_print(f'[{module}] converting {filename} to {targets[module]}')
+            info_print(f'[{module}] converting {filename} to {targets[module]} (kompiling)')
             touch_container(targets[module])
             lines = list(compile_lines(load_module(module),
                     module_id=module,
@@ -1410,7 +1439,8 @@ def kg_contest(format_, args):
                     ('checker', 'output_validators'),
                 ]:
                 src = getattr(details, name)
-                # TODO handle the case where src is not Python
+                # TODO handle the case where src is not Python.
+                # We need to compile it and "pass the compiled file" somehow.
                 srcf = os.path.join(problem_loc, 'kgkompiled', 'pc2', os.path.basename(src.filename)) 
                 targf = os.path.join(cdp_config, code, targ, os.path.basename(src.filename))
                 touch_container(targf)
