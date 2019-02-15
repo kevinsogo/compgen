@@ -10,7 +10,7 @@ def node_arg(nodes):
 def make_adj(nodes, edges):
     nodes = node_arg(nodes)
     if isinstance(edges, dict):
-        if sorted(edges.keys()) != sorted(nodes): raise GraphError("")
+        if sorted(edges.keys()) != sorted(nodes): raise GraphError("Invalid adjaacency list")
         return edges
     adj = {i: [] for i in nodes}
     for a, b in edges:

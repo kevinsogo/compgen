@@ -6,6 +6,7 @@ import subprocess
 from sys import stderr
 import time as timel
 
+from .utils import *
 from .iutils import *
 
 class ExtProgramError(Exception): ...
@@ -19,8 +20,18 @@ def infer_lang(filename):
     base, ext = os.path.splitext(filename)
     return lang_of_ending.get(ext)
 
+@listify
+def _strip_prefixes(command, *prefixes):
+    for part in command:
+        for pref in prefixes:
+            if part.startswith(pref):
+                yield part[len(pref):]
+                break
+        else:
+            yield part
+
 class Program:
-    def __init__(self, filename, compile_, run, *, relpath=None):
+    def __init__(self, filename, compile_, run, *, relpath=None, strip_prefixes=['___']):
         if not filename: raise ValueError("Filename cannot be empty")
         if not run: raise ValueError("A program cannot have an empty run command")
         self.relpath = relpath
@@ -33,8 +44,8 @@ class Program:
             'rel_filename': self.rel_filename,
             'filename_base': os.path.splitext(os.path.basename(filename))[0],
         }
-        self.compile = env['compile'] = [p.format(**env) for p in compile_]
-        self.run = [p.format(**env) for p in run]
+        self.compile = env['compile'] = _strip_prefixes([p.format(**env) for p in compile_], *strip_prefixes)
+        self.run = _strip_prefixes([p.format(**env) for p in run], *strip_prefixes)
         self.compiled = False
         super().__init__()
 

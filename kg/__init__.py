@@ -249,7 +249,14 @@ subtasks_p = subparsers.add_parser('subtasks',
 
                 If you wrote your problem using "kg init", then you may omit "-i", "-f" and "-vf"; they will default
                 to the KompGen format ("tests/*.in"), and other details will be parsed from details.json, so
-                "kg subtasks" without options would just work. (You can still pass them of course.)
+                "[*[kg subtasks]*]" without options would just work. (You can still pass them of course.)
+
+
+                If your command (-c or -vc) requires leading dashes, then the argument parser might interpret them as
+                options to "kg subtasks" itself. To work around this, prepend "___" (triple underscore) to each part
+                containing a "-". The "___" will be ignored. For example,
+
+                $ [*[kg subtasks -i "tests/*.in" -vc java ___-Xss128m Validator]*]
         ''')))
 subtasks_p.add_argument('-F', '--format', '--fmt', help='format of data')
 subtasks_p.add_argument('-l', '--loc', default='.', help='location to run commands on')
@@ -337,7 +344,7 @@ gen_p = subparsers.add_parser('gen',
 
                 This generates the files [output_pattern] by running [solution_program] for every file in
                 [input_pattern]. [solution_program] must be a program that takes an input from stdin and prints
-                the output files in stdout.
+                the output in stdout.
 
                 The output files will be inferred from the corresponding input files. "*" in patterns are
                 wildcards, and they will be matched automatically.
@@ -370,8 +377,15 @@ gen_p = subparsers.add_parser('gen',
 
                 If you wrote your problem using "kg init", then you may omit "-i", "-o" and "-f"; they will
                 default to the KompGen format ("tests/*.in" and "tests/*.ans"), and other details will be parsed
-                from details.json, so for example, "kg gen" without options would just work. (You can still pass
+                from details.json, so for example, "[*[kg gen]*]" without options would just work. (You can still pass
                 them of course.)
+
+
+                If your command (-c) requires leading dashes, then the argument parser might interpret them as
+                options to "kg gen" itself. To work around this, prepend "___" (triple underscore) to each part
+                containing a "-". The "___" will be ignored. For example,
+
+                $ [*[kg gen -c java ___-Xss128m Solution]*]
         ''')))
 
 gen_p.add_argument('-F', '--format', '--fmt', help='format of data')
@@ -500,8 +514,15 @@ test_p = subparsers.add_parser('test',
 
                 If you wrote your problem using "kg init", then you may omit "-i", "-o", "-f" and "-jf; they will
                 default to the KompGen format ("tests/*.in" and "tests/*.ans"), and other details will be parsed
-                from details.json, so for example, "kg test" without options would just work. (You can still pass
+                from details.json, so for example, "[*[kg test]*]" without options would just work. (You can still pass
                 them of course.)
+
+
+                If your command (-c, -jc or -vc) requires leading dashes, then the argument parser might interpret
+                them as options to "kg test" itself. To work around this, prepend "___" (triple underscore) to each
+                part containing a "-". The "___" will be ignored. For example,
+
+                $ [*[kg test -c java ___-Xss128m Solution -jc java ___-Xss128m Checker]*]
         ''')))
 
 test_p.add_argument('-F', '--format', '--fmt', help='format of data')
@@ -650,7 +671,14 @@ run_p = subparsers.add_parser('run',
 
                 If you wrote your problem using "kg init", then you may omit "-i" and "-f"; they will default to
                 the KompGen format ("tests/*.in"), and other details will be parsed from details.json, so
-                "kg run" without options would just work. (You can still pass them of course.)
+                "[*[kg run]*]" without options would just work. (You can still pass them of course.)
+
+
+                If your command (-c) requires leading dashes, then the argument parser might interpret them as
+                options to "kg run" itself. To work around this, prepend "___" (triple underscore) to each part
+                containing a "-". The "___" will be ignored. For example,
+
+                $ [*[kg run -c java ___-Xss128m MyProgram]*]
         ''')))
 
 run_p.add_argument('-F', '--format', '--fmt', help='format of data')
@@ -1110,6 +1138,8 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
             ('pc2', 'PC2', False, [details.validator, details.checker]),
         ]:
         if fmt not in target_formats: continue
+
+        # TODO maybe copy non-python files. to_copy and to_translate
         decor_print()
         decor_print('.. '*14)
         beginfo_print(f'Compiling for {fmt} ({name})')
@@ -1380,7 +1410,8 @@ def kg_contest(format_, args):
                     ('checker', 'output_validators'),
                 ]:
                 src = getattr(details, name)
-                srcf = os.path.join(problem_loc, 'kgkompiled', 'pc2', os.path.basename(src.filename))
+                # TODO handle the case where src is not Python
+                srcf = os.path.join(problem_loc, 'kgkompiled', 'pc2', os.path.basename(src.filename)) 
                 targf = os.path.join(cdp_config, code, targ, os.path.basename(src.filename))
                 touch_container(targf)
                 copyfile(srcf, targf)
