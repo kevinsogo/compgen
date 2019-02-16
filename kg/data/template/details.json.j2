@@ -10,8 +10,8 @@
         "formatter.py"
     ],
     {% if subtasks >= 1 %}"valid_subtasks": {{ subtask_list }},
-    {% endif %}"subtasks_files": "subtasks.json",
-    {% if checker %}"checker": "checker.py",
+    "subtasks_files": "subtasks.json",
+    {% endif %}{% if checker %}"checker": "checker.py",
     {% endif %}
     {% if not minimal %}"comments": [
         "You can place comments here. They will not be processed.",

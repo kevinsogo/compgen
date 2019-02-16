@@ -282,14 +282,14 @@ class StrictStream:
 
     @save_on_label
     @listify
-    def do_multiple(self, f, n, *a, **kw):
-        n = self._get(n)
-        if n < 0: raise ValueError(f"n must be nonnegative: {n}")
+    def do_multiple(self, f, count, *a, **kw):
+        count = self._get(count)
+        if count < 0: raise ValueError(f"n must be nonnegative: {count}")
         sep = ''.join(kw.pop('sep', ' '))
         end = kw.pop('end', '')
-        for i in range(n):
+        for i in range(count):
             yield f(*a, **kw)
-            if i < n - 1:
+            if i < count - 1:
                 for ch in sep: self.read_char(ch)
         for ch in end: self.read_char(ch)
 

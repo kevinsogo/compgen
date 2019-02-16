@@ -20,7 +20,7 @@ class Directive(Enum):
     COULD_BE_BAD = auto() # we'll issue a warning. this could just be a mistake
     ECHO = auto() # not a directive. just echo
 
-# this will be processed in this order.
+# the processing will be in this order.
 SYNTAX_RULES = [
     (re.compile(r'.*###\s*@.*###.*$'), Directive.BAD, "There must be at most one directive in each line"),
     (re.compile(r'^(.*###\s*)@\s*keep (.*)$'), Directive.KEEP, None),

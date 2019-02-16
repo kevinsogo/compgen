@@ -16,15 +16,15 @@ def group_into(v, seq):
         if len(buf) == v:
             yield buf
             buf = []
-    if buf:
-        yield buf
+    if buf: yield buf
 
 
 class XRandom(Random):
-    def shuff(self, x):
+    def shuffled(self, x):
         x = list(x)
         self.shuffle(x)
         return x
+    shuff = shuffled
     def randinterval(self, a, b):
         while True:
             x = self.randint(a, b)
