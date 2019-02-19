@@ -1,3 +1,4 @@
+from collections import defaultdict
 from itertools import islice
 from shutil import copyfile
 import os.path
@@ -99,6 +100,12 @@ def parse_testscript(testscript, generators, *, relpath=None):
 
     gens = {}
 
+    found_gen_args = defaultdict(list)
+    def register_gen_args(line, *gen_args):
+        if found_gen_args[gen_args]:
+            warn_print(f'WARNING: Testscript line {repr(line)} will generate the same file/s as '
+                       f'{repr(found_gen_args[gen_args][-1])}. (Random seed is determined by args)')
+        found_gen_args[gen_args].append(line)
     later = []
     for line in testscript.strip().split('\n'):
         parts = line.split()
@@ -125,6 +132,7 @@ def parse_testscript(testscript, generators, *, relpath=None):
                 ...
             else:
                 validate_target(index)
+                register_gen_args(line, gen, *args)
                 gens[index] = gen, args, True, index, target, line
                 return
 
@@ -139,6 +147,7 @@ def parse_testscript(testscript, generators, *, relpath=None):
             if list(t_sequence(dupseq)) != indices:
                 raise TestScriptError("First argument of multifile generator must generate the same sequence as target. "
                         f"'{dupseq}' != '{target}'")
+            register_gen_args(line, gen, *rargs)
             gens[min(indices)] = gen, args, False, indices, target, line
 
         process()
@@ -147,6 +156,7 @@ def parse_testscript(testscript, generators, *, relpath=None):
     for gen, args, src_line in later:
         index = mex()
         validate_target(index)
+        register_gen_args(src_line, gen, *args)
         gens[index] = gen, args, True, index, '$', src_line
 
     if not all(i == target for i, target in enumerate(sorted(found), 1)):
