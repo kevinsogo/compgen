@@ -14,9 +14,9 @@ Intended for Ubuntu (and probably some other Unix-based systems) for now, althou
 
 - Run `bash setup.sh` as root or superuser (sudo). If it prints `DONE`, then it was successful. Make sure you have `python3` and `pip3`.  
 
-*Note:* Among other things, it installs a bunch of python packages (via `setuptools`). Feel free to modify `setup.sh` if you don't want to install globally, e.g., if you want to use virtualenv or something. 
+    *Note:* Among other things, it installs a bunch of python packages (via `setuptools`). Feel free to modify `setup.sh` if you don't want to install globally, e.g., if you want to use virtualenv or something. 
 
-If it issues errors for you, please read `setup.sh` and try to find a way to run each line somehow.
+    If it issues errors for you, please read `setup.sh` and try to find a way to run each line somehow.
 
 - Whenever this library gets updated (e.g. you pull from the repo), run `bash setup.sh` again to update your installation.
 
@@ -29,8 +29,38 @@ All commands here have further documentation which can be accessed via `--help`,
 
 ```bash
 $ kg --help  # general help
-$ kg some_command --help  # help for command 'some_command'
+$ kg some-command --help  # help for command 'some-command'
 ```
+
+
+## Test with local data
+
+```bash
+# generate the output from input. The output file names will be inferred from the patterns.
+$ kg gen -i "tests/*.in" -o "tests/*.ans" -f Solution.java
+
+# test solution against the input and output files.
+$ kg test -i "tests/*.in" -o "tests/*.ans" -f other_sol.cpp
+
+# test solution, with custom checker
+$ kg test -i "tests/*.in" -o "tests/*.ans" -f other_sol.cpp -jf checker.py
+
+# just run the program against the inputs
+$ kg run -i "tests/*.in" -f YetAnotherSol.java
+```
+
+You can also replace `-f [file]` with `-c [command]`, if you wish to pass a full command:
+
+```bash
+$ kg gen -i "tests/*.in" -o "tests/*.ans" -c java Solution
+$ kg test -i "tests/*.in" -o "tests/*.ans" -c ./other_sol.exe
+$ kg test -i "tests/*.in" -o "tests/*.ans" -c ./other_sol.exe -jc python checker.py
+$ kg run -i "tests/*.in" -c java YetAnotherSol
+```
+
+For the `-jf`/`-jc` option, the checker must accept three command line arguments `inputpath outputpath judgepath`. It must exit with code 0 iff the answer is correct.  
+
+<!-- Currently, `kg test` with a custom checker only supports binary tasks and tasks where each subtask is binary-graded. -->
 
 
 ## Convert files from one format to another
@@ -49,49 +79,28 @@ You have a bunch of files, and you want to know which subtask each one belongs t
 
 ### Method 1: Using a detector script
 
-First, write a program (say `detector.java`) that takes a valid input from stdin and prints the indices of *all* subtasks in which the file is valid. Then run the following:
+First, write a program (say `Detector.java`) that takes a valid input from stdin and prints the indices of *all* subtasks in which the file is valid. Then run the following:
 
 ```bash
-$ kg subtasks -i "tests/*.in" -f detector.java
-$ kg subtasks -i "tests/*.in" -c java detector # alternative
+$ kg subtasks -i "tests/*.in" -f Detector.java
+$ kg subtasks -i "tests/*.in" -c java Detector # alternative
 ```
 
 ### Method 2: Using a validator which can detect subtasks
 
-Write a program (say `validator.java`) that takes the subtask number as the first argument and an input file from stdin, and exits with code 0 iff the file is valid for that subtask. Then run the following:
+Write a program (say `Validator.java`) that takes the subtask number as the first argument and an input file from stdin, and exits with code 0 iff the file is valid for that subtask. Then run the following:
 
 ```bash
-$ kg subtasks -i "tests/*.in" -vf validator.java -s 1 2 3
-$ kg subtasks -i "tests/*.in" -vc java validator -s 1 2 3 # alternative
+$ kg subtasks -i "tests/*.in" -vf Validator.java -s 1 2 3
+$ kg subtasks -i "tests/*.in" -vc java Validator -s 1 2 3 # alternative
 ```
 
 Here, `-s` is the list of subtasks. 
 
 
-## Test with local data
-
-```bash
-# generate the output from input. The output file names will be inferred from the patterns.
-$ kg gen -i "tests/*.in" -o "tests/*.ans" -f sol.java
-
-# test solution against the input and output files.
-$ kg test -i "tests/*.in" -o "tests/*.ans" -f other_sol.cpp
-
-# test solution, with custom checker
-$ kg test -i "tests/*.in" -o "tests/*.ans" -f other_sol.cpp -jf checker.cpp
-
-# just run the program against the inputs
-$ kg run -i "tests/*.in" -f yet_another_sol.java
-```
-
-You can also replace `-f [file]` with `-c [command]`.
-
-For the third command, the checker must accept three command line arguments `inputpath outputpath judgepath`. It must exit with code 0 iff the answer is correct. (Currently, `kg test` with a custom checker only supports binary tasks and tasks where each subtask is binary-graded.) 
-
-
 ## Convenience  
 
-Special commands are available if you're using Polygon or HackerRank.
+Special commands are available if your data is in Polygon or HackerRank format.
 
 ```bash
 $ kg-pg # Polygon
@@ -124,13 +133,13 @@ Given a list of teams in, say, `teams.json`, and the seat layout in, say, `seati
 $ kg seating -f seating.txt write teams.json > seating.html
 ```
 
-The teams can be grouped by school. See the example in `examples/teams.json`. This is used so that students from the same school can be placed far from one another.
+The teams can be grouped by school; see the example in `examples/teams.json`. This is used so that students from the same school can be placed far from one another.
 
 The format of `seating.txt` is simple. The first grid represents the layout of the seats, and all subsequent grids represent constraints. Higher digits represent stronger constraints. The example in `examples/seating.txt` is a simple layout: 
 
 - It has eight columns, with consecutive columns facing different directions.
 - One of the seats, `#`, is unavailable. 
-- Each person cannot seat within one position of a schoolmate, and cannot seat within two if at least one is facing the other.
+- Each person cannot seat within one position of a schoolmate, and cannot seat within two if at least one is directly facing the other.
 
 Like the password output, this also uses bootstrap.  
 

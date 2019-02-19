@@ -52,7 +52,7 @@ parser = argparse.ArgumentParser(
 
                     - (for problems) [*[kg subtasks]*], [*[kg gen]*], [*[kg test]*], [*[kg run]*]
                     - (for contests) [*[kg seating]*], [*[kg passwords]*]
-                    - (others) [*[kg convert]*], [*[kg convertsequence]*]
+                    - (others) [*[kg convert]*], [*[kg convert-sequence]*]
 
                 - For developing problems/contests from scratch (writing generators, validators, checkers, etc.)
 
@@ -99,7 +99,7 @@ convert_p = subparsers.add_parser('konvert',
                 - HackerRank I/O pairs look like:  input/input*.txt  and  output/output*.txt
                 -    KompGen I/O pairs look like:  tests/*.in        and  tests/*.ans
 
-                You can think of "kg convert" as similar to two calls to "kg convertsequence", one for the input
+                You can think of "kg convert" as similar to two calls to "kg convert-sequence", one for the input
                 files, and another for the output files, with some additional validity checks (e.g., for HackerRank,
                 input/inputFOO.txt is rejected) and reindexing (e.g., Polygon starts at "1", e.g., tests/1, but
                 HackerRank starts at "00", e.g., input/input00.txt).
@@ -139,15 +139,15 @@ def convert_formats(src, dest):
 ##########################################
 # convert one file sequence to another
 
-convert2_p = subparsers.add_parser('konvertsequence',
-            aliases=['convertsequence'],
+convert2_p = subparsers.add_parser('konvert-sequence',
+            aliases=['convert-sequence'],
     formatter_class=argparse.RawDescriptionHelpFormatter,
                help='Convert a file sequence with a certain pattern to another',
         description=cformat_text(dedent('''\
                 Convert a file sequence with a certain pattern to another.
 
 
-                $ [*[kg convertsequence --from [source_pattern] --to [target_pattern]]*]
+                $ [*[kg convert-sequence --from [source_pattern] --to [target_pattern]]*]
 
                 This converts every file matched by [source_pattern] into a file that matches [target_pattern].
 
@@ -157,7 +157,7 @@ convert2_p = subparsers.add_parser('konvertsequence',
 
                 For example,
 
-                $ [*[kg convertsequence --from "input/input*.txt" --to "tests/0*.in"]*]
+                $ [*[kg convert-sequence --from "input/input*.txt" --to "tests/0*.in"]*]
 
                 will convert input/input00.txt to tests/000.in, input/input11.txt to tests/011.in, etc.
 
@@ -174,8 +174,8 @@ convert2_p.add_argument('--to', help='destination file pattern', required=True)
 
 @set_handler(convert2_p)
 def kg_convert2(format_, args):
-    if args.main_command == 'convertsequence':
-        info_print("You spelled 'konvertsequence' incorrectly. I'll let it slide for now.", file=stderr)
+    if args.main_command == 'convert-sequence':
+        info_print("You spelled 'konvert-sequence' incorrectly. I'll let it slide for now.", file=stderr)
 
     convert_sequence(args.fr, args.to)
 
@@ -808,7 +808,7 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
     if 'outputs' in makes:
         decor_print()
         decor_print('~~ '*14)
-        beginfo_print('MAKING OUTPUTS...' + ("WITH CHECKER..." if checks else 'WITHOUT CHECKER'))
+        beginfo_print('MAKING OUTPUTS...' + ("WITH CHECKS..." if checks else 'WITHOUT CHECKS'))
         fmt = get_format_from_type(format_, loc, read='i', write='o')
         generate_outputs(
                 fmt, details.judge_data_maker,
