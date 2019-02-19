@@ -56,7 +56,7 @@ _cfkeys = {
 
 def rand_cformat_text(x):
     import random
-    return cformat_text(''.join((lambda z, y: f'[{y}[{z}]{y}]')(z, random.choice("^*#.%@+$")) for z in x))
+    return cformat_text(''.join('[{y}[{z}]{y}]'.format(z=z, y=random.choice("^*#.%@+$")) for z in x))
 
 # because termcolor.cprint sucks, I make my own...
 def cprint(*args, sep=' ', end='\n', color=None, on_color=None, attrs=None, **kwargs):
