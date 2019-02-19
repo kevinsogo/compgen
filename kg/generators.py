@@ -19,7 +19,7 @@ def group_into(v, seq):
     if buf: yield buf
 
 
-class XRandom(Random):
+class KGRandom(Random):
     def shuffled(self, x):
         x = list(x)
         self.shuffle(x)
@@ -30,6 +30,14 @@ class XRandom(Random):
             x = self.randint(a, b)
             y = self.randint(a, b)
             if x <= y: return x, y
+    def randmerge(self, a, b):
+        a = list(a)[::-1]
+        b = list(b)[::-1]
+        res = []
+        while a or b:
+            res.append((a if self.randrange(len(a) + len(b)) < len(a) else b).pop())
+        return res
+
 
 
 # some hash on a sequence of integers. Don't change this! This is used by seed computation based on command line args.  
@@ -76,7 +84,7 @@ class DistribCase:
                 nrand_seed = rand.getrandbits(64) ^ 0xC0BFEFE
                 @wraps(f)
                 def new_f(): # now new_f is deterministic
-                    return f(XRandom(nrand_seed), *fwd_args)
+                    return f(KGRandom(nrand_seed), *fwd_args)
                 casemakers.append(new_f)
                 mnew_case.total_cases += 1
                 for name, value in info.items(): # forward any info
@@ -91,7 +99,7 @@ class DistribCase:
                 nrand_seed = rand.getrandbits(64) ^ 0xC0BFEFE
                 @wraps(f)
                 def new_f(): # now new_f is deterministic
-                    return f(XRandom(nrand_seed), *fwd_args)
+                    return f(KGRandom(nrand_seed), *fwd_args)
                 for name, value in info.items(): # forward any info
                     setattr(new_f, name, value)
                 return new_f
@@ -133,9 +141,9 @@ def write_to_file(print_to_file, make, args, file, *, validate=None): ### @@ if 
     else:
         make = DistribCase(make, distribute)[index]
 
-    rand = XRandom(_make_seed(args))
+    rand = KGRandom(_make_seed(args))
     case = make(rand, *args)
-    _write_with_validate(print_to_file, file, case, validate=validate)
+    _write_with_validate(print_to_file, file, case, validate=validate) # TODO ensure this does not exit(42)
 
 
 def write_to_files(print_to_file, make, filenames, *args, validate=None):
@@ -149,7 +157,7 @@ def write_to_files(print_to_file, make, filenames, *args, validate=None):
     else:
         make = DistribCase(make, distribute)
 
-    rand = XRandom(_make_seed(args))
+    rand = KGRandom(_make_seed(args))
     filenames = iter(filenames)
     filecount = 0
     for index, case in enumerate(make(rand, *args)):
@@ -159,6 +167,6 @@ def write_to_files(print_to_file, make, filenames, *args, validate=None):
             raise GeneratorError(f"Not enough files! Need more than {index}")
         print("GENERATOR Writing to", filename, file=stderr) ### @if False
         with open(filename, 'w') as file:
-            _write_with_validate(print_to_file, file, case, validate=validate)
+            _write_with_validate(print_to_file, file, case, validate=validate) # TODO ensure this does not exit(42)
         filecount += 1
     print("GENERATED", filecount, "FILES", file=stderr) ### @if False

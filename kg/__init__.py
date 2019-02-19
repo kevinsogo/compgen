@@ -1086,6 +1086,8 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
         'kg.graphs': os.path.join('graphs', '__init__.py'),
         'kg.graphs.utils': os.path.join('graphs', 'utils.py'),
         'kg.graphs.generators': os.path.join('graphs', 'generators.py'),
+        'kg.math': os.path.join('math', '__init__.py'),
+        'kg.math.primes': os.path.join('math', 'primes.py'),
     }
     locations = {lib: os.path.join(script_path, path) for lib, path in locations.items()}
     kg_libs = set(locations)

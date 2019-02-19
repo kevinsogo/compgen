@@ -33,6 +33,7 @@ def run_testscript(inputs, testscript, generators, *, relpath=None):
     info_print("PARSING TESTSCRIPT")
     filecount, gens = parse_testscript(testscript, generators, relpath=relpath)
     files = list(islice(inputs, filecount))
+    info_print(f"EXPECTING {filecount} TEST FILES")
     if len(files) < filecount:
         raise TestScriptError(f"{filecount} files needed but only {len(files)} input files found.")
 
