@@ -56,7 +56,7 @@ parser = argparse.ArgumentParser(
                     - (for contests) [*[kg seating]*], [*[kg passwords]*]
                     - (others) [*[kg convert]*], [*[kg convertsequence]*]
 
-                - For developing problems from scratch (writing generators, validators, checkers, etc.)
+                - For developing problems/contests from scratch (writing generators, validators, checkers, etc.)
 
                     - (for problems) [*[kg init]*], [*[kg make]*], [*[kg gen]*]/[*[test]*]/[*[run]*], [*[kg kompile]*]
                     - (for contests) [*[kg kontest]*]
@@ -1560,8 +1560,8 @@ passwords_p = subparsers.add_parser('passwords',
 
                 $ [*[kg contest [teams_file]]*]
 
-                Here, [teams_file] is a path to a json file containing the team information. Outputs in
-                kgkompiled/.
+                Here, [teams_file] is a path to a json file containing the team information. Outputs the contest
+                data in kgkompiled/.
 
                 It can simply contain a JSON list of strings denoting team names, like:
 

@@ -114,6 +114,11 @@ def file_sequence(s):
     else:
         yield from t_sequence(s)
 
+def overflow_ell(s, ct):
+    assert ct >= 3
+    s = str(s)
+    return s if len(s) <= ct else s[:ct-3] + '...'
+
 ### @@ if False {
 # TODO make unit tests
 # print(list(islice(t_sequence('2'), 100)))

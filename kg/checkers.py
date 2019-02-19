@@ -348,7 +348,7 @@ def _check_local(checker, title='', file=stdout, help=None):
         print(f"{tc_id:>2} Result:  {verdict}", file=file)
         print(f"{tc_id:>2} on HR:   {_hr_verdict_name[verdict]}", file=file)
         print(f"{tc_id:>2} Score:   {score}", file=file)
-        if message: print(f"{tc_id:>2} Message: {message}", file=file)
+        if message: print(f"{tc_id:>2} Message: {overflow_ell(message, 100)}", file=file)
     else:
         print(f"{tc_id:>2} Score={score} {verdict}", file=file)
 

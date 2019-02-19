@@ -108,12 +108,12 @@ class Format:
             assert set(self.o_to_i) <= self.outputs
             assert set(self.i_to_o) <= self.inputs
             if len(self.o_to_i) < len(self.outputs):
-                missing = sorted(self.outputs - set(self.o_to_i))
+                missing = natsorted(self.outputs - set(self.o_to_i))
                 missing = ', '.join(missing) if len(missing) <= 5 else ', '.join(missing[:5] + '...')
                 raise FormatError(f"Cannot match these output files to input files: {missing}")
 
             if len(self.i_to_o) < len(self.inputs):
-                missing = sorted(self.inputs - set(self.i_to_o))
+                missing = natsorted(self.inputs - set(self.i_to_o))
                 missing = ', '.join(missing) if len(missing) <= 5 else ', '.join(missing[:5] + '...')
                 raise FormatError(f"Cannot match these input files to output files: {missing}")
 
@@ -178,13 +178,13 @@ class Format:
             self._checked = True
 
     def thru_inputs(self):
-        return sorted(self.inputs)
+        return natsorted(self.inputs)
 
     def thru_outputs(self):
-        return sorted(self.outputs)
+        return natsorted(self.outputs)
 
     def thru_io(self):
-        return sorted(self.i_to_o.items())
+        return natsorted(self.i_to_o.items())
 
     def thru_expected_io(self):
         for parts in self.expected_parts():
@@ -276,6 +276,7 @@ def get_format(args, read='', write=''):
         return Format(args.input, args.output, read=read, write=write)
     else:
         assert args.format
+        if args.output: raise ValueError('-o/--output not allowed without -i/--input')
         if args.format in formats:
             return formats[args.format](args.loc, read=read, write=write)
         else:

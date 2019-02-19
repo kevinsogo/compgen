@@ -7,22 +7,29 @@ setup(name='KompGen',
       description='Utilities for programming contests',
       author='Kevin Atienza',
       author_email='kevin.charles.atienza@gmail.com',
-      packages=['kg', 'kg.diff', 'kg.black_magic', 'kg.graphs', 'kg.utils', 'kg.math'],
+      packages=[
+          'kg',
+          'kg.diff',
+          'kg.black_magic',
+          'kg.graphs',
+          'kg.utils',
+          'kg.math',
+      ],
       package_data={
-        'kg': [
-            'data/*',
-            'data/template/*',
-            'data/contest_template/*',
-            'data/contest_template/pc2/*'
-        ],
-        'kg.diff': [
-            'templates/*',
-        ],
-    },
-    install_requires=[
-        'natsort',
-        'colorama',
-        'termcolor',
-        'Jinja2',
-    ],
+          'kg': [
+              'data/*',
+              'data/template/*',
+              'data/contest_template/*',
+              'data/contest_template/pc2/*'
+          ],
+          'kg.diff': [
+              'templates/*',
+          ],
+      },
+      install_requires=[
+          'natsort',
+          'colorama',
+          'termcolor',
+          'Jinja2',
+      ],
 )

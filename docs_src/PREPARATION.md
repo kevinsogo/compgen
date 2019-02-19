@@ -66,7 +66,7 @@ Now, we can begin writing those files!
 
 # Formatters
 
-This just takes a test case and prints it to a file in the correct input format. Save it on a file on its own, say `formatter.py`, so you can import it later.
+This just takes a test case (in a Python representation of your choosing) and prints it to a file in the correct input format. Save it on a file on its own, say `formatter.py`, so you can import it later.
 
 ```python
 {{ addition/formatter.py }}
@@ -164,6 +164,22 @@ It's easy to write a test generator.
 - You can replace `stdout` with a file-like object.
 
 - Obviously, you'll have to work hard to make "strong" test data; for many problems, pure random data like this will not be enough. Writing good tests is beyond the scope of this tutorial.
+
+- Generators are expected to produce the same output file for the same list of arguments. (The random seed is determined purely by the argument list.) This means that something like this will generate the same files:
+
+    ```bash
+    single_case 10 100000 > $
+    single_case 10 100000 > $
+    single_case 10 100000 > $
+    ```
+
+    If you want to generate different files, pass an extra argument (which will be ignored but will trigger a different random seed) like this:
+
+    ```bash
+    single_case 10 100000 ignored1 > $
+    single_case 10 100000 ignored2 > $
+    single_case 10 100000 ignored3 > $
+    ```
 
 There are a few more advanced usages and features (will document soon!), but this should cover most use cases.
 

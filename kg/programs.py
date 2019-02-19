@@ -65,7 +65,7 @@ class Program:
         kwargs.setdefault('check', True)
         if time:
             start_time = timel.time()
-            if os.name != 'nt': command = ['/usr/bin/time', '-f' 'ELAPSED TIME %esec %Usec %Ssec'] + command
+            if os.name != 'nt': command = ['/usr/bin/time', '-f' 'ELAPSED TIME from /usr/bin/time %esec %Usec %Ssec'] + command
         try:
             return subprocess.run(command, **kwargs)
         except Exception:
