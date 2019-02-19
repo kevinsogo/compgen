@@ -473,8 +473,11 @@ def seating_args(subparsers):
 
         decor_print(file=stderr)
         decor_print('.'*30, file=stderr)
-        beginfo_print('Writing the seating arrangement to stdout... We recommend piping the output to a file.',
-                file=stderr)
+        if stdout.isatty():
+            beginfo_print('Writing the seating arrangement to stdout... We recommend piping the output to a file.',
+                    file=stderr)
+        else:
+            beginfo_print('Writing the seating arrangement...', file=stderr)
         decor_print('.'*30, file=stderr)
         decor_print(file=stderr)
 
@@ -482,7 +485,10 @@ def seating_args(subparsers):
 
         decor_print(file=stderr)
         decor_print('.'*30, file=stderr)
-        succ_print('Done writing the seating arrangement to stdout. We recommend piping the output to a file.',
-                file=stderr)
+        if stdout.isatty():
+            succ_print('Done writing the seating arrangement to stdout! We recommend piping the output to a file.',
+                    file=stderr)
+        else:
+            succ_print('Done writing the seating arrangement!', file=stderr)
         decor_print('.'*30, file=stderr)
         decor_print(file=stderr)
