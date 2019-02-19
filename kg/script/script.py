@@ -1605,7 +1605,7 @@ def kg_passwords(format_, args):
             yield school_name, team_name, account, passwords[team_name]
 
     beginfo_print(f'Writing passwords for {len(team_names)} teams')
-    write_passwords(list(get_accounts()), 'kgkompiled',
+    write_passwords(list(get_accounts()), dest='kgkompiled',
             seedval=' or '.join({str(x) for x in [args.seed, seed] if x is not None}),
             code=args.code, title=args.title)
     succ_print(f'Passwords done')
