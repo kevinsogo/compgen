@@ -206,7 +206,7 @@ def _check_generic(checker, input_path, output_path, judge_path, **kwargs):
         return Verdict.RTE, 0.0, "The solution didn't return a 0 exit code (maybe... because EXITCODE.TXT exists)."
     ### @@}
 
-    kwargs.update({ 'input_path': input_path, 'output_path': output_path, 'judge_path': judge_path })
+    kwargs.update({'input_path': input_path, 'output_path': output_path, 'judge_path': judge_path})
 
     def handle_exc_verdict(exc, verdict):
         if kwargs.get('verbose'): traceback.print_exc()
@@ -219,6 +219,7 @@ def _check_generic(checker, input_path, output_path, judge_path, **kwargs):
     with input_file, output_file, judge_file:
         try:
             score = checker(input_file, output_file, judge_file, **kwargs)
+            if not (0.0 <= score <= 1.0): return Verdict.FAIL, 0.0, f"The checker returned an invalid score: {repr(score)}"
             return Verdict.AC, score, ""
         except ParseError as exc:
             return handle_exc_verdict(exc, Verdict.PAE)
