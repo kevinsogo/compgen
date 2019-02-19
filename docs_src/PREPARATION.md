@@ -165,22 +165,6 @@ It's easy to write a test generator.
 
 - Obviously, you'll have to work hard to make "strong" test data; for many problems, pure random data like this will not be enough. Writing good tests is beyond the scope of this tutorial.
 
-- Generators are expected to produce the same output file for the same list of arguments. (The random seed is determined purely by the argument list.) This means that something like this will generate the same files:
-
-    ```bash
-    single_case 10 100000 > $
-    single_case 10 100000 > $
-    single_case 10 100000 > $
-    ```
-
-    If you want to generate different files, pass an extra argument (which will be ignored but will trigger a different random seed) like this:
-
-    ```bash
-    single_case 10 100000 ignored1 > $
-    single_case 10 100000 ignored2 > $
-    single_case 10 100000 ignored3 > $
-    ```
-
 There are a few more advanced usages and features (will document soon!), but this should cover most use cases.
 
 <!-- Advanced tutorial involves strict multicase (not implemented yet), lazy multicase, options to write_to_file and friends, .shuff vs .shuffle, etc. -->
@@ -197,7 +181,29 @@ The testscript file contains instructions on how to generate all the tests. It l
 
 The programs used will be taken from `generators` in `details.json`; in this case, `single_case.py` and `multi_case_lazy.py`. They can be in any language. A `!` at the beginning means "run this bash command as is". Comments begin with `#`. 
 
-This is similar to Polygon's testscript system, though more limited since you have to use `$`, among other things. This is limited in expessive power for now, but we'll change that soon.
+This is similar to Polygon's testscript system. In place of `$`, you can write an explicit index, like
+
+```bash
+single_case 10 100000 > 11
+```
+
+This will force the output of that line to be the $11$th file. Note that counting starts at $1$, but generated files start at `000`, so this will create `tests/010.in`.  
+
+*Note:* Generators are expected to produce the same output file for the same list of arguments. (The random seed is determined purely by the argument list.) This means that something like this will generate the same files:
+
+```bash
+single_case 10 100000 > $
+single_case 10 100000 > $
+single_case 10 100000 > $
+```
+
+If you want to generate different files, pass an extra argument (which will be ignored but will trigger a different random seed) like this:
+
+```bash
+single_case 10 100000 ignored1 > $
+single_case 10 100000 ignored2 > $
+single_case 10 100000 ignored3 > $
+```
 
 <!-- TODO numbering in testscript -->
 
