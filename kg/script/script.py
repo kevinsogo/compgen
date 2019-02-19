@@ -61,7 +61,7 @@ parser = argparse.ArgumentParser(
 
                 See the individual --help texts for each command, e.g., [*[kg init --help]*].
         ''')))
-parser.add_argument('--krazy', action='store_true', help=argparse.SUPPRESS)
+parser.add_argument('--krazy', action='store_true', help="Go krazy. (Don't use unless drunk)")
 # TODO add 'verbose' option here
 subparsers = parser.add_subparsers(help='which operation to perform', dest='main_command')
 subparsers.required = True
@@ -871,9 +871,7 @@ q_p = subparsers.add_parser('joke',
         description=rand_cformat_text(dedent('''\
                 Print a non-funny joke.
 
-                Sorry, my sense of humor is very bad. I was never known as the funny person.
-
-                My friends make better jokes. Maybe you do too.
+                I'm sorry if they're not as funny as your jokes.
 
                 '''))
                 + cformat_text('[^[Any]^] [*[help]*] [#[would]#] [.[be].] [%[very]%] [@[much]@] [+[appreciated]+]...'))

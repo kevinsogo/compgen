@@ -30,7 +30,9 @@ def _strip_prefixes(command, *prefixes):
 
 def _get_python3_command(*, verbose=True):
     if verbose: info_print("getting python3 command...", file=stderr)
-    if subprocess.run(['check-pypy3'], stdout=subprocess.PIPE, stderr=subprocess.PIPE).returncode == 0:
+    if subprocess.run(['pypy3', '-c', 'from kg import main'], 
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE).returncode == 0:
         if verbose:
             print(info_text("using"), key_text("pypy3"), info_text("('kg' pypy3 installation found)"),
                   file=stderr)
@@ -147,5 +149,5 @@ class Program:
 
     @classmethod
     def noop(cls):
-        return cls('!noop', [], ['kg-noop'])
+        return cls('!noop', [], ['kg-aux', 'noop'])
 

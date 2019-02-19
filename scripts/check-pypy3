@@ -1,5 +1,0 @@
-#!/usr/bin/env pypy3
-
-# detects if kg is installed in pypy3 by importing 'kg.main'
-
-from kg import main

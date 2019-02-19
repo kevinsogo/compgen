@@ -5,7 +5,7 @@ import os.path
 from glob import glob
 import re
 
-from kg.iutils import *
+from kg.script.utils import *
 
 here = os.path.dirname(os.path.abspath(__file__))
 

@@ -12,17 +12,13 @@ Intended for Ubuntu (and probably some other Unix-based systems) for now, althou
 
 # Setup
 
-1. Run `bash setup.sh` as root or superuser (sudo). If it prints `DONE`, then it was successful. Make sure you have `python3` and `pip3`.  
+- Run `bash setup.sh` as root or superuser (sudo). If it prints `DONE`, then it was successful. Make sure you have `python3` and `pip3`.  
 
-    *Note:* Among other things, it installs a bunch of python packages (via `setuptools`). Feel free to modify `setup.sh` if you don't want to install globally, e.g., if you want to use virtualenv or something. 
+*Note:* Among other things, it installs a bunch of python packages (via `setuptools`). Feel free to modify `setup.sh` if you don't want to install globally, e.g., if you want to use virtualenv or something. 
 
-    If it issues errors for you, please read `setup.sh` and try to find a way to run each line somehow.
+If it issues errors for you, please read `setup.sh` and try to find a way to run each line somehow.
 
-2. Add the `scripts/` folder to your `$PATH` variable so you can run the scripts anywhere.
-
-    One way to do this would be to append the line `export PATH="/absolute/path/to/scripts:$PATH"` at the end of `~/.profile`. (Replace `/absolute/path/to/scripts`!) Then the `$PATH` variable will be updated after logging out and then logging in again. (If you can't do that yet, you can run `source ~/.profile` to set it up temporarily.)
-
-3. Whenever this library gets updated (e.g. you pull from the repo), run `bash setup.sh` again to update your installation.
+- Whenever this library gets updated (e.g. you pull from the repo), run `bash setup.sh` again to update your installation.
 
 
 
@@ -102,7 +98,7 @@ $ kg-pg # Polygon
 $ kg-hr # HackerRank
 ```
 
-This automatically detects the tests based on the corresponding format, so no need to pass `-i` and `-o` arguments. It receives an optional argument `--loc` which says where the test data is located. It defaults to the current folder.
+This automatically detects the tests based on the corresponding format, so no need to pass `-i` and `-o` arguments.  
 
 
 ## Generate passwords  
@@ -229,6 +225,7 @@ tests/
 *.class
 *.executable
 *.exe
+.eggs
 ```
 
 This also means that the folders `tests/` and `kgkompiled/` may be freely deleted if you're trying to free up space. They can always be regenerated from the other files.

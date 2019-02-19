@@ -13,7 +13,7 @@ valid_keys = set(defaults) | {"comments", "extras"}
 def detector_from_validator(validator, relpath=None):
     if validator:
         return Program("!fromvalidator", validator.compile,
-                ["kg-subtasks", "-q", "-c"] + ['___' + part for part in validator.run] + ["--"],
+                ["kg-aux", "subtasksfromvalidator", "-q", "-c"] + ['___' + part for part in validator.run] + ["--"],
                 relpath=relpath)
 
 class Details(object):

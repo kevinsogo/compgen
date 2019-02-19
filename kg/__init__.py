@@ -1,1 +1,1 @@
-from .script import main
+from .script import main, main_hr, main_pg
