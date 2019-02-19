@@ -29,12 +29,15 @@ def _strip_prefixes(command, *prefixes):
             yield part
 
 class Program:
-    def __init__(self, filename, compile_, run, *, relpath=None, strip_prefixes=['___']):
+    def __init__(self, filename, compile_, run, *, relpath=None, strip_prefixes=['___'], check_exists=True):
         if not filename: raise ValueError("Filename cannot be empty")
         if not run: raise ValueError("A program cannot have an empty run command")
         self.relpath = relpath
         self.filename = filename
         self.rel_filename = attach_relpath(relpath, filename)
+        if check_exists and not self.rel_filename.startswith('!') and not os.path.exists(self.rel_filename):
+            raise ValueError(f"File {self.rel_filename} not found.")
+
         env = {
             'loc': relpath,
             'sep': os.sep,
