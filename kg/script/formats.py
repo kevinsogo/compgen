@@ -6,7 +6,7 @@ from itertools import count
 
 from natsort import natsorted
 
-from .iutils import *
+from .utils import *
 
 class InferError(Exception): ...
 class FormatError(Exception): ...

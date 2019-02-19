@@ -2,8 +2,7 @@ from enum import Enum, auto
 from sys import stdout, stderr
 import base64, re, zlib
 
-from kg.utils import *
-from kg.iutils import *
+from ..script.utils import *
 
 from .commands import *
 from .exceptions import *

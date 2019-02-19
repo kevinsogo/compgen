@@ -5,9 +5,7 @@ from random import Random, randrange
 from sys import stderr
 from textwrap import dedent
 
-from .iutils import *
-
-script_path = os.path.dirname(os.path.realpath(__file__))
+from .utils import *
 
 class PasswordError(Exception): ...
 
@@ -161,7 +159,7 @@ def write_passwords(accounts, *, dest='.', **context):
             '''))
 
         context['accounts'] = '\n'.join(rows)
-        with open(os.path.join(script_path, 'data', 'contest_template', 'logins_table.html')) as of:
+        with open(os.path.join(kg_data_path, 'contest_template', 'logins_table.html')) as of:
             f.write(of.read().format(**context))
 
     filename = os.path.join(dest, f'logins{_code}_boxes.html')
@@ -190,6 +188,6 @@ def write_passwords(accounts, *, dest='.', **context):
             account_rows.append(row)
 
         context['accounts'] = '\n'.join('<tr>%s</tr>\n' % '\n'.join(row) for row in account_rows)
-        with open(os.path.join(script_path, 'data', 'contest_template', 'logins_boxes.html')) as of:
+        with open(os.path.join(kg_data_path, 'contest_template', 'logins_boxes.html')) as of:
             f.write(of.read().format(**context))
 

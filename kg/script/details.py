@@ -2,9 +2,9 @@ import json
 
 from .programs import *
 from .formats import *
+from .utils import *
 
-script_path = os.path.dirname(os.path.realpath(__file__))
-with open(os.path.join(script_path, 'data', 'defaults.json')) as f:
+with open(os.path.join(kg_data_path, 'defaults.json')) as f:
     defaults = json.load(f)
 
 valid_keys = set(defaults) | {"comments", "extras"}
@@ -116,7 +116,7 @@ class Details(object):
         if key == 'checker':
             diff_pref = '!diff.'
             if isinstance(v, str) and v.startswith(diff_pref): 
-                v = os.path.join(script_path, 'diff', v[len(diff_pref):] + '.py')
+                v = os.path.join(kg_path, 'diff', v[len(diff_pref):] + '.py')
         prog = Program.from_data(v, relpath=self.relpath) if v else None
         return prog
 

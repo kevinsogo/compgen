@@ -1,6 +1,14 @@
 from sys import stdout
 import os.path
 import pathlib
+
+from ..utils import *
+from ..utils.hr import *
+
+script_path = os.path.dirname(os.path.realpath(__file__))
+kg_path = os.path.join(script_path, '..')
+kg_data_path = os.path.join(kg_path, 'data')
+
 def colored(text, *a, **kw): return text
 try:
     import colorama

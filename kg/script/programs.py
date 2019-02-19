@@ -7,12 +7,10 @@ from sys import stderr
 import time as timel
 
 from .utils import *
-from .iutils import *
 
 class ExtProgramError(Exception): ...
 
-script_path = os.path.dirname(os.path.realpath(__file__))
-with open(os.path.join(script_path, 'data', 'langs.json')) as f:
+with open(os.path.join(kg_data_path, 'langs.json')) as f:
     langs = json.load(f)
 
 lang_of_ending = {ending: lang for lang, data in langs.items() for ending in data['endings']}

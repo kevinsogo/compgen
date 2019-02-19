@@ -5,7 +5,7 @@ import re
 
 from .exceptions import *
 
-from kg.iutils import *
+from ..script.utils import *
 
 class CommandError(CompileError): ...
 

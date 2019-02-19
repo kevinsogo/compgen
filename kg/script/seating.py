@@ -10,14 +10,11 @@ import os.path
 
 from .contest_details import *
 from .utils import *
-from .iutils import *
 
 
 class SeatingError(Exception): ...
 class SeatingFormatError(SeatingError): ...
 
-
-script_path = os.path.dirname(os.path.realpath(__file__))
 
 def dump_grid(f, grid):
     sz = max(len(str(v)) for row in grid for v in row)
@@ -214,7 +211,7 @@ class Seating:
         context['for_title'] = f"FOR {context['title']}" if context['title'] else ''
         context['code'] = '(' + context['code'] + ')' if context['code'] else ''
         context['ptitle'] = '(' + context['title'] + ')' if context['title'] else ''
-        with open(os.path.join(script_path, 'data', 'seating.html')) as of:
+        with open(os.path.join(kg_data_path, 'seating.html')) as of:
             targetfile.write(of.read().format(**context))
 
 

@@ -2,15 +2,14 @@ import json
 import os.path
 import re
 
-from .iutils import *
+from .utils import *
 
-script_path = os.path.dirname(os.path.realpath(__file__))
-with open(os.path.join(script_path, 'data', 'contest_defaults.json')) as f:
+with open(os.path.join(kg_data_path, 'contest_defaults.json')) as f:
     defaults = json.load(f)
 
 valid_keys = set(defaults) | {"comments", "extras"}
 
-with open(os.path.join(script_path, 'data', 'contest_langs.json')) as f:
+with open(os.path.join(kg_data_path, 'contest_langs.json')) as f:
     langs = json.load(f)
 
 def get_lang(lang):

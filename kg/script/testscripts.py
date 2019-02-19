@@ -4,7 +4,6 @@ from shutil import copyfile
 import os.path
 
 from .formats import *
-from .iutils import *
 from .programs import *
 from .utils import *
 
