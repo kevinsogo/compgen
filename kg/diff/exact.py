@@ -7,20 +7,20 @@ def is_exactly_equal(seq1, seq2):
 @set_checker()
 @default_score
 def checker(input_file, output_file, judge_file, **kwargs):
-    if not is_exactly_equal(output_file, judge_file):
+    output_lines = list(output_file)
+    judge_lines = list(judge_file)
+    if not is_exactly_equal(output_lines, judge_lines):
         ### @@if format not in ('pg', 'hr') {
         if 'output_path' in kwargs and 'judge_path' in kwargs:
-            import subprocess
-            from subprocess import PIPE
+            import difflib
+            diff = '\n'.join(difflib.unified_diff(output_lines, judge_lines, fromfile='Output File', tofile='Judge File'))
 
-            p = subprocess.run(['diff', kwargs['output_path'], kwargs['judge_path']], stdout=PIPE, encoding='utf-8')
-
-            to_print = p.stdout
-            if len(to_print) > 111+3: to_print = to_print[:111] + '...'
-            assert len(to_print) <= 111+3
+            N = 1111
+            if len(diff) > N+3: diff = diff[:N] + '...'
+            assert len(diff) <= N+3
 
             print('Incorrect. Diff:')
-            print(to_print)
+            print(diff)
         ### @@ }
         raise WA('Incorrect.')
 
