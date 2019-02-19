@@ -339,16 +339,17 @@ def get_subtasks(subtasks, detector, format_, relpath=None):
 
 gen_p = subparsers.add_parser('gen',
     formatter_class=argparse.RawDescriptionHelpFormatter,
-               help='Generate output files for some given input files',
+               help='Run a program against several files as input, and generate an output file for each',
         description=cformat_text(dedent('''\
-                Generate output files for some given input files.
+                Run a program against several files as input, and generate an output file for each.
+
+                A common use is to generate output data from the input data using the solution program.
 
 
-                $ [*[kg gen -i [input_pattern] -o [output_pattern] -f [solution_program]]*]
+                $ [*[kg gen -i [input_pattern] -o [output_pattern] -f [program]]*]
 
-                This generates the files [output_pattern] by running [solution_program] for every file in
-                [input_pattern]. [solution_program] must be a program that takes an input from stdin and prints
-                the output in stdout.
+                This generates the files [output_pattern] by running [program] for every file in [input_pattern].
+                [program] must be a program that takes an input from stdin and prints the output in stdout.
 
                 The output files will be inferred from the corresponding input files. "*" in patterns are
                 wildcards, and they will be matched automatically.
@@ -361,8 +362,8 @@ gen_p = subparsers.add_parser('gen',
                 Here, input files "tests/*.in" will be converted to output files "tests/*.ans", with the part in
                 the "*" carrying over. For example, "tests/005.in" corresponds to "tests/005.ans".
 
-                Quotes are required (at least on Linux), otherwise bash will replace it with the
-                actual matched filenames. (not sure about Windows)
+                Quotes are required (at least on Linux), otherwise bash will replace it with the actual matched
+                filenames. (not sure about Windows)
 
                 The programming language of the program is inferred from the extension. You can also pass a full
                 command using -c, for example,
