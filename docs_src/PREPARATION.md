@@ -154,7 +154,7 @@ A generator takes some command line arguments and prints a valid test file to th
 It's easy to write a test generator.  
 
 ```python
-{{ addition/single_case.py }}
+{{ addition/gen_single.py }}
 ```
 
 **Notes:**
@@ -179,12 +179,12 @@ The testscript file contains instructions on how to generate all the tests. It l
 {{ templates/testscript }}
 ```
 
-The programs used will be taken from `generators` in `details.json`; in this case, `single_case.py` and `multi_case_lazy.py`. They can be in any language. A `!` at the beginning means "run this bash command as is". Comments begin with `#`. 
+The programs used will be taken from `generators` in `details.json`; in this case, `gen_single.py` and `gen_multi_lazy.py`. They can be in any language. A `!` at the beginning means "run this bash command as is". Comments begin with `#`. 
 
 This is similar to Polygon's testscript system. In place of `$`, you can write an explicit index, like
 
 ```bash
-single_case 10 100000 > 11
+gen_single 10 100000 > 11
 ```
 
 This will force the output of that line to be the $11$th file. Note that counting starts at $1$, but generated files start at `000`, so this will create `tests/010.in`.  
@@ -192,17 +192,17 @@ This will force the output of that line to be the $11$th file. Note that countin
 *Note:* Generators are expected to produce the same output file for the same list of arguments. (The random seed is determined purely by the argument list.) This means that something like this will generate the same files:
 
 ```bash
-single_case 10 100000 > $
-single_case 10 100000 > $
-single_case 10 100000 > $
+gen_single 10 100000 > $
+gen_single 10 100000 > $
+gen_single 10 100000 > $
 ```
 
 If you want to generate different files, pass an extra argument (which will be ignored but will trigger a different random seed) like this:
 
 ```bash
-single_case 10 100000 ignored1 > $
-single_case 10 100000 ignored2 > $
-single_case 10 100000 ignored3 > $
+gen_single 10 100000 ignored1 > $
+gen_single 10 100000 ignored2 > $
+gen_single 10 100000 ignored3 > $
 ```
 
 <!-- TODO numbering in testscript -->

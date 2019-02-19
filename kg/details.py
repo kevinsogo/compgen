@@ -43,6 +43,10 @@ class Details(object):
             self.subtask_detector = detector_from_validator(self.validator, relpath=relpath)
             assert (not self.subtask_detector) == (not self.validator)
 
+        # prefix of generators
+        for generator in self.generators:
+            if not os.path.basename(generator.filename).startswith('gen_'):
+                warn_print(f"It is preferable to prefix generator filenames with 'gen_' (found {repr(generator.filename)})")
 
         if not self.judge_data_maker:
             self.judge_data_maker = self.model_solution

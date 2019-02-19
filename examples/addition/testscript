@@ -1,11 +1,11 @@
 ! cat sample.in > $
-single_case 10 10 > $
-single_case 10 100 > $
-single_case 10 1000 > 4
-single_case 10 10000 > $
-multi_case_lazy 0 10 20 > $
-multi_case_lazy 1 10 20 > $
-multi_case_lazy 2 10 20 > $
-multi_case_lazy 3 10 20 > $
-multi_case_eager 7,10-12 10 100 > {7,10-11,12}
-single_case 10 100000 > $
+gen_single 10 10 > $
+gen_single 10 100 > $
+gen_single 10 1000 > 4
+gen_single 10 10000 > $
+gen_multi_lazy 0 10 20 > $
+gen_multi_lazy 1 10 20 > $
+gen_multi_lazy 2 10 20 > $
+gen_multi_lazy 3 10 20 > $
+gen_multi_eager 7,10-12 10 100 > {7,10-11,12}
+gen_single 10 100000 > $

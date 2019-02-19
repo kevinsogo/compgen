@@ -281,23 +281,23 @@ The testscript file contains instructions on how to generate all the tests. It l
 # comments are prefixed with hash (#)
 
 ! cat sample.in > $
-single_case 10 10 > $
-single_case 10 100 > $
-single_case 10 1000 > $
-single_case 10 10000 > $
-multi_case_lazy 0 10 20 > $
-multi_case_lazy 1 10 20 > $
-multi_case_lazy 2 10 20 > $
-multi_case_lazy 3 10 20 > $
-single_case 10 100000 > $
+gen_single 10 10 > $
+gen_single 10 100 > $
+gen_single 10 1000 > $
+gen_single 10 10000 > $
+gen_multi_lazy 0 10 20 > $
+gen_multi_lazy 1 10 20 > $
+gen_multi_lazy 2 10 20 > $
+gen_multi_lazy 3 10 20 > $
+gen_single 10 100000 > $
 ```
 
-The programs used will be taken from `generators` in `details.json`; in this case, `single_case.py` and `multi_case_lazy.py`. They can be in any language. A `!` at the beginning means "run this bash command as is". Comments begin with `#`. 
+The programs used will be taken from `generators` in `details.json`; in this case, `gen_single.py` and `gen_multi_lazy.py`. They can be in any language. A `!` at the beginning means "run this bash command as is". Comments begin with `#`. 
 
 This is similar to Polygon's testscript system. In place of `$`, you can write an explicit index, like
 
 ```bash
-single_case 10 100000 > 11
+gen_single 10 100000 > 11
 ```
 
 This will force the output of that line to be the $11$th file. Note that counting starts at $1$, but generated files start at `000`, so this will create `tests/010.in`.  
@@ -305,17 +305,17 @@ This will force the output of that line to be the $11$th file. Note that countin
 *Note:* Generators are expected to produce the same output file for the same list of arguments. (The random seed is determined purely by the argument list.) This means that something like this will generate the same files:
 
 ```bash
-single_case 10 100000 > $
-single_case 10 100000 > $
-single_case 10 100000 > $
+gen_single 10 100000 > $
+gen_single 10 100000 > $
+gen_single 10 100000 > $
 ```
 
 If you want to generate different files, pass an extra argument (which will be ignored but will trigger a different random seed) like this:
 
 ```bash
-single_case 10 100000 ignored1 > $
-single_case 10 100000 ignored2 > $
-single_case 10 100000 ignored3 > $
+gen_single 10 100000 ignored1 > $
+gen_single 10 100000 ignored2 > $
+gen_single 10 100000 ignored3 > $
 ```
 
 <!-- TODO numbering in testscript -->

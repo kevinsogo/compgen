@@ -4,10 +4,9 @@
     "validator": "validator.py",
     "testscript": "testscript",
     "generators": [
-        "single_case.py",
-        "multi_case.py",
-        "multi_case_lazy.py",
-        "multi_case_eager.py"
+        "gen_single.py",
+        "gen_multi_lazy.py",
+        "gen_multi_eager.py"
     ],
     "other_programs": [
         "formatter.py"

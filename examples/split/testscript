@@ -1,7 +1,7 @@
-single_case 10 10 > $
-single_case 10 50 > $
-single_case 10 100 > $
-single_case 10 500 > $
-single_case 10 1000 > $
-single_case 10 5000 > $
-single_case 10 10000 > $
+gen_single 10 10 > $
+gen_single 10 50 > $
+gen_single 10 100 > $
+gen_single 10 500 > $
+gen_single 10 1000 > $
+gen_single 10 5000 > $
+gen_single 10 10000 > $
