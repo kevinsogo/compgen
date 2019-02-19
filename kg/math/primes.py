@@ -7,19 +7,29 @@ from itertools import chain
 from random import randrange
 from sys import stderr, argv
 
+class MathError(Exception): ...
+
+def prime_sieve(n):
+    sieve_is_prime = [False]*2 + [True]*(n-1)
+    for i in range(2, n+1):
+        if sieve_is_prime[i]:
+            for j in range(i*i, n+1, i):
+                sieve_is_prime[j] = False
+    return sieve_is_prime
+
+def get_primes(n, sieve_is_prime=None):
+    if sieve_is_prime is None: sieve_is_prime = prime_sieve(n)
+    return [p for p in range(n+1) if sieve_is_prime[p]]
+
 _sieve_is_prime = []
 _sieve_primes = []
 def _set_sieve(n):
-    _sieve_is_prime[:] = [False]*2 + [True]*(n-1)
-    for i in range(2, n+1):
-        if _sieve_is_prime[i]:
-            for j in range(i*i, n+1, i):
-                _sieve_is_prime[j] = False
-    _sieve_primes[:] = [p for p in range(n+1) if _sieve_is_prime[p]]
+    _sieve_is_prime[:] = prime_sieve(n)
+    _sieve_primes[:] = get_primes(n, _sieve_is_prime)
 
 _small_primes = []
 def _set_small(s):
-    _small_primes[:] = [p for p in range(s+1) if _sieve_is_prime[p]]
+    _small_primes[:] = get_primes(s, _sieve_is_prime)
 
 _set_sieve(10**5)
 _set_small(80)
@@ -54,21 +64,21 @@ def is_prime_miller_rabin(n, *, more_witnesses=()): ### @@if False {
     if n < 2^64, then is_prime(n) never returns a wrong answer. (hopefully!)
     """
     ### @@}
-    # if too small, check small_is_prime
+    # if too small, check small_is_prime   ### @if False
     if n < len(_sieve_is_prime): return _sieve_is_prime[n]
-    # check divisibility with small primes
+    # check divisibility with small primes   ### @if False
     if any(n % p == 0 for p in _small_primes): return False
-    # find (d,s) such that d*2^s = n-1 with d odd
+    # find (d,s) such that d*2^s = n-1 with d odd   ### @if False
     d, s = n - 1, 0
     while not d & 1: d >>= 1; s += 1
-    # find the best set of witnesses
+    # find the best set of witnesses   ### @if False
     for bound, bound_ws in _witnesses_bounds:
         if n < bound:
             best_witnesses = bound_ws
             break
     else:
         best_witnesses = _i64_witnesses
-    # check compositeness with the witnesses
+    # check compositeness with the witnesses   ### @if False
     for a in chain(best_witnesses, more_witnesses):
         if _check_composite(n, s, d, a): return False
     return True
@@ -83,8 +93,8 @@ def is_prime_naive(n):
         if n % p == 0: return False
         p += 1
     return True
-# TODO implement some O(n^(1/3)) primality test/factorization (perhaps Fermat+Lehman?) or something,
-# O(n^(1/4)) also possible [SQUFOF algorithm] but may be too hard to implement and verify
+# TODO implement some O(n^(1/3)) primality test/factorization (perhaps Fermat+Lehman?) or something, ### @if False
+# O(n^(1/4)) also possible [SQUFOF algorithm] but may be too hard to implement and verify ### @if False
 
 def is_prime(n, guarantee=True):
     if not is_prime_miller_rabin(n, more_witnesses=(randrange(2, 10**18) for i in range(5 if n >= 2**64 else 0))):
@@ -98,7 +108,14 @@ def next_prime(n):
     while not is_prime(n): n += 1
     return n
 
+def prev_prime(n):
+    if n < 2: raise MathError(f"There is no prime <= {n}")
+    while not is_prime(n): n -= 1
+    assert n >= 2
+    return n
 
+### @@if False {
 if __name__ == '__main__':
     n = int(argv[1])
     print(f"{n} is", "prime" if is_prime(n) else "not prime")
+### @@}
