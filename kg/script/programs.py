@@ -28,6 +28,25 @@ def _strip_prefixes(command, *prefixes):
         else:
             yield part
 
+def _get_python3_command(*, verbose=True):
+    if verbose: info_print("getting python3 command...", file=stderr)
+    if subprocess.run(['check-pypy3'], stdout=subprocess.PIPE, stderr=subprocess.PIPE).returncode == 0:
+        if verbose:
+            print(info_text("using"), key_text("pypy3"), info_text("('kg' pypy3 installation found)"),
+                  file=stderr)
+        return 'pypy3'
+    else:
+        if verbose:
+            print(info_text("using"), key_text("python3"), info_text("('kg' pypy3 installation not found)"),
+                  file=stderr)
+        return 'python3'
+
+python3_command = None
+def get_python3_command(*, verbose=True):
+    global python3_command
+    if not python3_command: python3_command = _get_python3_command(verbose=verbose)
+    return python3_command
+
 class Program:
     def __init__(self, filename, compile_, run, *, relpath=None, strip_prefixes=['___'], check_exists=True):
         if not filename: raise ValueError("Filename cannot be empty")
@@ -43,6 +62,7 @@ class Program:
             'sep': os.sep,
             'filename': filename,
             'rel_filename': self.rel_filename,
+            'python3': get_python3_command(),
             'filename_base': os.path.splitext(os.path.basename(filename))[0],
         }
         self.compile = env['compile'] = _strip_prefixes([p.format(**env) for p in compile_], *strip_prefixes)
@@ -66,7 +86,8 @@ class Program:
         kwargs.setdefault('check', True)
         if time:
             start_time = timel.time()
-            if os.name != 'nt': command = ['/usr/bin/time', '-f' 'ELAPSED TIME from /usr/bin/time %esec %Usec %Ssec'] + command
+            if os.name != 'nt':
+                command = ['/usr/bin/time', '-f' 'ELAPSED TIME from /usr/bin/time %esec %Usec %Ssec'] + command
         try:
             return subprocess.run(command, **kwargs)
         except Exception:

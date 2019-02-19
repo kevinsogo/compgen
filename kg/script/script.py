@@ -312,7 +312,7 @@ def get_subtasks(subtasks, detector, format_, relpath=None):
         if not subtasks_of[input_]:
             raise CommandError(f"No subtasks found for {input_}")
         if subtset and not (subtasks_of[input_] <= subtset):
-            raise CommandError("Found invalid subtasks!" + ' '.join(sorted(subtasks_of[input_] - subtset)))
+            raise CommandError("Found invalid subtasks! " + ' '.join(map(repr, sorted(subtasks_of[input_] - subtset))))
 
         all_subtasks |= subtasks_of[input_]
         info_print(f"Subtasks found for {input_}:", end=' ')

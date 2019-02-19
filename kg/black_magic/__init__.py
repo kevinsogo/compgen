@@ -1,4 +1,11 @@
-from enum import Enum, auto
+from enum import Enum
+try:
+    from enum import auto
+except ImportError:
+    def auto(): # hacky for pypy3
+        auto.val += 1
+        return auto.val
+    auto.val = 0
 from sys import stdout, stderr
 import base64, re, zlib
 

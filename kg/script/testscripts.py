@@ -52,7 +52,7 @@ def run_testscript(inputs, testscript, generators, *, relpath=None):
             yield filename
         else:
             # replace the first part
-            info_print(f'[o={otarget}] GENERATING MULTIPLE (from {repr(src_line)})')
+            info_print(f'[o={otarget}] GENERATING MULTIPLE: {len(target)} FILES (from {repr(src_line)})')
             dupseq, *rargs = args
             dupseq = ':' + dupseq
             args = dupseq, *rargs

@@ -10,10 +10,12 @@ from kg.script.programs import *
 parser = argparse.ArgumentParser(description='Run against the validator across multiple subtasks and print those which accept.')
 
 parser.add_argument('subs', nargs='+', help='List of subtasks')
+parser.add_argument('-q', '--quiet', action='store_true', help=argparse.SUPPRESS)
 parser.add_argument('-c', '--command', nargs='+', help='validator command', required=True)
 
 args = parser.parse_args()
 
+get_python3_command(verbose=not args.quiet)
 prog = Program.from_args(None, args.command)
 
 def dec(s):

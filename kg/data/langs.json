@@ -1,7 +1,7 @@
 {
     "python3": {
         "compile": "kg-assert-exist {filename}",
-        "run": "python3 {filename}",
+        "run": "{python3} {filename}",
         "endings": [".py", ".py3"]
     },
     "python2": {

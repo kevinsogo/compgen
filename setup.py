@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from setuptools import setup
 
@@ -18,7 +18,7 @@ setup(name='KompGen',
       ],
       package_data={
           'kg': [
-              'data/*',
+              'data/*.*',
               'data/template/*',
               'data/contest_template/*',
               'data/contest_template/pc2/*'

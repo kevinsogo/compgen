@@ -13,7 +13,7 @@ valid_keys = set(defaults) | {"comments", "extras"}
 def detector_from_validator(validator, relpath=None):
     if validator:
         return Program("!fromvalidator", validator.compile,
-                ["kg-subtasks", "-c"] + ['___' + part for part in validator.run] + ["--"],
+                ["kg-subtasks", "-q", "-c"] + ['___' + part for part in validator.run] + ["--"],
                 relpath=relpath)
 
 class Details(object):
@@ -46,7 +46,8 @@ class Details(object):
         # prefix of generators
         for generator in self.generators:
             if not os.path.basename(generator.filename).startswith('gen_'):
-                warn_print(f"It is preferable to prefix generator filenames with 'gen_' (found {repr(generator.filename)})")
+                warn_print("It is preferable to prefix generator filenames with 'gen_' "
+                          f"(found {repr(generator.filename)})")
 
         if not self.judge_data_maker:
             self.judge_data_maker = self.model_solution
