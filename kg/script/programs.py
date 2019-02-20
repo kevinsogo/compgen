@@ -96,7 +96,7 @@ class Program:
             raise
         finally:
             if time:
-                elapsed = timel.time() - start_time
+                self.last_running_time = elapsed = timel.time() - start_time
                 info_print(f"ELAPSED TIME from time.time(): {elapsed:.2f}sec", file=stderr)
 
     def matches_abbr(self, abbr):

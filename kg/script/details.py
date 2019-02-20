@@ -1,4 +1,5 @@
 import json
+from sys import stderr
 
 from .programs import *
 from .formats import *
@@ -47,7 +48,7 @@ class Details(object):
         for generator in self.generators:
             if not os.path.basename(generator.filename).startswith('gen_'):
                 warn_print("It is preferable to prefix generator filenames with 'gen_' "
-                          f"(found {repr(generator.filename)})")
+                          f"(found {repr(generator.filename)})", file=stderr)
 
         if not self.judge_data_maker:
             self.judge_data_maker = self.model_solution

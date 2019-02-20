@@ -560,8 +560,10 @@ def kg_test(format_, args):
     judge.do_compile()
     total = corrects = 0
     scoresheet = []
+    max_time = 0
     for index, (input_, output_) in enumerate(format_.thru_io()):
         def check_correct():
+            nonlocal max_time
             with tempfile.NamedTemporaryFile(delete=False) as tmp:
                 with open(input_) as inp:
                     info_print("File", str(index).rjust(3), 'CHECKING AGAINST', input_)
@@ -570,6 +572,8 @@ def kg_test(format_, args):
                     except CalledProcessError:
                         err_print('The solution issued a runtime error...')
                         return False
+                    finally:
+                        max_time = max(max_time, solution.last_running_time)
 
                 jargs = list(map(os.path.abspath, (input_, tmp.name, output_)))
                 if not args.judge_strict_args:
@@ -590,6 +594,7 @@ def kg_test(format_, args):
     decor_print('.'*42)
     (succ_print if corrects == total else err_print)(str(corrects), end=' ')
     (succ_print if corrects == total else info_print)(f'out of {total} files correct')
+    info_print(f'Max running time (from time.time()): {max_time:.2f}sec')
     decor_print('.'*42)
     decor_print()
 

@@ -6,7 +6,7 @@ def is_exactly_equal(seq1, seq2):
 
 @set_checker()
 @default_score
-def checker(input_file, output_file, judge_file, **kwargs):
+def check_exactly_equal(input_file, output_file, judge_file, **kwargs):
     output_lines = list(output_file)
     judge_lines = list(judge_file)
     if not is_exactly_equal(output_lines, judge_lines):
