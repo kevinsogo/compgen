@@ -12,15 +12,20 @@
 
 - Support more formats: Kattis, CodeChef, DOM?.  
 
+- (kg kontest) Make file locations in CDP relative if possible, so that "kg kontest" outputs can be placed anywhere.
 
 
 # To consider  
 
 This includes some disorganized ideas, TODOs, notes...
 
-- Prefix all generators (templates, examples) with `gen_`. Would be a nice convention to have.
+- Fix '--loc' running of java code.
 
 - Allow running several solutions at once.  
+
+- Author/s fields.
+
+- Possibly use HJSON (or something).
 
 - Rename HELP.md.
 

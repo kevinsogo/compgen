@@ -51,3 +51,15 @@ def gen_star_tree(rand, n):
 def gen_line_tree(rand, n, *, cactus=0):
     for i in range(1, n):
         yield i, i - 1 - (i - 1) % (cactus + 1)
+
+def shuff_labels(rand, nodes, edges):
+    nodes = node_arg(nodes)
+    newlabel = dict(zip(nodes, rand.shuff(nodes)))
+    return [(newlabel[x], newlabel[y], *r) for x, y, *r in edges]
+
+def rand_swaps(rand, nodes, edges):
+    nodes = node_arg(nodes)
+    def rand_swap(x, y, *r):
+        if rand.randrange(2): x, y = y, x
+        return (x, y, *r)
+    return [rand_swap(*e) for e in edges]
