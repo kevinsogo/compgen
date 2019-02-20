@@ -24,7 +24,7 @@ setup(name='KompGen',
               'kg-polygon = kg:main_pg',
               'kg-hr = kg:main_hr',
               'kg-hackerrank = kg:main_hr',
-              'kg-aux = kg.script.aux:main'
+              'kg-aux = kg.script.aux:main',
           ],
       },
       packages=[
@@ -41,7 +41,7 @@ setup(name='KompGen',
               'data/*.*',
               'data/template/*',
               'data/contest_template/*',
-              'data/contest_template/pc2/*'
+              'data/contest_template/pc2/*',
           ],
           'kg.diff': [
               'templates/*',

@@ -2,7 +2,7 @@
 # Created: {datetime_created}
 --- 
 
-name: '{letter_title}'
+name: "{letter_title}"
 source: 
 author: 
 license: 

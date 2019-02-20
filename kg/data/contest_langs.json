@@ -3,7 +3,7 @@
         "display_name": "Java",
         "compile": "javac {filename}",
         "compiled_file": "{filename_base}.class",
-        "run": "java -Xss128m -Xms960 -Xmx960m {filename_base}",
+        "run": "java -Xss128m -Xms960m -Xmx960m {filename_base}",
         "interpreted": false
     },
     "c": {

@@ -50,14 +50,14 @@ parser = argparse.ArgumentParser(
 
                 - For one-off scripting tasks, e.g., testing a solution against a bunch of data.
 
-                    - (for problems) [*[kg subtasks]*], [*[kg gen]*], [*[kg test]*], [*[kg run]*]
+                    - (for problems) [*[kg gen]*], [*[kg test]*], [*[kg run]*], [*[kg subtasks]*]
                     - (for contests) [*[kg seating]*], [*[kg passwords]*]
                     - (others) [*[kg convert]*], [*[kg convert-sequence]*]
 
                 - For developing problems/contests from scratch (writing generators, validators, checkers, etc.)
 
-                    - (for problems) [*[kg init]*], [*[kg make]*], [*[kg gen]*]/[*[test]*]/[*[run]*], [*[kg kompile]*]
-                    - (for contests) [*[kg kontest]*]
+                    - (for problems) [*[kg init]*], [*[kg make]*], [*[kg gen]*]/[*[test]*]/[*[run]*], [*[kg compile]*]
+                    - (for contests) [*[kg contest]*]
 
                 See the individual --help texts for each command, e.g., [*[kg init --help]*].
         ''')))
