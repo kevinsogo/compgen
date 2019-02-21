@@ -254,6 +254,6 @@ Feel free to include/exclude other files depending on your needs.
 
 - Feel free to request features/changes/improvements you'd like to see.
 
-- [See this list.](docs/HELP.md) Looking forward to your merge request!
+- [See this list.](TODOS.md) Looking forward to your merge request!
 
 

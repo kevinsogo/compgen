@@ -15,19 +15,15 @@
 
 This includes some disorganized ideas, TODOs, notes...
 
-- Fix '--loc' running of java code.
-
 - Allow running several solutions at once.  
 
 - Author/s fields.
 
+- Allow overriding of defaults when using Bounds & Bounds. Add stderr prints about "overriding" when one is not an Interval. Possibly disallow Interval & non-Interval.
+
 - Possibly use HJSON (or something) for config files, not pure JSON.
 
-- Rename HELP.md.
-
 - Add summaries/reports in kg gen and kg run. (and kg make?)
-
-- Use `isclose` for abs and rel grading; remove abs_error and abs_rel_error. (probably not... we need to use decimals for accurate checking)
 
 - Annotated fields in details.json for programs and their expected verdicts.
 
