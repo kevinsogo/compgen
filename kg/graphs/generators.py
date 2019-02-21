@@ -54,6 +54,7 @@ def gen_line_tree(rand, n, *, cactus=0):
 
 def shuff_labels(rand, nodes, edges):
     nodes = node_arg(nodes)
+    assert len(set(nodes)) == len(nodes)
     newlabel = dict(zip(nodes, rand.shuff(nodes)))
     return [(newlabel[x], newlabel[y], *r) for x, y, *r in edges]
 

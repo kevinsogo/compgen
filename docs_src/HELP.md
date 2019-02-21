@@ -25,7 +25,11 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Rename HELP.md.
 
-- Use `isclose` for abs and rel grading. remove abs_error and abs_rel_error
+- Add summaries/reports in kg gen and kg run. (and kg make?)
+
+- Use `isclose` for abs and rel grading; remove abs_error and abs_rel_error. (probably not... we need to use decimals for accurate checking)
+
+- Annotated fields in details.json for programs and their expected verdicts.
 
 - Use `os.path.normcase` (or something similar) on filenames parsed from details.json and similar places, so it could be interpreted properly in the correct OS.
 
@@ -62,8 +66,6 @@ This includes some disorganized ideas, TODOs, notes...
 - Support for stress testing. `kg.stresses`, I guess.
 
 - Export to .tex format, both for Kattis and for `\newproblem{title}{TL}` format.
-
-- Use python's `timeit` to check the running time of solutions, instead of `/usr/bin/time`.
 
 - Use a YAML library.
 
