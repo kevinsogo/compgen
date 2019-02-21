@@ -6,13 +6,13 @@ Use this library if you're one of the following:
 - You want to write a problem from scratch. (Bonus points if you want to write everything in Python.)
 - Somewhere in between.
 
-Intended for Ubuntu (and probably some other Unix-based systems) for now, although at least one person has managed to make it work in Windows. If you can't, feel free to ask for help :)
+Intended for Ubuntu (and probably some other Unix-based systems) for now, although at least two people have managed to make it work in Windows. If you can't, feel free to ask for help :)
 
 
 
 # Setup
 
-- Run `bash setup.sh` as root or superuser (sudo). If it prints `DONE`, then it was successful. Make sure you have `python3` and `pip3`.  
+- Run `bash setup.sh` as root or superuser (sudo), or `setup.bat` if you're using Windows. If it prints `DONE`, then it was successful. Make sure you have `python3` and `pip3`.  
 
     *Note:* Among other things, it installs a bunch of python packages (via `setuptools`). Feel free to modify `setup.sh` if you don't want to install globally, e.g., if you want to use virtualenv or something. 
 
@@ -20,6 +20,11 @@ Intended for Ubuntu (and probably some other Unix-based systems) for now, althou
 
 - Whenever this library gets updated (e.g. you pull from the repo), run `bash setup.sh` again to update your installation.
 
+- (Optional) If you want to autocomplete commands in bash with tab, make sure that `AUTOCOMPLETE READY` was printed by `setup.sh`, and then add the following line in your `.bashrc`:
+
+```bash
+eval "$(register-python-argcomplete kg)"
+```
 
 
 # Useful scripts

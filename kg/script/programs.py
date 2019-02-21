@@ -1,9 +1,9 @@
 from collections import defaultdict
+from sys import stderr
 import json
 import os
 import os.path
 import subprocess
-from sys import stderr
 import time as timel
 
 from .utils import *

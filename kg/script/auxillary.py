@@ -67,6 +67,8 @@ def kg_subtasks(args):
 
 
 
+
+
 assertexist_p = subparsers.add_parser('assert-exist',
                help='Check if a file exists',
         description='Check if a file exists.')
@@ -80,11 +82,23 @@ def kgutil_assertexist(args):
 
 
 
+
+
 noop_p = subparsers.add_parser('noop', help='Do nothing', description='Do nothing.')
 
 @set_handler(noop_p)
 def kgutil_noop(args):
     ...
+
+
+
+
+
+mc_p = subparsers.add_parser('kg-main-commands', help='Print all main kg commands', description='Print all main kg commands.')
+
+@set_handler(mc_p)
+def kgutil_mc(args):
+    print('kg', 'kg-pg', 'kg-polygon', 'kg-kg', 'kg-kompgen', 'kg-hr', 'kg-hackerrank')
 
 
 

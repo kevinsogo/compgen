@@ -16,6 +16,7 @@ import re
 import tempfile
 import zipfile
 
+from argcomplete import autocomplete
 from jinja2 import Template
 from natsort import natsorted
 
@@ -1620,6 +1621,7 @@ def kg_passwords(format_, args):
 
 
 ##########################################
+autocomplete(parser)
 def main(format='kg'):
     args = parser.parse_args()
     if args.krazy: set_krazy(True)

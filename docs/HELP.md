@@ -35,7 +35,9 @@ This includes some disorganized ideas, TODOs, notes...
 
 - "kg template" to generate template validators/checkers/generators
 
-- Use Jinja templating for makedocs, seating and passwods
+- Use Jinja templating for makedocs, seating and passwords
+
+- Autocomplete feels slow. try optimizing
 
 - Use bare *
 

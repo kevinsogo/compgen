@@ -16,7 +16,6 @@ python3 setup.py clean --all
 python3 setup.py install
 python3 setup.py clean --all
 
-
 # also try installing for pypy3. (It should just skip if you don't have pypy3)
 if [ -x "$(command -v pypy3)" ]; then
     echo "ATTEMPTING TO INSTALL ON pypy3 (sudo)"
@@ -31,4 +30,7 @@ else
     echo "NOT INSTALLING ON pypy3, pypy3 NOT FOUND."
 fi
 
+
+echo
+activate-global-python-argcomplete --user && echo "AUTOCOMPLETE READY" || echo "Skipping autocomplete"
 echo "DONE"
