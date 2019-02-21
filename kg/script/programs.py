@@ -29,21 +29,30 @@ def _strip_prefixes(command, *prefixes):
             yield part
 
 def _get_python3_command(*, verbose=True):
-    if verbose: info_print("getting python3 command...", file=stderr)
-    try:
-        subprocess.run(['pypy3', '-c', 'from kg import main'],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                check=True)
-        if verbose:
-            print(info_text("using"), key_text("pypy3"), info_text("('kg' pypy3 installation found)"),
-                  file=stderr)
-        return 'pypy3'
-    except:
-        if verbose:
-            print(info_text("using"), key_text("python3"), info_text("('kg' pypy3 installation not found)"),
-                  file=stderr)
-        return 'python3'
+    """
+    Get the first python3 command that has 'kg' installed, among "pypy3", "python3", "python", and "py".
+    "kg" is detected as being installed if 'from kg import main' succeeds.
+    """
+    if verbose: info_print("getting python3 command...", end='', file=stderr, flush=True)
+    previous = []
+    for command in ['pypy3', 'python3', 'python', 'py']:
+        try:
+            subprocess.run([command, '-c', 'from kg import main'],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    check=True)
+        except Exception:
+            previous.append(command)
+        else:
+            if verbose: print(info_text("got"), key_text(command),
+                              info_text(f"('kg' not found in {', '.join(previous)})" if previous else ''),
+                              file=stderr)
+            return command
+    fallback = 'python3'
+    if verbose: print(warn_text("\nWarning: falling back to"), key_text(fallback),
+                      warn_text(f"even if 'import kg' failed! ('kg' not found in {', '.join(previous)})"),
+                      file=stderr)
+    return fallback
 
 python3_command = None
 def get_python3_command(*, verbose=True):
