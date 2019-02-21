@@ -226,7 +226,7 @@ subtasks_p = subparsers.add_parser('subtasks',
 
                 For example,
 
-                $ [*[kg subtasks -i "tests/*.in" -f detector.java]*]
+                $ [*[kg subtasks -i "tests/*.in" -f Detector.java]*]
                 $ [*[kg subtasks -i "tests/*.in" -vf validator.cpp]*]
 
                 Quotes are required (at least on Linux), otherwise bash will replace it with the
@@ -241,7 +241,7 @@ subtasks_p = subparsers.add_parser('subtasks',
 
                 You can also run this for just one file, e.g.,
 
-                $ [*[kg subtasks -i data/sample.in -f detector.java]*]
+                $ [*[kg subtasks -i data/sample.in -f Detector.java]*]
 
                 There can even be multiple "*"s in -i.
 
@@ -356,7 +356,7 @@ gen_p = subparsers.add_parser('gen',
 
                 For example,
 
-                $ [*[kg gen -i "tests/*.in" -o "tests/*.ans" -f solution.java]*]
+                $ [*[kg gen -i "tests/*.in" -o "tests/*.ans" -f Solution.java]*]
 
                 Here, input files "tests/*.in" will be converted to output files "tests/*.ans", with the part in
                 the "*" carrying over. For example, "tests/005.in" corresponds to "tests/005.ans".
@@ -482,7 +482,7 @@ test_p = subparsers.add_parser('test',
 
                 For example,
 
-                $ [*[kg test -i "tests/*.in" -o "tests/*.ans" -f solution.java]*]
+                $ [*[kg test -i "tests/*.in" -o "tests/*.ans" -f Solution.java]*]
 
                 Here, input files "tests/*.in" will be matched with output files "tests/*.ans", with the part in
                 the "*" carrying over. For example, "tests/005.in" corresponds to "tests/005.ans".
@@ -508,7 +508,7 @@ test_p = subparsers.add_parser('test',
                 If your program has a custom checker file, you may pass it via the -jf ("judge file") option.
                 For example,
 
-                $ [*[kg test -i "tests/*.in" -o "tests/*.ans" -f solution.java -jf checker.py]*]
+                $ [*[kg test -i "tests/*.in" -o "tests/*.ans" -f Solution.java -jf checker.py]*]
 
                 Here, checker.py takes three command line arguments "input_path", "output_path" and "judge_path",
                 and exits with 0 iff the answer is correct. It may print anything in stdout/stderr.
@@ -655,7 +655,7 @@ run_p = subparsers.add_parser('run',
 
                 For example,
 
-                $ [*[kg run -i "tests/*.in" -f solution.java]*]
+                $ [*[kg run -i "tests/*.in" -f Solution.java]*]
 
                 Quotes are required (at least on Linux), otherwise bash will replace it with the
                 actual matched filenames. (not sure about Windows)
@@ -675,7 +675,7 @@ run_p = subparsers.add_parser('run',
 
                 This is useful, for example, if you want to validate a bunch of test files:
 
-                $ [*[kg run -i "tests/*.in" -f validator.java]*]
+                $ [*[kg run -i "tests/*.in" -f Validator.java]*]
 
 
                 If you wrote your problem using "kg init", then you may omit "-i" and "-f"; they will default to
@@ -745,7 +745,7 @@ make_p = subparsers.add_parser('make',
                 $ [*[kg make outputs --checks]*]  # if you want to run the checker
 
 
-                This detects the subtasks (similar to "kg subtask") and writes it to the "subtasks_files" file
+                This detects the subtasks (similar to "kg subtasks") and writes it to the "subtasks_files" file
                 in JSON format:
 
                 $ [*[kg make subtasks]*]
@@ -1367,7 +1367,7 @@ def kg_contest(format_, args):
     contest = ContestDetails.from_loc(args.config)
 
     seedval = args.seed
-    if seedval is None: seedval = randrange(10**6)
+    if seedval is None: seedval = randrange(10**18)
 
     if args.format == 'pc2':
 

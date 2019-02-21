@@ -17,15 +17,15 @@ def create_passwords(accounts, *, seedval=None):
     PASSWORD_LETTERS = 'ABCDEFGHJKLMNOPRSTUVWXYZ'
     VOWELS = set('AEIOUY')
     BLACKLIST = set('''
-        yak yac pek pec ass fuc fuk fuq god gad omg not qum qoq qoc qok coq koq kik utn fux fck coc cok coq kox koc
-        kok koq cac cak caq kac kak kaq pac bad lus pak ded dic die kil dik diq dix dck pns psy fag fgt ngr nig cnt
-        knt sht dsh twt bch cum clt kum klt suc suk suq sck lic lik liq lck jiz jzz gay gey gei gai vag vgn sjv fap
-        prn jew joo gvr pus pis pss snm tit fku fcu fqu hor slt jap wop kik kyk kyc kyq dyk dyq dyc kkk jyz prk prc
-        prq mic mik miq myc myk myq guc guk guq giz gzz sex sxx sxi sxe sxy xxx wac wak waq wck pot thc vaj vjn nut
-        std lsd poo azn pcp dmn orl anl ans muf mff phk phc phq xtc tok toc toq mlf rac rak raq rck sac sak saq pms
-        nad ndz nds wtf sol sob fob sfu abu alh wag gag ggo pta pot tot put tut tet naz nzi xex cex shi xxi fak fac
+        yak yac pek pec ass fuc fuk fuq god gad omg not qum qoq qoc qok coq koq kik utn fux fck coc cok coq kox koc pee
+        kok koq cac cak caq kac kak kaq pac bad lus pak ded dic die kil dik diq dix dck pns psy fag fgt ngr nig cnt knt
+        sht dsh twt bch cum clt kum klt suc suk suq sck lic lik liq lck jiz jzz gay gey gei gai vag vgn sjv fap prn jew
+        joo gvr pus pis pss snm tit fku fcu fqu hor slt jap wop kik kyk kyc kyq dyk dyq dyc kkk jyz prk prc prq mic mik
+        miq myc myk myq guc guk guq giz gzz sex sxx sxi sxe sxy xxx wac wak waq wck pot thc vaj vjn nut std lsd poo azn
+        pcp dmn orl anl ans muf mff phk phc phq xtc tok toc toq mlf rac rak raq rck sac sak saq pms nad ndz nds wtf sol
+        sob fob sfu abu alh wag gag ggo pta pot tot put tut tet naz nzi xex cex shi xxi fak fac tti
     '''.upper().strip().split())
-    if seedval is None: seedval = randrange(10**6)
+    if seedval is None: seedval = randrange(10**18)
 
     info_print(f"Using seed {seedval}", file=stderr)
     rand = Random(seedval)

@@ -96,7 +96,7 @@ class Seating:
     def assign(self, groups, seedval=None):
         seating = list(map(list, self.seating))
         
-        if seedval is None: seedval = randrange(10**6)
+        if seedval is None: seedval = randrange(10**18)
 
         # prepare
         seats = [(i, j) for i, row in enumerate(seating) for j, ch in enumerate(row) if ch != '.' and ch != '#']
@@ -285,7 +285,7 @@ def write_seating(contest, seedval=None, dest='.'):
 
     with open(contest.rel_seating) as f: seating = Seating.load(f)
 
-    if seedval is None: seedval = randrange(10**6)
+    if seedval is None: seedval = randrange(10**18)
 
     filename = os.path.join(dest, f'seating_{contest.code}.html')
     info_print("Writing to", filename, file=stderr)
