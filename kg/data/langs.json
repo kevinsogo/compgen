@@ -11,7 +11,7 @@
     },
     "java": {
         "compile": "javac {filename}",
-        "run": "java {filename_base}",
+        "run": "java -cp {filename_path} {filename_base}",
         "endings": [".java"]
     },
     "cpp": {

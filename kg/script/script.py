@@ -704,7 +704,7 @@ def kg_run(format_, args):
     format_ = get_format(args, read='i')
     details = Details.from_format_loc(args.format, args.details, relpath=args.loc)
 
-    solution = Program.from_args(args.file, args.command) or details.judge_data_maker
+    solution = Program.from_args(args.file, args.command) or details.model_solution
     if not solution: raise CommandError("Missing solution")
 
     solution.do_compile()

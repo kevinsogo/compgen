@@ -76,6 +76,7 @@ class Program:
             'filename': filename,
             'rel_filename': self.rel_filename,
             'python3': get_python3_command(),
+            'filename_path': os.path.dirname(self.rel_filename),
             'filename_base': os.path.splitext(os.path.basename(filename))[0],
         }
         self.compile = env['compile'] = _strip_prefixes([p.format(**env) for p in compile_], *strip_prefixes)
