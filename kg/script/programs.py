@@ -30,14 +30,16 @@ def _strip_prefixes(command, *prefixes):
 
 def _get_python3_command(*, verbose=True):
     if verbose: info_print("getting python3 command...", file=stderr)
-    if subprocess.run(['pypy3', '-c', 'from kg import main'], 
+    try:
+        subprocess.run(['pypy3', '-c', 'from kg import main'],
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE).returncode == 0:
+                stderr=subprocess.PIPE,
+                check=True)
         if verbose:
             print(info_text("using"), key_text("pypy3"), info_text("('kg' pypy3 installation found)"),
                   file=stderr)
         return 'pypy3'
-    else:
+    except:
         if verbose:
             print(info_text("using"), key_text("python3"), info_text("('kg' pypy3 installation not found)"),
                   file=stderr)
