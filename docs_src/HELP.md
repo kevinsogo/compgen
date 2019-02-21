@@ -21,13 +21,15 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Author/s fields.
 
-- Possibly use HJSON (or something).
+- Possibly use HJSON (or something) for config files, not pure JSON.
 
 - Rename HELP.md.
 
 - Use `isclose` for abs and rel grading. remove abs_error and abs_rel_error
 
 - Use `os.path.normcase` (or something similar) on filenames parsed from details.json and similar places, so it could be interpreted properly in the correct OS.
+
+- "kg template" to generate template validators/checkers/generators
 
 - Use Jinja templating for makedocs, seating and passwods
 

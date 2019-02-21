@@ -308,7 +308,7 @@ def seating_args(subparsers):
                 $ [*[kg seating -f [seating_file] assign]*]
                 $ [*[kg seating -f [seating_file] write]*]
 
-                A sample [seating_file] can be seen in exasmples/seating.txt.
+                A sample [seating_file] can be seen in examples/seating.txt.
 
 
                 The write command is probably the most useful for you. See
