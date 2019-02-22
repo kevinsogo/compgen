@@ -1376,9 +1376,12 @@ def kg_contest(format_, args):
     target_loc = args.target_loc or contest.target_loc or os.path.abspath('kgkompiled')
     if not os.path.isabs(target_loc):
         raise CommandError(f"--target-loc must be an absolute path: got {repr(target_loc)}")
+    info_print("Using target_loc =", repr(target_loc), file=stderr)
 
     seedval = args.seed
+    if seedval is None: seedval = contest.seed
     if seedval is None: seedval = randrange(10**18)
+    info_print("Using seedval =", repr(seedval), file=stderr)
 
     if args.format == 'pc2':
 

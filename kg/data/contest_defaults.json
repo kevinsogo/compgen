@@ -19,6 +19,7 @@
     "admins": [],
     "leaderboards": [],
     "feeders": [],
+    "seed": null,
     "team_count": 0,
     "judge_count": 1,
     "admin_count": 1,
