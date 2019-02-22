@@ -1370,12 +1370,12 @@ def kg_contest(format_, args):
     if args.format != 'pc2':
         raise CommandError(f"Unsupported contest format: {args.format}")
 
-    target_loc = args.target_loc or os.path.abspath('kgkompiled')
-    if not os.path.isabs(target_loc):
-        raise CommandError(f"--target-loc must be an absolute path: got {repr(target_loc)}")
-
     # TODO possibly use a yaml library here, but for now this will do.
     contest = ContestDetails.from_loc(args.config)
+
+    target_loc = args.target_loc or contest.target_loc or os.path.abspath('kgkompiled')
+    if not os.path.isabs(target_loc):
+        raise CommandError(f"--target-loc must be an absolute path: got {repr(target_loc)}")
 
     seedval = args.seed
     if seedval is None: seedval = randrange(10**18)

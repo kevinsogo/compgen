@@ -54,6 +54,8 @@ A couple of things to keep in mind:
 - `kg kontest` expects that `kg make all` has been run for every problem. If you want to force run `kg make all` across all problems, pass the `-m` option to `kg kontest`.
 
 - PC^2 requires absolute paths in its configuration, so it is highly recommended to pass the `--target-loc` option. This specifies where the contest folder will eventually end up in the admin and judge computers. The contest folder will still be generated in `kgkompiled/`, but it will be configured as if it will eventually be placed in `--target-loc` when it is loaded.
+
+    You can also specify the `"target_loc"` in `contest.json`.  
     
 A working example is provided in `examples/contest.json`. You can run this to test it:
 

@@ -24,5 +24,6 @@
     "admin_count": 1,
     "leaderboard_count": 1,
     "feeder_count": 0,
+    "target_loc": null,
     "seating": null
 }

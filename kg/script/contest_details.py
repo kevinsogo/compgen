@@ -28,7 +28,7 @@ class ContestDetails(object):
         self.relpath = os.path.dirname(os.path.abspath(source)) if source is not None else None
 
         # data validation
-        for key in ['title', 'code', 'duration', 'scoreboard_freeze_length', 'site_password', 'problems', 'seating']:
+        for key in ['title', 'code', 'duration', 'scoreboard_freeze_length', 'site_password', 'problems', 'seating', 'target_loc']:
             setattr(self, key, self.details.get(key, defaults.get(key)))
 
         if not (self.code and valid_contestcode.match(self.code)):
