@@ -1338,12 +1338,20 @@ contest_p = subparsers.add_parser('kontest',
                 $ [*[kg contest [format] [config_file] --make-all]*]
 
 
+                Important note about the "--target-loc [target_loc]" option: The [target_loc] must be an absolute
+                path pointing to a folder and denotes the location where the contest folder going to be in the
+                contest system. The output of "kg contest" will still be generated in "kgkompiled/", but the output
+                itself will be configured as if it will be placed in [target_loc] when it is used. This is useful
+                since PC^2 requires absolute paths in its configuration.
+
+
                 See the KompGen repo docs for more details.
         ''')))
 contest_p.add_argument('format', help='Contest format to compile to')
 contest_p.add_argument('config', help='JSON file containing the contest configuration')
 contest_p.add_argument('-m', '--make-all', action='store_true', help='Run "kg make all" in all problems')
 contest_p.add_argument('-ns', '--no-seating', action='store_true', help='Skip the creation of the seating arrangement')
+contest_p.add_argument('-t', '--target-loc', help='Specify the final location of the contest folder in the contest system')
 contest_p.add_argument('-s', '--seed', type=int, help='Initial seed to use')
 
 def problem_letters():
@@ -1362,8 +1370,11 @@ def kg_contest(format_, args):
     if args.format != 'pc2':
         raise CommandError(f"Unsupported contest format: {args.format}")
 
+    target_loc = args.target_loc or os.path.abspath('kgkompiled')
+    if not os.path.isabs(target_loc):
+        raise CommandError(f"--target-loc must be an absolute path: got {repr(target_loc)}")
+
     # TODO possibly use a yaml library here, but for now this will do.
-    # It might be a hassle to add another dependency.
     contest = ContestDetails.from_loc(args.config)
 
     seedval = args.seed
@@ -1376,6 +1387,10 @@ def kg_contest(format_, args):
         cdp_config = os.path.join(contest_folder, 'CDP', 'config')
         ext_data = os.path.join(contest_folder, 'ALLDATA')
         contest_template = os.path.join(kg_data_path, 'contest_template', 'pc2')
+
+        target_folder = os.path.join(target_loc, contest.code)
+        target_cdp_config = os.path.join(target_folder, 'CDP', 'config')
+        target_ext_data = os.path.join(target_folder, 'ALLDATA')
 
         # construct template environment
         if not contest.site_password: raise CommandError("site_password required for PC2")
@@ -1393,7 +1408,7 @@ def kg_contest(format_, args):
             "feeder_count": len(contest.feeders),
             "filename": "{:mainfile}",
             "filename_base": "{:basename}",
-            "alldata": os.path.abspath(ext_data),
+            "alldata": target_ext_data,
         }
 
         # problem envs
@@ -1414,11 +1429,12 @@ def kg_contest(format_, args):
             decor_print('-'*42)
             print(beginfo_text("Getting problem"), key_text(repr(code)), beginfo_text(f"(from {problem_loc})"))
 
+            if details.valid_subtasks:
+                warn_print("Warning: The problem has subtasks, but 'pc2' contests only support binary tasks. "
+                        "Ignoring subtasks.")
+
             if args.make_all:
                 info_print('Running "kg make all"...')
-                if details.valid_subtasks:
-                    warn_print("Warning: The problem has subtasks, but 'pc2' contests only support binary tasks. "
-                            "Ignoring subtasks.")
                 kg_make(['all'], problem_loc, format_, details)
 
             time_limit = int(round(details.time_limit))
@@ -1447,10 +1463,11 @@ def kg_contest(format_, args):
                 # TODO handle the case where src is not Python.
                 # We need to compile it and "pass the compiled file" somehow.
                 srcf = os.path.join(problem_loc, 'kgkompiled', 'pc2', os.path.basename(src.filename)) 
-                targf = os.path.join(cdp_config, code, targ, os.path.basename(src.filename))
+                rel_targf = os.path.join(code, targ, os.path.basename(src.filename))
+                targf = os.path.join(cdp_config, rel_targf)
                 touch_container(targf)
                 copyfile(srcf, targf)
-                problem_env[letter][name] = os.path.abspath(targf)
+                problem_env[letter][name] = os.path.join(target_cdp_config, rel_targf)
 
         def yaml_lang(lang):
             with open(os.path.join(contest_template, '1language.yaml')) as f:
@@ -1508,7 +1525,7 @@ def kg_contest(format_, args):
             info_print(f"Copying data for {code}...")
             try:
                 src_format = KGFormat(penv['problem_loc'], read='io')
-            except FormatException as exc:
+            except FormatError as exc:
                 raise CommandError(f"No tests found for '{penv['problem_loc']}'. Please run 'kg make all' "
                         "to generate the files, or call 'kg kontest' with the '-m' option.") from exc
             for data_loc in [
