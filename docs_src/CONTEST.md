@@ -43,24 +43,26 @@ Most fields should be self-explanatory, but here are things to keep in mind:
 
 ## Compiling to PC2-readable format
 
-The next step is to run `kg kontest pc2 path/to/contest.json`. This will create a folder `kgkompiled/[contestcode]`. It will contain (among other things) `contest.yaml`, which can be loaded by PC2.  
+The next step is to run `kg kontest pc2 path/to/contest.json`. This will create a folder `kgkompiled/[contestcode]/`. It will contain (among other things) `contest.yaml`, which can be loaded by PC2.  
 
 A couple of things to keep in mind:
 
-- The `ALLDATA` folder needs to be copied to each judge computer. It must be located in the same absolute path across all judge computers. This is a PC2 requirement. This also means that all judge computers must be identical, including the name of the current user.
-
-    I suggest placing the `ALLDATA` folder in `/home/[user]/[contestcode]/ALLDATA` to make it simple. And then in the admin, go to the *Problems* tab, click *Set Judge's Data Path*, and paste the absolute path to `ALLDATA` there.  
-
-- `kg kontest` expects that `kg make all` has been run for every problem. If you want to force run `kg make all` across all problems, pass the `-m` option to `kg kontest`.
-
-- PC2 requires absolute paths in its configuration, so it is highly recommended to pass the `--target-loc` option. This specifies where the contest folder will eventually end up in the admin and judge computers. The contest folder will still be generated in `kgkompiled/`, but it will be configured as if it will eventually be placed in `--target-loc` when it is loaded by PC2.
+- PC2 requires absolute paths in its configuration, so it is highly recommended to pass the `--target-loc` option. This specifies where the contest folder will eventually end up in the admin and judge computers. The contest folder (`[contestcode]/`) will still be generated in `kgkompiled/`, but it will be configured as if it will eventually be placed in `--target-loc` when it is loaded by PC2.
 
     You can also specify the `"target_loc"` in `contest.json`.  
+
+    I suggest something simple like `/home/[user]/` for the `target_loc`.  
+
+    You then need to place the `[contestcode]/` folder in `target_loc`.
     
+    *Note:* It must be located in the same absolute path across all judge computers. This is a PC2 requirement. This also means that all judge computers must be identical, including the name of the current user.
+
+- `kg kontest` expects that `kg make all` has been run for every problem. If you want to force run `kg make all` across all problems, pass the `--make-all` option to `kg kontest`.
+
 A working example is provided in `examples/contest.json`. You can run this to test it:
 
 ```bash
-$ kg kontest pc2 examples/contest.json   # add -m if you want
+$ kg kontest pc2 examples/contest.json   # add --make-all if you want
 ```
 
 This will create the folder `kgkompiled/EXAMPLECONTEST` from the two example problems.
@@ -72,12 +74,14 @@ This will create the folder `kgkompiled/EXAMPLECONTEST` from the two example pro
 To load everything to PC2 the first time you run a server, run the following:
 
 ```bash
-$ bin/pc2server --load path/to/CDP/config/contest.yaml
+$ bin/pc2server --load path/to/[contestcode]/CDP/config/contest.yaml
 ```
 
 Alternatively, run the server normally, and in the admin, go to the *Import Config* tab and load `contest.yaml` there.
 
 If you wish to update an existing PC2 contest, run `kg kontest` again, and then load `contest.yaml` from *Import Config* again. The `--load` method cannot be used to update.
+
+If you wish to use PC2 Profiles, you can load each one using the *Import Config* tab, per profile. 
 
 
 ## Additional PC2 settings  
@@ -97,6 +101,28 @@ There are a couple of other options that I couldn't find a way to set automatica
 
 If you wish to hold a practice round, create another `contest.json` file (say `practice_contest.json`) and perform the same steps above. Give it a different contest code. (You may load it under a different PC2 *Profile*.)
 
+
+## Additional PC2 notes  
+
+Unfortunately, PC2 is quite buggy, so I would like to mention a few important ones here. These don't have anything to do with KompGen but I'm including it here anyway because I'm nice.
+
+- Most of the time, PC2 v9.6.0 cannot handle submissions which do not read the whole input file completely. (It will issue an error like "broken pipe" or "stream closed".) You will most likely encounter these types of problems during the practice round since contestants will be testing the system. In this case, it is better to run the submission manually. Just be sure to read the code first to make sure it isn't doing anything dangerous like deleting folders.  
+
+- The default compile and run commands per language are based off of PC2's defaults, but these defaults don't seem to properly handle filenames with spaces in them, like `Problem A.cpp`. You might need to update the compile and run commands per language.  (If you find cross-platform-compatible versions of these commands, please write them in `contest_langs.json` and issue a merge request to KompGen!)
+    
+    You may also want to tell the contestants to not use spaces/special characters in their filenames.
+
+- For some reason, PC2 uses `a.txt` as the filename that contains the output data, so a submission overwriting the contents of the file `a.txt` might get judged as "Yes" purely because `a.txt` is being overwritten! (Huge security issue, I know.) For this, I suggest reading each submission that is judged "Yes" if they're reading off/writing to a file, and if so, running it manually as well.
+
+    You may also want to tell contestants to read from stdin and print to stdout, and that reading from/writing to a file is not allowed.
+
+- I don't know if this bug still exists in v9.6.0, but in previous versions, PC2 cannot efficiently handle output with very long lines, say 1 million characters in a single line. I think it is the Java GUI that can't handle it (although it can handle a million short lines just fine). In that case, you may want to judge this problem manually, or simply ensure that output lines in your problem are not that long. (Again, not sure if the bug still exists.)
+
+- Although I attempt to set it automatically, the "scoreboard freeze" feature of PC2 doesn't seem to work. Please watch out if this is the case, and if so, just shut down the scoreboard accounts manually at the moment you want to freeze the scoreboard.
+
+- To make manual testing easier, I suggest installing KompGen in the judge computer so that you have access to `kg gen/test/run`. (The data is available in `ALLDATA/[problem_code]/` and custom checkers are available at `CDP/config/[problem_code]/output_validators/` if you need them. You may need them as the `-i`, `-o` and `-jf` arguments.)  
+
+- I don't know of any way to set the following things, either manually or automatically: runtime memory limit, compile time limit, compile memory limit. Please tell me if you know. Thanks!
 
 
 # Other Formats  
