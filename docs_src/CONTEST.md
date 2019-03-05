@@ -112,10 +112,6 @@ Unfortunately, PC2 is quite buggy, so I would like to mention a few important on
     
     You may also want to tell the contestants to not use spaces/special characters in their filenames.
 
-- For some reason, PC2 uses `a.txt` as the filename that contains the output data, so a submission overwriting the contents of the file `a.txt` might get judged as "Yes" purely because `a.txt` is being overwritten! (Huge security issue, I know.) For this, I suggest reading each submission that is judged "Yes" if they're reading off/writing to a file, and if so, running it manually as well.
-
-    You may also want to tell contestants to read from stdin and print to stdout, and that reading from/writing to a file is not allowed.
-
 - I don't know if this bug still exists in v9.6.0, but in previous versions, PC2 cannot efficiently handle output with very long lines, say 1 million characters in a single line. I think it is the Java GUI that can't handle it (although it can handle a million short lines just fine). In that case, you may want to judge this problem manually, or simply ensure that output lines in your problem are not that long. (Again, not sure if the bug still exists.)
 
 - Although I attempt to set it automatically, the "scoreboard freeze" feature of PC2 doesn't seem to work. Please watch out if this is the case, and if so, just shut down the scoreboard accounts manually at the moment you want to freeze the scoreboard.
