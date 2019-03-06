@@ -25,6 +25,8 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Add summaries/reports in kg gen and kg run. (and kg make?)
 
+- Renames... (write_to_file* -> gen_to_file?)
+
 - Annotated fields in details.json for programs and their expected verdicts.
 
 - Use `os.path.normcase` (or something similar) on filenames parsed from details.json and similar places, so it could be interpreted properly in the correct OS.
@@ -32,6 +34,8 @@ This includes some disorganized ideas, TODOs, notes...
 - "kg template" to generate template validators/checkers/generators
 
 - Use Jinja templating for makedocs, seating and passwords
+
+- Use subtasks_files (subtasks.json) for kg test if it exists (and format is kg).
 
 - Autocomplete feels slow. try optimizing
 

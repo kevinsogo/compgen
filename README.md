@@ -20,11 +20,11 @@ Intended for Ubuntu (and probably some other Unix-based systems) for now, althou
 
 - Whenever this library gets updated (e.g. you pull from the repo), run `bash setup.sh` again to update your installation.
 
-- (Optional) If you want to autocomplete commands in bash with tab, make sure that `AUTOCOMPLETE READY` was printed by `setup.sh`, and then add the following line in your `.bashrc`:
+<!-- - (Optional) If you want to autocomplete commands in bash with tab, make sure that `AUTOCOMPLETE READY` was printed by `setup.sh`, and then add the following line in your `.bashrc`:
 
 ```bash
 eval "$(register-python-argcomplete kg)"
-```
+``` -->
 
 
 # Useful scripts

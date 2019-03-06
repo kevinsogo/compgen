@@ -320,12 +320,12 @@ def get_subtasks(subtasks, detector, format_, relpath=None):
         key_print(*sorted(subtasks_of[input_]))
 
     info_print("Distinct subtasks found:", end=' ')
-    key_print(*sorted(all_subtasks))
+    key_print(*natsorted(all_subtasks))
 
     if subtset:
         assert all_subtasks <= subtset
         if all_subtasks != subtset:
-            warn_print('Warning: Some subtasks not found:', *sorted(subtset - all_subtasks), file=stderr)
+            warn_print('Warning: Some subtasks not found:', *natsorted(subtset - all_subtasks), file=stderr)
 
     return subtasks_of, all_subtasks, inputs
 
@@ -563,33 +563,42 @@ def kg_test(format_, args):
     scoresheet = []
     max_time = 0
     for index, (input_, output_) in enumerate(format_.thru_io()):
-        def check_correct():
+        def get_score():
             nonlocal max_time
             with tempfile.NamedTemporaryFile(delete=False) as tmp:
-                with open(input_) as inp:
-                    info_print("File", str(index).rjust(3), 'CHECKING AGAINST', input_)
-                    try:
-                        solution.do_run(stdin=inp, stdout=tmp, time=True, check=True)
-                    except CalledProcessError:
-                        err_print('The solution issued a runtime error...')
-                        return False
-                    finally:
-                        max_time = max(max_time, solution.last_running_time)
+                with tempfile.NamedTemporaryFile(delete=False) as result_tmp:
+                    with open(input_) as inp:
+                        info_print("File", str(index).rjust(3), 'CHECKING AGAINST', input_)
+                        try:
+                            solution.do_run(stdin=inp, stdout=tmp, time=True, check=True)
+                        except CalledProcessError:
+                            err_print('The solution issued a runtime error...')
+                            return False
+                        finally:
+                            max_time = max(max_time, solution.last_running_time)
 
-                jargs = list(map(os.path.abspath, (input_, tmp.name, output_)))
-                if not args.judge_strict_args:
-                    jargs += ['-c', solution.filename, '-t', str(index), '-v']
+                    jargs = list(map(os.path.abspath, (input_, tmp.name, output_)))
+                    if not args.judge_strict_args:
+                        jargs += [result_tmp.name, '-c', solution.filename, '-t', str(index), '-v']
 
-                return judge.do_run(*jargs, check=False).returncode == 0
+                    correct = judge.do_run(*jargs, check=False).returncode == 0
+                    with open(result_tmp.name) as result_tmp_file:
+                        try:
+                            score = json.load(result_tmp_file)['score']
+                        except Exception as exc:
+                            import traceback
+                            traceback.print_exc()
+                            score = 1.0 if correct else 0.0 # can't read score. use binary scoring
+                    return correct, score
 
-        correct = check_correct()
+        correct, score = get_score()
         total += 1
         corrects += correct
         if correct:
             succ_print("File", str(index).rjust(3), 'correct')
         else:
             err_print("File", str(index).rjust(3), 'WRONG' + '!'*11)
-        scoresheet.append((index, input_, correct))
+        scoresheet.append((index, input_, correct, score))
 
     decor_print()
     decor_print('.'*42)
@@ -619,9 +628,9 @@ def kg_test(format_, args):
             subtasks_of, all_subtasks, inputs = get_subtasks(subtasks, detector, format_)
             # normal grading
             min_score = {sub: 1 for sub in all_subtasks}
-            for index, input_, correct in scoresheet:
+            for index, input_, correct, score in scoresheet:
                 for sub in subtasks_of[input_]:
-                    min_score[sub] = min(min_score[sub], correct)
+                    min_score[sub] = min(min_score[sub], score)
 
             decor_print()
             decor_print('.'*42)
@@ -630,7 +639,9 @@ def kg_test(format_, args):
                 print(info_text("Subtask ="),
                       key_text(str(sub).rjust(3)),
                       info_text(": Score = "),
-                      (succ_text if min_score[sub] == 1 else err_text)(f"{float(min_score[sub]):.3f}"),
+                      (succ_text if min_score[sub] == 1 else
+                       info_text if min_score[sub] > 0 else
+                       err_text)(f"{float(min_score[sub]):.3f}"),
                       sep='')
 
 

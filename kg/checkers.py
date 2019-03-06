@@ -285,7 +285,17 @@ _polygon_rcode = {
     Verdict.EXC: 3,
 }
 
-### @@if format in ('local', 'kg', 'pg', 'pc2') {
+### @@if format in ('local', 'kg') {
+def write_json_verdict(verdict, message, score, result_file):
+    with open(result_file, 'w') as f:
+        json.dump({
+            'verdict': verdict,
+            'message': message,
+            'score': score,
+        }, f)
+### @@}
+
+### @@if format in ('pg', 'pc2') {
 _xml_outcome = {
     Verdict.AC: "Accepted",
     Verdict.CE: "No - Compilation Error",
@@ -296,7 +306,7 @@ _xml_outcome = {
     Verdict.FAIL: "No - Other - Contact Staff",
     Verdict.EXC: "No - Other - Contact Staff",
 }
-def write_xml_verdict(verdict, message, result_file):
+def write_xml_verdict(verdict, message, score, result_file):
     from xml.etree.ElementTree import Element, ElementTree
     result = Element('result')
     result.set('security', result_file)
@@ -354,7 +364,9 @@ def _check_local(checker, title='', file=stdout, help=None):
 
     if args.result_file:
         if verbose: print(f"{tc_id:>2} Writing result to {args.result_file}...", file=file)
-        write_xml_verdict(verdict, message, args.result_file)
+        ### @@replace 'write_json_verdict', 'write_json_verdict' if format in ('local', 'kg') else 'write_xml_verdict' {
+        write_json_verdict(verdict, message, score, args.result_file)
+        ### @@}
 
     exit(_polygon_rcode[verdict])
 ### @@ }

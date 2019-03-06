@@ -30,7 +30,12 @@ class KGRandom(Random):
             x = self.randint(a, b)
             y = self.randint(a, b)
             if x <= y: return x, y
-    def randmerge(self, a, b):
+    def randmerge(self, *x):
+        # divide and conquer for speed
+        if not x: return []
+        if len(x) == 1: return list(x[0])
+        return self.randmerge2(self.randmerge(*x[::2]), self.randmerge(*x[1::2]))
+    def randmerge2(self, a, b):
         a = list(a)[::-1]
         b = list(b)[::-1]
         res = []
