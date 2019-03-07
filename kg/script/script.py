@@ -573,7 +573,7 @@ def kg_test(format_, args):
                             solution.do_run(stdin=inp, stdout=tmp, time=True, check=True)
                         except CalledProcessError:
                             err_print('The solution issued a runtime error...')
-                            return False
+                            return False, 0.0
                         finally:
                             max_time = max(max_time, solution.last_running_time)
 
