@@ -16,12 +16,25 @@ def _check_simple(x, name):
         raise FormatError(f"Invalid {name} pattern: {x} ... cannot handle patterns with {invalid}")
 
 class Format:
-    def __init__(self, inputg=None, outputg=None, read='', write=''):
+    def __init__(self, inputg=None, outputg=None, *, read='', write='', clear=''):
         if not read and not write: raise FormatError("read and write modes cannot both be empty")
-        if not(set(read) <= set('io')): raise FormatError(f"Unknown read mode: {read}")
-        if not(set(write) <= set('io')): raise FormatError(f"Unknown write mode: {write}")
+        if not set(read) <= set('io'): raise FormatError(f"Unknown read mode: {read}")
+        if not set(write) <= set('io'): raise FormatError(f"Unknown write mode: {write}")
+        if not set(clear) <= set('io'):  raise FormatError(f"Unknown clear mode: {clear}")
         if set(read) & set(write):
             raise FormatError(f"You cannot read and write at the same time: {''.join(sorted(set(read) & set(write)))}")
+
+        if 'i' in clear:
+            if inputg is None:
+                raise FormatError("Cannot clear inputs: inputg not found!")
+            else:
+                for inputf in glob(inputg): os.remove(inputf)
+
+        if 'o' in clear:
+            if outputg is None:
+                raise FormatError("Cannot clear outputs: outputg not found!")
+            else:
+                for outputf in glob(outputg): os.remove(outputf)
 
         self._checked = False
         self._i_re = None
@@ -218,11 +231,11 @@ def set_format(short, *names):
 
 @set_format('hr', 'hackerrank')
 class HRFormat(Format):
-    def __init__(self, loc='.', read='', write=''):
+    def __init__(self, loc='.', *, read='', write='', clear=''):
         super().__init__(
                 os.path.join(loc, 'input', 'input*.txt'),
                 os.path.join(loc, 'output', 'output*.txt'),
-            read=read, write=write)
+            read=read, write=write, clear=clear)
         for inputf, ex in zip(natsorted(self.inputs), self.expected_parts()):
             expinpf = self._join_iparts(*ex)
             if inputf != expinpf:
@@ -237,11 +250,11 @@ class HRFormat(Format):
 
 @set_format('pg', 'polygon')
 class PGFormat(Format):
-    def __init__(self, loc='.', read='', write=''):
+    def __init__(self, loc='.', *, read='', write='', clear=''):
         super().__init__(
                 os.path.join(loc, 'tests', '*'),
                 os.path.join(loc, 'tests', '*.a'),
-            read=read, write=write)
+            read=read, write=write, clear=clear)
         for inputf, ex in zip(natsorted(self.inputs), self.expected_parts()):
             expinpf = self._join_iparts(*ex)
             if inputf != expinpf:
@@ -255,11 +268,11 @@ class PGFormat(Format):
 
 @set_format('kg', 'kompgen')
 class KGFormat(Format):
-    def __init__(self, loc='.', read='', write='', tests_folder='tests'):
+    def __init__(self, loc='.', *, read='', write='', clear='', tests_folder='tests'):
         super().__init__(
                 os.path.join(loc, tests_folder, '*.in'),
                 os.path.join(loc, tests_folder, '*.ans'),
-            read=read, write=write)
+            read=read, write=write, clear=clear)
         for inputf, ex in zip(natsorted(self.inputs), self.expected_parts()):
             expinpf = self._join_iparts(*ex)
             if inputf != expinpf:
@@ -271,19 +284,19 @@ class KGFormat(Format):
             yield str(c).zfill(3),
 
 
-def get_format(args, read='', write=''):
+def get_format(args, *, read='', write='', clear=''):
     if args.input:
-        return Format(args.input, args.output, read=read, write=write)
+        return Format(args.input, args.output, read=read, write=write, clear=clear)
     else:
         assert args.format
         if args.output: raise ValueError('-o/--output not allowed without -i/--input')
         if args.format in formats:
-            return formats[args.format](args.loc, read=read, write=write)
+            return formats[args.format](args.loc, read=read, write=write, clear=clear)
         else:
             raise ValueError(f'Unrecognized format: {args.format}')
 
-def get_format_from_type(format, loc, read='', write=''):
-    return formats[format](loc, read=read, write=write)
+def get_format_from_type(format, loc, *, read='', write='', clear=''):
+    return formats[format](loc, read=read, write=write, clear=clear)
 
 def is_same_format(a, b):
     return short_format[a] == short_format[b]

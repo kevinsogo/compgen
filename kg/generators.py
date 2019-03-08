@@ -168,8 +168,8 @@ def write_to_files(print_to_file, make, filenames, *args, validate=None):
     for index, case in enumerate(make(rand, *args)):
         try:
             filename = next(filenames)
-        except StopIteration:
-            raise GeneratorError(f"Not enough files! Need more than {index}")
+        except StopIteration as st:
+            raise GeneratorError(f"Not enough files! Need more than {index}") from st
         print("GENERATOR Writing to", filename, file=stderr) ### @if False
         with open(filename, 'w') as file:
             _write_with_validate(print_to_file, file, case, validate=validate) # TODO ensure this does not exit(42)

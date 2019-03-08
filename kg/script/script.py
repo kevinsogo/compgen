@@ -808,7 +808,7 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
         with open(details.testscript) as scrf:
             script = scrf.read()
 
-        fmt = get_format_from_type(format_, loc, write='i')
+        fmt = get_format_from_type(format_, loc, write='i', clear='i')
 
         if validation:
             validator = details.validator
@@ -826,7 +826,7 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
         decor_print()
         decor_print('~~ '*14)
         beginfo_print('MAKING OUTPUTS...' + ("WITH CHECKS..." if checks else 'WITHOUT CHECKS'))
-        fmt = get_format_from_type(format_, loc, read='i', write='o')
+        fmt = get_format_from_type(format_, loc, read='i', write='o', clear='o')
         generate_outputs(
                 fmt, details.judge_data_maker,
                 model_solution=details.model_solution,
