@@ -29,8 +29,8 @@ def pgen_random_tree(rand, n, *, start=1):
 def pgen_broomy_tree(rand, n, *, branches=1, leaves=0.5, randleaves=False):
     cleaves = int(n * leaves)
     trunk = n - cleaves
-    if not (trunk >= branches >= 1 and cleaves >= 0): raise TreeGenError(
-            f"Invalid/unusable broomy args: {n} {branches} {leaves} Got cleaves={cleaves} trunk={trunk}")
+    if not (trunk >= branches >= 1 and cleaves >= 0):
+        raise TreeGenError(f"Invalid/unusable broomy args: {n} {branches} {leaves} Got cleaves={cleaves} trunk={trunk}")
     for i in range(1, n):
         if i < trunk:
             yield i, max(0, i - branches)
@@ -52,7 +52,7 @@ def gen_line_tree(rand, n, *, cactus=0):
     for i in range(1, n):
         yield i, i - 1 - (i - 1) % (cactus + 1)
 
-def shuff_labels(rand, nodes, edges):
+def shuff_labels(rand, nodes, edges): # TODO merge with 'graph_relabel'...
     nodes = node_arg(nodes)
     assert len(set(nodes)) == len(nodes)
     newlabel = dict(zip(nodes, rand.shuff(nodes)))
@@ -64,3 +64,23 @@ def rand_swaps(rand, nodes, edges):
         if rand.randrange(2): x, y = y, x
         return (x, y, *r)
     return [rand_swap(*e) for e in edges]
+
+def rand_traverse(*args, **kwargs):
+    return [i for i, p, d in rand_traverse_data(*args, **kwargs)]
+
+def rand_traverse_data(rand, nodes, edges, *, start=None):
+    nodes = node_arg(nodes)
+    if start is None: start = nodes[0]
+    if start not in nodes: raise GraphError(f"Failed to traverse: {start} not in nodes (n={len(nodes)})")
+    adj = make_adj(nodes, edges)
+    coll = [(start, 0)]
+    parent = {start: start}
+    while coll:
+        idx = rand.randrange(len(coll))
+        coll[idx], coll[-1] = coll[-1], coll[idx]
+        i, d = coll.pop()
+        yield i, parent[i], d
+        for j in adj[i]:
+            if j not in parent:
+                parent[j] = i
+                coll.append((j, d + 1))
