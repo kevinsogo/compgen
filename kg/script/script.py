@@ -1100,6 +1100,9 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
         'kg.graphs': os.path.join('graphs', '__init__.py'),
         'kg.graphs.utils': os.path.join('graphs', 'utils.py'),
         'kg.graphs.generators': os.path.join('graphs', 'generators.py'),
+        'kg.grids': os.path.join('grids', '__init__.py'),
+        'kg.grids.utils': os.path.join('grids', 'utils.py'),
+        'kg.grids.generators': os.path.join('grids', 'generators.py'),
         'kg.math': os.path.join('math', '__init__.py'),
         'kg.math.primes': os.path.join('math', 'primes.py'),
     }
