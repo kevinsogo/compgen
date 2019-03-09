@@ -120,6 +120,7 @@ class DistribCase:
     def __getitem__(self, index):
         def get(rand, *args):
             groups = self.lazy(rand, *args)
+            print(f"GENERATING index {index} OUT OF {len(groups)}", file=stderr) ### @if False
             if not (0 <= index < len(groups)): raise GeneratorError(f"Invalid index: {index} out of {len(groups)} groups")
             return self.realize(groups[index])
         return get
