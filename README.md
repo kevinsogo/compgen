@@ -26,7 +26,7 @@ Intended for Ubuntu (and probably some other Unix-based systems) for now, althou
 eval "$(register-python-argcomplete kg)"
 ``` -->
 
-*Note:* This is still very early on in development---we haven't even decided on the release cycle/method yet---so expect regular updates (pull from the repo regularly), and a few of them might be backwards-incompatible. We'll fix this soon, promise!
+*Note:* This is still very early on in development&mdash;we haven't even decided on the release cycle/method yet&mdash;so expect regular updates (pull from the repo regularly), and a few of them might be backwards-incompatible. We'll fix this soon, promise!
 
 
 # Useful scripts
