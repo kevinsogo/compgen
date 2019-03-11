@@ -114,7 +114,7 @@ Unfortunately, PC2 is quite buggy, so I would like to mention a few important on
 
 - I don't know if this bug still exists in v9.6.0, but in previous versions, PC2 cannot efficiently handle output with very long lines, say 1 million characters in a single line. I think it is the Java GUI that can't handle it (although it can handle a million short lines just fine). In that case, you may want to judge this problem manually, or simply ensure that output lines in your problem are not that long. (Again, not sure if the bug still exists.)
 
-- Although I attempt to set it automatically, the "scoreboard freeze" feature of PC2 doesn't seem to work. Please watch out if this is the case, and if so, just shut down the scoreboard accounts manually at the moment you want to freeze the scoreboard.
+- Although I attempt to set it automatically, the "scoreboard freeze" feature of PC2 doesn't seem to work. Please watch out if this is indeed the case, and if so, just shut down the scoreboard accounts manually at the moment you want to freeze the scoreboard.
 
 - To make manual testing easier, I suggest installing KompGen in the judge computer so that you have access to `kg gen/test/run`. (The data is available in `ALLDATA/[problem_code]/` and custom checkers are available at `CDP/config/[problem_code]/output_validators/` if you need them. You may need them as the `-i`, `-o` and `-jf` arguments.)  
 
