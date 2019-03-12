@@ -377,7 +377,7 @@ class _Read:
     @property
     def space(self): return self.char(' ')
     @property
-    def eoln(self): return self.char(EOLN)
+    def eoln(self): return self.char(EOLN) # ubuntu only (I think).
     @property
     def eof(self): return self.char(EOF)
     
@@ -397,7 +397,7 @@ def validator(*, suppress_eof_warning=False):
             if sf.last != EOF and not suppress_eof_warning: print("Warning: The validator didn't check for EOF at the end.", file=stderr)
             ### @@ if format == 'pc2' {
             if CURR_PLATFORM == 'pc2':
-                exit(42) # magic number to indicate successful validation
+                exit(42) # magic number to indicate successful validation (PC^2)
             ### @@ }
             return res
         return new_f

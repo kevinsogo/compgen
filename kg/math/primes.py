@@ -96,21 +96,21 @@ def is_prime_naive(n):
 # TODO implement some O(n^(1/3)) primality test/factorization (perhaps Fermat+Lehman?) or something, ### @if False
 # O(n^(1/4)) also possible [SQUFOF algorithm] but may be too hard to implement and verify ### @if False
 
-def is_prime(n, guarantee=True):
-    if not is_prime_miller_rabin(n, more_witnesses=(randrange(2, 10**18) for i in range(5 if n >= 2**64 else 0))):
+def is_prime(n, *, guarantee=True):
+    if not is_prime_miller_rabin(n, more_witnesses=(randrange(2, 10**18) for i in range(11 if n >= 2**64 else 0))):
         return False
     if guarantee and n >= 2**64:
         print(f'WARNING: falling back to slow algorithm for primality testing {n}', file=stderr)
         return is_prime_naive(n)
     return True
 
-def next_prime(n):
-    while not is_prime(n): n += 1
+def next_prime(n, *, guarantee=True):
+    while not is_prime(n, guarantee=guarantee): n += 1
     return n
 
-def prev_prime(n):
+def prev_prime(n, *, guarantee=True):
     if n < 2: raise MathError(f"There is no prime <= {n}")
-    while not is_prime(n): n -= 1
+    while not is_prime(n, guarantee=guarantee): n -= 1
     assert n >= 2
     return n
 
