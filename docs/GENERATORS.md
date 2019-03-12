@@ -181,7 +181,6 @@ from kg.math.primes import * ### @import
 Sample usage:
 
 ```python
-from kg.generators import * ### @import
 from kg.math.primes import * ### @import
 
 # returns a boolean array of length n+1, where a[i] is True iff i is prime. runs in O(n log log n)
