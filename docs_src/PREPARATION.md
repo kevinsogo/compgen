@@ -167,7 +167,7 @@ It's easy to write a test generator.
 
 There are a few more advanced usages and features (will document soon!), but this should cover most use cases.
 
-<!-- Advanced tutorial involves strict multicase (not implemented yet), lazy multicase, options to write_to_file and friends, .shuff vs .shuffle, etc. -->
+More detailed tutorials, including the usage of specialized generators (graphs, grids, etc.) can be found [here](GENERATORS.md).  
 
 
 
@@ -179,7 +179,9 @@ The testscript file contains instructions on how to generate all the tests. It l
 {{ templates/testscript }}
 ```
 
-The programs used will be taken from `generators` in `details.json`; in this case, `gen_single.py` and `gen_multi_lazy.py`. They can be in any language. A `!` at the beginning means "run this bash command as is". Comments begin with `#`. 
+The programs used will be taken from `generators` in `details.json`; in this case, `gen_single.py` and `gen_multi_lazy.py`. They can be in any language.
+
+A `!` at the beginning means "run this bash command as is". Comments begin with `#`. 
 
 This is similar to Polygon's testscript system. In place of `$`, you can write an explicit index, like
 
@@ -205,9 +207,7 @@ gen_single 10 100000 ignored2 > $
 gen_single 10 100000 ignored3 > $
 ```
 
-<!-- TODO numbering in testscript -->
-
-<!-- Advanced tutorial involves describing the Polygon system, Freemarker, bracket expansion syntax, etc. -->
+<!-- Advanced tutorial involves describing the Polygon system, Freemarker (when it's implemented), bracket expansion syntax, etc. -->
 
 
 

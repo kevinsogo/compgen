@@ -116,7 +116,7 @@ def parse_testscript(testscript, generators, *, relpath=None):
             raise TestScriptError(f"Invalid testscript line: {repr(line)}")
 
         if pipe != '>':
-            raise TestScriptError(f'Testscript line must end with "> $" or "> {{file/s}}": got {repr(line)}') from exc
+            raise TestScriptError(f'Testscript line must end with "> $" or "> {{file/s}}": got {repr(line)}')
 
         gen, args = parse_generator(prog, *args, generators=generators, relpath=relpath)
 

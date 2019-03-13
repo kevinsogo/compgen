@@ -27,7 +27,15 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Renames... (write_to_file* -> gen_to_file?)
 
+- Create a more flexible "testscript" that kgkompiles to a polygon-compatible one.
+
+    - Need to think about what happens to "!" commands. (ignore?)
+
 - Annotated fields in details.json for programs and their expected verdicts.
+
+- Allow compilation of a single file. `kg kompile -f`.
+    
+    - Maybe params for imported packages, like `kg kompile -f [...] -i [... [...]]`.  
 
 - Use `os.path.normcase` (or something similar) on filenames parsed from details.json and similar places, so it could be interpreted properly in the correct OS.
 
@@ -42,8 +50,6 @@ This includes some disorganized ideas, TODOs, notes...
 - Use bare *
 
 - Force load subtasks for kg test, otherwise we load from details.subtasks_files
-
-- Add `help` and `description` in subparsers.
 
 - Enclose "@importables" in blocks and only expose the good functions. Maybe automate this with kg kompile.
 

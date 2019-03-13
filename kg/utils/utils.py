@@ -47,6 +47,7 @@ def memoize(function):
     f.memo = memo
     return f
 
+# TODO these may badly conflict with many things. come up with a solution then fix
 inf = 10**18
 r_int = r'0|(?:-?[1-9]\d*)'
 r_sint = r'[+-](?:0|(?:[1-9]\d*))'

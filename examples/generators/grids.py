@@ -63,7 +63,7 @@ draw_grid(gen_random_grid(rand, 8, 11, *range(10)))
 5 3 5 9 7 6 0 6 8 0 7
 '''
 
-# 4 times more '.'s than '#'s
+# approximately 4 times more '.'s than '#'s
 draw_grid(gen_random_grid(rand, 8, 11, Tile('.', weight=4),
                                        Tile('#', weight=1)))
 '''
@@ -123,7 +123,8 @@ draw_grid(gen_random_grid(rand, 8, 11, Tile('.', weight=4),
 . . . . . . . . . # .
 '''
 
-# 4 times more '.'s than walls. Walls can be '#' or 'X' with equal probability.
+# approximately 4 times more '.'s than walls
+# walls can be '#' or 'X' with equal probability
 draw_grid(gen_random_grid(rand, 8, 11, Tile('.', weight=4),
                                        Tile('#', 'X', weight=1)))
 '''

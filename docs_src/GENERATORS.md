@@ -1,4 +1,7 @@
-Note: this is still WIP
+Note: this doc is still WIP
+
+<!-- Advanced tutorial involves strict multicase (not implemented yet), lazy multicase, options to write_to_file and friends, .shuff vs .shuffle, etc. -->
+
 
 
 # Grid generators  
