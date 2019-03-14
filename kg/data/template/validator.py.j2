@@ -6,8 +6,8 @@ from kg.validators import * ### @import
 {% endfor %}}{% endif %}
 
 bounds = {
-    't': Interval(1, 10**5),
-    'n': Interval(1, 10**5),
+    't': 1 <= +Var <= 10**5,
+    'n': 1 <= +Var <= 10**5,
 }
 
 @validator()

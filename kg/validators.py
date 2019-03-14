@@ -20,12 +20,17 @@ class Var(metaclass=VarMeta):
     def __init__(self, *, pref='', lims=None):
         self.pref = pref
         self.lims = lims if lims is not None else []
+        if any(isinstance(v, Var) for t, v in self.lims): raise ValueError("Operand cannot be Var")
         super().__init__()
-    def __le__(self, v): self.lims.append((self.pref + 'le', v)); return self
-    def __lt__(self, v): self.lims.append((self.pref + 'lt', v)); return self
-    def __ge__(self, v): self.lims.append((self.pref + 'ge', v)); return self
-    def __gt__(self, v): self.lims.append((self.pref + 'gt', v)); return self
-    def __abs__(self): return Var(pref='abs'+self.pref, lims=self.lims)
+    def add(self, t, v):
+        if isinstance(v, Var): raise ValueError(f"Operand cannot be Var: {v}")
+        self.lims.append((self.pref + t, v))
+        return self
+    def __le__(self, v): return self.add('le', v)
+    def __lt__(self, v): return self.add('lt', v)
+    def __ge__(self, v): return self.add('ge', v)
+    def __gt__(self, v): return self.add('gt', v)
+    def __abs__(self): return Var(pref=self.pref+'abs ', lims=self.lims)
     def __and__(self, other):
         if not isinstance(other, Var): raise TypeError(f"Cannot merge {self.__class__.__name__} with {other.__class__.__name__}")
         return self.__class__(pref=self.pref, lims=self.lims+other.lims)
@@ -36,7 +41,7 @@ class Var(metaclass=VarMeta):
 
     @classmethod
     def _satisfies(cls, a, type, b):
-        while type.startswith('abs'): type, a = type[3:], abs(a)
+        while type.startswith('abs '): type, a = type[4:], abs(a)
         if type == 'le': return a <= b
         if type == 'lt': return a < b
         if type == 'ge': return a >= b
@@ -44,29 +49,23 @@ class Var(metaclass=VarMeta):
         raise ValueError(f"Unknown type: {type}")
 
     def __repr__(self):
-        return f'{self.__class__.__name__}(pref={self.pref}, lims={repr(list(self.lims))})'
+        return f'{self.__class__.__name__}(pref={repr(self.pref)}, lims={repr(list(self.lims))})'
 
     def _compact_str(self):
         low = float('-inf'), +1
         hgh = float('+inf'), -1
-        def set_low(*x):
-            nonlocal low
-            if low < x: low = x
-        def set_hgh(*x):
-            nonlocal hgh
-            if hgh > x: hgh = x
         def add_cond(type, v):
             nonlocal low, hgh
             if type in ['le', 'lt']:
-                set_hgh(v, (0 if type == 'le' else -1))
+                hgh = min(hgh, (v, (0 if type == 'le' else -1)))
             elif type in ['ge', 'gt']:
-                set_low(v, (0 if type == 'ge' else +1))
+                low = max(low, (v, (0 if type == 'ge' else +1)))
             else:
                 raise ValueError(f"Unknown type: {type}")
 
         for type_, b in self.lims:
             absed = False
-            while type_.startswith('abs'): type_, absed = type_[3:], True
+            while type_.startswith('abs '): type_, absed = type_[4:], True
             add_cond(type_, b)
             if absed:
                 if type_ == 'le':
@@ -90,7 +89,7 @@ class Var(metaclass=VarMeta):
             if res is not None: return res
         def str_once(type, b):
             x = 'x'
-            while type.startswith('abs'): type, x = type[3:], f'|{x}|'
+            while type.startswith('abs '): type, x = type[4:], f'|{x}|'
             if type == 'le': return f"{x} <= {b}"
             if type == 'lt': return f"{x} < {b}"
             if type == 'ge': return f"{b} <= {x}"
@@ -98,8 +97,9 @@ class Var(metaclass=VarMeta):
             raise ValueError(f"Unknown type: {type}")
         return "[Interval bounded by: {}]".format(', '.join(sorted(set(str_once(*x) for x in self.lims))) or 'none')
 
-# TODO rename to 'interval'
+# TODO remove 'Interval' (backwards incompatible) ### @if False
 def Interval(l, r): return l <= Var() <= r
+interval = Interval
 
 EOF = ''
 
