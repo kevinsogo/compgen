@@ -13,29 +13,52 @@ class ValidationError(Exception): ...
 
 class StreamError(ValidationError): ...
 
+class Var:
+    def __init__(self): self.constraints = []
+    def __le__(self, v): self.constraints.append(('le', v)); return self
+    def __lt__(self, v): self.constraints.append(('lt', v)); return self
+    def __ge__(self, v): self.constraints.append(('ge', v)); return self
+    def __gt__(self, v): self.constraints.append(('gt', v)); return self
+    def __eq__(self, v): self.constraints.append(('eq', v)); return self
+    def __ne__(self, v): self.constraints.append(('ne', v)); return self
+
 class Interval:
-    ''' Represents a closed interval [l, r] '''
-    def __init__(self, l, r):
-        self.l = l
-        self.r = r
+    ''' Represents a bunch of constraints. '''
+    def __init__(self, l, r=None):
+        if r is not None: l = l <= Var() <= r
+        self.constraints = tuple(l.constraints if isinstance(l, Var) else l)
         super().__init__()
 
     def __and__(self, other):
         if not isinstance(other, Interval): raise TypeError(f"Cannot merge {self.__class__.__name__} with {other.__class__.__name__}")
-        return Interval(max(self.l, other.l), min(self.r, other.r))
-
-    def __len__(self):
-        return max(0, self.r - self.l + 1)
+        return Interval(self.constraints + other.constraints)
 
     def __contains__(self, x):
-        return self.l <= x <= self.r
+        return all(self._satisfies(x, *c) for c in self.constraints)
+
+    @classmethod
+    def _satisfies(cls, a, type, b):
+        if type == 'le': return a <= b
+        if type == 'lt': return a < b
+        if type == 'ge': return a >= b
+        if type == 'gt': return a > b
+        if type == 'eq': return a == b
+        if type == 'ne': return a != b
+        raise ValueError(f"Unknown type: {type}")
 
     def __repr__(self):
-        return f'{self.__class__.__name__}({self.l}, {self.r})'
+        return f'{self.__class__.__name__}({repr(list(self.constraints))})'
 
     def __str__(self):
-        return f'[{self.l}, {self.r}]'
-
+        def str_once(type, b):
+            if type == 'le': return f"x <= {b}"
+            if type == 'lt': return f"x < {b}"
+            if type == 'ge': return f"x >= {b}"
+            if type == 'gt': return f"x > {b}"
+            if type == 'eq': return f"x == {b}"
+            if type == 'ne': return f"x != {b}"
+            raise ValueError(f"Unknown type: {type}")
+        return "[Interval defined by: {}]".format(', '.join(sorted(str_once(*x) for x in self.constraints)))
 
 EOF = ''
 
