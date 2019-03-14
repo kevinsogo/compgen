@@ -128,7 +128,7 @@ The chain accepts `int`, `ints`, `token`, `tokens`, `char`, `space`, `eoln`, and
 
 I recommend the chain style since it more closely reflects the structure of each line, yet still requires you to exactly specify each byte.
 
-*Note:* The left side of a chain-style assignment must always be enclosed by `[...]`, even if there is only one recipient. Also, `ints` returns a *single* variable (with data type "list"). For example,
+*Note:* The left side of a chain-style assignment must always be enclosed by `[...]`, even if there is only one recipient. Also, `ints` returns a *single* variable (with data type `list`). For example,
 
 ```python
 [n]    = file.read. int(1, 10**5). space

@@ -59,7 +59,7 @@ class Var(metaclass=VarMeta):
         raise ValueError(f"Unknown type: {type}")
 
     def __repr__(self):
-        return f'{self.__class__.__name__}(pref={repr(self.pref)}, lims={repr(list(self.lims))})'
+        return f'{self.__class__.__name__}(pref={repr(self.pref)}, lims={repr(self.lims)})'
 
     def _compact_str(self):
         low = float('-inf'), +1
@@ -101,6 +101,9 @@ class Var(metaclass=VarMeta):
             ...
         else:
             if res is not None: return res
+        return self.raw_str()
+
+    def raw_str(self):
         def str_once(type, b):
             x = 'x'
             while type.startswith('abs '): type, x = type[4:], f'|{x}|'
@@ -108,14 +111,14 @@ class Var(metaclass=VarMeta):
             if type == 'lt': return f"{x} < {b}"
             if type == 'ge': return f"{b} <= {x}"
             if type == 'gt': return f"{b} < {x}"
-            if type == 'eq': return f"{b} == {x}"
-            if type == 'ne': return f"{b} != {x}"
+            if type == 'eq': return f"{x} == {b}"
+            if type == 'ne': return f"{x} != {b}"
             raise ValueError(f"Unknown type: {type}")
         return "[Interval bounded by: {}]".format(', '.join(sorted(set(str_once(*x) for x in self.lims))) or 'none')
 
 # TODO remove 'Interval' (backwards incompatible) ### @if False
-def Interval(l, r): return l <= +Var <= r
-interval = Interval
+def interval(l, r): return l <= +Var <= r
+Interval = interval
 
 EOF = ''
 
