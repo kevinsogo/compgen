@@ -13,52 +13,93 @@ class ValidationError(Exception): ...
 
 class StreamError(ValidationError): ...
 
-class Var:
-    def __init__(self): self.constraints = []
-    def __le__(self, v): self.constraints.append(('le', v)); return self
-    def __lt__(self, v): self.constraints.append(('lt', v)); return self
-    def __ge__(self, v): self.constraints.append(('ge', v)); return self
-    def __gt__(self, v): self.constraints.append(('gt', v)); return self
-    def __eq__(self, v): self.constraints.append(('eq', v)); return self
-    def __ne__(self, v): self.constraints.append(('ne', v)); return self
+class VarMeta(type):
+    def __pos__(self): return self()
 
-class Interval:
-    ''' Represents a bunch of constraints. '''
-    def __init__(self, l, r=None):
-        if r is not None: l = l <= Var() <= r
-        self.constraints = tuple(l.constraints if isinstance(l, Var) else l)
+class Var(metaclass=VarMeta):
+    def __init__(self, *, pref='', lims=None):
+        self.pref = pref
+        self.lims = lims if lims is not None else []
         super().__init__()
-
+    def __le__(self, v): self.lims.append((self.pref + 'le', v)); return self
+    def __lt__(self, v): self.lims.append((self.pref + 'lt', v)); return self
+    def __ge__(self, v): self.lims.append((self.pref + 'ge', v)); return self
+    def __gt__(self, v): self.lims.append((self.pref + 'gt', v)); return self
+    def __abs__(self): return Var(pref='abs'+self.pref, lims=self.lims)
     def __and__(self, other):
-        if not isinstance(other, Interval): raise TypeError(f"Cannot merge {self.__class__.__name__} with {other.__class__.__name__}")
-        return Interval(self.constraints + other.constraints)
+        if not isinstance(other, Var): raise TypeError(f"Cannot merge {self.__class__.__name__} with {other.__class__.__name__}")
+        return self.__class__(pref=self.pref, lims=self.lims+other.lims)
+    # TODO implement __or__
 
     def __contains__(self, x):
-        return all(self._satisfies(x, *c) for c in self.constraints)
+        return all(self._satisfies(x, *c) for c in self.lims)
 
     @classmethod
     def _satisfies(cls, a, type, b):
+        while type.startswith('abs'): type, a = type[3:], abs(a)
         if type == 'le': return a <= b
         if type == 'lt': return a < b
         if type == 'ge': return a >= b
         if type == 'gt': return a > b
-        if type == 'eq': return a == b
-        if type == 'ne': return a != b
         raise ValueError(f"Unknown type: {type}")
 
     def __repr__(self):
-        return f'{self.__class__.__name__}({repr(list(self.constraints))})'
+        return f'{self.__class__.__name__}(pref={self.pref}, lims={repr(list(self.lims))})'
+
+    def _compact_str(self):
+        low = float('-inf'), +1
+        hgh = float('+inf'), -1
+        def set_low(*x):
+            nonlocal low
+            if low < x: low = x
+        def set_hgh(*x):
+            nonlocal hgh
+            if hgh > x: hgh = x
+        def add_cond(type, v):
+            nonlocal low, hgh
+            if type in ['le', 'lt']:
+                set_hgh(v, (0 if type == 'le' else -1))
+            elif type in ['ge', 'gt']:
+                set_low(v, (0 if type == 'ge' else +1))
+            else:
+                raise ValueError(f"Unknown type: {type}")
+
+        for type_, b in self.lims:
+            absed = False
+            while type_.startswith('abs'): type_, absed = type_[3:], True
+            add_cond(type_, b)
+            if absed:
+                if type_ == 'le':
+                    add_cond('ge', -b)
+                elif type_ == 'lt':
+                    add_cond('gt', -b)
+                else:
+                    return
+
+        lowv, lowt = low
+        hghv, hght = hgh
+        if lowv < hghv or lowv == hghv and lowt == hght == 0: return f"{'[('[lowt]}{lowv}, {hghv}{'])'[hght]}"
+        return '(empty set)'
 
     def __str__(self):
+        try:
+            res = self._compact_str()
+        except Exception as exc:
+            ...
+        else:
+            if res is not None: return res
         def str_once(type, b):
-            if type == 'le': return f"x <= {b}"
-            if type == 'lt': return f"x < {b}"
-            if type == 'ge': return f"x >= {b}"
-            if type == 'gt': return f"x > {b}"
-            if type == 'eq': return f"x == {b}"
-            if type == 'ne': return f"x != {b}"
+            x = 'x'
+            while type.startswith('abs'): type, x = type[3:], f'|{x}|'
+            if type == 'le': return f"{x} <= {b}"
+            if type == 'lt': return f"{x} < {b}"
+            if type == 'ge': return f"{b} <= {x}"
+            if type == 'gt': return f"{b} < {x}"
             raise ValueError(f"Unknown type: {type}")
-        return "[Interval defined by: {}]".format(', '.join(sorted(str_once(*x) for x in self.constraints)))
+        return "[Interval bounded by: {}]".format(', '.join(sorted(set(str_once(*x) for x in self.lims))) or 'none')
+
+# TODO rename to 'interval'
+def Interval(l, r): return l <= Var() <= r
 
 EOF = ''
 
@@ -79,11 +120,14 @@ class Bounds:
             def combine(a, b):
                 if a is None: return b
                 if b is None: return a
-                if not (isinstance(a, Interval) and isinstance(b, Interval)):
-                    raise ValidationError(f"Conflict for attribute {attr} in merging!")
-                return a & b
+                if isinstance(a, Var) and isinstance(b, Var): return a & b
+                if not isinstance(a, Var) and not isinstance(b, Var): return b
+                raise ValidationError(f"Conflict for attribute {attr} in merging!")
             m[attr] = combine(getattr(self, attr, None), getattr(other, attr, None))
         return Bounds(m)
+
+    def __str__(self):
+        return '[Bounds:\n{}\n]'.format('\n'.join(f'\t{a}: {getattr(self, a)}' for a in self._attrs))
 
 
 _int_re = re.compile(r'0|(?:-?[1-9]\d*)$')
@@ -114,7 +158,7 @@ def _check_range(x, *args, type="Number"):
     elif len(args) == 1:
         if args[0] == 'str': return x
         r, = args
-        if isinstance(r, Interval):
+        if isinstance(r, Var):
             if x not in r: raise ValidationError(f"{type} {x} not in {r}")
         else:
             if not (0 <= x < r): raise ValidationError(f"{type} {x} not in [0, {r})")
@@ -154,8 +198,8 @@ def strict_real(x, *args, max_places=None, places=None, negzero=False, dotlead=F
 
     if places is not None:
         pl = len(x) - 1 - x.index('.')
-        if isinstance(places, Interval):
-            if pl not in Interval: raise ValidationError(f"Decimal place count of {x} not in {places}")
+        if isinstance(places, Var):
+            if pl not in Var: raise ValidationError(f"Decimal place count of {x} not in {places}")
         else:
             if pl != places: raise ValidationError(f"Decimal place count of {x} not equal to {places}")
 

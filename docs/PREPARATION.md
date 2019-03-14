@@ -112,10 +112,10 @@ from sys import *
 from kg.validators import * ### @import
 
 bounds = {
-    't': Interval(1, 10**5),
-    'n': Interval(1, 10**5),
-    'totaln': Interval(0, 5*10**5),
-    'a': Interval(-10**9, 10**9),
+    't': 1 <= +Var <= 10**5,
+    'n': 1 <= +Var <= 10**5,
+    'totaln': +Var <= 5*10**5,
+    'a': abs(+Var) <= 10**9,
 }
 
 @validator()
@@ -148,16 +148,16 @@ from sys import *
 from kg.validators import * ### @import
 
 subtasks = {
-    '1': { 'n': Interval(1, 10) },
-    '2': { 'n': Interval(1, 1000) },
+    '1': { 'n': 1 <= +Var <= 10 },
+    '2': { 'n': 1 <= +Var <= 1000 },
     '3': { },
 }
 
 bounds = {
-    't': Interval(1, 10**5),
-    'n': Interval(1, 10**5),
-    'totaln': Interval(0, 5*10**5),
-    'a': Interval(-10**9, 10**9),
+    't': 1 <= +Var <= 10**5,
+    'n': 1 <= +Var <= 10**5,
+    'totaln': +Var <= 5*10**5,
+    'a': abs(+Var) <= 10**9,
 }
 
 @validator()
@@ -183,7 +183,11 @@ if __name__ == '__main__':
 
 - Use integer literals as subtask names.
 
+- One can also write `Interval(a, b)` in place of `a <= +Var <= b`, although the latter syntax is more flexible.  
+
 - Don't crash or reject if `argv[1]` is not a valid subtask name (or even a valid integer literal); instead, proceed as if you're checking against the largest subtask. (Important for Polygon.)
+
+- The `&` operation is *not* commutative. Always use the subtask bounds as the second argument.
 
 - `.read_int` can also be called like `.read_int(1, 10**5)`.
 

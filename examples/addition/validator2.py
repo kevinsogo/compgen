@@ -2,10 +2,10 @@ from sys import *
 from kg.validators import * ### @import
 
 bounds = {
-    't': Interval(1, 10**5),
-    'n': Interval(1, 10**5),
-    'totaln': Interval(0, 5*10**5),
-    'a': Interval(-10**9, 10**9),
+    't': 1 <= +Var <= 10**5,
+    'n': 1 <= +Var <= 10**5,
+    'totaln': +Var <= 5*10**5,
+    'a': abs(+Var) <= 10**9,
 }
 
 @validator()
