@@ -22,15 +22,23 @@ class Var(metaclass=VarMeta):
         self.lims = lims if lims is not None else []
         if any(isinstance(v, Var) for t, v in self.lims): raise ValueError("Operand cannot be Var")
         super().__init__()
+
     def add(self, t, v):
         if isinstance(v, Var): raise ValueError(f"Operand cannot be Var: {v}")
-        self.lims.append((self.pref + t, v))
+        try:
+            append = self.lims.append
+        except AttributeError:
+            return NotImplemented
+        append((self.pref + t, v))
         return self
     def __le__(self, v): return self.add('le', v)
     def __lt__(self, v): return self.add('lt', v)
     def __ge__(self, v): return self.add('ge', v)
     def __gt__(self, v): return self.add('gt', v)
+    def __eq__(self, v): return self.add('eq', v)
+    def __ne__(self, v): return self.add('ne', v)
     def __abs__(self): return Var(pref=self.pref+'abs ', lims=self.lims)
+
     def __and__(self, other):
         if not isinstance(other, Var): raise TypeError(f"Cannot merge {self.__class__.__name__} with {other.__class__.__name__}")
         return self.__class__(pref=self.pref, lims=self.lims+other.lims)
@@ -46,6 +54,8 @@ class Var(metaclass=VarMeta):
         if type == 'lt': return a < b
         if type == 'ge': return a >= b
         if type == 'gt': return a > b
+        if type == 'eq': return a == b
+        if type == 'ne': return a != b
         raise ValueError(f"Unknown type: {type}")
 
     def __repr__(self):
@@ -66,14 +76,18 @@ class Var(metaclass=VarMeta):
         for type_, b in self.lims:
             absed = False
             while type_.startswith('abs '): type_, absed = type_[4:], True
-            add_cond(type_, b)
-            if absed:
-                if type_ == 'le':
-                    add_cond('ge', -b)
-                elif type_ == 'lt':
-                    add_cond('gt', -b)
-                else:
-                    return
+            if type_ == 'eq' and not absed:
+                add_cond('ge', b)
+                add_cond('le', b)
+            else:
+                add_cond(type_, b)
+                if absed:
+                    if type_ == 'le':
+                        add_cond('ge', -b)
+                    elif type_ == 'lt':
+                        add_cond('gt', -b)
+                    else:
+                        return
 
         lowv, lowt = low
         hghv, hght = hgh
@@ -94,6 +108,8 @@ class Var(metaclass=VarMeta):
             if type == 'lt': return f"{x} < {b}"
             if type == 'ge': return f"{b} <= {x}"
             if type == 'gt': return f"{b} < {x}"
+            if type == 'eq': return f"{b} == {x}"
+            if type == 'ne': return f"{b} != {x}"
             raise ValueError(f"Unknown type: {type}")
         return "[Interval bounded by: {}]".format(', '.join(sorted(set(str_once(*x) for x in self.lims))) or 'none')
 
@@ -109,6 +125,7 @@ class Bounds:
         if bounds:
             for name, value in bounds.items():
                 self._attrs.append(name)
+                if isinstance(value, Var): value = Var(lims=tuple(value.lims)) # copy and freeze the Var
                 setattr(self, name, value)
         super().__init__()
 
