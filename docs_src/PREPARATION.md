@@ -96,7 +96,7 @@ Here's a validator that can also check subtasks. It takes the subtask name as th
 
 - Use integer literals as subtask names.
 
-- One can also write `Interval(a, b)` in place of `a <= +Var <= b`, although the latter syntax is more flexible.  
+- One can also write `Interval(a, b)` in place of `a <= +Var <= b`, although the latter syntax is more flexible since you can also use something like `a < +Var < b`.  
 
 - Don't crash or reject if `argv[1]` is not a valid subtask name (or even a valid integer literal); instead, proceed as if you're checking against the largest subtask. (Important for Polygon.)
 

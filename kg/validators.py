@@ -98,7 +98,7 @@ class Var(metaclass=VarMeta):
         return "[Interval bounded by: {}]".format(', '.join(sorted(set(str_once(*x) for x in self.lims))) or 'none')
 
 # TODO remove 'Interval' (backwards incompatible) ### @if False
-def Interval(l, r): return l <= Var() <= r
+def Interval(l, r): return l <= +Var <= r
 interval = Interval
 
 EOF = ''
