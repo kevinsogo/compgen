@@ -78,10 +78,13 @@ The `checker` field may be omitted. It defaults to a simple diff check. There ar
 Note that the file endings will tell KompGen what language your program is. There will be a predetermined compile and run command for each recognized language. (See `langs.json` for details.) You can also use a three-argument version to specify a file: `[filename, compile, run]`, for example, as used in `model_solution` above. (The two-argument version is `[filename, run]`) For example, if your validator is written in Haskell, then you could write:
 
 ```js
-    "validator": ["validator.hs", "ghc {filename}", "./validator"],
+    "validator": ["validator.hs", "ghc {filename}", "./{filename_base}"],
 ```
 
-<!-- Advanced tutorial involves all hidden options here, "extras"/"comments", "subtasks.json", "!diff.*" -->
+<!-- Advanced tutorial involves all hidden options here, "extras"/"comments", "subtasks.json", "!diff.*" 
+
+also using {sep}
+-->
 
 Now, we can begin writing those files!
 
@@ -183,7 +186,7 @@ if __name__ == '__main__':
 
 - Use integer literals as subtask names.
 
-- One can also write `Interval(a, b)` in place of `a <= +Var <= b`, although the latter syntax is more flexible since you can also use something like `a < +Var < b`.  
+- You can also write `Interval(a, b)` in place of `a <= +Var <= b`, although the latter syntax is more flexible since you can also use something like `a < +Var < b`.  
 
 - Don't crash or reject if `argv[1]` is not a valid subtask name (or even a valid integer literal); instead, proceed as if you're checking against the largest subtask. (Important for Polygon.)
 
@@ -211,7 +214,7 @@ you can write it all in one line:
 [x, y, z] = file.read. int(lim.x). space. int(lim.y). space. int(lim.z). eoln
 ```
 
-The chain accepts `int`, `ints`, `token`, `tokens`, `char`, `space`, `eoln`, and `eof` (and possibly more in the future). They accept the same arguments as their `read_*` counterparts.
+The chain accepts `int`, `ints`, `token`, `tokens`, `real`, `reals`, `char`, `space`, `eoln`, `eof` and `line`. They accept the same arguments as their `read_*` counterparts.
 
 I recommend the chain style since it more closely reflects the structure of each line, yet still requires you to exactly specify each byte.
 
@@ -406,7 +409,10 @@ if __name__ == '__main__': chk()
 
 <!-- TODO graph checking. is_tree, is_connected, etc. -->
 
-<!-- Advanced tutorial involves using the `set_{multi/single}_checker` suite, etc., and also options for `set_checker`. -->
+<!-- Advanced tutorial involves using the `set_{multi/single}_checker` suite, etc., and also options for `set_checker`.
+
+also, "optimization" via laziness/lambda
+-->
 
 
 
@@ -429,13 +435,13 @@ line=that_only*appears_in%polygon ### @if format == 'pg'
 There is also `@replace`, which looks like:
 
 ```python
-valid_subtasks = None ### @replace None, str(sorted(details.valid_subtasks))
+valid_subtasks = None ### @replace None, repr(sorted(details.valid_subtasks))
 
 tmp_filename_base = '/tmp/hr_custom_checker_monika_' ###  @ replace "monika", unique_name()
 
-### @@ replace "xrange", "range" {
-for i in xrange(5):
-    print([i*j for j in xrange(5)])
+### @@ replace "range", "xrange" {
+for i in range(5):
+    print([i*j for j in range(5)])
 ### @@ }
 ```
 

@@ -32,7 +32,7 @@ class ContestDetails(object):
             setattr(self, key, self.details.get(key, defaults.get(key)))
 
         if not (self.code and valid_contestcode.match(self.code)):
-            raise ValueError(f"Invalid contest code: {repr(self.code)}")
+            raise ValueError(f"Invalid contest code: {self.code!r}")
 
         for key, long_name in [
                     ('team', 'team'),
@@ -45,19 +45,19 @@ class ContestDetails(object):
             key_count = key + '_count'
             if key_list in self.details:
                 if key_count in self.details:
-                    raise ValueError(f"{key_list, } and {key_count} cannot appear simultaneously")
+                    raise ValueError(f"{key_list} and {key_count} cannot appear simultaneously")
                 value_list = self.details[key_list]
                 if isinstance(value_list, str): # open as a possible json file
                     with open(attach_relpath(self.relpath, value_list)) as f:
                         value_list = json.load(f)
                 if not isinstance(value_list, list):
-                    raise ValueError(f"{key_list, } must be a list: got {type(value_list)}")
+                    raise ValueError(f"{key_list} must be a list: got {type(value_list)}")
             else:
                 value_count = self.details.get(key_count, defaults.get(key_count))
                 if not isinstance(value_count, int):
-                    raise ValueError(f"{key_count, } must be an int: got {type(value_count)}")
+                    raise ValueError(f"{key_count} must be an int: got {type(value_count)}")
                 if value_count < 0:
-                    raise ValueError(f"{key_count, } must be nonnegative: got {type(value_count)}")
+                    raise ValueError(f"{key_count} must be nonnegative: got {type(value_count)}")
                 value_list = [long_name + str(index) for index in range(1, value_count + 1)]
 
             if key == 'team':
@@ -68,7 +68,7 @@ class ContestDetails(object):
                     raise ValueError("Duplicate school found!")
 
             if len(set(value_list)) != len(value_list):
-                raise ValueError("Duplicate {} found!".format(key))
+                raise ValueError(f"Duplicate {key} found!")
             setattr(self, key_list, value_list)
 
         # languages
@@ -77,7 +77,7 @@ class ContestDetails(object):
         # check for extra keys
         for key in self.details:
             if key not in valid_keys:
-                raise ValueError(f"Key {repr(key)} invalid in contest.json. If you wish to add extra data, "
+                raise ValueError(f"Key {key!r} invalid in contest.json. If you wish to add extra data, "
                         "place it under 'comments' or 'extras'")
 
         super().__init__()
@@ -96,7 +96,7 @@ class ContestDetails(object):
                     'teams': [teamo],
                 }
             elif not isinstance(teamo['school'], str):
-                raise ValueError(f"School must be a string, got {teamo['school']}")
+                raise ValueError(f"School must be a string, got {teamo['school']!r}")
             team_schools.append(teamo)
         return team_schools
 

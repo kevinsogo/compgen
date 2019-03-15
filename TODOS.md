@@ -137,7 +137,8 @@ def make(rand, x=x):
 
 new_case kwargs can still be passed as info.
 
-- Interactors/interactive tasks. (Supported everywhere except HackerRank.) (maybe it's now time for me to learn Python coroutines...)
+- Interactors/interactive tasks. (Supported in Polygon, and maybe everywhere except HackerRank?)
+    - Python coroutines maybe?
 
 - Import from existing format, not just the I/O but also all other stuff and metadata.
 

@@ -1227,7 +1227,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                     assert not line.endswith('\n')
                     if not shebanged and not line.startswith('#!'):
                         shebang_line = "#!/usr/bin/env python3"
-                        info_print(f'adding shebang line {repr(shebang_line)}')
+                        info_print(f'adding shebang line {shebang_line!r}')
                         print(shebang_line, file=f)
                     shebanged = True
                     print(line, file=f)
@@ -1389,13 +1389,13 @@ def kg_contest(format_, args):
 
     target_loc = args.target_loc or contest.target_loc or os.path.abspath('kgkompiled')
     if not os.path.isabs(target_loc):
-        raise CommandError(f"--target-loc must be an absolute path: got {repr(target_loc)}")
-    info_print("Using target_loc =", repr(target_loc), file=stderr)
+        raise CommandError(f"--target-loc must be an absolute path: got {target_loc!r}")
+    info_print(f"Using target_loc = {target_loc!r}", file=stderr)
 
     seedval = args.seed
     if seedval is None: seedval = contest.seed
     if seedval is None: seedval = randrange(10**18)
-    info_print("Using seedval =", repr(seedval), file=stderr)
+    info_print(f"Using seedval = {seedval!r}", file=stderr)
 
     if args.format == 'pc2':
 

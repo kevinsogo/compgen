@@ -48,7 +48,7 @@ class Details(object):
         for generator in self.generators:
             if not os.path.basename(generator.filename).startswith('gen_'):
                 warn_print("It is preferable to prefix generator filenames with 'gen_' "
-                          f"(found {repr(generator.filename)})", file=stderr)
+                          f"(found {generator.filename!r})", file=stderr)
 
         if not self.judge_data_maker:
             self.judge_data_maker = self.model_solution
@@ -64,7 +64,7 @@ class Details(object):
         # check for extra keys
         for key in self.details:
             if key not in valid_keys:
-                raise ValueError(f"Key {repr(key)} invalid in details.json. If you wish to add extra data, "
+                raise ValueError(f"Key {key!r} invalid in details.json. If you wish to add extra data, "
                         "place it under 'comments' or 'extras'")
 
         super().__init__()

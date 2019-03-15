@@ -84,7 +84,7 @@ def _t_range_args(s):
                 end = start + 1
             if step and end is not None and (end - start) * step >= 0:
                 return start, end, step
-    raise ValueError(f"Range cannot be read: {repr(s)}")
+    raise ValueError(f"Range cannot be read: {s!r}")
 
 def t_range(r):
     return range(*_t_range_args(r))

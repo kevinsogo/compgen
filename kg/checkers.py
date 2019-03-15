@@ -115,7 +115,7 @@ class Checker:
         valid_fields = ['input', 'output', 'judge']
         if isinstance(no_extra_chars, bool):
             no_extra_chars = valid_fields if no_extra_chars else []
-        if not set(no_extra_chars) <= set(valid_fields): raise ValueError(f"Invalid no_extra_chars argument: {repr(no_extra_chars)}")
+        if not set(no_extra_chars) <= set(valid_fields): raise ValueError(f"Invalid no_extra_chars argument: {no_extra_chars!r}")
         def _set_checker(checker):
             def _checker(inp, outp, judgep, *args, **kwargs):
                 inp = ChkStream(inp, intype)
@@ -219,7 +219,7 @@ def _check_generic(checker, input_path, output_path, judge_path, **kwargs):
     with input_file, output_file, judge_file:
         try:
             score = checker(input_file, output_file, judge_file, **kwargs)
-            if not (0.0 <= score <= 1.0): return Verdict.FAIL, 0.0, f"The checker returned an invalid score: {repr(score)}"
+            if not (0.0 <= score <= 1.0): return Verdict.FAIL, 0.0, f"The checker returned an invalid score: {score!r}"
             return Verdict.AC, score, ""
         except ParseError as exc:
             return handle_exc_verdict(exc, Verdict.PAE)
@@ -425,8 +425,8 @@ from .utils.hr import * ### @import
 ###     @set write = True
 ### @@}
 
-valid_subtasks = None ### @replace None, sorted(details.valid_subtasks)
-subtasks_files = None ### @replace None, '[{}\n]'.format(''.join(f'\n    (({l}, {r}), {subs}),' for l, r, subs in subtasks_files))
+valid_subtasks = None ### @replace None, repr(sorted(details.valid_subtasks))
+subtasks_files = None ### @replace None, '[\n{}]'.format(''.join(f'    (({l}, {r}), {subs!r}),\n' for l, r, subs in subtasks_files))
 
 if valid_subtasks:
     ...

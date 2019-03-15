@@ -124,10 +124,10 @@ class Program:
 
     def __repr__(self):
         return (f"{self.__class__.__name__}("
-                f"{repr(self.filename)}, "
-                f"{repr(self.compile)}, "
-                f"{repr(self.run)}, "
-                f"relpath={self.relpath})")
+                f"{self.filename!r}, "
+                f"{self.compile!r}, "
+                f"{self.run!r}, "
+                f"relpath={self.relpath!r})")
 
 
     @classmethod
@@ -139,16 +139,16 @@ class Program:
             elif len(arg) == 3:
                 filename, compile_, run = arg
             else:
-                raise ExtProgramError(f"Cannot understand program data: {repr(arg)}")
+                raise ExtProgramError(f"Cannot understand program data: {arg!r}")
         elif isinstance(arg, str):
             lang = infer_lang(arg)
             if not lang:
-                raise ExtProgramError(f"Cannot infer language: {repr(arg)}")
+                raise ExtProgramError(f"Cannot infer language: {arg!r}")
             filename = arg
             compile_ = langs[lang]['compile']
             run = langs[lang]['run']
         else:
-            raise ExtProgramError(f"Unknown program type: {repr(arg)}")
+            raise ExtProgramError(f"Unknown program type: {arg!r}")
 
         return cls(filename, compile_.split(), run.split(), relpath=relpath)
 

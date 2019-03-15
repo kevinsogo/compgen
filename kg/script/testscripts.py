@@ -44,7 +44,7 @@ def run_testscript(inputs, testscript, generators, *, relpath=None):
             assert 1 <= target <= filecount
             filename = files[target - 1]
             print(info_text(f'[o={otarget} t={target}] GENERATING'), key_text(filename),
-                    info_text(f'(from {repr(src_line)})'))
+                    info_text(f'(from {src_line!r})'))
             touch_container(filename)
             with open(filename, 'w') as file:
                 gen.do_compile().do_run(*args, stdout=file)
@@ -52,7 +52,7 @@ def run_testscript(inputs, testscript, generators, *, relpath=None):
             yield filename
         else:
             # replace the first part
-            info_print(f'[o={otarget}] GENERATING MULTIPLE: {len(target)} FILES (from {repr(src_line)})')
+            info_print(f'[o={otarget}] GENERATING MULTIPLE: {len(target)} FILES (from {src_line!r})')
             dupseq, *rargs = args
             dupseq = ':' + dupseq
             args = dupseq, *rargs
@@ -102,8 +102,8 @@ def parse_testscript(testscript, generators, *, relpath=None):
     found_gen_args = defaultdict(list)
     def register_gen_args(line, *gen_args):
         if found_gen_args[gen_args]:
-            warn_print(f'WARNING: Testscript line {repr(line)} will generate the same file/s as '
-                       f'{repr(found_gen_args[gen_args][-1])}. (Random seed is determined by args)')
+            warn_print(f'WARNING: Testscript line {line!r} will generate the same file/s as '
+                       f'{found_gen_args[gen_args][-1]!r}. (Random seed is determined by args)')
         found_gen_args[gen_args].append(line)
     later = []
     for line in testscript.strip().split('\n'):
@@ -113,10 +113,10 @@ def parse_testscript(testscript, generators, *, relpath=None):
         try:
             prog, *args, pipe, target = parts
         except ValueError as exc:
-            raise TestScriptError(f"Invalid testscript line: {repr(line)}")
+            raise TestScriptError(f"Invalid testscript line: {line!r}")
 
         if pipe != '>':
-            raise TestScriptError(f'Testscript line must end with "> $" or "> {{file/s}}": got {repr(line)}')
+            raise TestScriptError(f'Testscript line must end with "> $" or "> {{file/s}}": got {line!r}')
 
         gen, args = parse_generator(prog, *args, generators=generators, relpath=relpath)
 
@@ -136,16 +136,16 @@ def parse_testscript(testscript, generators, *, relpath=None):
                 return
 
             if not (target.startswith('{') and target.endswith('}')):
-                raise TestScriptError(f"Invalid target file sequence: {repr(target)}")
+                raise TestScriptError(f"Invalid target file sequence: {target!r}")
             indices = list_t_sequence(target[1:-1])
             if not indices:
-                raise TestScriptError(f"Empty file sequence: {target}")
+                raise TestScriptError(f"Empty file sequence: {target!r}")
             for index in indices:
                 validate_target(index)
             dupseq, *rargs = args
             if list(t_sequence(dupseq)) != indices:
                 raise TestScriptError("First argument of multifile generator must generate the same sequence as target. "
-                        f"'{dupseq}' != '{target}'")
+                        f"{dupseq!r} != {target!r}")
             register_gen_args(line, gen, *rargs)
             gens[min(indices)] = gen, args, False, indices, target, line
 

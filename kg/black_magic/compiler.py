@@ -56,9 +56,9 @@ CLOSE = '### @@ }'
 
 def get_command(command):
     match = command_re.match(command + ' ')
-    if match is None: raise ValueError(f"Invalid command: {repr(command)}")
+    if match is None: raise ValueError(f"Invalid command: {command!r}")
     command_name, args = match.groups()
-    if command_name not in COMMANDS: raise ValueError(f"Unknown command name: {repr(command_name)} ({repr(command)})")
+    if command_name not in COMMANDS: raise ValueError(f"Unknown command name: {command_name!r} ({command!r})")
     res = COMMANDS[command_name](command_name, args)
     return res
 
@@ -170,6 +170,6 @@ def compile_lines(lines, **context):
 
     if context['compress']:
         enc = base64.b64encode(zlib.compress('\n'.join(get_lines()).encode('utf-8'), level=9))
-        yield f"import base64,zlib;exec(zlib.decompress(base64.b64decode({repr(enc)})).decode('utf-8'))"
+        yield f"import base64,zlib;exec(zlib.decompress(base64.b64decode({enc!r})).decode('utf-8'))"
     else:
         yield from get_lines()

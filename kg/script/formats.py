@@ -49,7 +49,7 @@ class Format:
         self.o_to_i = {}
 
         if self.inputs and self.inputs == self.outputs:
-            raise FormatError(f"Invalid patterns: {repr(inputg or '')} {repr(outputg or '')} "
+            raise FormatError(f"Invalid patterns: {inputg or ''!r} {outputg or ''!r} "
                     "... They match the same files.")
 
         # clean up outputs.
@@ -91,11 +91,11 @@ class Format:
 
 
         if self.inputs & self.outputs:
-            raise FormatError(f"Invalid patterns: {repr(inputg or '')} {repr(outputg or '')} ... "
+            raise FormatError(f"Invalid patterns: {inputg or ''!r} {outputg or ''!r} ... "
                     "Some files match both.")
 
         if set(read) == set('io') and len(self.inputs) != len(self.outputs):
-            raise FormatError(f"Invalid patterns: {repr(inputg or '')} {repr(outputg or '')} ... "
+            raise FormatError(f"Invalid patterns: {inputg or ''!r} {outputg or ''!r} ... "
                     "unequal number of files matched.")
 
         if read and set(read + write) == set('io'):

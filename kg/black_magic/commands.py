@@ -73,7 +73,7 @@ def try_run(expr, parsed, command, context):
         return command(expr, context)
     except Exception as exc:
         raise EvalError.for_parsed(parsed,
-                f"An exception occurred while running {repr(expr)} via {command.__name__}: {str(exc)}") from exc
+                f"An exception occurred while running {expr!r} via {command.__name__}") from exc
 
 
 class Command:

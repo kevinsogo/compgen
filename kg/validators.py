@@ -24,7 +24,7 @@ class Var(metaclass=VarMeta):
         super().__init__()
 
     def add(self, t, v):
-        if isinstance(v, Var): raise ValueError(f"Operand cannot be Var: {v}")
+        if isinstance(v, Var): return NotImplemented
         try:
             append = self.lims.append
         except AttributeError:
@@ -59,9 +59,18 @@ class Var(metaclass=VarMeta):
         raise ValueError(f"Unknown type: {type}")
 
     def __repr__(self):
-        return f'{self.__class__.__name__}(pref={repr(self.pref)}, lims={repr(self.lims)})'
+        return f'{self.__class__.__name__}(pref={self.pref!r}, lims={self.lims!r})'
 
-    def _compact_str(self):
+    def __str__(self):
+        try:
+            res = self.compact_str()
+        except Exception as exc:
+            ...
+        else:
+            if res is not None: return res
+        return self.raw_str()
+
+    def compact_str(self):
         low = float('-inf'), +1
         hgh = float('+inf'), -1
         def add_cond(type, v):
@@ -93,15 +102,6 @@ class Var(metaclass=VarMeta):
         hghv, hght = hgh
         if lowv < hghv or lowv == hghv and lowt == hght == 0: return f"{'[('[lowt]}{lowv}, {hghv}{'])'[hght]}"
         return '(empty set)'
-
-    def __str__(self):
-        try:
-            res = self._compact_str()
-        except Exception as exc:
-            ...
-        else:
-            if res is not None: return res
-        return self.raw_str()
 
     def raw_str(self):
         def str_once(type, b):
@@ -146,8 +146,12 @@ class Bounds:
             m[attr] = combine(getattr(self, attr, None), getattr(other, attr, None))
         return Bounds(m)
 
+    def __repr__(self):
+        bounds = {attr: getattr(self, attr) for attr in self._attrs}
+        return f'{self.__class__.__name__}({bounds!r})'
+
     def __str__(self):
-        return '[Bounds:\n{}\n]'.format('\n'.join(f'\t{a}: {getattr(self, a)}' for a in self._attrs))
+        return '{{Bounds:\n{}}}'.format(''.join(f'\t{a}: {getattr(self, a)}\n' for a in self._attrs))
 
 
 _int_re = re.compile(r'0|(?:-?[1-9]\d*)$')
@@ -165,7 +169,7 @@ def strict_int(x, *args): ### @@ if False {
     '''
     ### @@ }
     if not _int_re.match(x):
-        raise ValidationError(f"Expected integer literal, got: {repr(x)}")
+        raise ValidationError(f"Expected integer literal, got: {x!r}")
     if args == ['str']: return x
     x = int(x)
     _check_range(x, *args, type="Integer")
@@ -204,9 +208,9 @@ def strict_real(x, *args, max_places=None, places=None, negzero=False, dotlead=F
     '''
     ### @@ }
     if not _real_re.match(x) and x != '.':
-        raise ValidationError(f"Expected real literal, got: {repr(x)}")
+        raise ValidationError(f"Expected real literal, got: {x!r}")
     if not negzero and _real_neg_zero_re.match(x):
-        raise ValidationError(f"Real negative zero not allowed: {repr(x)}")
+        raise ValidationError(f"Real negative zero not allowed: {x!r}")
     if not dotlead and x.startswith('.'):
         raise ValidationError(f"Real with leading dot not allowed.")
     if not dottrail and x.endswith('.'):
@@ -364,7 +368,7 @@ class StrictStream:
     def read_token(self, regex=None, *, other_ends=[], _called="token", **kwargs): # optimize this. 
         tok = self.read_until([EOF, ' ', '\t', EOLN] + other_ends, _called=_called, **kwargs)
         if regex is not None and not re.match('^' + regex + '$', tok):
-            raise StreamError(f"Expected token with regex {repr(regex)}, got {repr(tok)}")
+            raise StreamError(f"Expected token with regex {regex!r}, got {tok!r}")
         return tok
 
     @save_on_label
@@ -446,7 +450,7 @@ class _Read:
         return chain
 
     for _chain in ['line', 'int', 'ints', 'real', 'reals', 'token', 'tokens']:
-        exec(f'{_chain} = _make_chain({repr(_chain)})') # evil hack for now
+        exec(f'{_chain} = _make_chain({_chain!r})') # evil hack for now
 
     del _make_chain, _chain
 

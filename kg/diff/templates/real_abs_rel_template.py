@@ -26,7 +26,7 @@ def checker(input_file, output_file, judge_file, **kwargs):
                 try:
                     err = error(D(v1), D(v2)) ### @replace "error", "abs_rel_error" if has_rel else "abs_error"
                 except InvalidOperation:
-                    raise WA(f"Unequal tokens that are not numbers: {repr(v1)} != {repr(v2)}")
+                    raise WA(f"Unequal tokens that are not numbers: {v1!r} != {v2!r}")
                 worst = max(worst, err)
                 if err > EPS:
                     print('Found an error of', worst) ### @keep @if format != 'hr'
