@@ -26,7 +26,7 @@ class Details(object):
 
         # data validation
         if not all(isinstance(v, int) for v in self.valid_subtasks):
-            raise ValueError("Subtask values must be ints")
+            raise TypeError("Subtask values must be ints")
 
         if len(set(self.valid_subtasks)) != len(self.valid_subtasks):
             raise ValueError("Duplicate values in valid_subtasks")
@@ -123,5 +123,5 @@ class Details(object):
         return prog
 
     def serialize(self):
-        ... # not implemented yet. returns a dict to be json'ed
+        raise NotImplementedError # not implemented yet. returns a dict to be json'ed
 

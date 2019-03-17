@@ -29,6 +29,8 @@ Due to limitations in some online judges, we will have some restrictions/require
 
     - In particular, the lines of the form `from xxx import * ### @import` will be replaced by the *whole* code `xxx`. This compresses everything into one file without imports. 
 
+<!-- This also means that obscure bugs may happen due to the fact that the *scopes of the importing and imported modules will become the same*. This doesn't happen in normal usage, but I'm still trying to figure out a long-term solution for this. -->
+
 
 
 

@@ -1,3 +1,4 @@
+from enum import Enum
 from sys import stdout, stderr
 import os.path
 import itertools, functools, argparse, traceback
@@ -72,29 +73,16 @@ class ChkStream:
 
 
 # an enum of accepted _Set names
-class _SN:
-    get_one_input = 'get_one_input'
-    get_output_from_input = 'get_output_from_input'
-    get_judge_data_from_input = 'get_judge_data_from_input'
-    problem_title = 'problem_title'
-    aggregate = 'aggregate'
-    iterator = 'iterator'
+_SetName = Enum('_SetName', ['get_one_input', 'get_output_from_input', 'get_judge_data_from_input', 'problem_title', 'aggregate', 'iterator'])
 
 class Checker:
     def __init__(self):
         self._vals = {}
-        for name in [_SN.get_one_input,
-                     _SN.get_output_from_input,
-                     _SN.get_judge_data_from_input,
-                     _SN.problem_title,
-                     _SN.aggregate,
-                     _SN.iterator,
-                ]:
-            setattr(self, name, functools.partial(self._set, name))
+        for sn in _SetName: setattr(self, sn.name, functools.partial(self._set, sn))
         super().__init__()
 
-    def _set(self, name, value):
-        self._vals[name] = value
+    def _set(self, sn, value):
+        self._vals[sn] = value
         return value
 
     def __call__(self, *args, **kwargs):
@@ -111,21 +99,22 @@ class Checker:
         if len(sdata) == 1: sdata = sdata*3
         if len(sdata) != 3: raise ValueError(f"Invalid args: {args}")
         intype, outtype, judgetype = sdata
-        no_extra_chars = kwargs.pop('no_extra_chars', False)
+        no_extra = kwargs.pop('no_extra_chars', False)
         valid_fields = ['input', 'output', 'judge']
-        if isinstance(no_extra_chars, bool):
-            no_extra_chars = valid_fields if no_extra_chars else []
-        if not set(no_extra_chars) <= set(valid_fields): raise ValueError(f"Invalid no_extra_chars argument: {no_extra_chars!r}")
+        if isinstance(no_extra, bool):
+            no_extra = valid_fields if no_extra else []
+        if not set(no_extra) <= set(valid_fields): raise ValueError(f"Invalid no_extra_chars argument: {no_extra!r}")
+        extra_msg = lambda file: f"Extra characters at the end of the {file}"
         def _set_checker(checker):
             def _checker(inp, outp, judgep, *args, **kwargs):
                 inp = ChkStream(inp, intype)
                 outp = ChkStream(outp, outtype)
                 judgep = ChkStream(judgep, judgetype)
                 result = checker(inp, outp, judgep, *args, **kwargs)
-                if no_extra_chars:
-                    if 'input' in no_extra_chars and inp.has_next(): raise Fail("Extra characters at the end of the input file!")
-                    if 'output' in no_extra_chars and outp.has_next(): raise WA("Extra characters at the end of the output file.")
-                    if 'judge' in no_extra_chars and judgep.has_next(): raise Fail("Extra characters at the end of the judge file!")
+                if no_extra:
+                    if 'input' in no_extra and inp.has_next(): raise Fail(extra_msg("input file!"))
+                    if 'output' in no_extra and outp.has_next(): raise WA(extra_msg("output file."))
+                    if 'judge' in no_extra and judgep.has_next(): raise Fail(extra_msg("judge file!"))
                 return result
             self.checker = _checker
             return checker
@@ -133,7 +122,7 @@ class Checker:
 
     def set_single_checker(self, *args, **kwargs):
         def _set_single_checker(check_test_case):
-            self.set_checker(*args, **kwargs)(functools.partial(self._check_single, check_test_case))
+            self.set_checker(*args, **kwargs)(functools.partial(self._check_multi, check_test_case, _iterator=iterate_single))
             return check_test_case
         return _set_single_checker
 
@@ -143,20 +132,10 @@ class Checker:
             return check_test_case
         return _set_multi_checker
 
-    def _check_single(self, check_test_case, input_file, output_file, judge_file, **kwargs):
-        get_one_input = self._vals[_SN.get_one_input]
-        get_output_from_input = self._vals[_SN.get_output_from_input]
-        get_judge_data_from_input = self._vals[_SN.get_judge_data_from_input]
-
-        inp = get_one_input(input_file, exc=Fail, **kwargs)
-        outp = get_output_from_input(output_file, inp, exc=ParseError, **kwargs)
-        judgep = get_judge_data_from_input(judge_file, inp, exc=Fail, **kwargs)
-        return check_test_case(inp, outp, judgep, **kwargs)
-
-    def _check_multi(self, check_test_case, input_f, output_f, judge_f, **kwargs):
-        get_one_input = self._vals[_SN.get_one_input]
-        get_output_from_input = self._vals[_SN.get_output_from_input]
-        get_judge_data_from_input = self._vals[_SN.get_judge_data_from_input]
+    def _check_multi(self, check_test_case, input_f, output_f, judge_f, *, _aggregate=None, _iterator=None, **kwargs):
+        get_one_input = self._vals[_SetName.get_one_input]
+        get_output_from_input = self._vals[_SetName.get_output_from_input]
+        get_judge_data_from_input = self._vals[_SetName.get_judge_data_from_input]
 
         def catch_spec_as(exc):
             def _catch(f):
@@ -169,8 +148,11 @@ class Checker:
                 return _wrapped
             return _catch
 
-        aggregate = catch_spec_as(Fail("aggregate function failed"))(self._vals.get(_SN.aggregate, minimum_score))
-        iterator = catch_spec_as(Fail("iterator function failed"))(self._vals.get(_SN.iterator, iterate_with_casecount))
+        aggregate = _aggregate or self._vals.get(_SetName.aggregate, minimum_score)
+        iterator = _iterator or self._vals.get(_SetName.iterator, iterate_with_casecount)
+
+        aggregate = catch_spec_as(Fail("aggregate function failed"))(aggregate)
+        iterator = catch_spec_as(Fail("iterator function failed"))(iterator)
 
         class It:
             @staticmethod
@@ -364,7 +346,7 @@ def _check_local(checker, title='', file=stdout, help=None):
 
     if args.result_file:
         if verbose: print(f"{tc_id:>2} Writing result to {args.result_file}...", file=file)
-        ### @@replace 'write_json_verdict', 'write_json_verdict' if format in ('local', 'kg') else 'write_xml_verdict' {
+        ### @@replace '_json_', '_json_' if format in ('local', 'kg') else '_xml_' {
         write_json_verdict(verdict, message, score, args.result_file)
         ### @@}
 
@@ -399,6 +381,9 @@ def iterate_with_casecount(it):
         inp = it.next_input(caseno=cas)
         yield it.get_score(inp, it.next_output(inp, caseno=cas), it.next_judge_data(inp, caseno=cas), caseno=cas)
 
+def iterate_single(it, *, cas=0):
+    inp = it.next_input(caseno=cas)
+    yield it.get_score(inp, it.next_output(inp, caseno=cas), it.next_judge_data(inp, caseno=cas), caseno=cas)
 
 def default_return(ret):
     def _default_return(f):
@@ -429,8 +414,7 @@ valid_subtasks = None ### @replace None, repr(sorted(details.valid_subtasks))
 subtasks_files = None ### @replace None, '[\n{}]'.format(''.join(f'    (({l}, {r}), {subs!r}),\n' for l, r, subs in subtasks_files))
 
 if valid_subtasks:
-    ...
-    ### @@ if details.valid_subtasks {
+    ... ### @@ if details.valid_subtasks {
 
     # change this for every problem just to be safe
     tmp_filename_base = '/tmp/hr_custom_checker_monika_' ### @replace "monika", unique_name()
@@ -487,8 +471,7 @@ if valid_subtasks:
 
     ### @@ }
 else:
-    ...
-    ### @@if not details.valid_subtasks {
+    ... ### @@if not details.valid_subtasks {
     def run_custom_checker(t_obj, r_obj):
         chk.run('hr', t_obj, r_obj, print_message=False)
 

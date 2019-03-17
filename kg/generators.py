@@ -51,7 +51,7 @@ _pbase = 1340157138
 _xmod = 10**9 + 7
 _xbase = 790790578
 _xor = 0xDEAFBEEFEE
-def _chash_seq(seq):
+def _chash_seq(seq, *, _pmod=_pmod, _pbase=_pbase, _xmod=_xmod, _xor=_xor):
     pol = 0
     xol = 0
     for s in seq:

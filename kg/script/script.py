@@ -1456,7 +1456,7 @@ def kg_contest(format_, args):
 
             time_limit = int(round(details.time_limit))
             if time_limit != details.time_limit:
-                raise ValueError(f"The time limit must be an integer for PC2: {problem_loc} {time_limit}")
+                raise TypeError(f"The time limit must be an integer for PC2: {problem_loc} {time_limit}")
 
             letters.append(letter)
             problem_env[letter] = {

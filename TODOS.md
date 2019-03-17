@@ -37,6 +37,10 @@ This includes some disorganized ideas, TODOs, notes...
     
     - Maybe params for imported packages, like `kg kompile -f [...] -i [... [...]]`.  
 
+- Geometry library (`kg.geom.*` or `kg.math.geom.*`.)
+    
+    - Nice things include random polygon, and random convex polygon given number of sides.
+
 - Use `os.path.normcase` (or something similar) on filenames parsed from details.json and similar places, so it could be interpreted properly in the correct OS.
 
 - "kg template" to generate template validators/checkers/generators

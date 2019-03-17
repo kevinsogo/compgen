@@ -47,21 +47,18 @@ def memoize(function):
     f.memo = memo
     return f
 
-# TODO these may badly conflict with many things. come up with a solution then fix
-inf = 10**18
+t_inf = 10**18
 r_int = r'0|(?:-?[1-9]\d*)'
 r_sint = r'[+-](?:0|(?:[1-9]\d*))'
 
-patterns = [
+t_patterns = [re.compile('^' + pat + '$') for pat in [
     rf'(?P<start>{r_int})(?:(?:\.\.)|-)(?P<end>{r_int})\((?P<step>{r_sint})\)',
     rf'(?P<start>{r_int})(?:(?:\.\.)|-)(?P<end>{r_int})',
     rf'(?P<start>{r_int})\((?P<step>{r_sint})\)',
     rf'(?P<start>{r_int})',
-]
+]]
 
-patterns = [re.compile('^' + pat + '$') for pat in patterns]
-
-def _t_range_args(s):
+def _t_range_args(s, *, inf=t_inf, patterns=t_patterns):
     for pat in patterns:
         m = pat.match(s)
         if m:
@@ -86,11 +83,11 @@ def _t_range_args(s):
                 return start, end, step
     raise ValueError(f"Range cannot be read: {s!r}")
 
-def t_range(r):
-    return range(*_t_range_args(r))
+def t_range(r, *, inf=t_inf):
+    return range(*_t_range_args(r, inf=inf))
 
-def t_infinite(r):
-    start, end, step = _t_range_args(r)
+def t_infinite(r, *, inf=t_inf):
+    start, end, step = _t_range_args(r, inf=inf)
     return abs(end) >= inf
 
 

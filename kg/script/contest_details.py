@@ -51,11 +51,11 @@ class ContestDetails(object):
                     with open(attach_relpath(self.relpath, value_list)) as f:
                         value_list = json.load(f)
                 if not isinstance(value_list, list):
-                    raise ValueError(f"{key_list} must be a list: got {type(value_list)}")
+                    raise TypeError(f"{key_list} must be a list: got {type(value_list)}")
             else:
                 value_count = self.details.get(key_count, defaults.get(key_count))
                 if not isinstance(value_count, int):
-                    raise ValueError(f"{key_count} must be an int: got {type(value_count)}")
+                    raise TypeError(f"{key_count} must be an int: got {type(value_count)}")
                 if value_count < 0:
                     raise ValueError(f"{key_count} must be nonnegative: got {type(value_count)}")
                 value_list = [long_name + str(index) for index in range(1, value_count + 1)]
@@ -85,7 +85,7 @@ class ContestDetails(object):
     @classmethod
     def get_team_schools(cls, teamf):
         if not isinstance(teamf, list):
-            raise ValueError(f"The team and school data must be a list: got {type(teamf)}")
+            raise TypeError(f"The team and school data must be a list: got {type(teamf)}")
         team_schools = []
         schooli = 0
         for teamo in teamf:
@@ -96,7 +96,7 @@ class ContestDetails(object):
                     'teams': [teamo],
                 }
             elif not isinstance(teamo['school'], str):
-                raise ValueError(f"School must be a string, got {teamo['school']!r}")
+                raise TypeError(f"School must be a string, got {teamo['school']!r}")
             team_schools.append(teamo)
         return team_schools
 
@@ -115,5 +115,5 @@ class ContestDetails(object):
     
 
     def serialize(self):
-        ... # not implemented yet. returns a dict to be json'ed
+        raise NotImplementedError # not implemented yet. returns a dict to be json'ed
 

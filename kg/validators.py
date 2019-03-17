@@ -20,7 +20,7 @@ class Var(metaclass=VarMeta):
     def __init__(self, *, pref='', lims=None):
         self.pref = pref
         self.lims = lims if lims is not None else []
-        if any(isinstance(v, Var) for t, v in self.lims): raise ValueError("Operand cannot be Var")
+        if any(isinstance(v, Var) for t, v in self.lims): raise TypeError("Operand cannot be Var")
         super().__init__()
 
     def add(self, t, v):
@@ -293,10 +293,10 @@ class _RMOD(_OP):
     def __call__(g, ss): return ss._get(g.b)%ss._get(g.a)
 ### @@ }
 
-BAD = object()
+SSBAD = object()
 
 def charname(ch):
-    if ch == BAD: return 'past-end-of-file'
+    if ch == SSBAD: return 'past-end-of-file'
     if ch == EOF: return 'end-of-file'
     assert len(ch) == 1
     return repr(ch)
@@ -328,17 +328,17 @@ class StrictStream:
     # TODO learn how to buffer idiomatically...
     buffer_size = 10**5
     def _buffer(self):
-        if not self._buff: self._buff += self.file.read(self.buffer_size) or [EOF, BAD]
+        if not self._buff: self._buff += self.file.read(self.buffer_size) or [EOF, SSBAD]
 
     def _next_char(self):
         self._buffer()
         self.last = self._buff.popleft()
-        if self.last is BAD: raise ValidationError("Read past EOF")
+        if self.last is SSBAD: raise ValidationError("Read past EOF")
         return self.last
 
     def _peek_char(self):
         self._buffer()
-        if self._buff[0] is BAD: raise ValidationError("Peeked past EOF")
+        if self._buff[0] is SSBAD: raise ValidationError("Peeked past EOF")
         return self._buff[0]
 
     @save_on_label

@@ -8,7 +8,7 @@ import os
 from .programs import get_python3_command, Program
 from .utils import set_handler
 
-class KGUtilError(Exception): ...
+class KGAuxError(Exception): ...
 
 ##########################################
 
@@ -78,7 +78,7 @@ assertexist_p.add_argument('filename', help='Filename to check')
 def kgutil_assertexist(args):
     if not os.path.exists(args.filename):
         print(f'{args.filename} does not exist! This is bad...', file=stderr)
-        raise KGUtilError(f'{args.filename} does not exist!')
+        raise KGAuxError(f'{args.filename} does not exist!')
 
 
 
