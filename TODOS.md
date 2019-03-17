@@ -28,6 +28,8 @@ This includes some disorganized ideas, TODOs, notes...
 - Renames... (write_to_file* -> gen_to_file?)
 
 - Create a more flexible "testscript" that kgkompiles to a polygon-compatible one.
+    
+    - Perhaps jinja
 
     - Need to think about what happens to "!" commands. (ignore?)
 

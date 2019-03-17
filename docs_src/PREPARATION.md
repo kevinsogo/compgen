@@ -192,7 +192,7 @@ The programs used will be taken from `generators` in `details.json`; in this cas
 
 A `!` at the beginning means "run this bash command as is". Comments begin with `#`. 
 
-This is similar to Polygon's testscript system. In place of `$`, you can write an explicit index, like
+This is similar to Polygon's testscript system (although you can't use pipes `|`...yet). In place of `$`, you can write an explicit index, like
 
 ```bash
 gen_single 10 100000 > 11

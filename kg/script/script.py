@@ -1156,7 +1156,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
 
     # convert to various formats
     for fmt, name, copy_files, to_compile in [
-            ('pg', 'Polygon', False, [details.validator, details.checker] + details.generators),
+            ('pg', 'Polygon', True, [details.validator, details.checker] + details.generators),
             ('hr', 'HackerRank', True, [details.checker]),
             ('pc2', 'PC2', False, [details.validator, details.checker]),
         ]:
@@ -1299,6 +1299,17 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                     (format_, loc),
                     (fmt, dest_folder),
                 )
+
+        if fmt == 'pg':
+            zipname = os.path.join(dest_folder, 'upload_this_to_polygon.zip')
+            info_print('making zip for Polygon...', zipname)
+            tests_folder = os.path.join(dest_folder, 'tests')
+            def get_arcname(filename):
+                assert os.path.samefile(tests_folder, os.path.commonpath([tests_folder, filename]))
+                return os.path.relpath(filename, start=tests_folder)
+            with zipfile.ZipFile(zipname, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                for inp in PGFormat(dest_folder, read='i').thru_inputs():
+                    zipf.write(inp, arcname=get_arcname(inp))
 
         if fmt == 'hr':
             zipname = os.path.join(dest_folder, 'upload_this_to_hackerrank.zip')

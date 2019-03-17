@@ -110,7 +110,7 @@ def file_sequence(s):
         for v in t_sequence(s[1:]):
             yield os.path.join('temp', str(v))
     else:
-        yield from t_sequence(s)
+        yield from map(str, t_sequence(s))
 
 def overflow_ell(s, ct):
     assert ct >= 3
