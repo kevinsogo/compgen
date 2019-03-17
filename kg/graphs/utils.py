@@ -4,33 +4,38 @@ from kg.utils import * ### @import
 
 class GraphError(Exception): ...
 
-def node_arg(nodes):
-    nodes = list(range(1, nodes+1) if isinstance(nodes, int) else nodes)
+class _NodeList(list): ...
+class _Adj(dict): ...
+
+def make_nodes(nodes):
+    if isinstance(nodes, _NodeList): return nodes
+    nodes = _NodeList(range(1, nodes+1) if isinstance(nodes, int) else nodes)
     if not nodes: raise GraphError("Node list cannot be empty")
     return nodes
 
 def make_adj(nodes, edges, *, directed=False):
-    nodes = node_arg(nodes)
+    if isinstance(edges, _Adj): return edges
+    nodes = make_nodes(nodes)
     if isinstance(edges, dict):
         if sorted(edges.keys()) != sorted(nodes): raise GraphError("Invalid adjaacency list")
         return edges
-    adj = {i: [] for i in nodes}
+    adj = _Adj((i, []) for i in nodes)
     for a, b, *rest in edges:
         adj[a].append(b)
         if not directed: adj[b].append(a)
     return adj
 
 def is_tree(nodes, edges):
-    nodes = node_arg(nodes)
+    nodes = make_nodes(nodes)
     edges = list(edges)
     return len(edges) == len(nodes) - 1 and is_connected(nodes, edges)
 
 def is_connected(nodes, edges, *, directed=False):
-    nodes = node_arg(nodes)
+    nodes = make_nodes(nodes)
     return len(nodes) == len(bfs(nodes, edges, directed=directed))
 
 def is_simple(nodes, edges, *, directed=False):
-    nodes = node_arg(nodes)
+    nodes = make_nodes(nodes)
     found_edges = set()
     for a, b in edges:
         if a not in nodes: raise ValueError(f"Invalid node: {a}")
@@ -47,10 +52,10 @@ def dfs(*args, **kwargs):
     return [i for i, p, d in dfs_data(*args, **kwargs)]
 
 def bfs_data(nodes, edges, *, start=None, directed=False):
-    nodes = node_arg(nodes)
+    nodes = make_nodes(nodes)
     if start is None: start = nodes[0]
-    if start not in nodes: raise GraphError(f"Failed to BFS: {start} not in nodes (n={len(nodes)})")
     adj = make_adj(nodes, edges, directed=directed)
+    if start not in adj: raise GraphError(f"Failed to BFS: {start} not in nodes (n={len(nodes)})")
     queue = deque([(start, 0)])
     parent = {start: start}
     while queue:
@@ -62,10 +67,10 @@ def bfs_data(nodes, edges, *, start=None, directed=False):
                 queue.append((j, d + 1))
 
 def dfs_data(nodes, edges, *, start=None, directed=False):
-    nodes = node_arg(nodes)
+    nodes = make_nodes(nodes)
     if start is None: start = nodes[0]
-    if start not in nodes: raise GraphError(f"Failed to DFS: {start} not in nodes (n={len(nodes)})")
     adj = make_adj(nodes, edges, directed=directed)
+    if start not in adj: raise GraphError(f"Failed to DFS: {start} not in nodes (n={len(nodes)})")
     # reverse adjacency for "canonicity"
     for i, adg in adj: adg[:] = adg[::-1]
     stack = [(start, 0)]
@@ -82,7 +87,7 @@ def farthest(nodes, edges, *, start):
     return bfs(nodes, edges, start=start)[-1]
 
 def diameter(nodes, edges):
-    nodes = node_arg(nodes)
+    nodes = make_nodes(nodes)
     adj = make_adj(nodes, edges)
     i = farthest(nodes, adj, start=nodes[0])
     b = list(bfs_data(nodes, adj, start=i))
@@ -91,7 +96,7 @@ def diameter(nodes, edges):
 
 @listify
 def bipartition(nodes, edges):
-    nodes = node_arg(nodes)
+    nodes = make_nodes(nodes)
     adj = make_adj(nodes, edges)
     vis = set()
     for s in nodes:
@@ -103,9 +108,19 @@ def bipartition(nodes, edges):
         yield gr
 
 def graph_relabel(nodes, edges, new_nodes):
-    nodes = node_arg(nodes)
-    new_nodes = node_arg(new_nodes)
+    nodes = make_nodes(nodes)
+    new_nodes = make_nodes(new_nodes)
     if sorted(nodes) != sorted(new_nodes): raise GraphError("Invalid node permutation")
     bago = dict(zip(nodes, new_nodes))
     return [(bago[i], bago[j], *rest) for i, j, *rest in edges]
 
+@listify
+def connected_components(nodes, edges):
+    nodes = make_nodes(nodes)
+    adj = make_adj(nodes, edges)
+    vis = set()
+    for i in nodes:
+        if i not in vis:
+            js = bfs(nodes, adj, start=i)
+            vis |= set(js)
+            yield js

@@ -3,7 +3,7 @@ from .utils import * ### @import 'kg.graphs.utils'
 # TODO
 # function that returns details about the graph
 def tree_details(nodes, edges, *, root=None):
-    nodes = node_arg(nodes)
+    nodes = make_nodes(nodes)
     if root is None: root = nodes[0]
     if root not in nodes: raise GraphError(f"Root not in nodes")
     adj = make_adj(nodes, edges)

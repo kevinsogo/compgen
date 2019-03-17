@@ -9,7 +9,7 @@ class TreeGenError(GraphError): ...
 def tree_pgen(pgen):
     @wraps(pgen)
     def make_tree(rand, nodes, *args, shuff=True, randswap=True, relabel=True, weeds=0.0, **kwargs):
-        nodes = node_arg(nodes)
+        nodes = make_nodes(nodes)
         if relabel: rand.shuffle(nodes)
         cweeds = int(len(nodes) * weeds)
         mains = len(nodes) - cweeds
@@ -53,13 +53,13 @@ def gen_line_tree(rand, n, *, cactus=0):
         yield i, i - 1 - (i - 1) % (cactus + 1)
 
 def shuff_labels(rand, nodes, edges): # TODO merge with 'graph_relabel'...
-    nodes = node_arg(nodes)
+    nodes = make_nodes(nodes)
     assert len(set(nodes)) == len(nodes)
     newlabel = dict(zip(nodes, rand.shuff(nodes)))
     return [(newlabel[x], newlabel[y], *r) for x, y, *r in edges]
 
 def rand_swaps(rand, nodes, edges):
-    nodes = node_arg(nodes)
+    nodes = make_nodes(nodes)
     def rand_swap(x, y, *r):
         if rand.randrange(2): x, y = y, x
         return (x, y, *r)
@@ -69,7 +69,7 @@ def rand_traverse(*args, **kwargs):
     return [i for i, p, d in rand_traverse_data(*args, **kwargs)]
 
 def rand_traverse_data(rand, nodes, edges, *, start=None):
-    nodes = node_arg(nodes)
+    nodes = make_nodes(nodes)
     if start is None: start = nodes[0]
     if start not in nodes: raise GraphError(f"Failed to traverse: {start} not in nodes (n={len(nodes)})")
     adj = make_adj(nodes, edges)
