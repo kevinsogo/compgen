@@ -1,6 +1,7 @@
 from collections import deque
 from decimal import Decimal
 from functools import wraps
+from io import StringIO
 from string import digits
 from sys import stderr
 import re
@@ -493,3 +494,13 @@ def validator(*, suppress_eof_warning=False):
             return res
         return new_f
     return _validator
+
+def detect_subtasks(validate, file, subtasks):
+    s = file.read()
+    for subtask in subtasks:
+        try:
+            validate(StringIO(s), subtask=subtask)
+        except Exception:
+            ... 
+        else:
+            yield subtask

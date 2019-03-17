@@ -13,7 +13,7 @@ valid_keys = set(defaults) | {"comments", "extras"}
 
 def detector_from_validator(validator, relpath=None):
     if validator:
-        return Program("!fromvalidator", validator.compile,
+        return Program("!detector_from_validator", validator.compile,
                 ["kg-aux", "subtasks-from-validator", "-q", "-c"] + ['___' + part for part in validator.run] + ["--"],
                 relpath=relpath)
 
@@ -115,6 +115,11 @@ class Details(object):
 
     def _maybe_prog(self, v, key=None):
         # special parsing for checker
+        if key == 'subtask_detector':
+            if v == '!detector_through_validator':
+                return Program("!detector_through_validator", self.validator.compile,
+                        self.validator.run + ["--detect-subtasks"],
+                        relpath=self.relpath)
         if key == 'checker':
             diff_pref = '!diff.'
             if isinstance(v, str) and v.startswith(diff_pref): 

@@ -9,7 +9,8 @@
     "other_programs": [
         "formatter.py"
     ],
-    {% if subtasks >= 1 %}"valid_subtasks": {{ subtask_list }},
+    {% if subtasks >= 1 %}"subtask_detector": "!detector_through_validator",
+    "valid_subtasks": {{ subtask_list }},
     "subtasks_files": "subtasks.json",
     {% endif %}{% if checker %}"checker": "checker.py",
     {% endif %}

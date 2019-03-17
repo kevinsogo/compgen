@@ -474,7 +474,7 @@ test_p = subparsers.add_parser('test',
 
                 This runs [solution_program] for every file in [input_pattern], and compares it against the
                 corresponding files in [output_pattern]. [solution_program] must be a program that takes an
-                input from stdin and prints the output files in stdout.
+                input from stdin and prints the output in stdout.
 
                 The output files will be inferred from the corresponding input files. "*" in patterns are
                 wildcards, and they will be matched automatically.

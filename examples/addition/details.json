@@ -11,6 +11,7 @@
     "other_programs": [
         "formatter.py"
     ],
+    "subtask_detector": "!detector_through_validator",
     "valid_subtasks": [1, 2, 3],
     "subtasks_files": "subtasks.json",
     "time_limit": 2,
