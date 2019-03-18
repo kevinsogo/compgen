@@ -299,6 +299,7 @@ def get_subtasks(subtasks, detector, format_, relpath=None):
     # iterate through inputs, run our detector against them
     subtasks_of = {}
     all_subtasks = set()
+    files_of_subtask = {sub: set() for sub in subtset}
     detector.do_compile()
     inputs = []
     for input_ in format_.thru_inputs():
@@ -316,6 +317,7 @@ def get_subtasks(subtasks, detector, format_, relpath=None):
             raise CommandError("Found invalid subtasks! " + ' '.join(map(repr, sorted(subtasks_of[input_] - subtset))))
 
         all_subtasks |= subtasks_of[input_]
+        for sub in subtasks_of[input_]: files_of_subtask[sub].add(input_)
         info_print(f"Subtasks found for {input_}:", end=' ')
         key_print(*sorted(subtasks_of[input_]))
 
@@ -326,6 +328,12 @@ def get_subtasks(subtasks, detector, format_, relpath=None):
         assert all_subtasks <= subtset
         if all_subtasks != subtset:
             warn_print('Warning: Some subtasks not found:', *natsorted(subtset - all_subtasks), file=stderr)
+
+    info_print("Subtask dependencies:")
+    for sub in natsorted(subtset):
+        if files_of_subtask[sub]:
+            deps = [dep for dep in natsorted(subtset) if dep != sub and files_of_subtask[dep] <= files_of_subtask[sub]]
+            print(info_text("Subtask"), key_text(sub), info_text("contains the ff subtasks:"), key_text(*deps))
 
     return subtasks_of, all_subtasks, inputs
 
