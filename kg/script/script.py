@@ -267,6 +267,7 @@ subtasks_p.add_argument('-f', '--file', help='detector file')
 subtasks_p.add_argument('-s', '--subtasks', default=[], nargs='+', help='list of subtasks')
 subtasks_p.add_argument('-vc', '--validator-command', nargs='+', help='validator command')
 subtasks_p.add_argument('-vf', '--validator-file', help='validator file')
+# TODO support "compiler through validator"
 
 @set_handler(subtasks_p)
 def kg_subtasks(format_, args):

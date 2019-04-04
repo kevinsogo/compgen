@@ -8,8 +8,6 @@
 
 - Support more formats: Kattis, CodeChef, DOM?.  
 
-- (kg kontest) Make file locations in CDP relative if possible, so that "kg kontest" outputs can be placed anywhere.
-
 
 # To consider  
 
@@ -46,6 +44,14 @@ This includes some disorganized ideas, TODOs, notes...
 - Use `os.path.normcase` (or something similar) on filenames parsed from details.json and similar places, so it could be interpreted properly in the correct OS.
 
 - "kg template" to generate template validators/checkers/generators
+
+- `@set_validator` and `validate()`.
+    
+    - `@validator` will become an alias of `@set_validator` and is just used for legacy validators.
+
+    - `validate()` can also be `validate(subtasks=subtasks.keys())`. It detects `--detect-subtasks` (using argparse).  
+
+    - has an optional argument `file=file`.  
 
 - Use Jinja templating for makedocs, seating and passwords
 
