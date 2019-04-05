@@ -591,13 +591,11 @@ def kg_test(format_, args):
                         jargs += [result_tmp.name, '-c', solution.filename, '-t', str(index), '-v']
 
                     correct = judge.do_run(*jargs, check=False).returncode == 0
-                    with open(result_tmp.name) as result_tmp_file:
-                        try:
+                    try:
+                        with open(result_tmp.name) as result_tmp_file:
                             score = json.load(result_tmp_file)['score']
-                        except Exception as exc:
-                            import traceback
-                            traceback.print_exc()
-                            score = 1.0 if correct else 0.0 # can't read score. use binary scoring
+                    except Exception as exc:
+                        score = 1.0 if correct else 0.0 # can't read score. use binary scoring
                     return correct, score
 
         correct, score = get_score()

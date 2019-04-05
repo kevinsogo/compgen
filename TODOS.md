@@ -51,6 +51,8 @@ This includes some disorganized ideas, TODOs, notes...
 
     - `validate()` can also be `validate(subtasks=subtasks.keys())`. It detects `--detect-subtasks` (using argparse).  
 
+        - Must not issue error when invalid arguments are found.
+
     - has an optional argument `file=file`.  
 
 - Use Jinja templating for makedocs, seating and passwords
