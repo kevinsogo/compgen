@@ -345,14 +345,33 @@ class StrictStream:
     @save_on_label
     def read_until(self, ends, *, charset=(), n=None, maxn=None, include_end=False, _called="token"):
         ends = set(ends)
+        charset = set(charset)
         n = self._get(n)
         maxn = self._get(maxn)
         if maxn is None: maxn = float('inf')
         if maxn < 0: raise ValueError(f"maxn must be nonnegative: {maxn}")
-        charset = set(charset)
         res = []
         while self._peek_char() not in ends:
             if charset and self._peek_char() not in charset:
+                raise StreamError(f"Invalid character for {_called} detected: {charname(self._peek_char())}")
+            res.append(self._next_char())
+            if n is not None and len(res) > n: raise StreamError(f"Expected exactly {n} characters, got more.")
+            if len(res) > maxn: raise StreamError(f"Took too many characters! Expected at most {maxn}")
+        if n is not None and len(res) != n: raise StreamError(f"Expected exactly {n} characters, got {len(res)}")
+        if include_end: res.append(self._next_char())
+        return ''.join(res)
+
+    @save_on_label
+    def read_while(self, charset, *, ends=(), n=None, maxn=None, include_end=False, _called="token"):
+        ends = set(ends)
+        charset = set(charset)
+        n = self._get(n)
+        maxn = self._get(maxn)
+        if maxn is None: maxn = float('inf')
+        if maxn < 0: raise ValueError(f"maxn must be nonnegative: {maxn}")
+        res = []
+        while self._peek_char() in charset:
+            if self._peek_char() in ends:
                 raise StreamError(f"Invalid character for {_called} detected: {charname(self._peek_char())}")
             res.append(self._next_char())
             if n is not None and len(res) > n: raise StreamError(f"Expected exactly {n} characters, got more.")
@@ -448,9 +467,10 @@ class _Read:
             def op(label=''): yield getattr(self.ss, 'read_' + name)(*a, **_add_label(kw, label))
             return _Read(self.ss, self, op)
         chain.__name__ = name
+        name = name.rstrip('_')
         return chain
 
-    for _chain in ['line', 'int', 'ints', 'real', 'reals', 'token', 'tokens']:
+    for _chain in ['line', 'int', 'ints', 'real', 'reals', 'token', 'tokens', 'until', 'while_']:
         exec(f'{_chain} = _make_chain({_chain!r})') # evil hack for now
 
     del _make_chain, _chain

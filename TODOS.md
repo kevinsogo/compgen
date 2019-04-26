@@ -25,6 +25,10 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Renames... (write_to_file* -> gen_to_file?)
 
+- validator read_while
+    
+    - Also think about how to unify them, i.e., reduce code duplication as much as possible
+
 - Create a more flexible "testscript" that kgkompiles to a polygon-compatible one.
     
     - Perhaps jinja
@@ -32,6 +36,8 @@ This includes some disorganized ideas, TODOs, notes...
     - Need to think about what happens to "!" commands. (ignore?)
 
 - Annotated fields in details.json for programs and their expected verdicts.
+    
+    - Similar to polygon.
 
 - Allow compilation of a single file. `kg kompile -f`.
     
@@ -56,6 +62,8 @@ This includes some disorganized ideas, TODOs, notes...
     - has an optional argument `file=file`.  
 
 - Use Jinja templating for makedocs, seating and passwords
+
+- Improve the seating algorithm. Maybe use some simulated annealing or something? haha
 
 - Use subtasks_files (subtasks.json) for kg test if it exists (and format is kg).
 
