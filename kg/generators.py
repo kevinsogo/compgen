@@ -42,6 +42,32 @@ class KGRandom(Random):
         while a or b:
             res.append((a if self.randrange(len(a) + len(b)) < len(a) else b).pop())
         return res
+    def randdistrib(self, total, count, *, min_=0, max_=None, skew=1):
+        if min_*count > total: raise ValueError(
+                f"The total must be at least {min_}*{count}={min_*count} "
+                f"when count={count} and min_={min_}")
+        if max_ is not None and max_*count < total: raise ValueError(
+                f"The total must be at most {max_}*{count}={max_*count} "
+                f"when count={count} and max_={max_}")
+        dist = [min_]*count
+
+        inds = self.shuffled(range(count))
+        for it in range(total - min_*count):
+            while True:
+                assert inds
+                idx = min(self.randrange(len(inds)) for it in range(skew))
+                inds[idx], inds[-1] = inds[-1], inds[idx]
+                i = inds[-1]
+                if dist[i] < max_:
+                    dist[i] += 1
+                    break
+                else:
+                    inds.pop()
+
+        assert sum(dist) == total
+        assert min_ <= min(dist) <= max(dist) <= max_
+
+        return dist
 
 
 
