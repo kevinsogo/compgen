@@ -337,7 +337,7 @@ class StrictStream:
         if self.last is SSBAD: raise ValidationError("Read past EOF")
         return self.last
 
-    def _peek_char(self):
+    def peek_char(self):
         self._buffer()
         if self._buff[0] is SSBAD: raise ValidationError("Peeked past EOF")
         return self._buff[0]
@@ -351,9 +351,9 @@ class StrictStream:
         if maxn is None: maxn = float('inf')
         if maxn < 0: raise ValueError(f"maxn must be nonnegative: {maxn}")
         res = []
-        while self._peek_char() not in ends:
-            if charset and self._peek_char() not in charset:
-                raise StreamError(f"Invalid character for {_called} detected: {charname(self._peek_char())}")
+        while self.peek_char() not in ends:
+            if charset and self.peek_char() not in charset:
+                raise StreamError(f"Invalid character for {_called} detected: {charname(self.peek_char())}")
             res.append(self._next_char())
             if n is not None and len(res) > n: raise StreamError(f"Expected exactly {n} characters, got more.")
             if len(res) > maxn: raise StreamError(f"Took too many characters! Expected at most {maxn}")
@@ -370,9 +370,9 @@ class StrictStream:
         if maxn is None: maxn = float('inf')
         if maxn < 0: raise ValueError(f"maxn must be nonnegative: {maxn}")
         res = []
-        while self._peek_char() in charset:
-            if self._peek_char() in ends:
-                raise StreamError(f"Invalid character for {_called} detected: {charname(self._peek_char())}")
+        while self.peek_char() in charset:
+            if self.peek_char() in ends:
+                raise StreamError(f"Invalid character for {_called} detected: {charname(self.peek_char())}")
             res.append(self._next_char())
             if n is not None and len(res) > n: raise StreamError(f"Expected exactly {n} characters, got more.")
             if len(res) > maxn: raise StreamError(f"Took too many characters! Expected at most {maxn}")
