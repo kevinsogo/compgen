@@ -126,7 +126,7 @@ file.read_eoln()
 you can write it all in one line:
 
 ```python
-[x, y, z] = file.read. int(lim.x). space. int(lim.y). space. int(lim.z). eoln
+[x, y, z] = file.read.int(lim.x).space.int(lim.y).space.int(lim.z).eoln
 ```
 
 The chain accepts `int`, `ints`, `token`, `tokens`, `real`, `reals`, `char`, `space`, `eoln`, `eof` and `line`. They accept the same arguments as their `read_*` counterparts.
@@ -136,9 +136,9 @@ I recommend the chain style since it more closely reflects the structure of each
 *Note:* The left side of a chain-style assignment must always be enclosed by `[...]`, even if there is only one recipient. Also, `ints` returns a *single* variable (with data type `list`). For example,
 
 ```python
-[n]    = file.read. int(1, 10**5). space
-[x, a] = file.read. int(lim.x). space. ints(n, lim.a). eoln # here, 'a' is a list
-[]     = file.read. eof  # execute a chain without receiving anything
+[n]    = file.read.int(1, 10**5).space
+[x, a] = file.read.int(lim.x).space.ints(n, lim.a).eoln  # here, 'a' is a list
+[]     = file.read.eof  # execute a chain without receiving anything
 ```
 
 *Note on line endings:* Currently, we only support Unix line endings, though this could change in the future. To change the line endings of a file, use `tr -d '\15\32' < windows.txt > unix.txt` for now.  

@@ -302,7 +302,7 @@ def write_xml_verdict(verdict, message, score, result_file):
 @_register_platform('kg')
 @_register_platform('pg')
 @_register_platform('pc2')
-def _check_local(checker, title='', file=stdout, help=None):
+def _check_local(checker, title='', file=stdout, help=None, force_verbose=False):
     desc = help or CURR_PLATFORM + (' judge for the problem' + (f' "{title}"' if title else ''))
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('input_path', help='input file path')
@@ -319,7 +319,7 @@ def _check_local(checker, title='', file=stdout, help=None):
     parser.add_argument('-i', '--identical', action='store_true', help=argparse.SUPPRESS)
     args = parser.parse_args()
 
-    verbose = not args.quiet if CURR_PLATFORM == 'pc2' else args.verbose
+    verbose = force_verbose or (not args.quiet if CURR_PLATFORM == 'pc2' else args.verbose)
     tc_id = args.tc_id or ''
 
     if verbose:

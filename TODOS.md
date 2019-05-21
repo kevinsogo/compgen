@@ -15,7 +15,11 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Allow running several solutions at once.  
 
+- For Polygon checkers, maybe print specific message for verdict
+
 - Author/s fields.
+
+- Instead of needing `-js` in `kg test`, just switch to `-js` automatically if it issues an error.
 
 - Allow overriding of defaults when using Bounds & Bounds. Add stderr prints about "overriding" when one is not an Interval. Possibly disallow Interval & non-Interval.
 
@@ -74,6 +78,8 @@ This includes some disorganized ideas, TODOs, notes...
 - Force load subtasks for kg test, otherwise we load from details.subtasks_files
 
 - Enclose "@importables" in blocks and only expose the good functions. Maybe automate this with kg kompile.
+
+    - Or just reformat the kg importables to only expose public functions. So give them their own namespace by putting them in a function, so that it doesn't clash with other namespaces.
 
 - Add compatibility warning for validators: Don't return 42 since that's the success code for the pc2/kattis format.
 
