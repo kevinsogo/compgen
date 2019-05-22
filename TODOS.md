@@ -25,6 +25,13 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Possibly use HJSON (or something) for config files, not pure JSON.
 
+- KompGen interactors (kg.interactors). Extract behavior from testlib interactor. Preliminary experiments:
+
+    - `0 = _ok`
+    - `1 = _wa`
+    - `3 = _fail`
+    - So I guess `2` is parse error, and these are basically the same as checkers.
+
 - Add summaries/reports in kg gen and kg run. (and kg make?)
 
 - Renames... (write_to_file* -> gen_to_file?)

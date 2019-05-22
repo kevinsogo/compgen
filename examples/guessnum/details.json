@@ -1,0 +1,18 @@
+{
+    "title": "Guess Num",
+    "model_solution": "solution.py",
+    "validator": "validator.py",
+    "testscript": "testscript",
+    "generators": [
+        "gen_random.py"
+    ],
+    "other_programs": [
+        "formatter.py"
+    ],
+    "interactor": "interactor.cpp",
+    "judge_data_maker": "data_maker.py",
+    "checker": "checker.py",
+    
+    "time_limit": 2,
+    "version": "0.2"
+}

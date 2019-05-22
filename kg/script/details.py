@@ -34,7 +34,7 @@ class Details(object):
         for key in ['title', 'time_limit']:
             setattr(self, key, self.details.get(key, defaults.get(key)))
 
-        for key in ['validator', 'checker', 'model_solution', 'subtask_detector', 'judge_data_maker']:
+        for key in ['validator', 'checker', 'interactor', 'model_solution', 'subtask_detector', 'judge_data_maker']:
             setattr(self, key, self._maybe_prog(self.details.get(key, defaults.get(key)), key=key))
 
         for key in ['generators', 'other_programs']:

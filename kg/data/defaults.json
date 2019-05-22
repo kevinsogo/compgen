@@ -3,6 +3,7 @@
     "model_solution": null,
     "validator": null,
     "checker": "!diff.exact",
+    "interactor": null,
     "testscript": null,
     "generators": [],
     "subtask_detector": null,

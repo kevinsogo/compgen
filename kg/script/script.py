@@ -6,7 +6,7 @@ from operator import attrgetter
 from random import randrange
 from shutil import copyfile
 from string import ascii_letters, ascii_uppercase, digits
-from subprocess import PIPE, CalledProcessError
+from subprocess import PIPE, CalledProcessError, SubprocessError
 from sys import stdin, stdout, stderr
 from textwrap import dedent
 import argparse
@@ -427,37 +427,59 @@ def kg_gen(format_, args):
 
     if not judge: raise CommandError("Missing judge")
 
-    generate_outputs(format_, judge_data_maker, model_solution=model_solution, judge=judge)
+    generate_outputs(format_, judge_data_maker,
+            model_solution=model_solution,
+            judge=judge, interactor=details.interactor)
 
-def generate_outputs(format_, data_maker, *, model_solution=None, judge=None):
+def generate_outputs(format_, data_maker, *, model_solution=None, judge=None, interactor=None):
     if not data_maker: raise CommandError("Missing solution")
     data_maker.do_compile()
     if judge: judge.do_compile()
     if model_solution and model_solution != data_maker: model_solution.do_compile()
+    if interactor: interactor.do_compile()
+    data_maker_name = 'model_solution' if model_solution == data_maker else 'data_maker'
     for input_, output_ in format_.thru_io():
         touch_container(output_)
-        with open(input_) as inp, open(output_, 'w') as outp:
-            print(info_text('WRITING', input_, '-->'), key_text(output_))
-            try:
-                data_maker.do_run(stdin=inp, stdout=outp, time=True, check=True)
-            except CalledProcessError as cpe:
-                err_print(f"The data_maker raised an error for {input_}", file=stderr)
-                raise CommandError(f"The data_maker raised an error for {input_}") from cpe
+        print(info_text('WRITING', input_, '-->'), key_text(output_))
+        try:
+            if model_solution == data_maker and interactor:
+                results = model_solution.do_interact(interactor, time=True, check=True,
+                        interactor_args=[input_, output_],
+                        interactor_kwargs=dict(time=True, check=True),
+                    )
+            else:
+                with open(input_) as inp, open(output_, 'w') as outp:
+                    data_maker.do_run(stdin=inp, stdout=outp, time=True, check=True)
+        except InteractorException as ie:
+            err_print(f"The interactor raised an error with the {data_maker_name} for {input_}", file=stderr)
+            raise CommandError(f"The interactor raised an error with the {data_maker_name} for {input_}") from ie
+        except SubprocessError as se:
+            err_print(f"The {data_maker_name} raised an error for {input_}", file=stderr)
+            raise CommandError(f"The {data_maker_name} raised an error for {input_}") from se
 
         if judge and model_solution:
-            @contextlib.contextmanager
+            @contextlib.contextmanager  # so that the file isn't closed
             def model_output():
                 if model_solution == data_maker:
                     yield output_
                 else:
                     with tempfile.NamedTemporaryFile(delete=False) as tmp:
                         info_print(f"Running model solution on {input_}")
-                        with open(input_) as inp:
-                            try:
-                                model_solution.do_run(stdin=inp, stdout=tmp, time=True, check=True)
-                            except CalledProcessError as cpe:
-                                err_print(f"The model_solution raised an error for {input_}", file=stderr)
-                                raise CommandError(f"The model_solution raised an error for {input_}") from cpe
+                        try:
+                            if interactor:
+                                results = model_solution.do_interact(interactor, time=True, check=True,
+                                        interactor_args=[input_, tmp.name],
+                                        interactor_kwargs=dict(time=True, check=True),
+                                    )
+                            else:
+                                with open(input_) as inp:
+                                    model_solution.do_run(stdin=inp, stdout=tmp, time=True, check=True)
+                        except InteractorException as ie:
+                            err_print(f"The interactor raised an error with the model_solution for {input_}", file=stderr)
+                            raise CommandError(f"The interactor raised an error with the model_solution for {input_}") from ie
+                        except SubprocessError as se:
+                            err_print(f"The interaction raised an error for {input_}", file=stderr)
+                            raise CommandError(f"The interaction raised an error for {input_}") from se
                         yield tmp.name
             with model_output() as model_out:
                 try:
@@ -553,6 +575,8 @@ test_p.add_argument('-js', '--judge-strict-args', action='store_true',
 test_p.add_argument('-s', '--subtasks', default=[], nargs='+', help='list of subtasks')
 test_p.add_argument('-vc', '--validator-command', nargs='+', help='validator command, for subtask grading')
 test_p.add_argument('-vf', '--validator-file', help='validator file, for subtask grading')
+test_p.add_argument('-ic', '--interactor-command', nargs='+', help='interactor command, if the problem is interactive')
+test_p.add_argument('-if', '--interactor-file', help='interactor file, if the problem is interactive')
 
 @set_handler(test_p)
 def kg_test(format_, args):
@@ -566,8 +590,11 @@ def kg_test(format_, args):
     judge = Program.from_args(args.judge_file, args.judge_command) or details.checker
     if not judge: raise CommandError("Missing judge")
 
+    interactor = Program.from_args(args.interactor_file, args.interactor_command) or details.interactor
+
     solution.do_compile()
     judge.do_compile()
+    if interactor: interactor.do_compile()
     total = corrects = 0
     scoresheet = []
     max_time = 0
@@ -576,15 +603,28 @@ def kg_test(format_, args):
             nonlocal max_time
             with tempfile.NamedTemporaryFile(delete=False) as tmp:
                 with tempfile.NamedTemporaryFile(delete=False) as result_tmp:
-                    with open(input_) as inp:
-                        info_print("File", str(index).rjust(3), 'CHECKING AGAINST', input_)
-                        try:
-                            solution.do_run(stdin=inp, stdout=tmp, time=True, check=True)
-                        except CalledProcessError:
-                            err_print('The solution issued a runtime error...')
-                            return False, 0.0
-                        finally:
-                            max_time = max(max_time, solution.last_running_time)
+                    info_print("File", str(index).rjust(3), 'CHECKING AGAINST', input_)
+                    try:
+                        if interactor:
+                            solution_res, interactor_res = solution.do_interact(interactor,
+                                    time=True, check=True,
+                                    interactor_args=(input_, tmp.name),
+                                    interactor_kwargs=dict(check=False),
+                                )
+                        else:
+                            interactor_res = None
+                            with open(input_) as inp:
+                                solution_res = solution.do_run(stdin=inp, stdout=tmp, time=True, check=True)
+                    except CalledProcessError:
+                        err_print('The solution issued a runtime error...')
+                        return False, 0.0
+                    finally:
+                        max_time = max(max_time, solution.last_running_time)
+
+                    # Check if the interactor issues WA by itself. Don't invoke the judge
+                    if getattr(interactor_res, 'returncode', 0):
+                        err_print('The interactor did not accept the interaction...')
+                        return False, 0.0
 
                     jargs = list(map(os.path.abspath, (input_, tmp.name, output_)))
                     if not args.judge_strict_args:
@@ -837,7 +877,8 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
         generate_outputs(
                 fmt, details.judge_data_maker,
                 model_solution=details.model_solution,
-                judge=details.checker if checks else None)
+                judge=details.checker if checks else None,
+                interactor=details.interactor)
 
         succ_print('DONE MAKING OUTPUTS.')
 
