@@ -684,7 +684,7 @@ def kg_test(format_, args):
             beginfo_print('SUBTASK REPORT:')
             for sub in natsorted(all_subtasks):
                 print(info_text("Subtask ="),
-                      key_text(str(sub).rjust(3)),
+                      key_text(str(sub).rjust(4)),
                       info_text(": Score = "),
                       (succ_text if min_score[sub] == 1 else
                        info_text if min_score[sub] > 0 else
@@ -1158,7 +1158,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
     kg_libs = set(locations)
 
     # current files
-    all_local = [details.validator, details.checker, details.model_solution] + (
+    all_local = [details.validator, details.checker, details.interactor, details.model_solution] + (
             details.generators + details.other_programs)
 
     @memoize
@@ -1204,7 +1204,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
 
     # convert to various formats
     for fmt, name, copy_files, to_compile in [
-            ('pg', 'Polygon', True, [details.validator, details.checker] + details.generators),
+            ('pg', 'Polygon', True, [details.validator, details.interactor, details.checker] + details.generators),
             ('hr', 'HackerRank', True, [details.checker]),
             ('pc2', 'PC2', False, [details.validator, details.checker]),
         ]:

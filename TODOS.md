@@ -25,6 +25,10 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Possibly use HJSON (or something) for config files, not pure JSON.
 
+- Add docs for interactors.
+
+- Study pc2 interactors
+
 - KompGen interactors (kg.interactors). Extract behavior from testlib interactor. Preliminary experiments:
 
     - `0 = _ok`
@@ -45,6 +49,8 @@ This includes some disorganized ideas, TODOs, notes...
     - Perhaps jinja
 
     - Need to think about what happens to "!" commands. (ignore?)
+
+    - Autonumbers stuff so Polygon is happy
 
 - Annotated fields in details.json for programs and their expected verdicts.
     
