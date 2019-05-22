@@ -46,6 +46,10 @@ class ChkStream:
                 for line in stream.readlines():
                     for tok in line.strip().split():
                         yield tok
+        elif type_ == 'raw_lines':
+            def naive_iter():
+                for line in stream.readlines():
+                    yield line
         else:
             raise ValueError(f"Invalid Stream type: {type_}")
 
