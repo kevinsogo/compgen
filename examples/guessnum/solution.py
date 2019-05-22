@@ -1,5 +1,3 @@
-from random import *
-seed(int(input()))
-v = randrange(-10**9, 10**9+1)
-print('ask', v, flush=True)
-print('answer', v - int(input()))
+input()
+print('ask', 0, flush=True)
+print('answer', -int(input()))
