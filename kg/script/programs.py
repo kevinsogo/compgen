@@ -89,12 +89,13 @@ def attach_results(*, reraise=False):
 
 
 class Program:
-    def __init__(self, filename, compile_, run, *, relpath=None, strip_prefixes=['___'], check_exists=True):
+    def __init__(self, filename, compile_, run, *, relpath=None, strip_prefixes=['___'], check_exists=True, **attributes):
         if not filename: raise ValueError("Filename cannot be empty")
         if not run: raise ValueError("A program cannot have an empty run command")
         self.relpath = relpath
         self.filename = filename
         self.rel_filename = attach_relpath(relpath, filename)
+        self.attributes = attributes
         if check_exists and not self.rel_filename.startswith('!') and not os.path.exists(self.rel_filename):
             raise ValueError(f"File {self.rel_filename} not found.")
 
@@ -218,25 +219,27 @@ class Program:
 
     @classmethod
     def from_data(cls, arg, *, relpath=None):
+        attributes = arg.pop() if arg and isinstance(arg, list) and isinstance(arg[-1], dict) else {} 
+
+        if isinstance(arg, str): arg = [arg]
         if isinstance(arg, list):
-            if len(arg) == 2:
+            if len(arg) == 1:
+                filename, = arg
+                lang = infer_lang(filename)
+                if not lang: raise ExtProgramError(f"Cannot infer language: {filename!r}")
+                compile_ = langs[lang]['compile']
+                run = langs[lang]['run']
+            elif len(arg) == 2:
                 filename, run = arg
                 compile_ = ''
             elif len(arg) == 3:
                 filename, compile_, run = arg
             else:
                 raise ExtProgramError(f"Cannot understand program data: {arg!r}")
-        elif isinstance(arg, str):
-            lang = infer_lang(arg)
-            if not lang:
-                raise ExtProgramError(f"Cannot infer language: {arg!r}")
-            filename = arg
-            compile_ = langs[lang]['compile']
-            run = langs[lang]['run']
         else:
             raise ExtProgramError(f"Unknown program type: {arg!r}")
 
-        return cls(filename, compile_.split(), run.split(), relpath=relpath)
+        return cls(filename, compile_.split(), run.split(), relpath=relpath, **attributes)
 
     @classmethod
     def from_args(cls, file, command, *, relpath=None):

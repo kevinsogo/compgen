@@ -427,8 +427,7 @@ def kg_gen(format_, args):
 
     if not judge: raise CommandError("Missing judge")
 
-    generate_outputs(format_, judge_data_maker,
-            model_solution=model_solution,
+    generate_outputs(format_, judge_data_maker, model_solution=model_solution,
             judge=judge, interactor=details.interactor)
 
 def generate_outputs(format_, data_maker, *, model_solution=None, judge=None, interactor=None):
@@ -442,8 +441,8 @@ def generate_outputs(format_, data_maker, *, model_solution=None, judge=None, in
         touch_container(output_)
         print(info_text('WRITING', input_, '-->'), key_text(output_))
         try:
-            if model_solution == data_maker and interactor:
-                results = model_solution.do_interact(interactor, time=True, check=True,
+            if data_maker.attributes.get('interacts') and interactor:
+                results = data_maker.do_interact(interactor, time=True, check=True,
                         interactor_args=[input_, output_],
                         interactor_kwargs=dict(time=True, check=True),
                     )
