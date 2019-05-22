@@ -44,8 +44,7 @@ class ChkStream:
         elif type_ == 'tokens':
             def naive_iter():
                 for line in stream.readlines():
-                    for tok in line.strip().split():
-                        yield tok
+                    yield from line.strip().split()
         else:
             raise ValueError(f"Invalid Stream type: {type_}")
 
