@@ -15,7 +15,7 @@ class ExtProgramError(Exception): ...
 class InteractorException(ExtProgramError):
     def __init__(self, original_error, *args, **kwargs):
         self.original_error = original_error
-        super().__init__(f"Original error: {original_error}" *args, **kwargs)
+        super().__init__(f"Original error: {original_error}", *args, **kwargs)
 
 with open(os.path.join(kg_data_path, 'langs.json')) as f:
     langs = json.load(f)

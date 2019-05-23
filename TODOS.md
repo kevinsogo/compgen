@@ -29,6 +29,14 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Study pc2 interactors
 
+- More context/explanation:
+
+    - generators are supposed to give the same output for a given input. also, seed determined by args
+
+    - Add interactor in explanation.
+
+    - Remove "checker" in README.md
+
 - KompGen interactors (kg.interactors). Extract behavior from testlib interactor. Preliminary experiments:
 
     - `0 = _ok`
