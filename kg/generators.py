@@ -70,6 +70,16 @@ class KGRandom(Random):
         assert min_ <= min(dist) <= max(dist) <= max_
 
         return dist
+    @listify
+    def randpartition(self, total, min_=1, bias=2):
+        if min_ < max_
+        it = 0
+        for i in range(total-min_):
+            it += 1
+            if (it >= min_ and not self.randrange(bias)) or it == max_:
+                yield it
+                it = 0
+        yield it + min_
 
 
 
