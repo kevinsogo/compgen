@@ -42,7 +42,17 @@ class KGRandom(Random):
         while a or b:
             res.append((a if self.randrange(len(a) + len(b)) < len(a) else b).pop())
         return res
-    def randdistrib(self, total, count, *, min_=0, max_=None, skew=1):
+    def randdistrib(self, total, count, *, min_=0, max_=None, skew=1): ### @@ if False {
+        '''
+        Generates a random partition of a number into given number of parts.
+
+        total: number to be partitioned
+        count: number of parts to partition it into
+        min_: minimum size of each part
+        max_: maximum size of each part
+        skew: how "skewed" the partition is; higher skew means more variance
+        '''
+        ### @@ }
         if min_*count > total: raise ValueError(
                 f"The total must be at least {min_}*{count}={min_*count} "
                 f"when count={count} and min_={min_}")
@@ -71,12 +81,22 @@ class KGRandom(Random):
 
         return dist
     @listify
-    def randpartition(self, total, min_=1, bias=2):
+    def randpartition(self, total, min_=1, skew=2): ### @@ if False {
+        '''
+        Generates a random partition of a number into a random number of parts.
+        Default options make the result uniformly distributed over all such
+        partitions.
+
+        total: number to be partitioned
+        min_: minimum size of each part
+        skew: how "skewed" the partition is; higher skew means larger part size
+        '''
+        ### @@ }
         if min_ < max_
         it = 0
-        for i in range(total-min_):
+        for i in range(total - min_):
             it += 1
-            if (it >= min_ and not self.randrange(bias)) or it == max_:
+            if it >= min_ and not self.randrange(skew):
                 yield it
                 it = 0
         yield it + min_
