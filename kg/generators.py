@@ -92,7 +92,6 @@ class KGRandom(Random):
         skew: how "skewed" the partition is; higher skew means larger part size
         '''
         ### @@ }
-        if min_ < max_
         it = 0
         for i in range(total - min_):
             it += 1
