@@ -49,6 +49,8 @@ class KGRandom(Random):
         if max_ is not None and max_*count < total: raise ValueError(
                 f"The total must be at most {max_}*{count}={max_*count} "
                 f"when count={count} and max_={max_}")
+        if max_ is None:
+            max_ = total
         dist = [min_]*count
 
         inds = self.shuffled(range(count))
