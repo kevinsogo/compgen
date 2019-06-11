@@ -59,7 +59,7 @@ If you've joined a Codeforces round and have participated in the hacking phase, 
 
 1. You read a contestant's solution and come up with a test case.
 
-2. The test case is checked if it matches the input format the problem by a program called the *validator*.
+2. The test case is checked if it matches the input format for the problem by a program called the *validator*.
 
 3. The contestant's solution is run on this test case, and its output is compared to the model solution by the checker.
 
