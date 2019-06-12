@@ -1,5 +1,5 @@
 from collections import defaultdict
-from itertools import islice
+from itertools import islice, count
 from shutil import copyfile
 from subprocess import PIPE
 import os.path
@@ -86,10 +86,8 @@ def run_testscript(inputs, testscript, generators, *, relpath=None):
 
 def parse_testscript(testscript, generators, *, relpath=None):
     found = set()
-    def mex():
-        v = 1
-        while v in found: v += 1
-        return v
+    def mex(start=1):
+        return next(v for v in count(start) if v not in found)
 
     def validate_target(index):
         if index in found:
@@ -177,12 +175,12 @@ def parse_testscript(testscript, generators, *, relpath=None):
             indices = []
             for file in range(nfiles):
                 index = mex()
-                validate_target(mex())
+                validate_target(index)
                 indices.append(index)
             register_gen_args(src_line, gen, *rargs)
-            # TODO compress ranges
-            target = '{' + ','.join(map(str, indices)) + '}'
-            args = target[1:-1], *rargs
+            rtarget = compress_t_sequence(','.join(map(str, indices)))
+            target = '{' + rtarget + '}'
+            args = rtarget, *rargs
             gens[min(indices)] = gen, args, False, indices, target, src_line
 
     if not all(i == target for i, target in enumerate(sorted(found), 1)):

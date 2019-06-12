@@ -220,7 +220,7 @@ def write_to_files(print_to_file, make, filenames, *args, validate=None):
     rand = KGRandom(_make_seed(args))
 
     if filenames == "COUNT":
-        print(len(list(make(rand, *args))))
+        print(sum(1 for case in make(rand, *args)))
         return
 
     if isinstance(filenames, str):
