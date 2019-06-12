@@ -184,4 +184,9 @@ def parse_testscript(testscript, generators, *, relpath=None):
     return len(found), [value for key, value in sorted(gens.items())]
 
 
-# TODO convert to codeforces testscript
+def convert_testscript(testscript, generators, *, relpath=None):
+    filecount, gens = parse_testscript(testscript, generators, relpath=relpath)
+
+    for gen, args, single, target, otarget, src_line in gens:
+        if src_line[0] != '!':
+            yield ' '.join([gen.filename, *args, '>', otarget])
