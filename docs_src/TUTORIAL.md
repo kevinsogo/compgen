@@ -131,7 +131,8 @@ Author: Kevin
 
 \section{Statement}
 
-You are given an integer $n$. If $n \ge 1$, output $n^3 + n^2 + n + 1$. Otherwise, output \texttt{NONE}.
+You are given an integer $n$. If $n \ge 1$, output $n^3 + n^2 + n + 1$. 
+Otherwise, output \texttt{NONE}.
 
 
 \section{Input Format}
@@ -683,12 +684,15 @@ Given two integers $F$ and $m$, output $\frac{F}{m}$.
 
 The first line of input contains $t$, the number of test cases.
 
-Each test case consists of a single line containing two space-separated integers, $F$ and $m$.
+Each test case consists of a single line containing two space-separated 
+integers, $F$ and $m$.
 
 
 \section{Output Format}
 
-For each test case, output a single line containing a single real number equal to $\frac{F}{m}$. Your answer will be considered correct if it is within an absolute or relative error of $10^{-6}$ from the correct answer.  
+For each test case, output a single line containing a single real number equal 
+to $\frac{F}{m}$. Your answer will be considered correct if it is within an 
+absolute or relative error of $10^{-6}$ from the correct answer.  
 
 \textit{Note:} Suppose the real answer is $r$, and your output is $s$. Then:
 
@@ -696,7 +700,9 @@ For each test case, output a single line containing a single real number equal t
 
 \item The \textbf{absolute error} is defined as $|r - s|$.
 
-\item The \textbf{relative error} is defined as the smaller number between $\frac{|r - s|}{|r|}$ and $\frac{|r - s|}{|s|}$. (If the denominator is $0$, then we ignore it.)
+\item The \textbf{relative error} is defined as the smaller number between 
+$\frac{|r - s|}{|r|}$ and $\frac{|r - s|}{|s|}$. (If the denominator is $0$,
+then we ignore it.)
 
 \end{itemize}
 
@@ -749,7 +755,9 @@ No additional constraints.
 
 \section{Notes}
 
-For the second case, the exact answer is $0.666666\ldots$ repeating, but the given answer, $0.666666654321$, is accepted since the absolute error from the correct answer is $< 10^{-6}$.
+For the second case, the exact answer is $0.666666\ldots$ repeating, but the 
+given answer, $0.666666654321$, is accepted since the absolute error from the 
+correct answer is $< 10^{-6}$.
 ```
 
 The only thing here that might be a little tricky is the output format. Again, this is just a standard output format copied from one of the NOI.PH problems. When asking for an answer that's a real number, it's typical to ask for it to have a given absolute or relative error, and the typical number is $10^{-6}$.
@@ -803,7 +811,7 @@ for cas in range(t):
         ensure(F % m == 0)
 ```
 
-and it would work: this is totally fine. However, the recommended solution is to add another attribute in `subtasks`. Change `subtasks` to look like
+and it would work: this is totally fine. However, the recommended solution is to add another attribute in `bounds` and `subtasks`. Change them to look like
 
 ```python
 subtasks = {
@@ -813,22 +821,25 @@ subtasks = {
     '4': { 'F': 1 <= +Var <= 100, 'm': 1 <= +Var <= 100 },
     '5': { },
 }
+
+bounds = {
+    't': 1 <= +Var <= 11111,
+    'F': 1 <= +Var <= 10**9,
+    'm': 1 <= +Var <= 10**9,
+    'ansint': False,
+}
 ```
 
-Here, we added an attribute `'ansint'` and set it to `True`. Now, instead of doing the check `if subtask == '1'` and so on, we can check if `lim` has `ansint` set to `True`:
+Here, we added an attribute `'ansint'`, with a default value of `False`, and set it to `True` for the specific subtasks. Now, instead of doing the check `if subtask == '1'` and so on, we can check if `lim` has `ansint` set to `True`:
 
 ```python
 for cas in range(t):
     [F, m] = file.read.int(lim.F).space.int(lim.m).eoln
-    if getattr(lim, 'ansint', False):
+    if lim.ansint == True:
         ensure(F % m == 0)
 ```
 
-The `getattr` function here checks if `lim` has `'ansint'`, and if so, its value is the value of `lim.ansint`. Otherwise, its value is `False`. This is so that if we change which subtasks have an integer answer in the future, we can just change `subtasks` without having to worry about changing the main function.
-
-<!-- TODO not sure if i want to introduce getattr here or not -->
-
-Put all together, you should have `validator.py` looking like this:
+This is so that if we change which subtasks have an integer answer in the future, we can just change `subtasks` without having to worry about changing the main function. Put all together, you should have `validator.py` looking like this:
 
 ```python
 from sys import *
@@ -846,6 +857,7 @@ bounds = {
     't': 1 <= +Var <= 11111,
     'F': 1 <= +Var <= 10**9,
     'm': 1 <= +Var <= 10**9,
+    'ansint': False,
 }
 
 @validator()
@@ -855,7 +867,7 @@ def validate_file(file, subtask=None):
     [t] = file.read.int(lim.t).eoln
     for cas in range(t):
         [F, m] = file.read.int(lim.F).space.int(lim.m).eoln
-        if getattr(lim, 'ansint', False):
+        if lim.ansint == True:
             ensure(F % m == 0)
 
     [] = file.read.eof
@@ -872,12 +884,14 @@ And now let's move on to the next step: generators!
 
 ## Test planning and writing generators
 
+Let's talk about **test planning**. 
+
 <!-- the sample input -->
 <!-- the all-possible generator -->
 <!-- the stresses -->
 <!-- the random cases generator -->
 
-## Writing the model solution and picking the checker
+## Writing the model solution and making all
 
 <!-- evils of floating point -->
 <!-- super-accurate model solution -->
