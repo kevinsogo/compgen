@@ -1,6 +1,7 @@
 from collections import defaultdict
 from itertools import islice
 from shutil import copyfile
+from subprocess import PIPE
 import os.path
 
 from .formats import *
@@ -159,19 +160,25 @@ def parse_testscript(testscript, generators, *, relpath=None):
             register_gen_args(src_line, gen, *args)
             gens[index] = gen, args, True, index, target, src_line
         else:
-            try:
-                nfiles = int(target[1:])
-            except ValueError:
-                raise TestScriptError(f"Invalid dollar target: {target!r}")
+            dupseq, *rargs = args
+            if dupseq != '$$':
+                raise TestScriptError("First argument of multifile generator with dollar target must be $$. "
+                        f"{dupseq!r} != $$")
+
+            if target == "$$":
+                result = gen.do_compile().do_run("COUNT", *rargs, stdout=PIPE)
+                nfiles = int(result.stdout.decode('utf-8'))
+            else:
+                try:
+                    nfiles = int(target[1:])
+                except ValueError:
+                    raise TestScriptError(f"Invalid dollar target: {target!r}")
+
             indices = []
             for file in range(nfiles):
                 index = mex()
                 validate_target(mex())
                 indices.append(index)
-            dupseq, *rargs = args
-            if dupseq != '$$':
-                raise TestScriptError("First argument of multifile generator with dollar target must be $$. "
-                        f"{dupseq!r} != $$")
             register_gen_args(src_line, gen, *rargs)
             # TODO compress ranges
             target = '{' + ','.join(map(str, indices)) + '}'
