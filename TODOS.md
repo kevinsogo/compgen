@@ -25,6 +25,8 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Possibly use HJSON (or something) for config files, not pure JSON.
 
+- Warn if a constructed chain is never called
+
 - Add docs for interactors.
 
 - Study pc2 interactors
