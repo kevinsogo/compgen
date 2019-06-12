@@ -12,7 +12,9 @@ kg: error: the following arguments are required: main_command
 
 If you don't get a message like this, check out the Setup header in the README.
 
-I'll also assume some proficiency with Python, as we'll work exclusively in Python throughout this tutorial. (It's possible to use different languages, but if you're using KompGen in the first place, you're probably interested in doing everything in Python anyway.) I'll try not to use anything too magical in Python, and stick to basic language functions.
+I'll also assume some proficiency with [Python](https://docs.python.org/3/tutorial/), as we'll work exclusively in Python throughout this tutorial. (It's possible to use different languages, but if you're using KompGen in the first place, you're probably interested in doing everything in Python anyway.) I'll try not to use anything too magical in Python, and stick to basic language functions.
+
+To avoid any issues later on, if you're using Windows, I'll strongly recommend you [install Gow](https://github.com/bmatzelle/gow/wiki) if you haven't yet. It will give you some useful programs like `cat` or `diff` (and if you don't know what these are, don't worry about it).
 
 
 # Overview
@@ -114,91 +116,92 @@ Now that you know how a problem is written, let's set our first problem using Ko
 
 # Mystery Function
 
-First, let's set the problem [Mystery Function](https://www.hackerrank.com/contests/noi-ph-2019-finals-practice/challenges/mystery-function). Although it's not the easiest problem in the round, it's the easiest problem to set.
+First, let's set the problem [Mystery Function](https://www.hackerrank.com/contests/noi-ph-2019-finals-practice/challenges/mystery-function). Although it's not the easiest problem in the round, it's the easiest problem to set, because the test data is very simple. I recommend you follow along with the commands on your computer, so that you can see how KompGen works.
 
 ## Writing the statement
 
 NOI.PH problems have a template for statements that's different from the one that KompGen (currently) makes, so we'll use this template instead. Here's a very bare statement that illustrates this:
 
-```
+```tex
 Title: Mystery Function  
 Slug: mystery-function  
 Description: ?  
 Author: Kevin  
 
 
-----------------------------------
-**Problem Statement**  
+\section{Statement}
 
-You are given an integer $n$. If $n \ge 1$, output $n^3 + n^2 + n + 1$. Otherwise, output `NONE`.
-
-
-----------------------------------
-**Input Format**  
-
-The first line of input contains $t$, the number of test cases.  
-
-Each test case consists of one line containing a single integer, $n$.  
+You are given an integer $n$. If $n \ge 1$, output $n^3 + n^2 + n + 1$. Otherwise, output \texttt{NONE}.
 
 
-----------------------------------
-**Constraints**  
+\section{Input Format}
 
-$1 \le t \le 10^5$  
+The first line of input contains $t$, the number of test cases.
 
-**Subtask 1** (20 points):  
+Each test case consists of one line containing a single integer, $n$.
+
+
+\section{Output Format}
+
+For each test case, output one line containing the answer to that test case.
+
+
+\section{Scoring}
+
+\textbf{For all subtasks}
+
+$1 \le t \le 10^5$
+
+\textbf{Subtask 1} (20 points):
+
 $n \in \{1, 2, 3, 69, 420\}$  
 
-**Subtask 2** (20 points):  
-$|n| < 10^3$  
+\textbf{Subtask 2} (20 points):
 
-**Subtask 3** (60 points):  
-$|n| < 10^5$  
+$|n| < 10^3$
 
+\textbf{Subtask 3} (60 points):
 
-----------------------------------
-**Output Format**  
-
-For each test case, output one line containing the answer to that test case.  
+$|n| < 10^5$
 
 
-----------------------------------
-**Sample Input**  
+
+\section{Sample Input}
 
     1
     1
 
 
-----------------------------------
-**Sample Output**  
+\section{Sample Output}
 
     4
 
 
-----------------------------------
-**Explanation**  
+\section{Notes}
 
 We have $n = 1$. Hence we output $1^3 + 1^2 + 1 + 1 = 4$.
 ```
 
-We save this in a file called `statement.md`. The `.md` extension is for [Markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet). The dollar signs enclose math, which is written in [LaTeX](https://math.meta.stackexchange.com/questions/5020/mathjax-basic-tutorial-and-quick-reference). (The tutorial is for MathJax, but it applies to LaTeX too.) When problems in the NOI.PH Scientific Committee are at the idea stage, we usually pass around statement files like these.
+We save this in a file called `statement.tex`. The `.tex` is for [LaTeX](https://www.nyu.edu/projects/beber/files/Chang_LaTeX_sheet.pdf). When problems in the NOI.PH Scientific Committee are at the idea stage, we usually pass around statement files like these.
 
 Observe how carefully the input and output formats are specified. For this problem, it's pretty easy to write the input format: this is the typical template used for input with test cases. Generally, when writing input formats, I just modify the input format from an existing NOI.PH problem. The same goes for output formats.
 
 The only thing here that might not be obvious are the *slug* and *description*. In a HackerRank URL to a problem, the thing that comes after the last slash is called the *slug*. It consists of only lowercase English letters, numbers, and hyphens. We typically also leave the description blank.
 
+<!-- TODO i kinda want to write a better cheatsheet than the linked one. https://math.meta.stackexchange.com/questions/5020/mathjax-basic-tutorial-and-quick-reference might be a good reference. -->
+
 <!-- TODO To help with writing input and output formats, some templates can be found in `STATEMENTS.md`. -->
 
 ## Initializing, and details.json
 
-Open your terminal somewhere and run the command
+Open your terminal somewhere you're fine putting files in and run the command
 ```bash
 $ kg init mystery-function --subtasks=3
 ```
 
 Here, `mystery-function` is the slug and `3` is the number of subtasks. Don't worry about getting the number of subtasks right: we can always change it later.
 
-The command makes a folder called `mystery-function` inside the current folder. There will be a bunch of automatically generated files: don't worry too much about these. For now, get rid of the generated `statement.md` and replace it with the `statement.md` we wrote previously.
+The command makes a folder called `mystery-function` inside the current folder. There will be a bunch of automatically generated files: don't worry too much about these. For now, get rid of the generated `statement.md` and replace it with the `statement.tex` we wrote previously.
 
 Open the file `details.json`. This file is what KompGen uses to determine which files in the folder are which. Whenever you add a new file, you typically want to add it to `details.json` as well. Most of the fields here should be self-explanatory: you have the title, the model solution, the validator, the generators, and the list of subtasks. Don't worry about any of the other fields for now.
 
@@ -248,17 +251,19 @@ First, let's specify the constraints on `t` and `n`, by changing `subtasks` and 
 ```python
 subtasks = {
     '1': {},
-    '2': { 'n': abs(+Var) < 10**3 },
-    '3': { 'n': abs(+Var) < 10**5 },
+    '2': { 'n': -10**3 < +Var < 10**3 },
+    '3': { 'n': -10**5 < +Var < 10**5 },
 }
 
 bounds = {
     't': 1 <= +Var <= 10**5,
-    'n': abs(+Var) < 10**5,
+    'n': -10**5 < +Var < 10**5,
 }
 ```
 
-Here, `bounds` should have the constraints for the variables across all subtasks, and `subtasks` should have any additional constraints. You can treat `+Var` like a variable, so you can do stuff like `abs(+Var) < 10**9`. Currently, KompGen doesn't support `or` or `and` here. We can't write something like
+<!-- TODO I now actually want to swap bounds and subtasks in the generated template. -->
+
+Here, `bounds` should have the constraints for the variables across all subtasks, and `subtasks` should have any additional constraints. Currently, KompGen doesn't support `or` here. We can't write something like
 
 ```python
 # doesn't work:
@@ -317,13 +322,13 @@ from kg.validators import * ### @import
 
 subtasks = {
     '1': {},
-    '2': { 'n': abs(+Var) < 10**3 },
-    '3': { 'n': abs(+Var) < 10**5 },
+    '2': { 'n': -10**3 < +Var < 10**3 },
+    '3': { 'n': -10**5 < +Var < 10**5 },
 }
 
 bounds = {
     't': 1 <= +Var <= 10**5,
-    'n': abs(+Var) < 10**5,
+    'n': -10**5 < +Var < 10**5,
 }
 
 @validator()
@@ -368,6 +373,8 @@ if __name__ == '__main__':
     write_to_file(print_to_file, gen_random, argv[1:], stdout)
 ```
 
+<!-- TODO change to new write_to_file format, same with all the other files -->
+
 Note that `gen_random` doesn't actually write to the file, it just outputs the integers to be written in the file. The output of `gen_random` will be something like `[5, 10, 2]`. The actual writing is done by the **formatter**, which is saved in a file called `formatter.py`:
 
 ```python
@@ -402,7 +409,7 @@ $ gen_random.py 5 10000 > tests/003.in
 
 This is a bit of a hassle, so there is a file that does this automatically. This file is called the **testscript**, which is saved in a file called `testscript`. The equivalent of the above would be:
 
-```
+```bash
 gen_random 3 10 > $
 gen_random 10 1000 > $
 gen_random 10 5000 > $
@@ -456,7 +463,7 @@ The line `T = int(args[0])`, takes in the integer `T` from the input. If you wan
 
 The line `res.append(rand.choice([1, 2, 3, 69, 420]))` appends a randomly chosen number from `[1, 2, 3, 69, 420]` to `res`. For randomness, you can use any function in [Python's random module](https://docs.python.org/3/library/random.html), but you have to remember to prefix it with `rand.`.
 
-Note how in the last line, we changed `gen_random` to `gen_subtask`, which is the name of the function that we wrote.
+Note how in the last line, we changed `gen_random` to `gen_subtask1`, which is the name of the function that we wrote.
 
 Now, open `testscript`. Remove everything and replace it with the single line
 
@@ -511,7 +518,9 @@ gen_subtask1 100000 > $
 gen_subtask1 100000 > $
 ```
 
-then `kg make inputs` will just make the same input file three times. To make them actually different, we can just pass extra arguments:
+then `kg make inputs` will just make the same input file three times. This is important so that the same KompGen source files always produce the same output, for consistency. (This is also why you should always use random functions by prefixing them with `rand.`, rather than using `from random import *`.)
+
+To make the outputs actually different, we can just pass extra arguments:
 
 ```bash
 gen_subtask1 100000 ignored1 > $
@@ -523,7 +532,7 @@ The generators ignore any extra arguments. But because the arguments are changed
 
 ## Another generator and sample input
 
-Let's write the second generator, which we'll use for subtasks 2 and subtasks 3. It will take two inputs, `T` and `N`, where `T` is the number of test cases and `N` is the maximum absolute value of `n`.
+Let's write the second generator, which we'll use for subtasks 2 and 3. It will take two inputs, `T` and `N`, where `T` is the number of test cases and `N` is the maximum absolute value of `n`.
 
 To make sure the test cases are different, we're going to use the function `rand.shuffled`, which shuffles a list and returns a new list. (If you're familiar with `rand.shuffle`, this is slightly different, because `shuffle` shuffles an existing list and doesn't return anything. Think about the difference between `sorted(a)` and `a.sort()`.)
 
@@ -580,11 +589,9 @@ gen_random 100000 1000 > $
 gen_random 100000 100000 > $
 ```
 
-The `!` at the beginning of the line means "run this command as is". So the first line here takes the contents of `sample.in`, and the testscript puts it in the first input file. Sample inputs should come before any of the other inputs in the problem.
+The `!` at the beginning of the line means "run this command as is". So the first line here takes the contents of `sample.in`, and the testscript puts it in the first input file. This is what the command `cat` does. If you don't know what `cat` does, for now, it's enough to remember that if you want to make input manually, use the format `! cat manual_input.in > $`.
 
-As a note, if you don't have `cat` on your computer (which is possible if you're using Windows), then you can replace it with `type`, as in `! type sample.in > $`. But it's maybe a better idea to [install Gow](https://github.com/bmatzelle/gow/wiki) instead, so you get `cat` and `diff` and a bunch of other stuff.
-
-And with that, we're done making the generators!
+Note that sample inputs should come before any of the other inputs in the problem. And with that, we're done making the generators!
 
 ## Writing the model solution and making all
 
@@ -633,7 +640,7 @@ This should make a folder called `kgkompiled`. In it should be the folder `pg`. 
 
 First, login or register to Polygon. At the toolbar on top, click New Problem. Name the problem `mystery-function`, and then press Create. Then find the problem `mystery-function` in your list of problems, and click Start.
 
-In the toolbar above, click Statement, choose English as a language, and press Create. Before typing anything, scroll down and check Show section 'Scoring'. Then fill in the problem statement, adding the name of the problem, the statement under Legend, the input and output formats, the constraints under Scoring, and the sample explanation under Notes. Then hit Save.
+In the toolbar above, click Statement, choose English as a language, and press Create. Before typing anything, scroll down and check Show section 'Scoring'. Then fill in the problem statement by copying and pasting the fields in `statement.tex`, adding the name of the problem, the statement under Legend, the input and output formats, the constraints under Scoring, and the sample explanation under Notes. Then hit Save.
 
 In the toolbar above, click Files. In the Source Files section, click Add Files, then Choose Files. Go to the folder `mystery-function/kgkompiled/pg` we have from earlier, and upload `gen_subtask1.py`, `gen_random.py`, and `validator.py`. Then click Add Files. (*Do not upload the files in `mystery-function`.* You always want to upload the files in `kgkompiled/pg`.)
 
@@ -645,30 +652,254 @@ After making the sample test, click Tests in the above toolbar again. Open `test
 
 In the toolbar above, click Solution files. Click Add Solutions, then Choose Files. Upload `solution.py`, then click Add Files. To add other users who can see the problem, click Manage access in the above toolbar.
 
-*Finally,* look at the lowest box in the right sidebar. Hit Commit Changes, and add a commit message. You probably want to check the Don't send email notification checkbox, which is somewhat customary in the NOI.PH to avoid email spam. Then hit Commit!
+*Finally,* look at the lowest box in the right sidebar. Hit Commit Changes, and add a commit message. You probably want to check the Don't send email notification checkbox, which is somewhat customary in the NOI.PH Scientific Committee to avoid email spam. Then hit Commit!
 
 <!-- TODO screenshots? -->
 
-When sharing a problem you made in KompGen to others, it's typical to not include the `tests/` folder and the `kgkompiled/` folder, because these can be generated from the KompGen source files anyway.
+When sharing a problem you made in KompGen to others, it's typical to not include the `tests/` folder and the `kgkompiled/` folder, because these can be generated from the KompGen source files anyway. You can also delete these folders if you want to save space.
 
 
 # Sharing Chocolates 7
 
-<!-- multi-file generators -->
+Now, let's set the problem [Sharing Chocolates 7](https://www.hackerrank.com/contests/noi-ph-2019-finals-practice/challenges/sharing-chocolates-7). We'll get some more practice using KompGen, write a slightly more advanced validator, and talk about the evils of floating point.
+
+## Statement and initialization
+
+Here's the `statement.tex` we'll be using:
+
+```tex
+Title: Sharing Chocolates 7: The Force Equals Mass Times Acceleration  
+Slug: sharing-chocolates-7  
+Description: ?  
+Author: Kevin  
+
+
+\section{Statement}
+
+Given two integers $F$ and $m$, output $\frac{F}{m}$.
+
+
+\section{Input Format}
+
+The first line of input contains $t$, the number of test cases.
+
+Each test case consists of a single line containing two space-separated integers, $F$ and $m$.
+
+
+\section{Output Format}
+
+For each test case, output a single line containing a single real number equal to $\frac{F}{m}$. Your answer will be considered correct if it is within an absolute or relative error of $10^{-6}$ from the correct answer.  
+
+\textit{Note:} Suppose the real answer is $r$, and your output is $s$. Then:
+
+\begin{itemize}
+
+\item The \textbf{absolute error} is defined as $|r - s|$.
+
+\item The \textbf{relative error} is defined as the smaller number between $\frac{|r - s|}{|r|}$ and $\frac{|r - s|}{|s|}$. (If the denominator is $0$, then we ignore it.)
+
+\end{itemize}
+
+
+\section{Scoring}
+
+\textbf{For all subtasks}
+
+$1 \le t \le 11111$
+
+$1 \le F, m \le 10^9$
+
+\textbf{Subtask 1} (20 points):
+
+$1 \le F, m \le 5$
+
+The answer is an integer.
+
+\textbf{Subtask 2} (20 points):
+
+$1 \le F, m \le 100$
+
+The answer is an integer.
+
+\textbf{Subtask 3} (20 points):
+
+The answer is an integer.
+
+\textbf{Subtask 4} (20 points):
+
+$1 \le F, m \le 100$
+
+\textbf{Subtask 5} (20 points):
+
+No additional constraints.
+
+
+\section{Sample Input}
+
+    2
+    2 1
+    2 3
+
+
+\section{Sample Output}
+
+    2.000
+    0.666666654321
+
+
+\section{Notes}
+
+For the second case, the exact answer is $0.666666\ldots$ repeating, but the given answer, $0.666666654321$, is accepted since the absolute error from the correct answer is $< 10^{-6}$.
+```
+
+The only thing here that might be a little tricky is the output format. Again, this is just a standard output format copied from one of the NOI.PH problems. When asking for an answer that's a real number, it's typical to ask for it to have a given absolute or relative error, and the typical number is $10^{-6}$.
+
+Like last time, run the command
+
+```bash
+$ kg init sharing-chocolates-7 --subtasks=5
+```
+
+Then open `details.json`, change the title of the problem to "Sharing Chocolates 7: The Force Equals Mass Times Acceleration", and then get rid of the generated `statement.md` and replace it with `statement.tex`.
+
+## Writing the validator
+
+You can probably figure out how to write most of the validator yourself. The tricky part is checking whether the answer is an integer. As an exercise, try to write the validator for now ignoring this constraint, and compare your answer to mine. Open `validator.py`, maybe referring to the previous tutorial, and try to write the validator.
+
+Ready? Here's the validator I wrote, without the header or footer. Yours might look a little different, but as long as it does the same thing, that's okay:
+
+```python
+subtasks = {
+    '1': { 'F': 1 <= +Var <= 5, 'm': 1 <= +Var <= 5 },
+    '2': { 'F': 1 <= +Var <= 100, 'm': 1 <= +Var <= 100 },
+    '3': { },
+    '4': { 'F': 1 <= +Var <= 100, 'm': 1 <= +Var <= 100 },
+    '5': { },
+}
+
+bounds = {
+    't': 1 <= +Var <= 11111,
+    'F': 1 <= +Var <= 10**9,
+    'm': 1 <= +Var <= 10**9,
+}
+
+@validator()
+def validate_file(file, subtask=None):
+    lim = Bounds(bounds) & Bounds(subtasks.get(subtask))
+
+    [t] = file.read.int(lim.t).eoln
+    for cas in range(t):
+        [F, m] = file.read.int(lim.F).space.int(lim.m).eoln
+
+    [] = file.read.eof
+```
+
+Now let's check if the answer is an integer. This is just checking if `F % m == 0`, so we can use an `ensure` statement for this. You can do something like
+
+```python
+for cas in range(t):
+    [F, m] = file.read.int(lim.F).space.int(lim.m).eoln
+    if subtask == '1' or subtask == '2' or subtask == '3':
+        ensure(F % m == 0)
+```
+
+and it would work: this is totally fine. However, the recommended solution is to add another attribute in `subtasks`. Change `subtasks` to look like
+
+```python
+subtasks = {
+    '1': { 'F': 1 <= +Var <= 5, 'm': 1 <= +Var <= 5, 'ansint': True },
+    '2': { 'F': 1 <= +Var <= 100, 'm': 1 <= +Var <= 100, 'ansint': True },
+    '3': { 'ansint': True },
+    '4': { 'F': 1 <= +Var <= 100, 'm': 1 <= +Var <= 100 },
+    '5': { },
+}
+```
+
+Here, we added an attribute `'ansint'` and set it to `True`. Now, instead of doing the check `if subtask == '1'` and so on, we can check if `lim` has `ansint` set to `True`:
+
+```python
+for cas in range(t):
+    [F, m] = file.read.int(lim.F).space.int(lim.m).eoln
+    if getattr(lim, 'ansint', False):
+        ensure(F % m == 0)
+```
+
+The `getattr` function here checks if `lim` has `'ansint'`, and if so, its value is the value of `lim.ansint`. Otherwise, its value is `False`. This is so that if we change which subtasks have an integer answer in the future, we can just change `subtasks` without having to worry about changing the main function.
+
+<!-- TODO not sure if i want to introduce getattr here or not -->
+
+Put all together, you should have `validator.py` looking like this:
+
+```python
+from sys import *
+from kg.validators import * ### @import
+
+subtasks = {
+    '1': { 'F': 1 <= +Var <= 5, 'm': 1 <= +Var <= 5, 'ansint': True },
+    '2': { 'F': 1 <= +Var <= 100, 'm': 1 <= +Var <= 100, 'ansint': True },
+    '3': { 'ansint': True },
+    '4': { 'F': 1 <= +Var <= 100, 'm': 1 <= +Var <= 100 },
+    '5': { },
+}
+
+bounds = {
+    't': 1 <= +Var <= 11111,
+    'F': 1 <= +Var <= 10**9,
+    'm': 1 <= +Var <= 10**9,
+}
+
+@validator()
+def validate_file(file, subtask=None):
+    lim = Bounds(bounds) & Bounds(subtasks.get(subtask))
+
+    [t] = file.read.int(lim.t).eoln
+    for cas in range(t):
+        [F, m] = file.read.int(lim.F).space.int(lim.m).eoln
+        if getattr(lim, 'ansint', False):
+            ensure(F % m == 0)
+
+    [] = file.read.eof
+
+if __name__ == '__main__':
+    subtask = argv[1] if len(argv) > 1 else None
+    if subtask == '--detect-subtasks':
+        print(*detect_subtasks(validate_file, stdin, subtasks))
+    else:
+        validate_file(stdin, subtask=subtask)
+```
+
+And now let's move on to the next step: generators!
+
+## Test planning and writing generators
+
+<!-- the sample input -->
+<!-- the all-possible generator -->
+<!-- the stresses -->
+<!-- the random cases generator -->
+
+## Writing the model solution and picking the checker
+
+<!-- evils of floating point -->
 <!-- super-accurate model solution -->
 <!-- standard float checker -->
+
+## Compiling and uploading
+
+<!-- some more detail about kgkompile -->
+<!-- talk about polygon's standard checkers -->
 
 
 # Totally Not Robots
 
-<!-- built-in partition function -->
+<!-- by now, you should already be familiar with "the standard checklist" -->
 <!-- talk about strong testcases -->
+<!-- built-in partition function -->
 
 
 # City Map
 
-<!-- might want to skip if you don't need custom checkers -->
 <!-- built-in partition function and multi-file generators again -->
+<!-- might want to skip if you don't need custom checkers -->
 <!-- custom checker model: solution output and judge output -->
 <!-- writing the custom checker (being very, very exception-safe) -->
 <!-- data maker -->
@@ -676,4 +907,14 @@ When sharing a problem you made in KompGen to others, it's typical to not includ
 
 # Other KompGen features
 
-<!-- other built-in magical functions: graphs, etc -->
+<!-- ## Multi-file generators -->
+<!-- single-file model -->
+<!-- lqpl-divmod's generator -->
+<!-- distribute model -->
+<!-- mystery function's generator -->
+
+<!-- ## Grid generators -->
+
+<!-- ## Built-in graph utilities -->
+<!-- graph generators -->
+<!-- using utilities for checking graphs -->
