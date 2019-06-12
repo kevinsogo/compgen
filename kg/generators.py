@@ -210,9 +210,6 @@ def write_to_file(print_to_file, make, args, file, *, validate=None): ### @@ if 
 
 
 def write_to_files(print_to_file, make, filenames, *args, validate=None):
-    if isinstance(filenames, str):
-        filenames = file_sequence(filenames)
-
     try:
         make, distribute = make
     except (ValueError, TypeError):
@@ -221,6 +218,13 @@ def write_to_files(print_to_file, make, filenames, *args, validate=None):
         make = DistribCase(make, distribute)
 
     rand = KGRandom(_make_seed(args))
+
+    if filenames == "COUNT":
+        print(sum(1 for case in make(rand, *args)))
+        return
+
+    if isinstance(filenames, str):
+        filenames = file_sequence(filenames)
     filenames = iter(filenames)
     filecount = 0
     for index, case in enumerate(make(rand, *args)):

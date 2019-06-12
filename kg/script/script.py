@@ -1339,6 +1339,23 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                     print(line, file=f)
 
 
+        # convert testscript
+        if fmt == 'pg' and details.testscript:
+            filename = details.testscript
+            target = os.path.join(dest_folder, os.path.basename(filename))
+            info_print(f'[... non-python ...] converting testscript {filename} to {target}', file=stderr)
+            touch_container(target)
+
+            with open(details.testscript) as scrf:
+                script = scrf.read()
+
+            lines = list(convert_testscript(script, details.generators, relpath=loc))
+
+            with open(target, 'w') as f:
+                for line in lines:
+                    assert not line.endswith('\n')
+                    print(line, file=f)
+
         # copy over the files
         if copy_files:
             info_print('copying test data from', loc, 'to', dest_folder, '...')
