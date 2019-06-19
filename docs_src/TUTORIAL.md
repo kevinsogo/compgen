@@ -607,7 +607,7 @@ for cas in range(int(input())):
         print("NONE")
 ```
 
-And then we choose the checker. In fact, for this problem, we don't have to do anything, since we're going to use the default checker. The default checker simply checks if the contestant's output is exactly the same as the model solution's output, with some leniency with whitespace.
+And then we choose the checker. In fact, for this problem, we don't have to do anything, since we're going to use the default checker. The default checker simply checks if the contestant's output is exactly the same as the model solution's output, which is what we want.
 
 So we're actually done! Run the command
 
@@ -649,7 +649,7 @@ In the toolbar above, click Checker. Select `ncmp.cpp` as the checker, and click
 
 In the toolbar above, click Tests. First you have to add in any tests that you do `! cat` in testscript, since Polygon doesn't support that. To add a test manually, click Add Test. Paste in the data in `sample.in`, then check Use in statements, and hit Create.
 
-After making the sample test, click Tests in the above toolbar again. Open `testscript` and paste its contents below Script:, then remove any lines beginning with `!`. Click Save Script. It is in the Tests tab that we can also set the scoring, but we won't do so now.
+After making the sample test, click Tests in the above toolbar again. Open `testscript` (again, the one in `kgkompiled/pg`) and paste its contents below Script:. Then click Save Script. It is in the Tests tab that we can also set the scoring, but we won't do so now.
 
 In the toolbar above, click Solution files. Click Add Solutions, then Choose Files. Upload `solution.py`, then click Add Files. To add other users who can see the problem, click Manage access in the above toolbar.
 
@@ -815,9 +815,9 @@ and it would work: this is totally fine. However, the recommended solution is to
 
 ```python
 subtasks = {
-    '1': { 'F': 1 <= +Var <= 5, 'm': 1 <= +Var <= 5, 'ansint': True },
-    '2': { 'F': 1 <= +Var <= 100, 'm': 1 <= +Var <= 100, 'ansint': True },
-    '3': { 'ansint': True },
+    '1': { 'F': 1 <= +Var <= 5, 'm': 1 <= +Var <= 5, 'ans_is_int': True },
+    '2': { 'F': 1 <= +Var <= 100, 'm': 1 <= +Var <= 100, 'ans_is_int': True },
+    '3': { 'ans_is_int': True },
     '4': { 'F': 1 <= +Var <= 100, 'm': 1 <= +Var <= 100 },
     '5': { },
 }
@@ -826,16 +826,16 @@ bounds = {
     't': 1 <= +Var <= 11111,
     'F': 1 <= +Var <= 10**9,
     'm': 1 <= +Var <= 10**9,
-    'ansint': False,
+    'ans_is_int': False,
 }
 ```
 
-Here, we added an attribute `'ansint'`, with a default value of `False`, and set it to `True` for the specific subtasks. Now, instead of doing the check `if subtask == '1'` and so on, we can check if `lim` has `ansint` set to `True`:
+Here, we added an attribute `ans_is_int`, with a default value of `False`, and set it to `True` for the specific subtasks. Now, instead of doing the check `if subtask == '1'` and so on, we can check if `lim` has `ans_is_int` set to `True`:
 
 ```python
 for cas in range(t):
     [F, m] = file.read.int(lim.F).space.int(lim.m).eoln
-    if lim.ansint == True:
+    if lim.ans_is_int:
         ensure(F % m == 0)
 ```
 
@@ -846,9 +846,9 @@ from sys import *
 from kg.validators import * ### @import
 
 subtasks = {
-    '1': { 'F': 1 <= +Var <= 5, 'm': 1 <= +Var <= 5, 'ansint': True },
-    '2': { 'F': 1 <= +Var <= 100, 'm': 1 <= +Var <= 100, 'ansint': True },
-    '3': { 'ansint': True },
+    '1': { 'F': 1 <= +Var <= 5, 'm': 1 <= +Var <= 5, 'ans_is_int': True },
+    '2': { 'F': 1 <= +Var <= 100, 'm': 1 <= +Var <= 100, 'ans_is_int': True },
+    '3': { 'ans_is_int': True },
     '4': { 'F': 1 <= +Var <= 100, 'm': 1 <= +Var <= 100 },
     '5': { },
 }
@@ -857,7 +857,7 @@ bounds = {
     't': 1 <= +Var <= 11111,
     'F': 1 <= +Var <= 10**9,
     'm': 1 <= +Var <= 10**9,
-    'ansint': False,
+    'ans_is_int': False,
 }
 
 @validator()
@@ -867,7 +867,7 @@ def validate_file(file, subtask=None):
     [t] = file.read.int(lim.t).eoln
     for cas in range(t):
         [F, m] = file.read.int(lim.F).space.int(lim.m).eoln
-        if lim.ansint == True:
+        if lim.ans_is_int:
             ensure(F % m == 0)
 
     [] = file.read.eof
@@ -884,23 +884,186 @@ And now let's move on to the next step: generators!
 
 ## Test planning and writing generators
 
-Let's talk about **test planning**. 
+Let's talk about **test planning**. As the name suggests, it's the process of planning out what kinds of tests will appear in the problem, and how they're generated.
 
-<!-- the sample input -->
-<!-- the all-possible generator -->
-<!-- the stresses -->
-<!-- the random cases generator -->
+For subtasks 1, 2, and 4, the number of possible cases is small enough that we can just check all of them. For subtasks 3 and 5, we need to check a lot of random cases, of course. But we should also check limit cases: like all combinations of the maximum and minimum $F$ and $m$, for example.
+
+This means we'll write three generators. The first will generate all possible pairs of $F$ and $m$, the second will generate the limit cases, and the last will generate random cases.
+
+We'll also need to remember to make a test for the sample input, and since we already have the sample input, let's start with that. Edit `sample.in` to read the sample input we have in the statement, and edit the testscript to have the line `! cat sample.in > $` at the beginning.
+
+Now let's write the formatter. Recall that this is the file that will take the output of the generator and print it to the file. Let's decide that the generator will output a list of pairs `[F, m]`. The formatter here is pretty simple:
+
+```python
+def print_to_file(file, cases):
+    print(len(cases), file=file)
+    for F, m in cases:
+        print(F, m, file=file)
+```
+
+Let's write the first generator: one that generates random input. Mine takes three integers as input: the number of test cases `T`, the maximum value of `m` and `F` as `N`, and lastly `0` if we require the answers to be integers and `1` otherwise.
+
+Try to do so yourself, referring to the previous section if you have to. If we require the answers to be integers, it's more efficient to generate `m` and `F/m` randomly first, and *then* multiply them to produce `F`, rather than repeatedly trying pairs of `F` and `m` until we get `F % m == 0`.
+
+Saved as `gen_random.py`, mine looks like:
+
+```python
+from sys import *
+from kg.generators import * ### @import
+from formatter import * ### @import
+
+def gen_random(rand, *args):
+    T, N, ans_is_int = map(int, args[:3])
+    cases = []
+    for cas in range(T):
+        if ans_is_int:
+            m = rand.randint(1, N)
+            a = rand.randint(1, N//m)
+            cases.append([m*a, m])
+        else:
+            cases.append([rand.randint(1, N), rand.randint(1, N)])
+    return cases
+
+if __name__ == '__main__':
+    write_to_file(print_to_file, gen_random, argv[1:], stdout)
+```
+
+The corresponding lines in the testscript will be `gen_random 11111 1000000000 1` and `gen_random 11111 1000000000 0`.
+
+Now let's write the second generator, which generates all possible inputs, and then fills in the remaining test cases in the file with random data. It will take in three integers as input: the number of test cases `T`, the maximum value of `m` and `F` as `N`, and lastly `0` if we require the answers to be integers and `1` otherwise. Again, try writing it yourself. Here's my generator, saved in `gen_all.py`:
+
+```python
+from sys import *
+from kg.generators import * ### @import
+from formatter import * ### @import
+
+def gen_all(rand, *args):
+    T, N, ans_is_int = map(int, args[:3])
+    cases = []
+    for F in range(1, N+1):
+        for m in range(1, N+1):
+            if (not ans_is_int) or F % m == 0:
+                cases.append([F, m])
+    while len(cases) < T:
+        if ans_is_int:
+            m = rand.randint(1, N)
+            a = rand.randint(1, N//m)
+            cases.append([m*a, m])
+        else:
+            cases.append([rand.randint(1, N), rand.randint(1, N)])
+    return cases
+
+if __name__ == '__main__':
+    write_to_file(print_to_file, gen_all, argv[1:], stdout)
+```
+
+Remember to change the last line to have `gen_all` rather than `gen_random`! For this one, the corresponding lines in the testscript will be `gen_all 11111 5 1`, `gen_all 11111 100 1`, and `gen_random 11111 100 0`.
+
+Now let's write the third generator, the limit cases. I made limit cases for this problem by going over all possible pairs of two integers chosen from `[1, 2, int(N**.5), N//2, N-1, N]`. To illustrate how imports work, I also imported the function `product` from `itertools`, which gives the Cartesian product of sets. Mine looks like:
+
+```python
+from sys import *
+from kg.generators import * ### @import
+from formatter import * ### @import
+
+from itertools import product
+
+def gen_limits(rand, *args):
+    N, ans_is_int = map(int, args[:2])
+    cases = []
+    for F, m in product([1, 2, int(N**.5), N//2, N-1, N], repeat=2):
+        if (not ans_is_int) or F % m == 0:
+            cases.append([F, m])
+    return cases
+
+if __name__ == '__main__':
+    write_to_file(print_to_file, gen_limits, argv[1:], stdout)
+```
+
+Again, remember to change the last line! We'll call this one with `gen_limits 1000000000 1` and `gen_limits 1000000000 0`. The final testscript looks something like this:
+
+```bash
+! cat sample.in > $
+gen_random 11111 1000000000 1
+gen_random 11111 1000000000 0
+gen_all 11111 5 1
+gen_all 11111 100 1
+gen_all 11111 100 0
+gen_limits 1000000000 1
+gen_limits 1000000000 0
+```
+
+Finally, remember to change `details.json` in order to include all the generators we just made! When I make problems, this is a step I tend to forget. Thankfully, KompGen will remind us if we forget to do so. Anyway, change `details.json` to have this:
+
+```json
+"generators": [
+    "gen_random.py",
+    "gen_all.py",
+    "gen_limits.py",
+],
+```
 
 ## Writing the model solution and making all
 
-<!-- evils of floating point -->
-<!-- super-accurate model solution -->
-<!-- standard float checker -->
+We now go to the problem of writing the model solution. We need to take extra care when working with floating point, so we want the judge's answers to be as accurate as possible. In order to do this, we can use the Python module [`decimal`](https://docs.python.org/3/library/decimal.html) in order to guarantee that our program gives the correct answer to twenty decimal places, which should be enough.
+
+So our super-accurate model solution would look like:
+
+```python
+import decimal
+decimal.getcontext().prec = 28
+for cas in range(int(input())):
+    F, m = map(decimal.Decimal, input().split())
+    print("{0:.20f}".format(F/m))
+```
+
+Finally, we now choose a checker. For this problem, we can also use one of the default checkers, which checks if the absolute or relative error of a real number is at most a certain value. Open `details.json`, and change the `checker` field to look like
+
+```json
+"checker": "!diff.real_abs_rel_1e_6",
+```
+
+This checker, `real_abs_rel_1e_6`, is one of the default checkers included with KompGen. You can change `1e_6` to anything from `1e_0` to `1e_16`, and that will be used as the tolerance. You can also use `real_abs_1e_6`, which just checks if the absolute error is within $10^{-6}$, without considering the relative error.
+
+And now we're done! Open the terminal in the current folder, run the command `kg make all`, and watch the magic happen. Again, feel free to inspect the generated input and output, as well as the file `subtasks.json`, if you want to.
 
 ## Compiling and uploading
 
-<!-- some more detail about kgkompile -->
-<!-- talk about polygon's standard checkers -->
+Let's talk a bit more about compiling and uploading. When you run `kg kompile` in the folder, and it produces the `kgkompiled/pg` folder, several different things are happening.
+
+Since Polygon does not support importing from other uploaded files, what KompGen does is that it will copy and paste the needed imports into the top of the file. So for example, the line
+
+```python
+from kg.validators import * ### @import
+```
+
+will be processed by KompGen by copying the `validators.py` file from the KompGen library, and being pasted directly into the file, in order to produce the compiled file.
+
+So this is why the `### @import` is needed at the end of the line here. This also means that KompGen only supports `import *`, since it literally copies the entire file. And neither of these restrictions apply to imports from the Python standard library, since we can import from those in Polygon anyway.
+
+Polygon also doesn't support `! cat sample.in > $` for the testscript, so KompGen will go ahead and erase that line in the compiled testscript. KompGen will also make some other changes to the testscript for multi-file generators, which you can read more about in the last section of this tutorial.
+
+Let's talk about Polygon's standard checkers as well. The given descriptions are pretty descriptive: if you select a checker, you can see a little description underneath in gray. So we can see that the checker we want to use for this problem is `rcmp6.cpp`.
+
+One thing that might not be clear is the term *token*. A token is a maximal-length substring that doesn't contain any whitespace. To compare two solutions token-by-token would be to compare them while ignoring any whitespace, and this is what `wcmp.cpp` does.
+
+If a standard checker suffices for the problem, then you should use that. If multiple checkers can work, it's probably a good idea to choose the least strict option. For example, for our previous problem Mystery Function, we could choose any of `fcmp.cpp`, `wcmp.cpp`, or `ncmp.cpp`. But `fcmp.cpp` is very strict with whitespace. On the other hand, prefer `ncmp.cpp` over `wcmp.cpp` since it is more specific for this purpose: comparing two integers.
+
+### Publishing for Polygon
+
+If your problem will eventually be used on Codeforces, rather than being developed in Polygon and later being uploaded into Hackerrank, then there are a few things to keep in mind.
+
+Let's talk about setting up scoring in Polygon. First you want to go to the General Info tab and tick Are test points enabled?. Then go to the Tests tab and check Enable groups.
+
+Now you can tick several test cases to be in the same group. Check several test cases that are all in the same subtasks, then click Group. Name that group, say, `subtask1234` if all the tests you checked are in subtasks 1, 2, 3 and 4.
+
+After doing this for all tests, scroll to the bottom, and set up the dependencies. For example, the group `subtask1` should have `subtask13` and `subtask1234` as a dependency. Change the Points policy for all your groups to be COMPLETE_GROUP. Then to assign points, find any single test in the group `subtask1`, click Points, then type in the number of points.
+
+You also want to set up the sample test cases. In the Tests tab, find a sample test case, then click Edit. If you want it to be used in the statements, tick Use in statements. For this problem, since we want a specific output for the sample test case, click the If you want to specify thing. Then you can type in the custom input and output that you want to be shown on the problem statement.
+
+Finally, the most important thing to remember is that Codeforces will skip judging a solution if its answer in the first test case is wrong. This is an issue if your problem has subtasks, because it's possible that a contestant is aiming for a specific subtask that doesn't include the first test case.
+
+The neatest solution is to make the first test case, which is usually a sample test case, to fall under all the subtasks. This first test case doesn't _have_ to be a sample test case: for example, you could make the first test case `T = 0` without making it a sample test case, so that no solutions will be skipped.
 
 
 # Totally Not Robots
@@ -908,6 +1071,7 @@ Let's talk about **test planning**.
 <!-- by now, you should already be familiar with "the standard checklist" -->
 <!-- talk about strong testcases -->
 <!-- built-in partition function -->
+<!-- publishing for hackerrank -->
 
 
 # City Map
