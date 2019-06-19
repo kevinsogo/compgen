@@ -101,6 +101,10 @@ Phew, that's a lot of stuff! Let's review:
 
 - The **checker** checks if a contestant's output is correct.
 
+This is neatly summarized in the following picture:
+
+<img src="kompgen-model.jpg">
+
 We introduced these five files in the order checker, model solution, generator, validator, and statement. For this tutorial, we will write these files *in the reverse order*, although it's possible to write these in any order. This means that the process of making a problem is:
 
 1. Write a clear **statement**.
@@ -426,6 +430,10 @@ Note how there's no `.py` any more. Also note how we use a `$` instead of specif
 - The **formatter** takes the data and prints it to an input file.
 
 - The **testscript** has a bunch of commands for running the generators.
+
+Again, here's a nice picture that shows this:
+
+<img src="generator-model.jpg">
 
 ## My first generator
 
@@ -1019,6 +1027,8 @@ for cas in range(int(input())):
     print("{0:.20f}".format(F/m))
 ```
 
+In this problem it is particularly easy to do the analysis and write the judge solution. In general, however, when setting problems involving floating point, it's important to do analysis on the maximum precision error that an intended solution can have. This is the type of skill you learn when you solve problems involving precision error in the first place.
+
 Finally, we now choose a checker. For this problem, we can also use one of the default checkers, which checks if the absolute or relative error of a real number is at most a certain value. Open `details.json`, and change the `checker` field to look like
 
 ```json
@@ -1267,8 +1277,6 @@ def randpartition(self, total, min_=1, skew=2): ### @@ if False {
     total: number to be partitioned
     min_: minimum size of each part
     skew: how "skewed" the partition is; higher skew means larger part size
-    '''
-    ### @@ }
     # ... omitted for brevity ...
 ```
 
@@ -1456,12 +1464,15 @@ Head back to the Test Cases tab, and find the last file of subtask 1. Change the
 Then head to the Custom Checker tab, and tick Enable Custom Checker. Choose Python 3 as the language. Then open the file `hr.pastable.version.checker.py` in `kgkompiled\hr`, and paste the contents of that file in the middle section. Then click the Save Changes button on the bottom. You're done!
 
 
-
 # City Map
 
 <!-- built-in partition function and multi-file generators again -->
 <!-- might want to skip if you don't need custom checkers -->
 <!-- custom checker model: solution output and judge output -->
+
+<!-- <img src="checker-model.jpg"> -->
+
+<!-- chkstream concept -->
 <!-- writing the custom checker (being very, very exception-safe) -->
 <!-- data maker -->
 
@@ -1474,8 +1485,11 @@ Then head to the Custom Checker tab, and tick Enable Custom Checker. Choose Pyth
 <!-- distribute model -->
 <!-- mystery function's generator -->
 
+<!-- ## Checker suite -->
+
 <!-- ## Grid generators -->
 
 <!-- ## Built-in graph utilities -->
+<!-- talk about setting graph problems and being hard in general -->
 <!-- graph generators -->
 <!-- using utilities for checking graphs -->
