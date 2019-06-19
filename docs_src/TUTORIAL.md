@@ -103,7 +103,7 @@ Phew, that's a lot of stuff! Let's review:
 
 This is neatly summarized in the following picture:
 
-<img src="kompgen-model.jpg">
+![](kompgen-model.jpg)
 
 We introduced these five files in the order checker, model solution, generator, validator, and statement. For this tutorial, we will write these files *in the reverse order*, although it's possible to write these in any order. This means that the process of making a problem is:
 
@@ -433,7 +433,7 @@ Note how there's no `.py` any more. Also note how we use a `$` instead of specif
 
 Again, here's a nice picture that shows this:
 
-<img src="generator-model.jpg">
+![](generator-model.jpg)
 
 ## My first generator
 
@@ -1470,7 +1470,7 @@ Then head to the Custom Checker tab, and tick Enable Custom Checker. Choose Pyth
 <!-- might want to skip if you don't need custom checkers -->
 <!-- custom checker model: solution output and judge output -->
 
-<!-- <img src="checker-model.jpg"> -->
+<!-- ![](checker-model.jpg) -->
 
 <!-- chkstream concept -->
 <!-- writing the custom checker (being very, very exception-safe) -->
