@@ -59,6 +59,8 @@ class KGRandom(Random):
         if max_ is not None and max_*count < total: raise ValueError(
                 f"The total must be at most {max_}*{count}={max_*count} "
                 f"when count={count} and max_={max_}")
+        if skew_ <= 0:
+            raise ValueError("The skew has to be at least 1.")
         if max_ is None:
             max_ = total
         dist = [min_]*count
@@ -92,6 +94,15 @@ class KGRandom(Random):
         skew: how "skewed" the partition is; higher skew means larger part size
         '''
         ### @@ }
+        if total < 0:
+            raise ValueError("The total should be at least 0.")
+        if min_ <= 0:
+            raise ValueError("The value of min_ should be at least 1.")
+        if skew <= 0:
+            raise ValueError("The skew should be at least 1.")
+        if total == 0:
+            return []
+
         it = 0
         for i in range(total - min_):
             it += 1
