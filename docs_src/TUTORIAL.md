@@ -3,7 +3,7 @@ This is a tutorial on how to prepare problems from scratch using KompGen. We'll 
 I'll assume you have `kg` installed in your system. You can check this by typing `kg` in the termiinal, which should pop up a message like this:
 ```bash
 $ kg
-usage: kg [-h] [--krazy]
+usage: kg [-h] [–krazy]
           {konvert,convert,konvert-sequence,convert-sequence,subtasks,gen,test,
           run,make,joke,init,kompile,compile,kontest,contest,seating,passwords}
           ...
@@ -16,7 +16,7 @@ I'll also assume some proficiency with [Python](https://docs.python.org/3/tutori
 
 To avoid any issues later on, if you're using Windows, I'll strongly recommend you [install Gow](https://github.com/bmatzelle/gow/wiki) if you haven't yet. It will give you some useful programs like `cat` or `diff`. (If you don't know what these are, don't worry about it.)
 
-It should take about 60 to 90 minutes to read and follow the whole tutorial. Reading the overview should take around 5 minutes. Then there's one section for each of the problems Mystery Function, Sharing Chocolates 7, Totally Not Robots, and City Map, each of which should take around 15--20 minutes to read and follow on your computer. The final section of this file will simply discuss more advanced features of KompGen, and should take around 5 minutes to read.
+It should take about 60 to 90 minutes to read and follow the whole tutorial. Reading the overview should take around 5 minutes. Then there's one section for each of the problems Mystery Function, Sharing Chocolates 7, Totally Not Robots, and City Map, each of which should take around 15–20 minutes to read and follow on your computer. The final section of this file will simply discuss more advanced features of KompGen, and should take around 5 minutes to read.
 
 
 # Overview
@@ -35,7 +35,7 @@ I'll assume you're familiar with the way that solutions to competitive programmi
 
 This introduces us to our first two programs. The first is the **model solution**. As the name suggests, it's the solution that a contestant's solution is compared against. The programs aren't directly compared, but their outputs are. Sometimes, this is also called the *judge solution*.
 
-The second is the **checker**. For most problems, the checker will simply determine if the outputs of the contestant and the model solution are the same. You may also be familiar that when the answer is a float, an answer is accepted if its absolute or relative error is within certain bounds---this is also handled by the checker. For problems with multiple possible solutions, it's also the checker that determines whether a contestant's output is correct.
+The second is the **checker**. For most problems, the checker will simply determine if the outputs of the contestant and the model solution are the same. You may also be familiar that when the answer is a float, an answer is accepted if its absolute or relative error is within certain bounds—this is also handled by the checker. For problems with multiple possible solutions, it's also the checker that determines whether a contestant's output is correct.
 
 ## Strong test cases and generators
 
@@ -195,15 +195,15 @@ Observe how carefully the input and output formats are specified. For this probl
 
 The only thing here that might not be obvious are the *slug* and *description*. In a HackerRank URL to a problem, the thing that comes after the last slash is called the *slug*. It consists of only lowercase English letters, numbers, and hyphens. We typically also leave the description blank.
 
-<!-- TODO i kinda want to write a better cheatsheet than the linked one. https://math.meta.stackexchange.com/questions/5020/mathjax-basic-tutorial-and-quick-reference might be a good reference. -->
+<!– TODO i kinda want to write a better cheatsheet than the linked one. https://math.meta.stackexchange.com/questions/5020/mathjax-basic-tutorial-and-quick-reference might be a good reference. –>
 
-<!-- TODO To help with writing input and output formats, some templates can be found in `STATEMENTS.md`. -->
+<!– TODO To help with writing input and output formats, some templates can be found in `STATEMENTS.md`. –>
 
 ## Initializing, and details.json
 
 Open your terminal somewhere you're fine putting files in and run the command
 ```bash
-$ kg init mystery-function --subtasks=3
+$ kg init mystery-function –subtasks=3
 ```
 
 Here, `mystery-function` is the slug and `3` is the number of subtasks. Don't worry about getting the number of subtasks right: we can always change it later.
@@ -245,7 +245,7 @@ def validate_file(file, subtask=None):
 
 if __name__ == '__main__':
     subtask = argv[1] if len(argv) > 1 else None
-    if subtask == '--detect-subtasks':
+    if subtask == '–detect-subtasks':
         print(*detect_subtasks(validate_file, stdin, subtasks))
     else:
         validate_file(stdin, subtask=subtask)
@@ -268,7 +268,7 @@ bounds = {
 }
 ```
 
-<!-- TODO I now actually want to swap bounds and subtasks in the generated template. -->
+<!– TODO I now actually want to swap bounds and subtasks in the generated template. –>
 
 Here, `bounds` should have the constraints for the variables across all subtasks, and `subtasks` should have any additional constraints. Currently, KompGen doesn't support `or` here. We can't write something like
 
@@ -352,7 +352,7 @@ def validate_file(file, subtask=None):
 
 if __name__ == '__main__':
     subtask = argv[1] if len(argv) > 1 else None
-    if subtask == '--detect-subtasks':
+    if subtask == '–detect-subtasks':
         print(*detect_subtasks(validate_file, stdin, subtasks))
     else:
         validate_file(stdin, subtask=subtask)
@@ -380,7 +380,7 @@ if __name__ == '__main__':
     write_to_file(print_to_file, gen_random, argv[1:], stdout)
 ```
 
-<!-- TODO change to new write_to_file format, same with all the other files -->
+<!– TODO change to new write_to_file format, same with all the other files –>
 
 Note that `gen_random` doesn't actually write to the file, it just outputs the integers to be written in the file. The output of `gen_random` will be something like `[5, 10, 2]`. The actual writing is done by the **formatter**, which is saved in a file called `formatter.py`:
 
@@ -665,7 +665,7 @@ In the toolbar above, click Solution files. Click Add Solutions, then Choose Fil
 
 *Finally,* look at the lowest box in the right sidebar. Hit Commit Changes, and add a commit message. You probably want to check the Don't send email notification checkbox, which is somewhat customary in the NOI.PH Scientific Committee to avoid email spam. Then hit Commit!
 
-<!-- TODO screenshots? -->
+<!– TODO screenshots? –>
 
 When sharing a problem you made in KompGen to others, it's typical to not include the `tests/` folder and the `kgkompiled/` folder, because these can be generated from the KompGen source files anyway. You can also delete these folders if you want to save space.
 
@@ -775,7 +775,7 @@ The only thing here that might be a little tricky is the output format. Again, t
 Like last time, run the command
 
 ```bash
-$ kg init sharing-chocolates-7 --subtasks=5
+$ kg init sharing-chocolates-7 –subtasks=5
 ```
 
 Then open `details.json`, change the title of the problem to "Sharing Chocolates 7: The Force Equals Mass Times Acceleration", and then get rid of the generated `statement.md` and replace it with `statement.tex`.
@@ -884,7 +884,7 @@ def validate_file(file, subtask=None):
 
 if __name__ == '__main__':
     subtask = argv[1] if len(argv) > 1 else None
-    if subtask == '--detect-subtasks':
+    if subtask == '–detect-subtasks':
         print(*detect_subtasks(validate_file, stdin, subtasks))
     else:
         validate_file(stdin, subtask=subtask)
@@ -896,9 +896,9 @@ And now let's move on to the next step: generators!
 
 Let's talk about **test planning**. As the name suggests, it's the process of planning out what kinds of tests will appear in the problem, and how they're generated.
 
-For subtasks 1, 2, and 4, the number of possible cases is small enough that we can just check all of them. For subtasks 3 and 5, we need to check a lot of random cases, of course. But we should also check limit cases: like all combinations of the maximum and minimum $F$ and $m$, for example.
+For subtasks 1, 2, and 4, the number of possible cases is small enough that we can just check all of them. For subtasks 3 and 5, we need to check a lot of random cases, of course. But we should also check limit cases: like all combinations of the maximum and minimum `F` and `m`, for example.
 
-This means we'll write three generators. The first will generate all possible pairs of $F$ and $m$, the second will generate the limit cases, and the last will generate random cases.
+This means we'll write three generators. The first will generate all possible pairs of `F` and `m`, the second will generate the limit cases, and the last will generate random cases.
 
 We'll also need to remember to make a test for the sample input, and since we already have the sample input, let's start with that. Edit `sample.in` to read the sample input we have in the statement, and edit the testscript to have the line `! cat sample.in > $` at the beginning.
 
@@ -1232,7 +1232,7 @@ From here we see we can pass an argument `charset`, which we can guess from its 
 
 Since KompGen is in very early development, code is being written faster than it is being documented. So there are a lot of features of KompGen that aren't perfectly documented. Don't worry though: some day in the future there will be *actual* documentation, and then I can get rid of this section of the tutorial and we'll all be happy. *Some day.*
 
-But if you want to use the more advanced features of KompGen that aren't discussed here *now*, you might have to resort to reading the source code to figure out what you need. (Or ask the developers---we're friendly!) We'll give another example of this when we write generators.
+But if you want to use the more advanced features of KompGen that aren't discussed here *now*, you might have to resort to reading the source code to figure out what you need. (Or ask the developers—we're friendly!) We'll give another example of this when we write generators.
 
 ## Test planning and KompGen built-ins
 
@@ -1379,7 +1379,7 @@ Observe two things. First, the last line calls `make_file`, which is the main fu
 
 After writing `gen_all`, add the desired lines into `testscript`. We only need to call `gen_all` thrice: one for each subtask. Then make sure to write the sample input as well, and edit `details.json` to include `gen_all` in the generators.
 
-### The edit--generate cycle
+### The edit–generate cycle
 
 Note that there are a *lot* of magic numbers here. We just drew all of the weights from thin air here, without much explanation. Thankfully, we can get a "feel" of what kind of results will come out by repeatedly running `kg make inputs` and modifying the generator until we get what we want.
 
@@ -1399,7 +1399,7 @@ def make_file(rand, *args):
 
 That way, the length of the number is randomly distributed, rather than the number itself. Then I ran `kg make inputs`, and am now satisfied. If I decided I want slightly longer words or slightly shorter words after inspecting the output, I can always modify `bias` and run `kg make inputs` again. Or if I didn't like the distribution of sentence lengths, I can modify `length` and try again.
 
-This cycle of edit--generate, edit--generate, is something I do a lot when I make test cases. This is why `testscript` allows commenting out with `#`: that way, you can only focus on making the tests for one particular generator, or focus on making a particular test.
+This cycle of edit–generate, edit–generate, is something I do a lot when I make test cases. This is why `testscript` allows commenting out with `#`: that way, you can only focus on making the tests for one particular generator, or focus on making a particular test.
 
 Let me explain. Suppose your initial testscript, before you make any inputs, looks like this:
 
@@ -1466,30 +1466,30 @@ Then head to the Custom Checker tab, and tick Enable Custom Checker. Choose Pyth
 
 # City Map
 
-<!-- built-in partition function and multi-file generators again -->
-<!-- might want to skip if you don't need custom checkers -->
-<!-- custom checker model: solution output and judge output -->
+<!– built-in partition function and multi-file generators again –>
+<!– might want to skip if you don't need custom checkers –>
+<!– custom checker model: solution output and judge output –>
 
-<!-- ![](checker-model.jpg) -->
+<!– ![](checker-model.jpg) –>
 
-<!-- chkstream concept -->
-<!-- writing the custom checker (being very, very exception-safe) -->
-<!-- data maker -->
+<!– chkstream concept –>
+<!– writing the custom checker (being very, very exception-safe) –>
+<!– data maker –>
 
 
 # Other KompGen features
 
-<!-- ## Multi-file generators -->
-<!-- single-file model -->
-<!-- lqpl-divmod's generator -->
-<!-- distribute model -->
-<!-- mystery function's generator -->
+<!– ## Multi-file generators –>
+<!– single-file model –>
+<!– lqpl-divmod's generator –>
+<!– distribute model –>
+<!– mystery function's generator –>
 
-<!-- ## Checker suite -->
+<!– ## Checker suite –>
 
-<!-- ## Grid generators -->
+<!– ## Grid generators –>
 
-<!-- ## Built-in graph utilities -->
-<!-- talk about setting graph problems and being hard in general -->
-<!-- graph generators -->
-<!-- using utilities for checking graphs -->
+<!– ## Built-in graph utilities –>
+<!– talk about setting graph problems and being hard in general –>
+<!– graph generators –>
+<!– using utilities for checking graphs –>
