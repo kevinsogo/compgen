@@ -1,4 +1,4 @@
-This is a tutorial on how to prepare problems from scratch using KompGen. We'll work through preparing the [NOI.PH 2019 Finals Practice Round](https://hackerrank.com/contests/noi-ph-2019-finals-practice) together, and while doing so, we'll go over many of the features of KompGen that you'll use during problemsetting.
+This is a tutorial on how to prepare problems from scratch using KompGen. We'll work through what I did to prepare the [NOI.PH 2019 Finals Practice Round](https://hackerrank.com/contests/noi-ph-2019-finals-practice) together. (I prepared all the problems except Bato Bato Split.) While doing so, we'll go over many of the features of KompGen that you'll use during problemsetting.
 
 I'll assume you have `kg` installed in your system. You can check this by typing `kg` in the termiinal, which should pop up a message like this:
 ```bash
@@ -14,7 +14,9 @@ If you don't get a message like this, check out the Setup header in the README.
 
 I'll also assume some proficiency with [Python](https://docs.python.org/3/tutorial/), as we'll work exclusively in Python throughout this tutorial. (It's possible to use different languages, but if you're using KompGen in the first place, you're probably interested in doing everything in Python anyway.) I'll try not to use anything too magical in Python, and stick to basic language functions.
 
-To avoid any issues later on, if you're using Windows, I'll strongly recommend you [install Gow](https://github.com/bmatzelle/gow/wiki) if you haven't yet. It will give you some useful programs like `cat` or `diff` (and if you don't know what these are, don't worry about it).
+To avoid any issues later on, if you're using Windows, I'll strongly recommend you [install Gow](https://github.com/bmatzelle/gow/wiki) if you haven't yet. It will give you some useful programs like `cat` or `diff`. (If you don't know what these are, don't worry about it.)
+
+It should take about 60 to 90 minutes to read and follow the whole tutorial. Reading the overview should take around 5 minutes. Then there's one section for each of the problems Mystery Function, Sharing Chocolates 7, Totally Not Robots, and City Map, each of which should take around 15--20 minutes to read and follow on your computer. The final section of this file will simply discuss more advanced features of KompGen, and should take around 5 minutes to read.
 
 
 # Overview
@@ -631,7 +633,7 @@ The second line means tests `0` through `1` are in subtasks `1`, `2`, and `3`. S
 
 ## Sharing your work
 
-Suppose you want to upload your problem to Polygon, which is the platform NOI.PH currently uses to develop problems. After running `kg make all`, run the command
+Suppose you want to upload your problem to [Polygon](https://polygon.codeforces.com), which is the platform NOI.PH currently uses to develop problems. After running `kg make all`, run the command
 
 ```bash
 $ kg kompile
@@ -1068,10 +1070,391 @@ The neatest solution is to make the first test case, which is usually a sample t
 
 # Totally Not Robots
 
-<!-- by now, you should already be familiar with "the standard checklist" -->
-<!-- talk about strong testcases -->
-<!-- built-in partition function -->
-<!-- publishing for hackerrank -->
+Now, let's set the problem [Totally Not Robots](https://www.hackerrank.com/contests/noi-ph-2019-finals-practice/challenges/totally-not-robots). We'll write a more complicated validator, use some of the built-in utility functions to make generating easier, and discuss uploading to HackerRank.
+
+## Statement and initialization
+
+By now you should be familiar with "the standard checklist". Write the statement, write the validator, write the formatter, write the generators, write the testscript, edit `details.json`, write the solution, pick the checker (or not). Many problems can be set with this kind of process, and Totally Not Robots is one of them, so let's jump right to it!
+
+Here's the statement:
+
+```tex
+Title: Totally Not Robots  
+Slug: totally-not-robots  
+Description: ?  
+Author: Kevin  
+
+
+\section{Statement}
+
+Given a sentence with exactly one non-negative integer $n$ without any leading zeroes, print the sentence, replacing $n$ with $n-1$.
+
+
+\section{Input Format}
+
+The first line of input contains $t$, the number of test cases.
+
+Each test case consists of a single line containing the English sentence.
+
+
+\section{Output Format}
+
+For each test case, output one line containing the answer.
+
+
+\section{Scoring}
+
+\textbf{For all subtasks}
+
+$1 \le t \le 10^5$
+
+Each line:
+- has a length of between $1$ and $80$ characters, inclusive.
+- contains no leading or trailing whitespace.
+- contains no tabs and no substrings of more than one space.
+- consists only of uppercase and lowercase English letters, digits, and spaces.
+
+\textbf{Subtask 1} (40 points):
+
+The integer in the sentence consists of a single digit only.
+
+\textbf{Subtask 2} (40 points):
+
+The integer in the sentence has at most $9$ digits.
+
+\textbf{Subtask 3} (20 points):
+
+The integer in the sequence has at most $19$ digits. 
+
+
+\section{Sample Input}
+
+    2
+    It is April 2019
+    11 4ever 4betterOR 04 worse
+
+
+\section{Sample Output}
+
+    It is April 2018
+    10 4ever 4betterOR 04 worse
+```
+
+The tricky part to write here is ensuring the statements are well-formatted enough. This you can model off an old NOI.PH problem like [Studying Diplomacy](https://www.hackerrank.com/contests/noi-ph-practice-page/challenges/studying-diplomacy).
+
+Now this is on you: initialize the folder with the appropriate number of subtasks, then replace the statement file with the statement we just wrote. If you need a reminder, feel free to look up the documentation at `compgen\docs\PREPARATION.md`, or to look at the previous sections.
+
+## Writing the validator
+
+Then let's write the validator. To read in the whole line, you can do something like
+
+```python
+[ln] = read.line(charset=valid_chars, maxn=lim.linelen).eoln
+```
+
+where `valid_chars` is a string of all allowed characters, and `maxn` is the maximum number of characters to read. Then `ln` will have the whole line, like `"It is April 2018"` or something. Also, recall that for a string `s`, `s.isdigit()` is `True` if `s` consists of only digits, and `False` otherwise.
+
+That's the only additional information you need, so try to write the validator yourself! Here's mine, without the header or footer:
+
+```python
+subtasks = {
+    '1': { 'n': 0 <= +Var <= 9 },
+    '2': { 'n': 0 <= +Var < 10**9 },
+    '3': { 'n': 0 <= +Var < 10**19 },
+}
+
+bounds = {
+    't': 1 <= +Var <= 10**5,
+    'n': 0 <= +Var < 10**19,
+    'linelen': 80,
+}
+
+valid_chars = string.ascii_letters + string.digits + ' '
+# the same as "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 "
+
+@validator()
+def validate_file(file, subtask=None):
+    lim = Bounds(bounds) & Bounds(subtasks.get(subtask))
+
+    [t] = file.read.int(lim.t).eoln
+    for cas in range(t):
+        [ln] = file.read.line(charset=valid_chars, maxn=lim.linelen).eoln
+        ensure(len(ln) >= 1)
+        ensure(ln.strip() == ln) # no leading or trailing whitespace
+        ensure('\t' not in ln and '  ' not in ln) # no tabs or two spaces
+
+        n = -1
+        num_ints = 0
+        for tok in ln.split():
+            if tok.isdigit() and (tok[0] != '0' or tok == '0'):
+                num_ints += 1
+                n = int(tok)
+
+        ensure(num_ints == 1)
+        ensure(n in lim.n)
+
+    [] = file.read.eof
+```
+
+Make sure your validator carefully checks all the restrictions in the constraints!
+
+### "Self-documenting code" but not really
+
+Now, how did I know that `read.line` accepted `charset` and `maxn` as arguments? Well, I read the KompGen source code. In `compgen\kg\validators.py`, you can find a function `read_line` that looks like:
+
+```python
+def read_line(self, *, eof=False, _called="line", **kwargs):
+    return self.read_until([EOLN] + ([EOF] if eof else []), _called=_called, **kwargs)
+```
+
+which redirects to `read_until`. So we look up the function `read_until`, which has:
+
+```python
+@save_on_label
+def read_until(self, ends, *, charset=(), n=None, maxn=None, include_end=False, _called="token"):
+    ends = set(ends)
+    charset = set(charset)
+    n = self._get(n)
+    # ... omitted for brevity ...
+```
+
+From here we see we can pass an argument `charset`, which we can guess from its name as the only allowed characters. We see that it gets converted to a `set`, so it's fine if we pass in a string. We can also see that it accepts the argument `maxn`, which based on reading the function, we can guess is the maximum number of characters it accepts.
+
+Since KompGen is in very early development, code is being written faster than it is being documented. So there are a lot of features of KompGen that aren't perfectly documented. Don't worry though: some day in the future there will be *actual* documentation, and then I can get rid of this section of the tutorial and we'll all be happy. *Some day.*
+
+But if you want to use the more advanced features of KompGen that aren't discussed here *now*, you might have to resort to reading the source code to figure out what you need. (Or ask the developers---we're friendly!) We'll give another example of this when we write generators.
+
+## Test planning and KompGen built-ins
+
+We'll just have one file that will contain all the different kinds of cases. Our single generator, `gen_all.py`, will take the number of test cases `T` and the number of digits `L`. Think for a moment about how you would make test cases for this problem, and what type of mistakes you need to anticipate.
+
+The solution I used when setting the problem is something like this. The generator makes a random "sentence" consisting of several random "words". The words can be either a legitimate number; a random word, consisting of random letters and digits; or a tricky word like `01`. We need to be able to control the legitimate number, so that we can have edge cases like `0` or `1` or `99999999`.
+
+For the tricky words, it's not enough to just have stuff like leading zeroes plus a number. You also want to catch contestants who use, say, [`strtol`](https://en.cppreference.com/w/c/string/byte/strtol) or Python's `int` to detect integers, by including stuff like `0x1`. It's important to try to catch as many likely mistakes as you can think of.
+
+The way that I used to generate a sentence is by choosing first the length, which is a random number biased towards `80`. Then the number, like `5`. Then of the remaining length, a random partition is chosen, like `[10, 11, 5, 13, 2, 17, 5, 16]`. These are then filled with random, non-number words of lengths `9`, `10`, `4`, etc., and then all the words are shuffled together.
+
+Most of these parts are easy. Choosing a random length is `rand.choice`, which we can bias by including more of the larger numbers:
+
+```python
+length = rand.choice([80]*10, [79]*5, [rand.randint(1, 78)]*5)
+```
+
+Generating random words can be done with a function. We just have to remember to pass `rand` as an argument to this function:
+
+```python
+import string
+
+def random_word(rand, length):
+    letters = [rand.choice(string.ascii_letters)]
+    for i in range(length - 1):
+        letters.append(rand.choice(string.ascii_letters + string.digits))
+        # which we can bias as well, e.g.
+        # string.ascii_letters*2 + string.digits*3
+    return ''.join(rand.shuffled(letters))
+```
+
+(We introduced `rand.shuffled` in Mystery Function.) Generating tricky words can be done with a function too. We choose an appropriate prefix like `0` or `00` or `0x`, and append some random digits. The part that's hard is generating a random partition, which involves some thinking.
+
+Thankfully, **KompGen has a powerful library**. If you have to use something standard like this, then it's possible KompGen already has it. By examining the file `compgen\kg\generators.py`, we see there's a function called `randpartition` which does exactly what we need! And it's documented too!
+
+```python
+def randpartition(self, total, min_=1, skew=2): ### @@ if False {
+    '''
+    Generates a random partition of a number into a random number of parts.
+    Default options make the result uniformly distributed over all such
+    partitions.
+    total: number to be partitioned
+    min_: minimum size of each part
+    skew: how "skewed" the partition is; higher skew means larger part size
+    '''
+    ### @@ }
+    # ... omitted for brevity ...
+```
+
+Suppose I want to figure out what `skew` does exactly. So I pull out a terminal, open Python, and type the following. (If you type in the exact same thing I did, then you will get the exact same results, for reasons explained previously.)
+
+```python
+>>> from kg.generators import *
+>>> rand = KGRandom()
+>>> rand.randpartition(20, skew=1)
+[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+>>> rand.randpartition(20, skew=2)
+[4, 5, 3, 1, 1, 1, 1, 1, 2, 1]
+>>> rand.randpartition(20, skew=3)
+[5, 1, 3, 2, 9]
+>>> rand.randpartition(20, skew=5)
+[2, 3, 7, 5, 3]
+>>> rand.randpartition(20, skew=7)
+[4, 7, 1, 8]
+>>> rand.randpartition(20, skew=9)
+[7, 6, 3, 4]
+>>> rand.randpartition(20, skew=15)
+[6, 1, 5, 8]
+>>> rand.randpartition(20, skew=20)
+[20]
+```
+
+To get a better idea of what the skew "feels like", you probably want to run each of the above multiple times. For a length of `80`, I'm picking as reasonable choices of skew `3`, `4`, `5`, `10`, and `25`. So my `random_sentence` function looks like this:
+
+```python
+def random_sentence(rand, n):
+    sentence = [str(n)]
+    length = rand.choice([80]*10, [79]*5, [rand.randint(len(str(n)), 78)]*5)
+    bias = rand.choice([3, 4, 5]*5, [10]*3, [25]*2)
+
+    for i in rand.randpartition(length - len(str(n)), min_=2, skew=bias):
+        if rand.randint(0, 2) > 1:
+            sentence.append(trick_word(rand, i - 1))
+        else:
+            sentence.append(random_word(rand, i - 1))
+
+    return ' '.join(rand.shuffled(sentence))
+```
+
+Try to figure out the rest of the parts from here. If you haven't yet, you need to write the `trick_word` function, and then you need to write a function that calls `random_sentence` multiple times.
+
+My final generator looks something like this, saved as `gen_all.py`:
+
+```python
+from sys import *
+import string
+from kg.generators import * ### @import
+from formatter import * ### @import
+
+def random_word(rand, length):
+    letters = [rand.choice(string.ascii_letters)]
+    for i in range(length - 1):
+        letters.append(rand.choice(string.ascii_letters*2 + string.digits*3))
+    return ''.join(rand.shuffled(letters))
+
+def trick_word(rand, length):
+    prefix = rand.choice("0"*5, "00"*4, "0x")
+    if length <= len(prefix):
+        return normal_word(rand, length)
+
+    letters = [prefix]
+    for i in range(length - len(prefix)):
+        letters.append(rand.choice(string.digits))
+    return ''.join(rand.shuffled(letters))
+
+def random_sentence(rand, n):
+    sentence = [str(n)]
+    length = rand.choice([80]*10, [79]*5, [rand.randint(len(str(n)), 78)]*5)
+    bias = rand.choice([3, 4, 5]*5, [10]*3, [25]*2)
+
+    for i in rand.randpartition(length - len(str(n)), min_=2, skew=bias):
+        if rand.randint(0, 2) > 1:
+            sentence.append(trick_word(rand, i - 1))
+        else:
+            sentence.append(random_word(rand, i - 1))
+    return ' '.join(rand.shuffled(sentence))
+
+def make_file(rand, *args):
+    T, L = map(int, args[:2])
+    cases = []
+    N = 10**L
+
+    for n in [0, 1, 2, N-2, N-1]*3: # multiple limit cases
+        cases.append(random_sentence(rand, n))
+
+    while len(cases) < T:
+        n = rand.randint(1, N-1)
+        cases.append(random_sentence(rand, n))
+    return cases
+
+if __name__ == '__main__':
+    write_to_file(print_to_file, make_file, argv[1:], stdout)
+```
+
+Observe two things. First, the last line calls `make_file`, which is the main function that calls everything else. And second, we're always passing `rand` as a parameter to our helper functions, because there's no way to generate randomness otherwise. Even if you forget to do either of these, Python will throw an error and give you a nice error message, which is one of the advantages of doing everything in Python rather than C++.
+
+After writing `gen_all`, add the desired lines into `testscript`. We only need to call `gen_all` thrice: one for each subtask. Then make sure to write the sample input as well, and edit `details.json` to include `gen_all` in the generators.
+
+### The edit--generate cycle
+
+Note that there are a *lot* of magic numbers here. We just drew all of the weights from thin air here, without much explanation. Thankfully, we can get a "feel" of what kind of results will come out by repeatedly running `kg make inputs` and modifying the generator until we get what we want.
+
+In fact, try running `kg make inputs` and inspect the output. Notice anything weird? Aside from our limit cases, where `n` is a specific number, all of the other numbers are about the same length. I didn't want this, since this was a string processing problem. I wanted to have a lot of different *lengths* of numbers, I didn't care too much about their actual values!
+
+So what I did was modify `make_file` to look like:
+
+```python
+def make_file(rand, *args):
+    # ... omitted for brevity ...
+    while len(cases) < T:
+        length = rand.randint(1, L)
+        n = rand.randint(10**(length-1), 10**length - 1)
+        cases.append(random_sentence(rand, n))
+    return cases
+```
+
+That way, the length of the number is randomly distributed, rather than the number itself. Then I ran `kg make inputs`, and am now satisfied. If I decided I want slightly longer words or slightly shorter words after inspecting the output, I can always modify `bias` and run `kg make inputs` again. Or if I didn't like the distribution of sentence lengths, I can modify `length` and try again.
+
+This cycle of edit--generate, edit--generate, is something I do a lot when I make test cases. This is why `testscript` allows commenting out with `#`: that way, you can only focus on making the tests for one particular generator, or focus on making a particular test.
+
+Let me explain. Suppose your initial testscript, before you make any inputs, looks like this:
+
+```bash
+! cat sample.in > $
+
+gen_1 1 2 > $
+gen_1 1 5 > $
+gen_1 1 10 > $
+gen_1 1 20 > $
+
+gen_2 1 2 > $
+gen_2 1 5 > $
+gen_2 1 10 > $
+gen_2 1 20 > $
+
+gen_3 1 2 3 > $
+gen_3 1 10 5 > $
+```
+
+Then you run `kg make inputs`, and decide that the test files from `gen_2` look weird. So you comment out the lines that aren't from `gen_2`:
+
+```bash
+# ! cat sample.in > $
+# 
+# gen_1 1 2 > $
+# gen_1 1 5 > $
+# gen_1 1 10 > $
+# gen_1 1 20 > $
+
+gen_2 1 2 > $
+gen_2 1 5 > $
+gen_2 1 10 > $
+gen_2 1 20 > $
+
+# gen_3 1 2 3 > $
+# gen_3 1 10 5 > $
+```
+
+And then you edit `gen_2`, or the testscript, based on the results. So you tweak with the parameters a bit, then run `kg make inputs` again. And if you're not satisfied, you can edit and then generate again, and keep on repating this. When you're done with your tweaking and editing, you can just uncomment out everything!
+
+## Making all, compiling, uploading
+
+Finally, write the model solution, which I'll leave up to you. The checker we want will be the default checker, so we don't have to do anything. Then run `kg make all` and we're done!
+
+I want to spend the rest of this section to talk about compiling and uploading to HackerRank, which is where most of the NOI.PH problems have been uploaded. The Polygon model is very similar to the KompGen model, where you upload the _generators_ rather than the test files. The key difference with the HackerRank model is that we upload the _test files themselves_ rather than the generator. 
+
+Anyway, go on to [HackerRank Administration](https://www.hackerrank.com/administration/challenges) and select the Manage Challenges tab. Hit Create Challenge.
+
+For the Details tab, choose the name of the challenge and the challenge slug, leave the description blank, and paste in the parts of the statement. HackerRank uses [Markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet) for formatting rather than LaTeX. If it's a NOI.PH problem, add the tag noiph.
+
+Head to the Test Cases tab, then hit Upload Zip, and upload the zip file `upload_this_to_hackerrank.zip` in `kgkompiled\hr`. Then tick the checkbox for any files you want to mark as samples; if you want to add an explanation, then hit the pencil and add in the explanation.
+
+Head to the Languages tab. For NOI.PH problems, check C++, C++14, Java, Java 8, PyPy, PyPy 3, Python 2, and Python 3. Use the default time limits unless you need to change them.
+
+To add other people who can edit the problem, go to the Moderators tab and add their usernames. In the Settings tab, for NOI.PH problems, Public Testcase is ticked, while the rest of the checkboxes are not ticked.
+
+Finally, let's talk about setting up scoring. The difference between HackerRank and Polygon is that we use a hack to setup subtask scoring in HackerRank. The main idea is that *the last file of any subtask must be unique to that subtask*. By *last file of a subtask*, we mean the file with the largest test case number that is considered a part of that subtask. That means that the last file of subtask 1, the last file of subtask 2, the last file of subtask 3, and so on, must be different files.
+
+Head back to the Test Cases tab, and find the last file of subtask 1. Change the Strength of this file to be the number of points for that subtask. Similarly, do this for the last file of subtask 2, subtask 3, and so on.
+
+Then head to the Custom Checker tab, and tick Enable Custom Checker. Choose Python 3 as the language. Then open the file `hr.pastable.version.checker.py` in `kgkompiled\hr`, and paste the contents of that file in the middle section. Then click the Save Changes button on the bottom. You're done!
+
 
 
 # City Map
