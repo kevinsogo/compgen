@@ -195,9 +195,9 @@ Observe how carefully the input and output formats are specified. For this probl
 
 The only thing here that might not be obvious are the *slug* and *description*. In a HackerRank URL to a problem, the thing that comes after the last slash is called the *slug*. It consists of only lowercase English letters, numbers, and hyphens. We typically also leave the description blank.
 
-<!– TODO i kinda want to write a better cheatsheet than the linked one. https://math.meta.stackexchange.com/questions/5020/mathjax-basic-tutorial-and-quick-reference might be a good reference. –>
+<!-- TODO i kinda want to write a better cheatsheet than the linked one. https://math.meta.stackexchange.com/questions/5020/mathjax-basic-tutorial-and-quick-reference might be a good reference. -->
 
-<!– TODO To help with writing input and output formats, some templates can be found in `STATEMENTS.md`. –>
+<!-- TODO To help with writing input and output formats, some templates can be found in `STATEMENTS.md`. -->
 
 ## Initializing, and details.json
 
@@ -268,7 +268,7 @@ bounds = {
 }
 ```
 
-<!– TODO I now actually want to swap bounds and subtasks in the generated template. –>
+<!-- TODO I now actually want to swap bounds and subtasks in the generated template. -->
 
 Here, `bounds` should have the constraints for the variables across all subtasks, and `subtasks` should have any additional constraints. Currently, KompGen doesn't support `or` here. We can't write something like
 
@@ -380,7 +380,7 @@ if __name__ == '__main__':
     write_to_file(print_to_file, gen_random, argv[1:], stdout)
 ```
 
-<!– TODO change to new write_to_file format, same with all the other files –>
+<!-- TODO change to new write_to_file format, same with all the other files -->
 
 Note that `gen_random` doesn't actually write to the file, it just outputs the integers to be written in the file. The output of `gen_random` will be something like `[5, 10, 2]`. The actual writing is done by the **formatter**, which is saved in a file called `formatter.py`:
 
@@ -399,13 +399,15 @@ Here, the output of the function `gen_random` is passed as the variable `cases`.
 2
 ```
 
-Recall that our generator is saved in a file called `gen_random.py`. If we want to use it to generate 3 integers between 1 and 10, we'd call it with:
+That way, if we want to change the output format, we only have to edit the formatter, without having to edit any of the other files.
+
+Now let's talk about testscripts. Recall that our generator is saved in a file called `gen_random.py`. If we want to use it to generate 3 integers between 1 and 10, we'd call it with:
 
 ```bash
 $ gen_random.py 3 10 > tests/000.in
 ```
 
-But often you want to call `gen_random.py` multiple times, with different values of `T` and `N`. So you'd want to do do something like
+But often you want to call `gen_random.py` multiple times, with different values of `T` and `N`. So you'd want to do something like
 
 ```bash
 $ gen_random.py 3 10 > tests/000.in
@@ -431,7 +433,7 @@ Note how there's no `.py` any more. Also note how we use a `$` instead of specif
 
 - The **testscript** has a bunch of commands for running the generators.
 
-Again, here's a nice picture that shows this:
+Here's a nice picture that shows this:
 
 ![](generator-model.jpg)
 
@@ -665,7 +667,7 @@ In the toolbar above, click Solution files. Click Add Solutions, then Choose Fil
 
 *Finally,* look at the lowest box in the right sidebar. Hit Commit Changes, and add a commit message. You probably want to check the Don't send email notification checkbox, which is somewhat customary in the NOI.PH Scientific Committee to avoid email spam. Then hit Commit!
 
-<!– TODO screenshots? –>
+<!-- TODO screenshots? -->
 
 When sharing a problem you made in KompGen to others, it's typical to not include the `tests/` folder and the `kgkompiled/` folder, because these can be generated from the KompGen source files anyway. You can also delete these folders if you want to save space.
 
@@ -894,13 +896,7 @@ And now let's move on to the next step: generators!
 
 ## Test planning and writing generators
 
-Let's talk about **test planning**. As the name suggests, it's the process of planning out what kinds of tests will appear in the problem, and how they're generated.
-
-For subtasks 1, 2, and 4, the number of possible cases is small enough that we can just check all of them. For subtasks 3 and 5, we need to check a lot of random cases, of course. But we should also check limit cases: like all combinations of the maximum and minimum `F` and `m`, for example.
-
-This means we'll write three generators. The first will generate all possible pairs of `F` and `m`, the second will generate the limit cases, and the last will generate random cases.
-
-We'll also need to remember to make a test for the sample input, and since we already have the sample input, let's start with that. Edit `sample.in` to read the sample input we have in the statement, and edit the testscript to have the line `! cat sample.in > $` at the beginning.
+It's a good idea to get the sample input and formatter out of the way before doing anything else. Edit `sample.in` to read the sample input we have in the statement, and edit the testscript to have the line `! cat sample.in > $` at the beginning.
 
 Now let's write the formatter. Recall that this is the file that will take the output of the generator and print it to the file. Let's decide that the generator will output a list of pairs `[F, m]`. The formatter here is pretty simple:
 
@@ -910,6 +906,19 @@ def print_to_file(file, cases):
     for F, m in cases:
         print(F, m, file=file)
 ```
+
+You may be wondering about the last line here. Well, when the `print` function takes several arguments, it prints them with a space in between them. We'll talk more about this later on:
+
+```python
+>>> print(1, 2, 3)
+1 2 3
+```
+
+Now let's talk about **test planning**. As the name suggests, it's the process of planning out what kinds of tests will appear in the problem, and how they're generated.
+
+For subtasks 1, 2, and 4, the number of possible cases is small enough that we can just check all of them. For subtasks 3 and 5, we need to check a lot of random cases, of course. But we should also check limit cases: like all combinations of the maximum and minimum `F` and `m`, for example.
+
+This means we'll write three generators. The first will generate all possible pairs of `F` and `m`, the second will generate the limit cases, and the last will generate random cases.
 
 Let's write the first generator: one that generates random input. Mine takes three integers as input: the number of test cases `T`, the maximum value of `m` and `F` as `N`, and lastly `0` if we require the answers to be integers and `1` otherwise.
 
@@ -1119,10 +1128,13 @@ For each test case, output one line containing the answer.
 $1 \le t \le 10^5$
 
 Each line:
-- has a length of between $1$ and $80$ characters, inclusive.
-- contains no leading or trailing whitespace.
-- contains no tabs and no substrings of more than one space.
-- consists only of uppercase and lowercase English letters, digits, and spaces.
+
+\begin{itemize}
+\item has a length of between $1$ and $80$ characters, inclusive.
+\item contains no leading or trailing whitespace.
+\item contains no tabs and no substrings of more than one space.
+\item consists only of uppercase and lowercase English letters, digits, and spaces.
+\end{itemize}
 
 \textbf{Subtask 1} (40 points):
 
@@ -1236,7 +1248,16 @@ But if you want to use the more advanced features of KompGen that aren't discuss
 
 ## Test planning and KompGen built-ins
 
-We'll just have one file that will contain all the different kinds of cases. Our single generator, `gen_all.py`, will take the number of test cases `T` and the number of digits `L`. Think for a moment about how you would make test cases for this problem, and what type of mistakes you need to anticipate.
+Again, it's always a good idea to get the sample test case and the formatter out of the way first. Edit `sample.in` with the sample test case. Write the formatter for this one, which is pretty simple:
+
+```python
+def print_to_file(file, cases):
+    print(len(cases), file=file)
+    for sentence in cases:
+        print(sentence, file=file)
+```
+
+Now for the test planning. We'll just have one file that will contain all the different kinds of cases. Our single generator, `gen_all.py`, will take the number of test cases `T` and the number of digits `L`. Think for a moment about how you would make test cases for this problem, and what type of mistakes you need to anticipate.
 
 The solution I used when setting the problem is something like this. The generator makes a random "sentence" consisting of several random "words". The words can be either a legitimate number; a random word, consisting of random letters and digits; or a tricky word like `01`. We need to be able to control the legitimate number, so that we can have edge cases like `0` or `1` or `99999999`.
 
@@ -1377,7 +1398,7 @@ if __name__ == '__main__':
 
 Observe two things. First, the last line calls `make_file`, which is the main function that calls everything else. And second, we're always passing `rand` as a parameter to our helper functions, because there's no way to generate randomness otherwise. Even if you forget to do either of these, Python will throw an error and give you a nice error message, which is one of the advantages of doing everything in Python rather than C++.
 
-After writing `gen_all`, add the desired lines into `testscript`. We only need to call `gen_all` thrice: one for each subtask. Then make sure to write the sample input as well, and edit `details.json` to include `gen_all` in the generators.
+After writing `gen_all`, add the desired lines into `testscript`. We only need to call `gen_all` thrice: one for each subtask. Then make sure to edit `details.json` to include `gen_all` in the generators.
 
 ### The edit–generate cycle
 
@@ -1466,30 +1487,211 @@ Then head to the Custom Checker tab, and tick Enable Custom Checker. Choose Pyth
 
 # City Map
 
-<!– built-in partition function and multi-file generators again –>
-<!– might want to skip if you don't need custom checkers –>
-<!– custom checker model: solution output and judge output –>
+Finally, we set the problem [City Map](https://www.hackerrank.com/contests/noi-ph-2019-finals-practice/challenges/city-map), where we discuss the last method you need to write validators, some cautionary words on writing tests involving graphs, and how to write custom checkers. You may want to skip the generators section if you're not writing a graph problem, and you may want to skip the checker section if you don't need a custom checker for your problem.
 
-<!– ![](checker-model.jpg) –>
+## Statement, initialization, and validator
 
-<!– chkstream concept –>
-<!– writing the custom checker (being very, very exception-safe) –>
-<!– data maker –>
+You know the drill at this point. Here's the statement:
+
+```tex
+Title: City Map  
+Slug: city-map  
+Description: ?  
+Author: Kevin  
+
+
+\section{Statement}
+
+You are given $p$ sequences of integers $s_1, s_2, \ldots, s_p$. Construct a simple vertex-labeled graph with $n \leq 1000$ vertices. For each $i = 1, 2, \ldots, p$, output a walk in the graph such that the labels of the vertices in this walk is $s_i$.
+
+
+\section{Input Format}
+
+The first line of input contains $t$, the number of test cases.  
+
+The first line of each test case contains a single integer $p$, the number of walks.
+
+The next $p$ lines describe each of the walks. In particular, the $i$th line contains $|s_i| + 1$ space-separated integers, the first of which is $|s_i|$, and the rest is the sequence $s_i$ in order. ($|s_i|$ is defined as the length of sequence $s_i$.)
+
+
+\section{Output Format}
+
+In the first line of each test case, if constructing a graph is possible, output the number of vertices $n$ in the graph.
+
+In the next line, output $n$ integers, where the $i$th integer is the label of the $i$th vertex.
+
+The next $n$ lines should each contain a string of length $n$. The string should consist of only the characters `0` and `1`. The $j$th character of the $i$th string should be `0` if vertices $i$ and $j$ are not connected by an edge, and `1` if they are.
+
+The last $p$ lines should contain $|s_i|$ space-separated integers each, representing the sequence of vertices visited in each walk.
+
+For a test case, if constructing a graph is not possible, output `impossible`.
+
+
+\section{Scoring}
+
+\textbf{For all subtasks}
+
+$1 \le t \le 5$
+
+$1 \le p \le 10^5$
+
+Every element of every sequence is between $1$ and $500$, inclusive.
+
+\textbf{Subtask 1} (30 points):
+
+$|s_1| + \ldots + |s_p| \le 100$
+
+\textbf{Subtask 2} (70 points):
+
+$|s_1| + \ldots + |s_p| \le 10^5$
+
+\textbf{Subtask 3} (20 points):
+
+The integer in the sequence has at most $19$ digits. 
+
+
+\section{Sample Input}
+
+    2
+    3
+    2 10 20
+    2 20 30
+    2 30 10
+    3
+    4 1 2 4 5
+    3 1 3 5
+    4 1 3 4 5
+
+
+\section{Sample Output}
+
+    3
+    10 20 30
+    011
+    101
+    110
+    1 2
+    2 3
+    3 1
+    6
+    1 2 1 3 4 5
+    001100
+    001010
+    110000
+    100011
+    010101
+    000110
+    3 2 5 6
+    1 4 6
+    1 4 5 6
+
+
+\section{Explanation}
+
+The first test case asks us to make a graph for three walks, each of length $2$.
+
+It is possible to construct a map for all walks using $3$ vertices. Houses $1$, $2$, and $3$ are labeled $10$, $20$, and $30$, respectively.
+
+The first walk should start at a vertex labeled $10$ and ends at a vertex assigned to friend $20$. Indeed, we can start at vertex $1$ and end at vertex $2$. The other walks can be explained similarly.
+
+The second test case shows that it is possible for a label to be assigned multiple vertices.
+```
+
+This is a typical statement for a graph problem asking the contestant to output an adjacency matrix. Now initialize the folder, and replace the generated statement.
+
+To write the validator, you need to know one more method: `read.ints`, which is used like
+
+```python
+bounds = { 'a': 1 <= +Var <= 10**9 }
+# ... other stuff ...
+[arr] = file.read.ints(n, lim.a) # arr is a list of n integers, each in lim.a
+```
+
+That means the validator will look like
+
+```python
+subtasks = {
+    '1': { 'sum_s_i': 1 <= +Var <= 100 }
+    '2': { 'sum_s_i': 1 <= +Var <= 10**5 }
+}
+
+bounds = {
+    't': 1 <= +Var <= 5,
+    'p': 1 <= +Var <= 10**5,
+    'a': 1 <= +Var <= 500,
+    'sum_s_i': 1 <= +Var <= 10**5,
+}
+
+@validator()
+def validate_file(file, subtask=None):
+    lim = Bounds(bounds) & Bounds(subtasks.get(subtask))
+
+    [t] = file.read.int(lim.t).eoln
+    for cas in range(t):
+        [p] = file.read.int(lim.p).eoln
+        sum_s_i = 0
+        for i in range(p):
+            [len_s_i] = file.read.int(lim.p).space
+            [s_i] = file.read.ints(len_s_i, lim.a).eoln
+            # note that s_i is a list of len_s_i integers
+            sum_s_i += len_s_i
+        ensure(sum_s_i in lim.sum_s_i)
+
+    [] = file.read.eof
+```
+
+And now let's move on to test planning and writing the generators.
+
+## Test planning and graph built-ins
+
+As always, let's get the sample test case and formatter out of the way first. Edit `sample.in` and open `formatter.py`. Our output will be a list of cases, and each case will be a list of walks, giving us this formatter:
+
+```python
+def print_to_file(file, cases):
+    print(len(cases), file=file)
+    for cas in cases:
+        print(len(cas), file=file)
+        for walk in cas:
+            print(len(walk), *walk, file=file)
+```
+
+You may be wondering about the last line here. Recall (from Sharing Chocolates 7's formatter) that when the print function takes multiple arguments, it prints them with a space in between them. But what about the asterisk? Basically, what it does is *unpack* the list `walk`. See these examples:
+
+```python
+>>> print(0, 1, 2)                   
+0 1 2
+>>> print(len([0, 1, 2]), [0, 1, 2]) 
+3 [0, 1, 2]
+>>> print(len([0, 1, 2]), *[0, 1, 2])
+3 0 1 2
+```
+
+Now let's get to test planning.
+
+<!-- built-in partition function and multi-file generators again -->
+<!-- might want to skip if you don't need custom checkers -->
+<!-- custom checker model: solution output and judge output -->
+
+<!-- ![](checker-model.jpg) -->
+
+<!-- chkstream concept -->
+<!-- writing the custom checker (being very, very exception-safe) -->
+<!-- data maker -->
 
 
 # Other KompGen features
 
-<!– ## Multi-file generators –>
-<!– single-file model –>
-<!– lqpl-divmod's generator –>
-<!– distribute model –>
-<!– mystery function's generator –>
+<!-- ## Multi-file generators -->
+<!-- single-file model -->
+<!-- lqpl-divmod's generator -->
+<!-- distribute model -->
+<!-- mystery function's generator -->
 
-<!– ## Checker suite –>
+<!-- ## Checker suite -->
 
-<!– ## Grid generators –>
+<!-- ## Grid generators -->
 
-<!– ## Built-in graph utilities –>
-<!– talk about setting graph problems and being hard in general –>
-<!– graph generators –>
-<!– using utilities for checking graphs –>
+<!-- ## Built-in graph utilities -->
+<!-- talk about setting graph problems and being hard in general -->
+<!-- graph generators -->
+<!-- using utilities for checking graphs -->
