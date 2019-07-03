@@ -105,7 +105,7 @@ This is neatly summarized in the following picture:
 
 ![](kompgen-model.jpg)
 
-We introduced these five files in the order checker, model solution, generator, validator, and statement. For this tutorial, we will write these files *in the reverse order*, although it's possible to write these in any order. This means that the process of making a problem is:
+We introduced these five files in the order of checker, model solution, generator, validator, and statement. For this tutorial, we will write these files *in the reverse order*, although it's possible to write these in any order. This means that the process of making a problem is:
 
 1. Write a clear **statement**.
 
@@ -407,7 +407,7 @@ Now let's talk about testscripts. Recall that our generator is saved in a file c
 $ gen_random.py 3 10 > tests/000.in
 ```
 
-But often you want to call `gen_random.py` multiple times, with different values of `T` and `N`. So you'd want to do something like
+Here, the `3` and `10` are given as input, and become `T` and `N` in the function `gen_random`. But often you want to call `gen_random.py` multiple times, with different values of `T` and `N`. So you'd want to do something like
 
 ```bash
 $ gen_random.py 3 10 > tests/000.in
@@ -1268,7 +1268,7 @@ The way that I used to generate a sentence is by choosing first the length, whic
 Most of these parts are easy. Choosing a random length is `rand.choice`, which we can bias by including more of the larger numbers:
 
 ```python
-length = rand.choice([80]*10, [79]*5, [rand.randint(1, 78)]*5)
+length = rand.choice([80]*10 + [79]*5 + [rand.randint(1, 78)]*5)
 ```
 
 Generating random words can be done with a function. We just have to remember to pass `rand` as an argument to this function:
@@ -1329,8 +1329,8 @@ To get a better idea of what the skew "feels like", you probably want to run eac
 ```python
 def random_sentence(rand, n):
     sentence = [str(n)]
-    length = rand.choice([80]*10, [79]*5, [rand.randint(len(str(n)), 78)]*5)
-    bias = rand.choice([3, 4, 5]*5, [10]*3, [25]*2)
+    length = rand.choice([80]*10 + [79]*5 + [rand.randint(len(str(n)), 78)]*5)
+    bias = rand.choice([3, 4, 5]*5 + [10]*3 + [25]*2)
 
     for i in rand.randpartition(length - len(str(n)), min_=2, skew=bias):
         if rand.randint(0, 2) > 1:
@@ -1358,7 +1358,7 @@ def random_word(rand, length):
     return ''.join(rand.shuffled(letters))
 
 def trick_word(rand, length):
-    prefix = rand.choice("0"*5, "00"*4, "0x")
+    prefix = rand.choice(["0"]*5 + ["00"]*4 + ["0x"])
     if length <= len(prefix):
         return normal_word(rand, length)
 
@@ -1369,8 +1369,8 @@ def trick_word(rand, length):
 
 def random_sentence(rand, n):
     sentence = [str(n)]
-    length = rand.choice([80]*10, [79]*5, [rand.randint(len(str(n)), 78)]*5)
-    bias = rand.choice([3, 4, 5]*5, [10]*3, [25]*2)
+    length = rand.choice([80]*10 + [79]*5 + [rand.randint(len(str(n)), 78)]*5)
+    bias = rand.choice([3, 4, 5]*5 + [10]*3 + [25]*2)
 
     for i in rand.randpartition(length - len(str(n)), min_=2, skew=bias):
         if rand.randint(0, 2) > 1:
@@ -1487,7 +1487,9 @@ Then head to the Custom Checker tab, and tick Enable Custom Checker. Choose Pyth
 
 # City Map
 
-Finally, we set the problem [City Map](https://www.hackerrank.com/contests/noi-ph-2019-finals-practice/challenges/city-map), where we discuss the last method you need to write validators, some cautionary words on writing tests involving graphs, and how to write custom checkers. You may want to skip the generators section if you're not writing a graph problem, and you may want to skip the checker section if you don't need a custom checker for your problem.
+Finally, we set the problem [City Map](https://www.hackerrank.com/contests/noi-ph-2019-finals-practice/challenges/city-map), where we discuss the last method you need to write validators, some cautionary words on writing tests involving graphs, and how to write custom checkers.
+
+You may want to skip the checker section if you don't need a custom checker for your problem. This section will use a bit more advanced Python as well.
 
 ## Statement, initialization, and validator
 
@@ -1544,10 +1546,6 @@ $|s_1| + \ldots + |s_p| \le 100$
 \textbf{Subtask 2} (70 points):
 
 $|s_1| + \ldots + |s_p| \le 10^5$
-
-\textbf{Subtask 3} (20 points):
-
-The integer in the sequence has at most $19$ digits. 
 
 
 \section{Sample Input}
@@ -1642,7 +1640,7 @@ def validate_file(file, subtask=None):
 
 And now let's move on to test planning and writing the generators.
 
-## Test planning and graph built-ins
+## Test planning and generators
 
 As always, let's get the sample test case and formatter out of the way first. Edit `sample.in` and open `formatter.py`. Our output will be a list of cases, and each case will be a list of walks, giving us this formatter:
 
@@ -1655,39 +1653,412 @@ def print_to_file(file, cases):
             print(len(walk), *walk, file=file)
 ```
 
-You may be wondering about the last line here. Recall (from Sharing Chocolates 7's formatter) that when the print function takes multiple arguments, it prints them with a space in between them. But what about the asterisk? Basically, what it does is *unpack* the list `walk`. See these examples:
+You may be wondering about the last line here. Recall (from Sharing Chocolates 7's formatter) that when the print function takes multiple arguments, it prints them with a space in between them. But what about the asterisk? Basically, what it does is *unpack* the list `walk`. Kind of like taking out the surrounding brackets of the list. See these examples:
 
 ```python
->>> print(0, 1, 2)                   
-0 1 2
->>> print(len([0, 1, 2]), [0, 1, 2]) 
+>>> print(len([0, 1, 2]), [0, 1, 2])
 3 [0, 1, 2]
 >>> print(len([0, 1, 2]), *[0, 1, 2])
 3 0 1 2
+>>> print(len([0, 1, 2]), 0, 1, 2)
+3 0 1 2
 ```
 
-Now let's get to test planning.
+Now let's get to test planning. The bulk of the test cases will simply be random test cases, generated in the following way: if the sum of the lengths of the walks is `SSI`, then we partition `SSI` randomly to get the lengths of each walk. Each walk will be random vertices from `A_min` to `A_max`.
 
-<!-- built-in partition function and multi-file generators again -->
-<!-- might want to skip if you don't need custom checkers -->
-<!-- custom checker model: solution output and judge output -->
+Then there will be a couple of limit cases. It's very important, when generating test data for graph problems, to go over lots of different kinds of limit cases; we'll talk more about this in the last section.
 
-<!-- ![](checker-model.jpg) -->
+For this problem, we can force the contestant to include a certain graph as a subgraph by finding a long path in the subgraph, and including that as a sequence. Let's pick the complete graph and the complete bipartite graph for this. Then a bunch of walks with only one vertex each, and a bunch of walks with two vertices each.
 
-<!-- chkstream concept -->
-<!-- writing the custom checker (being very, very exception-safe) -->
-<!-- data maker -->
+And now for the actual generators. For the random generator, which we'll save in `gen_random.py`, we again use the `randpartition` function:
+
+```python
+from sys import *
+from kg.generators import * ### @import
+from formatter import * ### @import
+
+def random_sequence(rand, P, A_min, A_max):
+    walk = []
+    for i in range(P):
+        walk.append(rand.randint(A_min, A_max))
+    return walk
+
+def random_case(rand, SSI_min, SSI_max, A_min, A_max, bias_min, bias_max):
+    cas = []
+    SSI = rand.randint(SSI_min, SSI_max)
+    bias = rand.choice(bias_min, bias_max)
+    for P in rand.randpartition(rand, SSI, bias):
+        cas.append(random_sequence(rand, P, A_min, A_max))
+    return cas
+
+def gen_random(rand, new_case, *args):
+    T, SSI_min, SSI_max, A_min, A_max, bias_min, bias_max = map(int, args[:7])
+    cases = []
+    for i in range(T):
+        cases.append(random_case(rand, SSI_min, SSI_max, A_min, A_max, bias_min, bias_max))
+    return cases
+
+if __name__ == '__main__':
+    write_to_file(print_to_file, gen_random, argv[1:], stdout)
+```
+
+Note that instead of using the same `SSI`, `A`, and `bias` all throughout, we specify minimum and maximum values instead, and generate a random value in between those. This is a typical trick used in random generators to make the test cases a bit more random. It also means that the bulk of the work will be in the testscript instead of the generator, which is easier to work with in the edit–generate cycle.
+
+For the limit generator, saved in `gen_limits.py`, we just make exactly five random cases: the first `SSI` vertices of an Eulerian cycle in a complete graph and complete bipartite graph, singleton walks, walks with only pairs, and one long walk of a single vertex. So we write a helper function to find Eulerian cycles:
+
+```python
+from sys import *
+from kg.generators import * ### @import
+from formatter import * ### @import
+
+def eulerian_cycle(adj):
+    seq = []
+    u = 0
+    path = [u]
+    while path:
+        if adj[u]:
+            path.append(u)
+            v = adj[u].pop()
+            adj[v].remove(u)
+            u = v
+        else:
+            seq.append(u + 1)
+            u = path.pop()
+    return seq
+
+def complete(SSI, A):
+    adj = []
+    for i in range(A):
+        adj.append(set(range(A)) - {i})
+    walk = []
+    for v in eulerian_cycle(adj)[:SSI]:
+        walk.append(v + 1)
+    return [walk]
+
+def complete_bipartite(SSI, A):
+    adj = []
+    for i in range(A):
+        adj.append(set(range(A, 2*A)))
+    for i in range(A):
+        adj.append(set(range(A)))
+    walk = []
+    for v in eulerian_cycle(adj)[:SSI]:
+        if v < A:
+            walk.append(v + 1)
+        else:
+            walk.append(v - A + 1)
+    return [walk]
+
+def singles(SSI, A):
+    cas = []
+    for i in range(1, A+1):
+        cas.append([i])
+    return rand.shuffled(cas[:SSI])
+
+def pairs(SSI, A):
+    cas = []
+    for i in range(1, A+1):
+        for j in range(1, i):
+            cas.append([i, j])
+    return rand.shuffled(cas[:SSI//2])
+
+def gen_limits(rand, *args):
+    SSI, A = map(int, args[:2])
+    cases = []
+    cases.append(complete(SSI, A))
+    cases.append(complete_bipartite(SSI, A))
+    cases.append(singles(SSI, A))
+    cases.append(pairs(SSI, A))
+    cases.append([[A]*SSI])
+    return rand.shuffled(cases)
+
+if __name__ == '__main__':
+    write_to_file(print_to_file, gen_limits, argv[1:], stdout)
+```
+
+There's a lot going on here, but since this isn't the main focus of this part, don't worry too much about it. Note the convention of using zero-indexed vertices for the code, and only converting to one-indexed vertices when printing; this standard is adopted by KompGen in its library, so it might be a good idea to write your code like this as well.
+
+Finally, the testscript. To make the edit–generate cycle easier, the testscript also supports comments by beginning a line with `#`:
+
+```bash
+gen_limits 100 500 > $
+gen_limits 100000 500 > $
+# T, SSI_min, SSI_max, A_min, A_max, bias_min, bias_max
+gen_random 5 95 100 42 42 3 30 > $
+gen_random 5 95 100 1 100 2 13 > $
+gen_random 5 95 100 1 100 13 70 > $
+gen_random 5 10 70 1 500 2 7 > $
+gen_random 5 80 90 1 500 2 7 > $
+gen_random 5 95 100 1 500 2 7 > $
+gen_random 5 95 100 1 500 13 30 > $
+gen_random 5 95 100 1 500 30 50 > $
+gen_random 5 95 100 1 500 50 100 > $
+gen_random 5 99900 100000 69 69 3 300 > $
+gen_random 5 99990 100000 1 100 2 130 > $
+gen_random 5 99990 100000 1 100 130 700 > $
+gen_random 5 500 1000 1 500 2 50 > $
+gen_random 5 50000 90000 1 500 2 130 > $
+gen_random 5 99990 100000 1 500 2 20 > $
+gen_random 5 99990 100000 1 500 20 130 > $
+gen_random 5 99990 100000 1 500 130 2000 > $
+gen_random 5 99990 100000 1 500 2000 30000 > $
+gen_random 5 99990 100000 1 500 30000 100000 > $
+```
+
+Then add `gen_limits` and `gen_random` to `details.json`, and run `kg make inputs` to check if the inputs look like what you want them to look like.
+
+## The KompGen checker model
+
+In the KompGen model, a checker is a program that takes in the input, output, and answer for a particular test case. It then outputs the score for that test case, or raises an error if it's a wrong answer. The generic checker template in `PREPARATION.md` explains this well:
+
+```python
+{{ templates/checker_generic_template.py }}
+```
+
+The inputs to the function `check_solution` are `input_file`, which is the input to the test case, `output_file`, the contestant's output to the test case, and then `judge_file`, the judge's output to the test case. The checker can use everything in the input file, the contestant's output, and the judge's output, to determine if the contestant's output is correct.
+
+Also note that the score is scaled from `0.0` to `1.0`. So if the checker outputs, say, `0.5`, and the test case is worth `15` points, then the contestant will score `7.5` points for this test case.
+
+Here's another illustration!
+
+![](checker-model.jpg)
+
+How exactly are the files read? The files `input_file`, `output_file`, and `judge_file` act as iterators over the lines of the file, like how you'd typically open a file with `open`. So doing `next(input_file)` returns the next line of `input_file`, and so on.
+
+The typical way the checker is written is using a lot of helper functions to parse the files. For example, here's a generic checker that KompGen uses:
+
+```python
+{{ templates/checker_generic.py }}
+```
+
+Observe how very exception-safe it is. To raise an exception from `ensure`, the syntax is `ensure(condition, exc("message"))` or `ensure(condition, "message", exc)`. Also note how extra output is also disallowed, by checking if `output_file.has_next()`.
+
+## Writing the checker
+
+This gives us an idea of how to write the checker for this problem. We don't actually need to read in the judge file at all: we only need to read in the input and the contestant's output.
+
+First, let's write the `check_solution` function. It will begin by reading in `t` from the input file. For each test case, we then we need to read in the contents of the output file, using several helper functions that we'll write later:
+
+```python
+@set_checker()
+def check_solution(input_file, output_file, judge_file, **kwargs):
+    t = int(next(input_file))
+    for cas in range(t):
+        n = get_n(output_file, WA)
+        # get_n(file, exc)
+        labels = get_sequence(output_file, n, 1, 500, WA)
+        # get_sequence(file, length, lower_bound, upper_bound, exc)
+        g = []
+        for i in range(n):
+            g.append(get_string(output_file, n, WA))
+            # get_string(file, length, exc)
+        ...
+```
+
+We need to check that `g` does indeed describe the adjacency matrix of a simple graph. So let's check that it has no self loops and is symmetric:
+
+```python
+@set_checker()
+def check_solution(input_file, output_file, judge_file, **kwargs):
+    t = int(next(input_file))
+    for cas in range(t):
+        ...
+        for i in range(n):
+            ensure(g[i][i] == "0", "Graph has self-loop", WA)
+            for j in range(i):
+                ensure(g[i][j] == g[j][i], "Matrix not symmetric", WA)
+        ...
+```
+
+Then let's read from the input file. We'll check if each walk is really present in the contestant's graph. To check this, we'll read in the number of walks `p` from the input file. Then we'll read in the required walk `walk` from the input file, and read in the contestant's walk `a`. To check the contestant's walk, we check that all the labels of the vertices match, and then check that the walk is indeed present in the contestant's graph:
+
+```python
+@set_checker()
+def check_solution(input_file, output_file, judge_file, **kwargs):
+    t = int(next(input_file))
+    for cas in range(t):
+        ...
+        p = int(next(input_file))
+        for i in range(p):
+            walk = list(map(int, next(input_file).strip().split()))
+            # walk reads in the required walk
+            a = get_sequence(output_file, len(walk) - 1, 1, n, WA)
+            for j in range(1, len(walk)):
+                ensure(walk[j] == labels[a[j]], "Wrong label", WA)
+                # checks if the labels are right
+            for j in range(1, len(walk) - 1):
+                ensure(g[a[j-1]][a[j]] == "1", "Edge not in graph", WA)
+                # checks if it is really a walk
+    ...
+```
+
+Finally, we check if the output has extra characters, and then return the contestant's score:
+
+```python
+@set_checker()
+def check_solution(input_file, output_file, judge_file, **kwargs):
+    t = int(next(input_file))
+    for cas in range(t):
+        ...
+    if output_file.has_next(): raise WA("Output has extra characters")
+    return 1.0
+```
+
+Now we have to write the helper functions. Recall that we have three helper functions here: `get_n(file, exc)`, `get_sequence(file, length, lower_bound, upper_bound, exc)`, and `get_string(file, length, exc)`. Try to write the first one. Remember to check that the contestant's `n` is between `1` and `1000`. This gives us:
+
+```python
+def get_n(file, exc):
+    try:
+        n = int(next(file).rstrip())
+    except Exception as e:
+        raise ParseError("Failed to get an integer") from e
+    ensure(1 <= n <= 1000, "Invalid number of vertices", exc)
+    return n
+```
+
+The syntax for the try-except here may be new to you. What it does is that it executes the code in the `try` block. Otherwise, if it throws an exception of the type `Exception`, it captures that exception in the variable `e`, and then runs the code in the `except` block.
+
+Now let's write `get_sequence`:
+
+```python
+def get_sequence(file, length, lower_bound, upper_bound, exc):
+    try:
+        l = list(map(int, next(file).rstrip().split(' ')))
+    except Exception as e:
+        raise ParseError("Failed to get a sequence") from e
+    ensure(len(l) == length, lambda: exc(f"Expected {n} numbers but got {len(l)}"))
+    for i in l:
+        ensure(lower_bound <= i <= upper_bound, lambda: exc(f"Item {i} is out of bounds"))
+    return l
+```
+
+This gives us a slightly different version of `ensure` for use with f-strings. If you want to use f-strings in your error message, then you can write `ensure(condition, lambda: exc(f"something"))`.
+
+Finally, let's write `get_string`. This is the one that takes in the contestant's adjacency matrix. So it has to check not only the length, but also that the only characters present in the string are `0` and `1`:
+
+```python
+def get_string(file, length, exc):
+    try:
+        s = next(file).rstrip()
+    except Exception as e:
+        raise ParseError("Failed to get a string") from e
+    ensure(len(s) == length, lambda: exc(f"Expected string of length {n} but got {len(l)}"))
+    ensure(set(s) <= "01", "Invalid character in matrix", exc)
+    return s
+```
+
+And that's it! Put it all together, with the header and the footer, and we have our checker:
+
+```python
+from kg.checkers import * ### @import
+
+def get_n(file, exc):
+    try:
+        n = int(next(file).rstrip())
+    except Exception as e:
+        raise ParseError("Failed to get an integer") from e
+    ensure(1 <= n <= 1000, "Invalid number of vertices", exc)
+    return n
+
+def get_sequence(file, length, lower_bound, upper_bound, exc):
+    try:
+        l = list(map(int, next(file).rstrip().split(' ')))
+    except Exception as e:
+        raise ParseError("Failed to get a sequence") from e
+    ensure(len(l) == length, lambda: exc(f"Expected {n} numbers but got {len(l)}"))
+    for i in l:
+        ensure(lower_bound <= i <= upper_bound, lambda: exc(f"Item {i} is out of bounds"))
+    return l
+
+def get_string(file, length, exc):
+    try:
+        s = next(file).rstrip()
+    except Exception as e:
+        raise ParseError("Failed to get a string") from e
+    ensure(len(s) == length, lambda: exc(f"Expected string of length {n} but got {len(l)}"))
+    ensure(set(s) <= "01", "Invalid character in matrix", exc)
+    return s
+
+@set_checker()
+def check_solution(input_file, output_file, judge_file, **kwargs):
+    t = int(next(input_file))
+    for cas in range(t):
+        n = get_n(output_file, WA)
+        labels = get_sequence(output_file, n, 1, 500, WA)
+        g = []
+        for i in range(n):
+            g.append(get_string(output_file, n, WA))
+
+        for i in range(n):
+            ensure(g[i][i] == "0", "Graph has self-loop", WA)
+            for j in range(i):
+                ensure(g[i][j] == g[j][i], "Matrix not symmetric", WA)
+
+        p = int(next(input_file))
+        for i in range(p):
+            walk = list(map(int, next(input_file).strip().split()))
+            a = get_sequence(output_file, len(walk) - 1, 1, n, WA)
+            for j in range(1, len(walk)):
+                ensure(walk[j] == labels[a[j]], "Wrong label", WA)
+            for j in range(1, len(walk) - 1):
+                ensure(g[a[j-1]][a[j]] == "1", "Edge not in graph", WA)
+
+    if output_file.has_next(): raise WA("Output has extra characters")
+    return 1.0
+
+if __name__ == '__main__': chk()
+```
+
+## Writing the model solution, the data maker, and making all
+
+The exercise of writing a model solution is left to the reader. (I don't want to spoil the problem for you!) Write one and save it in `solution.py`, then run `kg make all` and see if you get what you want.
+
+The problem is that the combined size of input and judge's output is too large. We generally want to keep the input and output smaller than a couple megabytes, so the generated input and output here is pretty big, and we want to cut it down.
+
+Generally, this is done by reducing the number of test cases. But in this problem, since the checker doesn't depend on judge's output at all, we can cut down the judge's output instead. Recall the KompGen checker model:
+
+![](checker-model.jpg)
+
+The judge file can be produced by either the model solution or something called the **data maker**. In the absence of a data maker, KompGen just uses the model solution to generate the judge files. But for some problems, you might not need the output of the model solution in order to check the contestant's output.
+
+In this case, you can use the data maker to output only the relevant data for the judge file. For example, suppose a problem is asking the contestant to output the minimum for some property and provide a construction. Then the judge data can only store the minimum, and check if the contestant's minimum matches the judge data. So the data maker would simply print the minimum, without providing a construction. (I realize this is rather vague, sorry.)
+
+Let's make a data maker for this problem! In fact, since we don't need to use the judge data at *all* to check this problem, then the data maker could just print some placeholder data. Open `details.json` and add the field
+
+```json
+{
+    // ...
+    "judge_data_maker": "data_maker.py",
+}
+```
+
+Then make a file `data_maker.py`, and make it print some placeholder data, like
+
+```python
+print("test")
+```
+
+What happens when you run `kg make all`, then, is that it generates the input files, then runs the data maker on each input file to produce the judge's output. Since there's a data maker, it then checks if the model solution produces the correct output. When exporting for Polygon, this data maker is ignored.
+
+And that's it! We're done!
 
 
 # Other KompGen features
 
-<!-- ## Multi-file generators -->
+In this final, optional section, we talk about some extra features of KompGen that aren't discussed in the previous sections. We'll discuss multi-file generators and some more details on checkers.
+
+## Multi-file generators
+
+
+
 <!-- single-file model -->
 <!-- lqpl-divmod's generator -->
 <!-- distribute model -->
 <!-- mystery function's generator -->
 
-<!-- ## Checker suite -->
+<!-- ## More on checkers -->
+<!-- chkstream concept -->
+<!-- checker suite -->
 
 <!-- ## Grid generators -->
 
