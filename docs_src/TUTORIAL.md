@@ -976,7 +976,7 @@ if __name__ == '__main__':
     write_to_file(print_to_file, gen_all, argv[1:], stdout)
 ```
 
-Remember to change the last line to have `gen_all` rather than `gen_random`! For this one, the corresponding lines in the testscript will be `gen_all 11111 5 1`, `gen_all 11111 100 1`, and `gen_random 11111 100 0`.
+Remember to change the last line to have `gen_all` rather than `gen_random`! For this one, the corresponding lines in the testscript will be `gen_all 11111 5 1`, `gen_all 11111 100 1`, and `gen_all 11111 100 0`.
 
 Now let's write the third generator, the limit cases. I made limit cases for this problem by going over all possible pairs of two integers chosen from `[1, 2, int(N**.5), N//2, N-1, N]`. To illustrate how imports work, I also imported the function `product` from `itertools`, which gives the Cartesian product of sets. Mine looks like:
 
@@ -1038,7 +1038,7 @@ for cas in range(int(input())):
 
 In this problem it is particularly easy to do the analysis and write the judge solution. In general, however, when setting problems involving floating point, it's important to do analysis on the maximum precision error that an intended solution can have. This is the type of skill you learn when you solve problems involving precision error in the first place.
 
-Finally, we now choose a checker. For this problem, we can also use one of the default checkers, which checks if the absolute or relative error of a real number is at most a certain value. Open `details.json`, and change the `checker` field to look like
+Finally, we now choose a checker. For this problem, we can also use one of the default checkers, which checks if the absolute or relative error of a real number is at most a certain value. Open `details.json`, and add the `checker` field:
 
 ```json
 "checker": "!diff.real_abs_rel_1e_6",
