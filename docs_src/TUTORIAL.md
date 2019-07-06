@@ -79,7 +79,7 @@ By now, you should be familiar with what separates good statements from bad ones
 
 - *The piece can move one step in the two-dimensional grid.* Which directions are allowed for one step? Can the piece move one step diagonally? What happens at the edges of the grid: can the piece move out of the grid?
 
-- *Jennifer must sit to the right of Geniefer.* Must Jennifer sit immediately next to Geniefer? Can she sit a few seats away, as long as the seat is to Geniefer’s right?
+- *Jennifer must sit to the right of Geniefer.* Must Jennifer sit immediately next to Geniefer? Can she sit a few seats away, as long as the seat is to Geniefer's right?
 
 - *Output the longest string satisfying the constraints above.* The word *the* implies that there's only one such longest string. What if there are multiple longest strings? Or are we guaranteed that there's only one such longest string?
 
@@ -1999,7 +1999,7 @@ def check_solution(input_file, output_file, judge_file, **kwargs):
             walk = list(map(int, next(input_file).strip().split()))
             a = get_sequence(output_file, len(walk) - 1, 1, n, WA)
             for j in range(1, len(walk)):
-                ensure(walk[j] == labels[a[j]], "Wrong label", WA)
+                ensure(walk[j] == labels[a[j] - 1], "Wrong label", WA)
             for j in range(1, len(walk) - 1):
                 ensure(g[a[j-1]][a[j]] == "1", "Edge not in graph", WA)
 
@@ -2045,20 +2045,232 @@ And that's it! We're done!
 
 # Other KompGen features
 
-In this final, optional section, we talk about some extra features of KompGen that aren't discussed in the previous sections. We'll discuss multi-file generators and some more details on checkers.
+In this final, optional section, we talk about some extra features of KompGen that aren't discussed in the previous sections. We'll discuss multi-file generators and some more details on checkers. We'll also be using some more advanced Python in this section.
 
 ## Multi-file generators
 
+Some generators, called **multi-file generators** can be written to produce multiple files with a single call. This can make it easier to write the testscript, or guarantee that different tests go to different files.
+
+There are two ways to do this, but the recommended way is using `write_to_files`. In this model, the function that generates the test cases returns a list, where each element in the list is the content of one file. Preferably, the function is a generator function that yields the contents of one file at a time.
+
+Here's a simple example of a multi-file generator using the single-file model. Here, the formatter looks like
+
+```python
+def print_to_file(file, cases):
+    print(len(cases), file=file)
+    for case in cases:
+        s, n, d = case
+        print(s, file=file)
+        print(n, d, file=file)
+```
+
+and the generator looks like
+
+```python
+from sys import *
+from kg.generators import * ### @import
+from formatter import * ### @import
+
+def gen_random(rand, *args):
+    F, A = map(int, args[:2])
+    for cas in range(F):
+        x, y = rand.randint(1, A), rand.randint(1, A)
+        yield [[0, x, y], [1, x, y]]
+
+if __name__ == '__main__':
+    write_to_files(print_to_file, gen_random, *argv[1:])
+```
+
+The main thing to pay attention to is the last line. Note that instead of the `write_to_file` function, we have a `write_to_files` function instead. The called parameters are also slightly different, but the main things to pay attention are the first argument, `print_to_file` from the formatter, and the second argument `gen_random`, the generating function.
+
+When this file is called with `F = 3` and `A = 100`, then it generates three files. Each file will have two test cases, one which has `0` followed by two random integers, and one which has `1` followed by the same two random integers.
+
+A common use case is to generate a bunch of distinct test cases, that will then be distributed into several files. KompGen offers the useful helper function `group_into(v, seq)`, which groups `seq` into lists of size `v`. So it takes the first `v` to make the first list, the next `v` to make the next list, and so on. You could writing something like:
+
+```python
+from sys import *
+from kg.generators import * ### @import
+from formatter import * ### @import
+
+def gen_random(rand, *args):
+    F, A = map(int, args[:2])
+    for cas in range(F):
+        x, y = rand.randint(1, A), rand.randint(1, A)
+        yield [0, x, y]
+        yield [1, x, y]
+
+def distribute(rand, *args):
+    T, args = args
+    yield from group_into(T, gen_random(rand, *args))
+
+if __name__ == '__main__':
+    write_to_files(print_to_file, distribute, *argv[1:])
+```
+
+Now when this file is called with `T = 2`, `F = 3`, and `A = 100`, this gives the same format of output: three files, each with two test cases each. If we set `T = 3` instead, there will be two files, each with three test cases each. This would be useful for, say, Mystery Function, if we want to test all possible `N` and `D` distributed over files.
+
+When a generator using `write_to_files` is called in the testscript, the syntax is slightly different. The first argument and the target both have to be file targets. For example:
+
+```bash
+! cat sample.in > $
+gen_random 2-4 2 3 100 > {2-4}
+
+# alternatives that give the same result:
+# gen_random 2,3-4 2 3 100 > {2,3-4}
+# gen_random $$ 2 3 100 > $3
+
+# also gives the same result, but slower:
+# gen_random $$ 2 3 100 > $$
+```
+
+Here, the first argument is the list of files the generator will write to, followed by the actual arguments given to the generator. The target is the same list of files. A list of files can be presented using dashes and commas, like `2,4-5,7-10`.
+
+Alternatively, you could use dollar targets to make the files automatically numbered. You can make the first argument `$$`, then the target `$3` to denote that it will produce three files. Like regular dollar targets, these files are numbered using the first available test case number.
+
+You could also make the target `$$`, but then the testscript would have to run your generator twice: one to figure out how many files there are, and another to actually produce the files. So it would take roughly twice the amount of time.
+
+<!-- the write_to_file model? -->
+
+## Checker decorators
+
+The `@set_checker` decorator accepts an argument `no_extra_chars` that can be set to `True`, if you want to check that there are no extra characters at the end of all files. You can also add the decorator `@default_score`, such that it returns `1.0` if it doesn't return anything:
+
+```python
+@set_checker()
+def check_solution(input_file, output_file, judge_file, **kwargs):
+    # ...
+    if input_file.has_next(): raise Fail("...")
+    if output_file.has_next(): raise WA("...")
+    if judge_file.has_next(): raise Fail("...")
+    return 1.0
+
+# is the same as
+
+@set_checker(no_extra_chars=True)
+@default_score
+def check_solution(input_file, output_file, judge_file, **kwargs):
+    # ...
+```
+
+This file can also be given a subset of `['input', 'output', 'judge']` to signal that only these files will be checked for extra lines:
 
 
-<!-- single-file model -->
-<!-- lqpl-divmod's generator -->
-<!-- distribute model -->
-<!-- mystery function's generator -->
+```python
+@set_checker(no_extra_chars=['output', 'judge'])
+@default_score
+def check_solution(input_file, output_file, judge_file, **kwargs):
+    # ...
+```
 
-<!-- ## More on checkers -->
-<!-- chkstream concept -->
-<!-- checker suite -->
+The `@set_checker` decorator also accepts arguments that change the way the files are read. Typically, the files are read line-by-line. But if you want to read the files token-by-token instead, like `cin` does from C++, then you can pass the argument `tokens`. This will make it ignore whitespace, however, which is fine for some problems but not for others. Anyway, it looks like:
+
+```python
+@set_checker(tokens, no_extra_chars=['output', 'judge'])
+@default_score
+def check_solution(input_file, output_file, judge_file, **kwargs):
+    # next(input_file) returns the next token in the input file
+```
+
+If you want to set some files to be read by tokens, and some files to be read by lines, you can do something like:
+
+```python
+@set_checker(tokens, lines, lines, no_extra_chars=['output', 'judge'])
+@default_score
+def check_solution(input_file, output_file, judge_file, **kwargs):
+    # ...
+```
+
+This means that `input_file` is read by tokens, while `output_file` and `judge_file` are read by lines.
+
+## Checker suite
+
+An alternative to using the `@set_checker` decorator is to use the **checker suite**, which gives a bit more structure for writing checkers. The general skeleton of a checker using the checker suite looks like
+
+```python
+from kg.checkers import * ### @import
+
+@chk.get_one_input
+def get_one_input(file, **kwargs):
+    return ...
+
+@chk.get_output_from_input
+def get_output_from_input(file, input_data, **kwargs):
+    return ...
+
+@chk.get_judge_data_from_input
+def get_judge_data_from_input(file, input_data, **kwargs):
+    return ...
+
+@set_single_checker()
+# or @set_multi_checker()
+def check_solution(input_data, output_data, judge_data, **kwargs):
+    ...
+    return 1.0
+
+if __name__ == '__main__': chk()
+```
+
+Here, `check_solution` is passed different things that if we used the regular `@set_checker` decorator. Here, `input_data` is not the actual input file, but what the function `get_one_input` returns. Similarly, `output_data` and `judge_data` are the return values of their respective functions.
+
+Each of the `get` functions are passed the actual file as the argument `file`. The functions that process the output file and the judge file are passed `input_data` as an argument as well, which is what the `get_one_input` file returns.
+
+We use `@set_single_checker` if there is one test case per file, and `@set_multi_checker` if each file has multiple test cases. The `@set_multi_checker` decorator is smart. It assumes that the first number in the input file is the number of test cases. Then you can write the `get` functions, assuming they're only reading in the input for a single test case.
+
+In particular, **if you use `@set_multi_checker`, don't read in the number of test cases!** The name `get_one_input` should remind you that you only read in the input for a single test case, and not multiple test cases.
+
+The advantage of using the checker suite is that it makes checkers more organized, because the parts that parse the output are separated from the parts that check the output. Here's the checker for City Map written with the checker suite instead:
+
+```python
+from kg.checkers import * ### @import
+
+@chk.get_one_input
+def get_one_input(file, **kwargs):
+    p = int(next(file))
+    return [list(map(int, next(file).rstrip().split(" "))) for i in range(p)]
+
+@chk.get_output_from_input
+def get_output_from_input(file, input_data, **kwargs):
+    n = int(next(file))
+    ensure(1 <= n <= 1000, WA("Invalid number of vertices"))
+    labels = list(map(int, next(file).rstrip().split(" ")))
+    ensure(all(1 <= i <= 500 for i in labels), "Invalid label", ParseError)
+
+    try:
+        g = [list(map(int, next(file).rstrip().split(" "))) for i in range(n)]
+        ensure(all(len(l) == n for l in g), "Invalid adjmat row length", ParseError)
+        ensure(all(set(l) <= "01" for l in g), "Invalid adjmat character", ParseError)
+    except Exception as exc:
+        raise ParseError("Could not read output grid") from exc
+
+    p = len(input_data)
+    try:
+        w = [list(map(int, next(file).rstrip().split(" "))) for i in range(p)]
+        ensure(all(all(1 <= i <= n for i in l) for l in w), "Invalid walk vertex", ParseError)
+    except Exception as exc:
+        raise ParseError("Could not read walks") from exc
+
+    return labels, g, w
+
+@chk.get_judge_data_from_input
+def get_judge_data_from_input(file, input_data, **kwargs):
+    ...
+
+@set_multi_checker(no_extra_chars=['output', 'judge'])
+@default_score
+def check_solution(input_data, output_data, judge_data, **kwargs):
+    needed_walks = input_data
+    l, g, walks = output_data
+
+    n = len(g)
+    ensure(all(g[i][i] == "0" for i in range(n)), "Graph has self-loop", WA)
+    ensure(all(g[i][j] == g[j][i] for i in range(n) for j in range(i)), "Graph not symmetric", WA)
+
+    for n_w, w in zip(needed_walks, walks):
+        ensure(all(i == l[j-1] for i, j in zip(n_w, w)), "Wrong label", WA)
+        ensure(all(g[i][j] == "1" for i, j in zip(w, w[1:])), "Edge not in graph", WA)
+
+if __name__ == '__main__': chk()
+```
 
 <!-- ## Grid generators -->
 
