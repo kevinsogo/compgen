@@ -51,6 +51,8 @@ class KGRandom(Random):
         min_: minimum size of each part
         max_: maximum size of each part
         skew: how "skewed" the partition is; higher skew means more variance
+
+        Reasonable values for skew are from 1 to 3*count.
         '''
         ### @@ }
         if min_*count > total: raise ValueError(
@@ -59,6 +61,8 @@ class KGRandom(Random):
         if max_ is not None and max_*count < total: raise ValueError(
                 f"The total must be at most {max_}*{count}={max_*count} "
                 f"when count={count} and max_={max_}")
+        if skew_ <= 0:
+            raise ValueError("The skew has to be at least 1.")
         if max_ is None:
             max_ = total
         dist = [min_]*count
@@ -90,8 +94,22 @@ class KGRandom(Random):
         total: number to be partitioned
         min_: minimum size of each part
         skew: how "skewed" the partition is; higher skew means larger part size
+
+        Reasonable values of skew are from 2 to total. The average size of each
+        part except the last is min_ + skew - 1. More specifically, the
+        distribution of part size is a negative binomial distribution with
+        r = 1 and p = (skew - 1)/skew, using the parametrization on Wikipedia.
         '''
         ### @@ }
+        if total < 0:
+            raise ValueError("The total should be at least 0.")
+        if min_ <= 0:
+            raise ValueError("The value of min_ should be at least 1.")
+        if skew <= 0:
+            raise ValueError("The skew should be at least 1.")
+        if total == 0:
+            return []
+
         it = 0
         for i in range(total - min_):
             it += 1
