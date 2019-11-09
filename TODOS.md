@@ -154,6 +154,10 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Maybe add a whitespace-sensitive version of checker "tokens"?
 
+- "Chain-style" checkers.
+
+    - Need to support strictness levels and options. Default is maximum for validators, and somewhere in the middle for checkers, but individual strictnesses should be toggleable, e.g., "trailing whitespace".
+
 - Utility to change line endings.
 
 - Support line endings in multiple platforms.
