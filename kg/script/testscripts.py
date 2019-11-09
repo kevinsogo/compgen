@@ -1,6 +1,7 @@
 from collections import defaultdict
-from itertools import islice
+from itertools import islice, count
 from shutil import copyfile
+from subprocess import PIPE
 import os.path
 
 from .formats import *
@@ -85,10 +86,8 @@ def run_testscript(inputs, testscript, generators, *, relpath=None):
 
 def parse_testscript(testscript, generators, *, relpath=None):
     found = set()
-    def mex():
-        v = 1
-        while v in found: v += 1
-        return v
+    def mex(start=1):
+        return next(v for v in count(start) if v not in found)
 
     def validate_target(index):
         if index in found:
@@ -121,8 +120,8 @@ def parse_testscript(testscript, generators, *, relpath=None):
         gen, args = parse_generator(prog, *args, generators=generators, relpath=relpath)
 
         def process():
-            if target == '$':
-                later.append((gen, args, line))
+            if target.startswith('$'):
+                later.append((gen, args, line, target))
                 return
 
             try:
@@ -152,11 +151,37 @@ def parse_testscript(testscript, generators, *, relpath=None):
         process()
 
     # assign dollars
-    for gen, args, src_line in later:
-        index = mex()
-        validate_target(index)
-        register_gen_args(src_line, gen, *args)
-        gens[index] = gen, args, True, index, '$', src_line
+    for gen, args, src_line, target in later:
+        if target == '$':
+            index = mex()
+            validate_target(index)
+            register_gen_args(src_line, gen, *args)
+            gens[index] = gen, args, True, index, target, src_line
+        else:
+            dupseq, *rargs = args
+            if dupseq != '$$':
+                raise TestScriptError("First argument of multifile generator with dollar target must be $$. "
+                        f"{dupseq!r} != $$")
+
+            if target == "$$":
+                result = gen.do_compile().do_run("COUNT", *rargs, stdout=PIPE)
+                nfiles = int(result.stdout.decode('utf-8'))
+            else:
+                try:
+                    nfiles = int(target[1:])
+                except ValueError:
+                    raise TestScriptError(f"Invalid dollar target: {target!r}")
+
+            indices = []
+            for file in range(nfiles):
+                index = mex()
+                validate_target(index)
+                indices.append(index)
+            register_gen_args(src_line, gen, *rargs)
+            rtarget = compress_t_sequence(','.join(map(str, indices)))
+            target = '{' + rtarget + '}'
+            args = rtarget, *rargs
+            gens[min(indices)] = gen, args, False, indices, target, src_line
 
     if not all(i == target for i, target in enumerate(sorted(found), 1)):
         raise TestScriptError("Some test files missing from the sequence. They must generate 1, 2, 3, ...")
@@ -164,4 +189,9 @@ def parse_testscript(testscript, generators, *, relpath=None):
     return len(found), [value for key, value in sorted(gens.items())]
 
 
-# TODO convert to codeforces testscript
+def convert_testscript(testscript, generators, *, relpath=None):
+    filecount, gens = parse_testscript(testscript, generators, relpath=relpath)
+
+    for gen, args, single, target, otarget, src_line in gens:
+        if src_line[0] != '!':
+            yield ' '.join([gen.filename, *args, '>', otarget])
