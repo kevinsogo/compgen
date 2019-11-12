@@ -156,6 +156,8 @@ Like the password output, this also uses bootstrap.
 
 You can also prepare a full problem from scratch using this library. Everything can be done locally. If you write it properly, it will be easy to upload it to various judges/platforms.
 
+For a more beginner-friendly tutorial, see [this page](docs/TUTORIAL.md).  
+
 
 ## Phase A. Preparation
 

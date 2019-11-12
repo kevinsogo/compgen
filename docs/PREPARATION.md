@@ -6,6 +6,8 @@ This is a detailed guide on how to prepare a problem from scratch using KompGen.
 
 Actually, not from scratch; this assumes you've already written the problem statement. And also that you've already read the README. 
 
+For a more beginner-friendly tutorial, see [this page](docs/TUTORIAL.md).  
+
 
 
 # Introduction  

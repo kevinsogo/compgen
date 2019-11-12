@@ -203,7 +203,7 @@ The only thing here that might not be obvious are the *slug* and *description*. 
 
 Open your terminal somewhere you're fine putting files in and run the command
 ```bash
-$ kg init mystery-function –subtasks=3
+$ kg init mystery-function --subtasks=3
 ```
 
 Here, `mystery-function` is the slug and `3` is the number of subtasks. Don't worry about getting the number of subtasks right: we can always change it later.
@@ -245,7 +245,7 @@ def validate_file(file, subtask=None):
 
 if __name__ == '__main__':
     subtask = argv[1] if len(argv) > 1 else None
-    if subtask == '–detect-subtasks':
+    if subtask == '--detect-subtasks':
         print(*detect_subtasks(validate_file, stdin, subtasks))
     else:
         validate_file(stdin, subtask=subtask)
@@ -352,7 +352,7 @@ def validate_file(file, subtask=None):
 
 if __name__ == '__main__':
     subtask = argv[1] if len(argv) > 1 else None
-    if subtask == '–detect-subtasks':
+    if subtask == '--detect-subtasks':
         print(*detect_subtasks(validate_file, stdin, subtasks))
     else:
         validate_file(stdin, subtask=subtask)
@@ -777,7 +777,7 @@ The only thing here that might be a little tricky is the output format. Again, t
 Like last time, run the command
 
 ```bash
-$ kg init sharing-chocolates-7 –subtasks=5
+$ kg init sharing-chocolates-7 --subtasks=5
 ```
 
 Then open `details.json`, change the title of the problem to "Sharing Chocolates 7: The Force Equals Mass Times Acceleration", and then get rid of the generated `statement.md` and replace it with `statement.tex`.
@@ -886,7 +886,7 @@ def validate_file(file, subtask=None):
 
 if __name__ == '__main__':
     subtask = argv[1] if len(argv) > 1 else None
-    if subtask == '–detect-subtasks':
+    if subtask == '--detect-subtasks':
         print(*detect_subtasks(validate_file, stdin, subtasks))
     else:
         validate_file(stdin, subtask=subtask)
@@ -1943,7 +1943,7 @@ def get_string(file, length, exc):
     except Exception as e:
         raise ParseError("Failed to get a string") from e
     ensure(len(s) == length, lambda: exc(f"Expected string of length {n} but got {len(l)}"))
-    ensure(set(s) <= "01", "Invalid character in matrix", exc)
+    ensure(set(s) <= set("01"), "Invalid character in matrix", exc)
     return s
 ```
 
@@ -2165,7 +2165,7 @@ def check_solution(input_file, output_file, judge_file, **kwargs):
 The `@set_checker` decorator also accepts arguments that change the way the files are read. Typically, the files are read line-by-line. But if you want to read the files token-by-token instead, like `cin` does from C++, then you can pass the argument `tokens`. This will make it ignore whitespace, however, which is fine for some problems but not for others. Anyway, it looks like:
 
 ```python
-@set_checker(tokens, no_extra_chars=['output', 'judge'])
+@set_checker('tokens', no_extra_chars=['output', 'judge'])
 @default_score
 def check_solution(input_file, output_file, judge_file, **kwargs):
     # next(input_file) returns the next token in the input file
@@ -2174,7 +2174,7 @@ def check_solution(input_file, output_file, judge_file, **kwargs):
 If you want to set some files to be read by tokens, and some files to be read by lines, you can do something like:
 
 ```python
-@set_checker(tokens, lines, lines, no_extra_chars=['output', 'judge'])
+@set_checker('tokens', 'lines', 'lines', no_extra_chars=['output', 'judge'])
 @default_score
 def check_solution(input_file, output_file, judge_file, **kwargs):
     # ...
