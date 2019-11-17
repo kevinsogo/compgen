@@ -23,6 +23,10 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Allow overriding of defaults when using Bounds & Bounds. Add stderr prints about "overriding" when one is not an Interval. Possibly disallow Interval & non-Interval.
 
+- Add warning in `KGRandom` about shuffling arbitrary collections, especially unordered ones like sets and dicts. It can override `.shuffle` by adding an optional kwarg, `sort`, which is `False` by default but also issues a warning. Add a way to suppress this warning safely.
+
+- Implement something similar to `wnext` of testlib. (must be fast)
+
 - Possibly use HJSON (or something) for config files, not pure JSON.
 
 - Warn if a constructed chain is never called

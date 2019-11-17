@@ -492,7 +492,7 @@ def generate_outputs(format_, data_maker, *, model_solution=None, judge=None, in
 
 
 ##########################################
-# generate output data
+# test against output data
 
 test_p = subparsers.add_parser('test',
     formatter_class=argparse.RawDescriptionHelpFormatter,

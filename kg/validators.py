@@ -1,9 +1,10 @@
+import argparse
 from collections import deque
 from decimal import Decimal
 from functools import wraps
 from io import StringIO
 from string import digits
-from sys import stderr
+from sys import stdin, stdout, stderr, argv
 import re
 
 from .utils import * ### @import
@@ -219,7 +220,7 @@ def strict_real(x, *args, max_places=None, places=None, negzero=False, dotlead=F
 
     pl = len(x) - 1 - x.find('.')
     if max_places is not None:
-        if pl > max_places: raise ValidationErrorf(f"Decimal place count of {x} exceeds {max_places}")
+        if pl > max_places: raise ValidationError(f"Decimal place count of {x} exceeds {max_places}")
 
     if places is not None:
         pl = len(x) - 1 - x.index('.')
@@ -506,7 +507,8 @@ def validator(*, suppress_eof_warning=False):
         def new_f(file, *args, **kwargs):
             sf = StrictStream(file)
             res = f(sf, *args, **kwargs)
-            if sf.last != EOF and not suppress_eof_warning: print("Warning: The validator didn't check for EOF at the end.", file=stderr)
+            if sf.last != EOF and not suppress_eof_warning:
+                print("Warning: The validator didn't check for EOF at the end.", file=stderr)
             ### @@ if format == 'pc2' {
             if CURR_PLATFORM == 'pc2':
                 exit(42) # magic number to indicate successful validation (PC^2)
@@ -524,3 +526,22 @@ def detect_subtasks(validate, file, subtasks):
             ... 
         else:
             yield subtask
+
+def validate_or_detect_subtasks(validate, subtasks, file=stdin, outfile=stdout, *args, **kwargs):
+    parser = argparse.ArgumentParser(description="A validator for the problem")
+    parser.add_argument('subtask', nargs='?', help='which subtask to check the file against')
+    parser.add_argument('--detect-subtasks', '-d', action='store_true', help='detect subtasks instead')
+    pargs, unknown = parser.parse_known_args()
+    subtask = pargs.subtask
+
+    ### @@ if format != 'pg' {
+    # suppress error messages when uploaded to Polygon
+    if subtask is not None and subtask not in subtasks:
+        # we need to allow invalid subtasks because Polygon passes some arguments to the validator
+        raise ValidationError("Invalid subtask name.")
+    ### @@ }
+
+    if pargs.detect_subtasks:
+        print(*detect_subtasks(validate, file, subtasks), file=outfile)
+    else:
+        validate(file, *args, subtask=subtask, **kwargs)
