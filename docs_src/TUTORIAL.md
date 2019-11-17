@@ -1,6 +1,6 @@
 This is a tutorial on how to prepare problems from scratch using KompGen. We'll work through what I did to prepare the [NOI.PH 2019 Finals Practice Round](https://hackerrank.com/contests/noi-ph-2019-finals-practice) together. (I prepared all the problems except Bato Bato Split.) While doing so, we'll go over many of the features of KompGen that you'll use during problemsetting.
 
-I'll assume you have `kg` installed in your system. You can check this by typing `kg` in the termiinal, which should pop up a message like this:
+I'll assume you have `kg` installed in your system. You can check this by typing `kg` in the terminal, which should pop up a message like this:
 ```bash
 $ kg
 usage: kg [-h] [–krazy]
