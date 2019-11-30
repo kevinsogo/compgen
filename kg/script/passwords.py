@@ -16,7 +16,8 @@ def create_passwords(accounts, *, seedval=None):
 
     PASSWORD_LETTERS = 'ABCDEFGHJKLMNOPRSTUVWXYZ'
     VOWELS = set('AEIOUY')
-    # need a blacklist of negative-sounding names; it might affect team morale.
+    # need a blacklist of potentially negative/offensive-sounding names; it might affect team morale.
+    # this could be somewhat problematic. I'm really sorry. I'm willing to remove this altogether...
     BLACKLIST = set('''
         yak yac pek pec ass fuc fuk fuq god gad omg not qum qoq qoc qok coq koq kik utn fux fck coc cok coq kox koc pee
         kok koq cac cak caq kac kak kaq pac bad lus pak ded dic die kil dik diq dix dck pns psy fag fgt ngr nig cnt knt

@@ -602,7 +602,7 @@ def kg_test(format_, args):
             nonlocal max_time
             with tempfile.NamedTemporaryFile(delete=False) as tmp:
                 with tempfile.NamedTemporaryFile(delete=False) as result_tmp:
-                    info_print("File", str(index).rjust(3), 'CHECKING AGAINST', input_)
+                    info_print("\nFile", str(index).rjust(3), 'CHECKING AGAINST', input_)
                     try:
                         if interactor:
                             solution_res, interactor_res = solution.do_interact(interactor,

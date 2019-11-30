@@ -7,7 +7,7 @@ This is a tutorial on how to prepare problems from scratch using KompGen. We'll 
 I'll assume you have `kg` installed in your system. You can check this by typing `kg` in the terminal, which should pop up a message like this:
 ```bash
 $ kg
-usage: kg [-h] [–krazy]
+usage: kg [-h] [-krazy]
           {konvert,convert,konvert-sequence,convert-sequence,subtasks,gen,test,
           run,make,joke,init,kompile,compile,kontest,contest,seating,passwords}
           ...

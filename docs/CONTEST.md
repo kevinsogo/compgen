@@ -59,7 +59,7 @@ Most fields should be self-explanatory, but here are things to keep in mind:
 
 - Each entry in the `langs` field (list of allowed programming languages) can be a string denoting the language code name or a dictionary containing additional details (like in `cpp` above). The missing fields will have predefined defaults which can be seen in `contest_langs.json`.  
 
-- The `problems` field contains a list of folders representing the problems. Each of these folders must contain a `details.json` file.  
+- The `problems` field contains a list of KompGen folders representing the problems. Each of these folders must contain a `details.json` file.  
 
 - The `*_count` fields are optional.  
 

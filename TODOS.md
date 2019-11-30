@@ -31,6 +31,10 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Warn if a constructed chain is never called
 
+- Fix bugs in `--loc`. Something to do with `.{sep}[something].exe`
+
+- Investigate the [WinError 2] thing happening with C++ solutions on windows.
+
 - Add docs for interactors.
 
 - Study pc2 interactors
@@ -159,6 +163,8 @@ This includes some disorganized ideas, TODOs, notes...
 - Implement `-o` only usage of `gen` (and possibly other commands).
 
 - Add options to modify predetermined compile and run for recognized languages. And also add more recognized languages. Currently, the languages are in `langs.json`. Maybe have a `~/.kgconfig` file that overrides these configurations?
+
+- Allow "pypy3" to be used for PC2 checkers. Maybe an option that can be added in `contest.json`.
 
 - Automatically determine the version of the `python` command, and use it to determine the default execution of `.py` files. (This may require overhauling the `langs.json` format.)
 

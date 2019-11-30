@@ -115,7 +115,7 @@ def parse_testscript(testscript, generators, *, relpath=None):
             raise TestScriptError(f"Invalid testscript line: {line!r}")
 
         if pipe != '>':
-            raise TestScriptError(f'Testscript line must end with "> $" or "> {{file/s}}": got {line!r}')
+            raise TestScriptError(f'Testscript line must end with "> $", "> $$", "> $count", or "> {{file/s}}": got {line!r}')
 
         gen, args = parse_generator(prog, *args, generators=generators, relpath=relpath)
 
@@ -164,8 +164,11 @@ def parse_testscript(testscript, generators, *, relpath=None):
                         f"{dupseq!r} != $$")
 
             if target == "$$":
-                result = gen.do_compile().do_run("COUNT", *rargs, stdout=PIPE)
+                count_args = ['COUNT'] + rargs
+                info_print(f"Running the multifile generator {gen.filename} on {' '.join(count_args)!r} once to get the file count...")
+                result = gen.do_compile().do_run(*count_args, stdout=PIPE)
                 nfiles = int(result.stdout.decode('utf-8'))
+                info_print(f"Ran the multifile generator {gen.filename} on {' '.join(count_args)!r} once to get the file count...got {nfiles} files.")
             else:
                 try:
                     nfiles = int(target[1:])
