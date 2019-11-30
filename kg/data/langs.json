@@ -11,7 +11,7 @@
     },
     "java": {
         "compile": "javac {filename}",
-        "run": "java -cp {filename_path} {filename_base}",
+        "run": "java -Xmx512m -Xss256m -cp {filename_path} {filename_base}",
         "endings": [".java"]
     },
     "cpp": {
