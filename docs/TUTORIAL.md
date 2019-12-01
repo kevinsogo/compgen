@@ -1,5 +1,5 @@
 <!-- NOTE TO CONTRIBUTORS: PLEASE DON'T EDIT THIS FILE. -->
-<!-- Edit docs_src/TUTORIAL.md instead, then run './makedocs'. -->
+<!-- Edit docs/src/TUTORIAL.md instead, then run './makedocs'. -->
 
 
 This is a tutorial on how to prepare problems from scratch using KompGen. We'll work through what I did to prepare the [NOI.PH 2019 Finals Practice Round](https://hackerrank.com/contests/noi-ph-2019-finals-practice) together. (I prepared all the problems except Bato Bato Split.) While doing so, we'll go over many of the features of KompGen that you'll use during problemsetting.

@@ -2,7 +2,7 @@
 set -e
 
 # make scripts executable
-chmod +x setup.sh docs_src/makedocs
+chmod +x setup.sh docs/src/makedocs
 
 # ensure pip is present
 python3 -m ensurepip || echo "Can't run ensurepip. It is now your responsibility to ensure that pip is present!!!"

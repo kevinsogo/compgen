@@ -1,5 +1,5 @@
 <!-- NOTE TO CONTRIBUTORS: PLEASE DON'T EDIT THIS FILE. -->
-<!-- Edit docs_src/PREPARATION.md instead, then run './makedocs'. -->
+<!-- Edit docs/src/PREPARATION.md instead, then run './makedocs'. -->
 
 
 This is a detailed guide on how to prepare a problem from scratch using KompGen. 

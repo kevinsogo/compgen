@@ -1,5 +1,5 @@
 <!-- NOTE TO CONTRIBUTORS: PLEASE DON'T EDIT THIS FILE. -->
-<!-- Edit docs_src/GENERATORS.md instead, then run './makedocs'. -->
+<!-- Edit docs/src/GENERATORS.md instead, then run './makedocs'. -->
 
 
 Note: this doc is still WIP
