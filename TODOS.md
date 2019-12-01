@@ -27,6 +27,8 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Implement something similar to `wnext` of testlib. (must be fast)
 
+- Implement 'or' in bounds/`Var` objects, e.g., `(1 <= +Var <= 100) | (200 <= +Var <= 300)`.  
+
 - Possibly use HJSON (or something) for config files, not pure JSON.
 
 - Warn if a constructed chain is never called

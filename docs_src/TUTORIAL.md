@@ -244,11 +244,7 @@ def validate_file(file, subtask=None):
     
 
 if __name__ == '__main__':
-    subtask = argv[1] if len(argv) > 1 else None
-    if subtask == '--detect-subtasks':
-        print(*detect_subtasks(validate_file, stdin, subtasks))
-    else:
-        validate_file(stdin, subtask=subtask)
+    validate_or_detect_subtasks(validate_file, subtasks, stdin)
 ```
 
 We won't touch the header, which inputs the required stuff from KompGen. We also won't touch anything after `if __name__ == '__main__':`, so don't worry about it.
@@ -351,11 +347,7 @@ def validate_file(file, subtask=None):
     [] = file.read.eof
 
 if __name__ == '__main__':
-    subtask = argv[1] if len(argv) > 1 else None
-    if subtask == '--detect-subtasks':
-        print(*detect_subtasks(validate_file, stdin, subtasks))
-    else:
-        validate_file(stdin, subtask=subtask)
+    validate_or_detect_subtasks(validate_file, subtasks, stdin)
 ```
 
 ## The KompGen generator model
@@ -885,11 +877,7 @@ def validate_file(file, subtask=None):
     [] = file.read.eof
 
 if __name__ == '__main__':
-    subtask = argv[1] if len(argv) > 1 else None
-    if subtask == '--detect-subtasks':
-        print(*detect_subtasks(validate_file, stdin, subtasks))
-    else:
-        validate_file(stdin, subtask=subtask)
+    validate_or_detect_subtasks(validate_file, subtasks, stdin)
 ```
 
 And now let's move on to the next step: generators!
