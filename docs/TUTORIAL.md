@@ -1022,7 +1022,7 @@ Finally, remember to change `details.json` in order to include all the generator
 "generators": [
     "gen_random.py",
     "gen_all.py",
-    "gen_limits.py",
+    "gen_limits.py"
 ],
 ```
 
@@ -2251,12 +2251,12 @@ from kg.checkers import * ### @import
 def get_one_input(file, **kwargs):
     return ...
 
-@chk.get_output_from_input
-def get_output_from_input(file, input_data, **kwargs):
+@chk.get_output_for_input
+def get_output_for_input(file, input_data, **kwargs):
     return ...
 
-@chk.get_judge_data_from_input
-def get_judge_data_from_input(file, input_data, **kwargs):
+@chk.get_judge_data_for_input
+def get_judge_data_for_input(file, input_data, **kwargs):
     return ...
 
 @set_single_checker()
@@ -2286,8 +2286,8 @@ def get_one_input(file, **kwargs):
     p = int(next(file))
     return [list(map(int, next(file).rstrip().split(" "))) for i in range(p)]
 
-@chk.get_output_from_input
-def get_output_from_input(file, input_data, **kwargs):
+@chk.get_output_for_input
+def get_output_for_input(file, input_data, **kwargs):
     n = int(next(file))
     ensure(1 <= n <= 1000, WA("Invalid number of vertices"))
     labels = list(map(int, next(file).rstrip().split(" ")))
@@ -2309,8 +2309,8 @@ def get_output_from_input(file, input_data, **kwargs):
 
     return labels, g, w
 
-@chk.get_judge_data_from_input
-def get_judge_data_from_input(file, input_data, **kwargs):
+@chk.get_judge_data_for_input
+def get_judge_data_for_input(file, input_data, **kwargs):
     ...
 
 @set_multi_checker(no_extra_chars=['output', 'judge'])

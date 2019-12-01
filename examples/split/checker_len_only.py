@@ -7,8 +7,8 @@ def get_one_input(file, **kwargs):
     ensure(len(a) == n, "Invalid length in input", exc=Fail)
     return a
 
-@chk.get_output_from_input
-def get_output_from_input(file, a, **kwargs):
+@chk.get_output_for_input
+def get_output_for_input(file, a, **kwargs):
     try:
         m = int(next(file).rstrip())
         b = list(map(int, next(file).rstrip().split(' ')))
@@ -18,8 +18,8 @@ def get_output_from_input(file, a, **kwargs):
     ensure(len(b) == m, lambda: WA(f"Expected {m} numbers but got {len(b)}"))
     return b
 
-@chk.get_judge_data_from_input
-def get_judge_data_from_input(file, a, **kwargs):
+@chk.get_judge_data_for_input
+def get_judge_data_for_input(file, a, **kwargs):
     return int(next(file))
 
 @set_multi_checker(no_extra_chars=True)

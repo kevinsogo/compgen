@@ -7,9 +7,9 @@ def get_one_input(file, **kwargs):
     ensure(len(a) == n, "Invalid length in input", exc=Fail)
     return a
 
-@chk.get_output_from_input
-@chk.get_judge_data_from_input
-def get_output_from_input(file, a, **kwargs):
+@chk.get_output_for_input
+@chk.get_judge_data_for_input
+def get_output_for_input(file, a, **kwargs):
     exc = kwargs['exc']
     try:
         m = int(next(file).rstrip())

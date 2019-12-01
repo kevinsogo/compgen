@@ -76,12 +76,28 @@ class ChkStream:
 
 
 # an enum of accepted _Set names
-_SetName = Enum('_SetName', ['get_one_input', 'get_output_from_input', 'get_judge_data_from_input', 'problem_title', 'aggregate', 'iterator'])
+_SetName = Enum('_SetName', ['get_one_input', 'get_output_for_input', 'get_judge_data_for_input', 'problem_title', 'aggregate', 'iterator'])
 
 class Checker:
     def __init__(self):
         self._vals = {}
         for sn in _SetName: setattr(self, sn.name, functools.partial(self._set, sn))
+
+        # aliases for backwards compatibility. I imagine these will be removed after some time.
+        def warn_on_use(wrong, correct, f):
+            ''' print a warning when the alias is used instead of the correct one. '''
+            @functools.wraps(f)
+            def warn_f(*args, **kwargs):
+                print(f'Deprecation warning: Please use {correct} instead of {wrong}', file=stderr) ### @if False
+                return f(*args, **kwargs)
+            # just return 'f' if we're not printing the warning anyway ### @if False
+            return warn_f ### @replace 'warn_f', 'f'
+        for wrong_name, correct_name in [
+                ('get_output_from_input', 'get_output_for_input'),
+                ('get_judge_data_from_input', 'get_judge_data_for_input'),
+            ]:
+            setattr(self, wrong_name, warn_on_use(wrong_name, correct_name, getattr(self, correct_name)))
+
         super().__init__()
 
     def _set(self, sn, value):
@@ -137,8 +153,8 @@ class Checker:
 
     def _check_multi(self, check_test_case, input_f, output_f, judge_f, *, _aggregate=None, _iterator=None, **kwargs):
         get_one_input = self._vals[_SetName.get_one_input]
-        get_output_from_input = self._vals[_SetName.get_output_from_input]
-        get_judge_data_from_input = self._vals[_SetName.get_judge_data_from_input]
+        get_output_for_input = self._vals[_SetName.get_output_for_input]
+        get_judge_data_for_input = self._vals[_SetName.get_judge_data_for_input]
 
         def catch_spec_as(exc):
             def _catch(f):
@@ -171,12 +187,12 @@ class Checker:
             @staticmethod
             @catch_spec_as(ParseError("Output file fully read but expected more"))
             def next_output(inp, **kw):
-                return get_output_from_input(output_f, inp, **kw, exc=ParseError, **kwargs)
+                return get_output_for_input(output_f, inp, **kw, exc=ParseError, **kwargs)
 
             @staticmethod
             @catch_spec_as(Fail("Judge file fully read but expected more"))
             def next_judge_data(inp, **kw):
-                return get_judge_data_from_input(judge_f, inp, **kw, exc=Fail, **kwargs)
+                return get_judge_data_for_input(judge_f, inp, **kw, exc=Fail, **kwargs)
 
             input_file = input_f
             output_file = output_f
