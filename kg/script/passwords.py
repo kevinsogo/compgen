@@ -9,37 +9,39 @@ from .utils import *
 
 class PasswordError(Exception): ...
 
-def create_passwords(accounts, *, seedval=None):
+def get_password_words():
+    if get_password_words.words is None:
+        with open(os.path.join(kg_data_path, 'password_words.txt')) as f:
+            get_password_words.words = [line.strip().upper() for line in f.readlines()]
+            assert all(get_password_words.words), "some empty password lines found."
+    return get_password_words.words
+
+get_password_words.words = None
+
+def create_passwords(accounts, *, short=False, seedval=None):
     accounts = list(accounts)
     if len(set(accounts)) != len(accounts):
         raise PasswordError("Duplicate accounts!")
 
-    PASSWORD_LETTERS = 'ABCDEFGHJKLMNOPRSTUVWXYZ'
-    VOWELS = set('AEIOUY')
-    # need a blacklist of potentially negative/offensive-sounding names; it might affect team morale.
-    # this could be somewhat problematic. I'm really sorry. I'm willing to remove this altogether...
-    BLACKLIST = set('''
-        yak yac pek pec ass fuc fuk fuq god gad omg not qum qoq qoc qok coq koq kik utn fux fck coc cok coq kox koc pee
-        kok koq cac cak caq kac kak kaq pac bad lus pak ded dic die kil dik diq dix dck pns psy fag fgt ngr nig cnt knt
-        sht dsh twt bch cum clt kum klt suc suk suq sck lic lik liq lck jiz jzz gay gey gei gai vag vgn sjv fap prn jew
-        joo gvr pus pis pss snm tit fku fcu fqu hor slt jap wop kik kyk kyc kyq dyk dyq dyc kkk jyz prk prc prq mic mik
-        miq myc myk myq guc guk guq giz gzz sex sxx sxi sxe sxy xxx wac wak waq wck pot thc vaj vjn nut std lsd poo azn
-        pcp dmn orl anl ans muf mff phk phc phq xtc tok toc toq mlf rac rak raq rck sac sak saq pms nad ndz nds wtf sol
-        sob fob sfu abu alh wag gag ggo pta pot tot put tut tet naz nzi xex cex shi xxi fak fac tti
-    '''.upper().strip().split())
     if seedval is None: seedval = randrange(10**18)
 
     info_print(f"Using seed {seedval}", file=stderr)
     rand = Random(seedval)
 
-    def make_chunk():
-        while True:
-            chunk = ''.join(rand.choice(PASSWORD_LETTERS) for i in range(3))
-            if chunk in BLACKLIST: continue
-            if set(chunk) & VOWELS: return chunk
+    if short:
+        PASSWORD_LETTERS = 'ABCDEFGHJKLMNOPRSTUVWXYZ'
+        VOWELS = set('AEIOUY')
+        def make_chunk():
+            while True:
+                chunk = ''.join(rand.choice(PASSWORD_LETTERS) for i in range(3))
+                if set(chunk) & VOWELS: return chunk
 
-    def make_password():
-        return '-'.join(make_chunk() for i in range(4))
+        def make_password():
+            return '-'.join(make_chunk() for i in range(4))
+    else:
+        password_words = get_password_words()
+        def make_password():
+            return '-'.join(rand.choice(password_words) for i in range(4))
 
     return {account: make_password() for account in accounts}, seedval
 
@@ -173,12 +175,12 @@ def write_passwords(accounts, *, dest='.', **context):
             <strong>{display}</strong> <small><em>{pcode}</em></small><br>
             <small>{type_}</small>
             <table class="team-details table table-condensed table-bordered"><tbody>
-            <tr><td>Login name</td><td><code>{login}</code></td></tr>
-            <tr><td>Password</td><td><code>{password}</code></td></tr>
+            <tr><td class="pass-field">Login name</td><td><code>{login}</code></td></tr>
+            <tr><td class="pass-field">Password</td><td><code>{password}</code></td></tr>
             </tbody></table>
             '''))
 
-        PER_ROW = 3
+        PER_ROW = 2
         account_rows = []
         row = []
         for account in entries:

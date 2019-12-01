@@ -8,14 +8,20 @@
             .e-password .entry-text {{
                 font-weight: bold;
             }}
+
             .pass-table > tbody > tr > td {{
                 border: 1.5px dashed black !important;
-                padding: 15px;
+                padding: 4px 15px;
             }}
 
             .table.team-details {{
                 margin-bottom: 0;
             }}
+
+            .table.team-details .pass-field {{
+                width: 100px;
+            }}
+
             @media print {{
                 body {{-webkit-print-color-adjust: exact;}}
                 .table td.success {{
@@ -28,7 +34,7 @@
         </style>
     </head>
     <body>
-        <div class="container">
+        <div class="container-fluid">
             <h1>LOGIN DETAILS {for_title}</h1>
             <p><small>Using seed {seedval}.</small></p>
 
