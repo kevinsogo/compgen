@@ -11,15 +11,11 @@
 
             .pass-table > tbody > tr > td {{
                 border: 1.5px dashed black !important;
-                padding: 4px 15px;
+                padding: 5px;
             }}
 
-            .table.team-details {{
-                margin-bottom: 0;
-            }}
-
-            .table.team-details .pass-field {{
-                width: 100px;
+            .team-details .pass-field {{
+                font-size: 75%;
             }}
 
             @media print {{
@@ -36,7 +32,7 @@
     <body>
         <div class="container-fluid">
             <h1>LOGIN DETAILS {for_title}</h1>
-            <p><small>Using seed {seedval}.</small></p>
+            <p><small>Using seed {seedval}. (Print landscape.)</small></p>
 
             <table class="table pass-table">
                 <tbody>{accounts}

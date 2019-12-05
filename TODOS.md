@@ -19,6 +19,8 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Author/s fields.
 
+- HTMLEscape seating.py and passwords.py properly. [to prevent code injection]
+
 - Instead of needing `-js` in `kg test`, just switch to `-js` automatically if it issues an error.
 
 - Allow overriding of defaults when using Bounds & Bounds. Add stderr prints about "overriding" when one is not an Interval. Possibly disallow Interval & non-Interval.
@@ -55,6 +57,10 @@ This includes some disorganized ideas, TODOs, notes...
     - `1 = _wa`
     - `3 = _fail`
     - So I guess `2` is parse error, and these are basically the same as checkers.
+
+- Support for naming arguments in generators, so that they can be added to argparse.
+    
+    - maybe extract from positional argument signature?
 
 - Add summaries/reports in kg gen and kg run. (and kg make?)
 
@@ -135,6 +141,8 @@ This includes some disorganized ideas, TODOs, notes...
 - Export to .tex format, both for Kattis and for `\newproblem{title}{TL}` format.
 
 - Use a YAML library.
+
+- don't make the kg checkers strict. use parse_known_args
 
 - Consider using the Kattis format as the base. (far future backwards-incompatible version.)
 

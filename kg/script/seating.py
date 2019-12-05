@@ -8,6 +8,8 @@ import argparse
 import html
 import os.path
 
+# TODO htmlescape this properly!!!
+
 from .contest_details import *
 from .utils import *
 

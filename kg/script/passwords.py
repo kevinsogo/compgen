@@ -5,6 +5,8 @@ from random import Random, randrange
 from sys import stderr
 from textwrap import dedent
 
+# TODO htmlescape this properly!!!
+
 from .utils import *
 
 class PasswordError(Exception): ...
@@ -172,12 +174,14 @@ def write_passwords(accounts, *, dest='.', **context):
         entries = []
         for index, (type_, display, login, password) in enumerate(accounts):
             entries.append(dedent(f'''\
-            <strong>{display}</strong> <small><em>{pcode}</em></small><br>
-            <small>{type_}</small>
-            <table class="team-details table table-condensed table-bordered"><tbody>
-            <tr><td class="pass-field">Login name</td><td><code>{login}</code></td></tr>
-            <tr><td class="pass-field">Password</td><td><code>{password}</code></td></tr>
-            </tbody></table>
+            <div><strong>{display}</strong> <small><em>{pcode}</em></small></div>
+            <div><small>{type_}</small></div>
+            <div class="team-details">
+                <span class="pass-field">Login:</span>
+                <span class="pass-value"><code>{login}</code></span>
+                <span class="pass-field">Pass:</span>
+                <span class="pass-value"><code>{password}</code></span>
+            </div>
             '''))
 
         PER_ROW = 2

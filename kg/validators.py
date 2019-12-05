@@ -204,9 +204,9 @@ def strict_real(x, *args, max_places=None, places=None, negzero=False, dotlead=F
     It receives the same arguments as strict_int, and also receives the following in addition:
 
     places: If it is an integer, then x must have exactly 'places' after the decimal point.
-    negzero: If True, then "negative zero", like, -0.0000, is not allowed. (default False)
-    dotlead: If True, then a leading dot, like, ".420", is not allowed. (default False)
-    dottrail: If True, then a trailing dot, like, "420.", is not allowed. (default False)
+    negzero: If True, then "negative zero", like, -0.0000, is allowed. (default False)
+    dotlead: If True, then a leading dot, like, ".420", is allowed. (default False)
+    dottrail: If True, then a trailing dot, like, "420.", is allowed. (default False)
     '''
     ### @@ }
     if not _real_re.match(x) and x != '.':
