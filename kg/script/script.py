@@ -634,7 +634,9 @@ def kg_test(format_, args):
                         err_print('The solution issued a runtime error...')
                         return False, 0.0
                     finally:
-                        max_time = max(max_time, solution.last_running_time)
+                        # save the running time now, since we're monkeying around...
+                        running_time = solution.last_running_time
+                        max_time = max(max_time, running_time)
 
                     # Check if the interactor issues WA by itself. Don't invoke the judge
                     if getattr(interactor_res, 'returncode', 0):
@@ -652,9 +654,9 @@ def kg_test(format_, args):
                     except Exception as exc:
                         score = 1.0 if correct else 0.0 # can't read score. use binary scoring
 
-                    if solution.last_running_time > time_limit:
+                    if running_time > time_limit:
                         err_print(f"The solution exceeded the time limit of {time_limit:.3f}sec; "
-                                  f"it didn't finish after {solution.last_running_time:.3f}sec...")
+                                  f"it didn't finish after {running_time:.3f}sec...")
                         if score > 0: info_print(f"It would have gotten a score of {score} otherwise...")
                         return False, 0.0
 
