@@ -6,7 +6,7 @@ from operator import attrgetter
 from random import randrange
 from shutil import copyfile
 from string import ascii_letters, ascii_uppercase, digits
-from subprocess import PIPE, CalledProcessError, SubprocessError
+from subprocess import PIPE, CalledProcessError, SubprocessError, TimeoutExpired
 from sys import stdin, stdout, stderr
 from textwrap import dedent
 import argparse
@@ -576,6 +576,8 @@ test_p.add_argument('-vc', '--validator-command', nargs='+', help='validator com
 test_p.add_argument('-vf', '--validator-file', help='validator file, for subtask grading')
 test_p.add_argument('-ic', '--interactor-command', nargs='+', help='interactor command, if the problem is interactive')
 test_p.add_argument('-if', '--interactor-file', help='interactor file, if the problem is interactive')
+test_p.add_argument('-tl', '--time-limit', type=float, help="the problem's time limit (or -1 for no limit); "
+                                                            "the code will be terminated if it exceeds 4x this time")
 
 @set_handler(test_p)
 def kg_test(format_, args):
@@ -590,6 +592,11 @@ def kg_test(format_, args):
     if not judge: raise CommandError("Missing judge")
 
     interactor = Program.from_args(args.interactor_file, args.interactor_command) or details.interactor
+
+    time_limit = args.time_limit
+    if time_limit is None: time_limit = details.time_limit
+    if time_limit == -1: time_limit = float('inf')
+    print(info_text('Using problem time limit:'), key_text(time_limit), info_text('sec.'))
 
     solution.do_compile()
     judge.do_compile()
@@ -609,11 +616,20 @@ def kg_test(format_, args):
                                     time=True, check=True,
                                     interactor_args=(input_, tmp.name),
                                     interactor_kwargs=dict(check=False),
+                                    time_limit=time_limit,
                                 )
                         else:
                             interactor_res = None
                             with open(input_) as inp:
-                                solution_res = solution.do_run(stdin=inp, stdout=tmp, time=True, check=True)
+                                solution_res = solution.do_run(
+                                        stdin=inp,
+                                        stdout=tmp,
+                                        time=True,
+                                        check=True,
+                                        time_limit=time_limit,
+                                    )
+                    except TimeoutExpired:
+                        pass
                     except CalledProcessError:
                         err_print('The solution issued a runtime error...')
                         return False, 0.0
@@ -635,6 +651,13 @@ def kg_test(format_, args):
                             score = json.load(result_tmp_file)['score']
                     except Exception as exc:
                         score = 1.0 if correct else 0.0 # can't read score. use binary scoring
+
+                    if solution.last_running_time > time_limit:
+                        err_print(f"The solution exceeded the time limit of {time_limit:.3f}sec; "
+                                  f"it didn't finish after {solution.last_running_time:.3f}sec...")
+                        if score > 0: info_print(f"It would have gotten a score of {score} otherwise...")
+                        return False, 0.0
+
                     return correct, score
 
         correct, score = get_score()

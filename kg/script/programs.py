@@ -87,6 +87,15 @@ def attach_results(*, reraise=False):
         return new_target
     return _attach_results
 
+def _fix_timeout(kwargs):
+    # be careful with timeout when the program creates subprocesses... the children processes are not killed,
+    # so multiple slow (and potentially memory-consuming) programs could be running in the background!!
+    kwargs.setdefault('timeout', float('inf'))
+    if 'time_limit' in kwargs:
+        kwargs['timeout'] = min(kwargs['timeout'], kwargs['time_limit'] * 4)
+        del kwargs['time_limit']
+    if kwargs['timeout'] >= float('inf'):
+        del kwargs['timeout']
 
 class Program:
     def __init__(self, filename, compile_, run, *, relpath=None, strip_prefixes=['___'], check_exists=True, **attributes):
@@ -126,9 +135,6 @@ class Program:
         if not self.compiled: raise ExtProgramError("Compile the program first")
         command = self.run + list(args)
         kwargs.setdefault('cwd', self.relpath)
-        if time and os.name != 'nt':
-            command = ['/usr/bin/time', '-f',
-                    f'{time_name or ""}. ELAPSED TIME from /usr/bin/time: %esec %Usec %Ssec'] + command
         return subprocess.Popen(command, **kwargs)
 
     def do_run(self, *args, time=False, time_name=None, **kwargs):
@@ -136,17 +142,15 @@ class Program:
         command = self.run + list(args)
         kwargs.setdefault('cwd', self.relpath)
         kwargs.setdefault('check', True)
+        _fix_timeout(kwargs)
         if time:
             start_time = timel.time()
-            if os.name != 'nt':
-                command = ['/usr/bin/time', '-f',
-                        f'{time_name or ""}. ELAPSED TIME from /usr/bin/time: %esec %Usec %Ssec'] + command
         try:
             return subprocess.run(command, **kwargs)
         finally:
             if time:
                 self.last_running_time = elapsed = timel.time() - start_time
-                info_print(f'{time_name or ""}. ELAPSED TIME from time.time(): {elapsed:.2f}sec', file=stderr)
+                info_print(f'{time_name or ""}. ELAPSED TIME: {elapsed:.2f}sec', file=stderr)
 
     def _do_run_process(self, process, *, time=False, check=False):
         if time:
@@ -160,7 +164,7 @@ class Program:
             finally:
                 if time:
                     self.last_running_time = elapsed = timel.time() - start_time
-                    info_print(f'. ELAPSED TIME from time.time(): {elapsed:.2f}sec', file=stderr)
+                    info_print(f'. ELAPSED TIME: {elapsed:.2f}sec', file=stderr)
             retcode = proc.poll()
 
             if check and retcode:
@@ -176,6 +180,8 @@ class Program:
         for stream in 'stdin', 'stdout':
             if stream in kwargs or stream in interactor_kwargs:
                 raise ExtProgramError(f"You cannot pass {stream!r} to interactors")
+
+        _fix_timeout(kwargs)
 
         process = self.get_runner_process(*args,
                 time=time, stdin=subprocess.PIPE, stdout=subprocess.PIPE, **kwargs)
