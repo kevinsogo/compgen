@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Seating Arrangement {% if code %}for {{ code }}{% endif %} {% if title %}({{ title }}){% endif %}</title>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+        <link rel="stylesheet" type="text/css" href="bootstrap.min.css"> <!-- If you have it locally... -->
+        <style>
+            .full-space {
+                /* width: 360px; */
+                height: 50px;
+            }
+            @media print {
+                body {-webkit-print-color-adjust: exact;}
+                .table td.success {
+                    background-color: #DFF0D7 !important;
+                }  
+                .table td.info {
+                    background-color: #D9EDF7 !important;
+                }  
+                .table td.active {
+                    background-color: #F5F5F5 !important;
+                }
+            }
+            .seating td.empty-space {
+                width: 0.1%;
+            }
+            .seating td.full-space {
+                width: 0.5%;
+            }
+
+            .seating-table {
+                layout: fixed;
+            }
+
+            .seating-table .occupied-space {
+                vertical-align: middle;
+                text-align: center;
+                line-height: 1.2;
+            }
+
+            .seating-table .occupied-space .entry-seat {
+                font-size: 70%;
+            }
+            .seating-table .occupied-space .entry-team {
+                font-size: 72%;
+                font-weight: bold;
+            }
+            .seating-table .occupied-space .entry-school {
+                font-size: 52%;
+                font-style: italic;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="seating container-fluid">
+            <h1>SEATING ARRANGEMENT {% if title %}FOR {{ title }}{% endif %}</h1>
+            <p><small>Using seed {{ seedval }}.</small></p>
+            <table class="seating-table table table-hover table-bordered table-condensed seating">
+                {% for row in table %}
+                    <tr>
+                        {% for entry in row %}
+                            {% if entry.state == "none" %}
+                                <td class='empty-space'><small>&nbsp;</small></td>
+                            {% elif entry.state == "vacant" %}
+                                <td class='full-space vacant-space active'><small>({{ entry.seat }})</small></td>
+                            {% elif entry.state == "occupied" %}
+                                <td class='full-space occupied-space info'>
+                                    <span class='entry-seat'>{{ entry.seat }}</span>
+                                    <br>
+                                    <span class='entry-team'>{{ entry.team_name }}</span>
+                                    <br>
+                                    <span class='entry-school'>{{ entry.school_name }}</span>
+                                </td>
+                            {% else %}
+                                <td class="alert alert-danger">ERROR!</td>
+                            {% endif %}
+
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </body>
+</html>

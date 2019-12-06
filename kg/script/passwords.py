@@ -1,11 +1,9 @@
-import html
 import io
 import os.path
+from itertools import groupby
 from random import Random, randrange
 from sys import stderr
 from textwrap import dedent
-
-# TODO htmlescape this properly!!!
 
 from .utils import *
 
@@ -125,7 +123,7 @@ def write_passwords_format(cont, format_, *, seedval=None, dest='.'):
                 print(u'\t'.join(row), file=f)
 
     write_passwords(passrows,
-            seedval=' or '.join({str(x) for x in [seedval, seed] if x is not None}),
+            seedval=' or '.join([str(x) for x, g in groupby([seedval, seed]) if x is not None]),
             dest=dest, code=cont.code, title=cont.title)
 
 def write_passwords(accounts, *, dest='.', **context):
@@ -136,66 +134,17 @@ def write_passwords(accounts, *, dest='.', **context):
 
     def clean_account(account):
         type_, display, login, password = account
-        if isinstance(type_, int): type_ = ''
-        return html.escape(type_), html.escape(display), html.escape(login), html.escape(password)
+        return '' if isinstance(type_, int) else type_, display, login, password
 
-    accounts = [clean_account(account) for account in accounts]
+    context.update({
+        'per_row': 3,
+        'accounts': [clean_account(account) for account in accounts],
+    })
 
-    # TODO maybe use some jinja/django templating here...
-    if not context.get('code'): context['code'] = ''
-    if not context.get('title'): context['title'] = ''
-    for_code = context['for_code'] = f"FOR {context['code']}" if context['code'] else ''
-    for_title = context['for_title'] = f"FOR {context['title']}" if context['title'] else ''
-    _code = context['_code'] = '_' + context['code'] if context['code'] else ''
-    pcode = context['pcode'] = '(' + context['code'] + ')' if context['code'] else ''
-    ptitle = context['ptitle'] = '(' + context['title'] + ')' if context['title'] else ''
-
-    filename = os.path.join(dest, f'logins{_code}_table.html')
-    info_print("Writing to", filename, file=stderr)
-    with open(filename, 'w') as f:
-        rows = []
-        for index, (type_, display, login, password) in enumerate(accounts):
-            rows.append(dedent(f'''\
-                <tr class="pass-entry">
-                <td>{type_}</td>
-                <td>{display}</td>
-                <td><code>{login}</code></td>
-                <td><code>{password}</code></td>
-                </tr>
-            '''))
-
-        context['accounts'] = '\n'.join(rows)
-        with open(os.path.join(kg_data_path, 'contest_template', 'logins_table.html')) as of:
-            f.write(of.read().format(**context))
-
-    filename = os.path.join(dest, f'logins{_code}_boxes.html')
-    info_print("Writing to", filename, file=stderr)
-    with open(filename, 'w') as f:
-        entries = []
-        for index, (type_, display, login, password) in enumerate(accounts):
-            entries.append(dedent(f'''\
-            <div><strong>{display}</strong> <small><em>{pcode}</em></small></div>
-            <div><small>{type_}</small></div>
-            <div class="team-details">
-                <span class="pass-field">Login:</span>
-                <span class="pass-value"><code>{login}</code></span>
-                <span class="pass-field">Pass:</span>
-                <span class="pass-value"><code>{password}</code></span>
-            </div>
-            '''))
-
-        PER_ROW = 2
-        account_rows = []
-        row = []
-        for account in entries:
-            row.append('<td style="width: %.6f%%">%s</td>' % (100. / PER_ROW, account))
-            if len(row) == PER_ROW:
-                account_rows.append(row)
-                row = []
-        if row:
-            account_rows.append(row)
-
-        context['accounts'] = '\n'.join('<tr>%s</tr>\n' % '\n'.join(row) for row in account_rows)
-        with open(os.path.join(kg_data_path, 'contest_template', 'logins_boxes.html')) as of:
-            f.write(of.read().format(**context))
-
+    for template in ['table', 'boxes']:
+        filename = os.path.join(dest, '_'.join(filter(None, ['logins', context['code'], template])) + '.html')
+        info_print("Writing to", filename, file=stderr)
+        with open(filename, 'w') as f:
+            f.write(
+                kg_template_env.get_template(os.path.join('contest_template', f'logins_{template}.html.j2')).render(**context)
+            )

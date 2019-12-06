@@ -19,13 +19,13 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Author/s fields.
 
-- HTMLEscape seating.py and passwords.py properly. [to prevent code injection]
-
 - Instead of needing `-js` in `kg test`, just switch to `-js` automatically if it issues an error.
 
 - Allow overriding of defaults when using Bounds & Bounds. Add stderr prints about "overriding" when one is not an Interval. Possibly disallow Interval & non-Interval.
 
 - Add warning in `KGRandom` about shuffling arbitrary collections, especially unordered ones like sets and dicts. It can override `.shuffle` by adding an optional kwarg, `sort`, which is `False` by default but also issues a warning. Add a way to suppress this warning safely.
+
+    - Maybe `.shuffle_sort` ? (also `.shuffled_sorted` and `.shuff_sorted`)
 
 - Implement something similar to `wnext` of testlib. (must be fast)
 

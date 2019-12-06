@@ -2,12 +2,19 @@ from sys import stdout
 import os.path
 import pathlib
 
+from jinja2 import Environment, select_autoescape, PackageLoader
+
 from ..utils import *
 from ..utils.hr import *
 
 script_path = os.path.dirname(os.path.realpath(__file__))
-kg_path = os.path.join(script_path, '..')
-kg_data_path = os.path.join(kg_path, 'data')
+kg_path = os.path.normpath(os.path.join(script_path, '..'))
+kg_data_path = os.path.normpath(os.path.join(kg_path, 'data'))
+
+kg_template_env = Environment(loader=PackageLoader('kg', 'data'),
+                           autoescape=select_autoescape(
+                                enabled_extensions=('html.j2', 'xml.j2'),
+                                default_for_string=True))
 
 def colored(text, *a, **kw): return text
 try:
@@ -147,3 +154,4 @@ def cformat_text(s, begin='info'):
     pop(begin)
     if envs: raise ValueError("Invalid cformat_text: unclosed")
     return ''.join(globals()[part + '_text'](s) for part, s in parts)
+

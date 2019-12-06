@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <title>Login Details {% if code %}for {{ code }}{% endif %} {% if title %}({{ title }}){% endif %}</title>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+        <link rel="stylesheet" type="text/css" href="bootstrap.min.css"> <!-- If you have it locally... -->
+        <style>
+            .e-password .entry-text {
+                font-weight: bold;
+            }
+
+            .pass-table > tbody > tr > td {
+                border: 1.5px dashed black !important;
+                padding: 5px;
+            }
+
+            .team-details .pass-field {
+                font-size: 75%;
+            }
+
+            @media print {
+                body {-webkit-print-color-adjust: exact;}
+                .table td.success {
+                    background-color: #DFF0D7 !important;
+                }  
+                .table td.active {
+                    background-color: #F5F5F5 !important;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container-fluid">
+            <h1>LOGIN DETAILS {% if title %}FOR {{ title }}{% endif %}</h1>
+            <p><small>Using seed {{ seedval }}. (Print with landscape orientation.)</small></p>
+
+            <table class="table pass-table">
+                <tbody>
+                    {% for row in accounts | batch(per_row, ('', '', '', '')) %}
+                        <tr>
+                            {% for type, display, account, password in row %}
+                                <td>
+                                    {% if display %}
+                                        <div>
+                                            <strong>{{ display }}</strong>
+                                            {% if code %}<small><em>({{ code }})</em></small>{% endif %}
+                                        </div>
+                                        <div><small>{{ type }}</small></div>
+                                        <div class="team-details">
+                                            <span class="pass-field">Login:</span>
+                                            <span class="pass-value"><code>{{ account }}</code></span>
+                                            <span class="pass-field">Pass:</span>
+                                            <span class="pass-value"><code>{{ password }}</code></span>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </body>
+</html>

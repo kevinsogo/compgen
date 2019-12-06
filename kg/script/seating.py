@@ -1,14 +1,11 @@
 from collections import defaultdict
-from itertools import combinations
+from itertools import combinations, groupby
 from random import Random, randrange
 from string import digits
 from sys import stdout, stderr
 from textwrap import dedent
 import argparse
-import html
 import os.path
-
-# TODO htmlescape this properly!!!
 
 from .contest_details import *
 from .utils import *
@@ -153,7 +150,7 @@ class Seating:
             grid[i][j] = gr
         return grid, best_sid
 
-    def write(self, team_schools, targetfile, seedval=None, **context):
+    def write_to(self, team_schools, targetfile, seedval=None, **context):
         group_teams = [ts['teams'] for ts in team_schools]
 
         grid, seed = self.assign(list(map(len, group_teams)), seedval=seedval)
@@ -164,57 +161,45 @@ class Seating:
 
         school_of_team = {team: ts['school'] for ts in team_schools for team in ts['teams']}
 
-        # TODO maybe use some jinja/django templating here...
         def make_table():
             seat = 0
-            for i in range(len(grid)):
-                yield "    <tr>"
+            def get_row(i):
+                nonlocal seat
                 for j in range(len(grid[i])):
                     if isinstance(grid[i][j], int):
                         assert 0 <= grid[i][j] < len(group_teams)
                         team_name = group_teams[grid[i][j]].pop()
                         school_name = school_of_team[team_name]
                         if isinstance(school_name, int): school_name = ''
-                        yield """
-                                <td class='fullcol info'
-                                    style='vertical-align: middle; text-align: center; line-height: 1.2'>
-                                <!-- -->
-                                        <span style='font-size: 70%'>{seat}</span>
-                                    <br><span style='font-size: 72%'><strong>{team_name}</strong></span>
-                                    <br><emph><span style='font-size: 52%'>{school_name}</span></emph></td>
-                                <!-- -->
-                                <!--
-                                <span style='font-size: 70%'>{seat}</span>
-                                <br><emph><span style='font-size: 100%'>{school_name}</span></emph></td>
-                                <!-- -->
-                                """.format(
-                                seat=f'Seat no. {seat}',
-                                team_name=html.escape(team_name),
-                                school_name=html.escape(school_name),
-                            )
+                        yield {
+                            'state': 'occupied',
+                            'seat': seat,
+                            'team_name': team_name,
+                            'school_name': school_name,
+                        }
                         seat += 1
                     elif grid[i][j] in {'*', '#'}:
-                        yield f"        <td class='fullcol active'><small>({seat})</small></td>"
+                        yield {
+                            'state': 'vacant',
+                            'seat': seat,
+                        }
                         seat += 1
                     else:
                         assert grid[i][j] == '.'
-                        yield "        <td class='emptycol'><small>&nbsp;</small></td>"
-                yield "    </tr>"
+                        yield {
+                            'state': 'none',
+                        }
+
+            return [list(get_row(i)) for i in range(len(grid))]
 
         context.update({
-            "seedval": ' or '.join({str(x) for x in [seedval, seed] if x is not None}),
-            "table": '\n'.join(make_table()),
+            "seedval": ' or '.join([str(x) for x, g in groupby([seedval, seed]) if x is not None]),
+            "table": make_table(),
         })
 
-        # TODO maybe use some jinja/django templating here...
-        if not context.get('code'): context['code'] = ''
-        if not context.get('title'): context['title'] = ''
-        context['for_code'] = f"FOR {context['code']}" if context['code'] else ''
-        context['for_title'] = f"FOR {context['title']}" if context['title'] else ''
-        context['code'] = '(' + context['code'] + ')' if context['code'] else ''
-        context['ptitle'] = '(' + context['title'] + ')' if context['title'] else ''
-        with open(os.path.join(kg_data_path, 'seating.html')) as of:
-            targetfile.write(of.read().format(**context))
+        targetfile.write(
+            kg_template_env.get_template(os.path.join('contest_template', 'seating.html.j2')).render(**context)
+        )
 
 
 def attempt_assignment(seed, nodes, edge_cost, groups):
@@ -292,7 +277,7 @@ def write_seating(contest, seedval=None, dest='.'):
     filename = os.path.join(dest, f'seating_{contest.code}.html')
     info_print("Writing to", filename, file=stderr)
     with open(filename, 'w') as f:
-        seating.write(contest.team_schools, f, seedval, code=contest.code, title=contest.title)
+        seating.write_to(contest.team_schools, f, seedval, code=contest.code, title=contest.title)
 
 
 def seating_args(subparsers):
@@ -331,7 +316,8 @@ def seating_args(subparsers):
     @set_handler(gen_p)
     def kg_seating_gen(format_, args):
         info_print(f'Our seating file is {args.seating_file}', file=stderr)
-        info_print(f'Making a {args.rows} x {args.cols} grid with seating width {args.width} to {args.seating_file}...', file=stderr)
+        info_print(f'Making a {args.rows} x {args.cols} grid with seating width {args.width} to {args.seating_file}...',
+                file=stderr)
         seating = Seating.gen(args.rows, args.cols, args.width)
         with open(args.seating_file, 'w') as f: seating.dump(f)
 
@@ -483,7 +469,7 @@ def seating_args(subparsers):
         decor_print('.'*30, file=stderr)
         decor_print(file=stderr)
 
-        seating.write(team_schools, stdout, seedval=args.seed, code=args.code, title=args.title)
+        seating.write_to(team_schools, stdout, seedval=args.seed, code=args.code, title=args.title)
 
         decor_print(file=stderr)
         decor_print('.'*30, file=stderr)
