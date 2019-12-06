@@ -21,6 +21,8 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Instead of needing `-js` in `kg test`, just switch to `-js` automatically if it issues an error.
 
+- Properly delete contest files in kgkompiled/ when recreating a contest.
+
 - Allow overriding of defaults when using Bounds & Bounds. Add stderr prints about "overriding" when one is not an Interval. Possibly disallow Interval & non-Interval.
 
 - Add warning in `KGRandom` about shuffling arbitrary collections, especially unordered ones like sets and dicts. It can override `.shuffle` by adding an optional kwarg, `sort`, which is `False` by default but also issues a warning. Add a way to suppress this warning safely.

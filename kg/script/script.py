@@ -1125,7 +1125,7 @@ def _kg_compile(format_, args):
         compress=args.compress,
         )
 
-def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, compress=False):
+def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, compress=False, python3='python3'):
     valid_formats = {'hr', 'pg', 'pc2'}
     if not set(target_formats) <= valid_formats:
         raise CommandError(f"Invalid formats: {set(target_formats) - valid_formats}")
@@ -1273,7 +1273,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                 for line in lines:
                     assert not line.endswith('\n')
                     if not shebanged and not line.startswith('#!'):
-                        shebang_line = "#!/usr/bin/env python3"
+                        shebang_line = f"#!/usr/bin/env {python3}"
                         info_print(f'adding shebang line {shebang_line!r}')
                         print(shebang_line, file=f)
                     shebanged = True
@@ -1546,7 +1546,7 @@ def kg_contest(format_, args):
             }
 
             # put validator in input_validators/, and checker to output_validators/
-            kg_compile(format_, details, 'pc2', loc=problem_loc)
+            kg_compile(format_, details, 'pc2', loc=problem_loc, python3=contest.python3_command)
             for name, targ in [
                     ('validator', 'input_validators'),
                     ('checker', 'output_validators'),

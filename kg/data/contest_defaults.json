@@ -26,5 +26,6 @@
     "leaderboard_count": 1,
     "feeder_count": 0,
     "target_loc": null,
-    "seating": null
+    "seating": null,
+    "python3_command": "python3"
 }
