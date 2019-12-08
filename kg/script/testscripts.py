@@ -197,4 +197,4 @@ def convert_testscript(testscript, generators, *, relpath=None):
 
     for gen, args, single, target, otarget, src_line in gens:
         if src_line[0] != '!':
-            yield ' '.join([gen.filename, *args, '>', otarget])
+            yield ' '.join([os.path.splitext(os.path.basename(gen.filename))[0], *args, '>', otarget])
