@@ -34,21 +34,30 @@ class Verdict:
 
 
 class ChkStream:
-    def __init__(self, stream, type_):
+    def __init__(self, stream, type_, exc=Fail):
         self.type = type_
         self.base_stream = stream # file-like object
         if type_ == 'lines':
             def naive_iter():
-                for line in stream.readlines():
-                    yield line.rstrip('\n')
+                try:
+                    for line in stream.readlines():
+                        yield line.rstrip('\n')
+                except Exception as e:
+                    raise exc from e
         elif type_ == 'tokens':
             def naive_iter():
-                for line in stream.readlines():
-                    yield from line.strip().split()
+                try:
+                    for line in stream.readlines():
+                        yield from line.strip().split()
+                except Exception as e:
+                    raise exc from e
         elif type_ == 'raw_lines':
             def naive_iter():
-                for line in stream.readlines():
-                    yield line
+                try:
+                    for line in stream.readlines():
+                        yield line
+                except Exception as e:
+                    raise exc from e
         else:
             raise ValueError(f"Invalid Stream type: {type_}")
 
@@ -127,7 +136,7 @@ class Checker:
         def _set_checker(checker):
             def _checker(inp, outp, judgep, *args, **kwargs):
                 inp = ChkStream(inp, intype)
-                outp = ChkStream(outp, outtype)
+                outp = ChkStream(outp, outtype, exc=WA)
                 judgep = ChkStream(judgep, judgetype)
                 result = checker(inp, outp, judgep, *args, **kwargs)
                 if no_extra:
