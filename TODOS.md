@@ -60,6 +60,8 @@ This includes some disorganized ideas, TODOs, notes...
     - `3 = _fail`
     - So I guess `2` is parse error, and these are basically the same as checkers.
 
+- Remove unneeded whitespace in html files.
+
 - Support for naming arguments in generators, so that they can be added to argparse.
     
     - maybe extract from positional argument signature?

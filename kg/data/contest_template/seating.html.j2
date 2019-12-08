@@ -54,7 +54,7 @@
     <body>
         <div class="seating container-fluid">
             <h1>SEATING ARRANGEMENT {% if title %}FOR {{ title }}{% endif %}</h1>
-            <p><small>Using seed {{ seedval }}.</small></p>
+            <p><small>Generated with seed {{ seedval }}.</small></p>
             <table class="seating-table table table-hover table-bordered table-condensed seating">
                 {% for row in table %}
                     <tr>
