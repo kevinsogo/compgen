@@ -45,6 +45,8 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Study pc2 interactors
 
+- Auto-attempt to apply `--judge-strict` in case the checker fails with RTE. If it still fails with RTE, then assume it's really because the answer is incorrect.
+
 - More context/explanation:
 
     - generators are supposed to give the same output for a given input. also, seed determined by args
