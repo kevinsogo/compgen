@@ -37,6 +37,14 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Warn if a constructed chain is never called
 
+- kg make only a subrange of the cases.
+
+    - suggestion: pass an arg as you would the first arg of a multitest generator.
+
+    - or maybe several args, and they will be "unioned".
+
+    - add "union" operation for a t_sequence
+
 - Fix bugs in `--loc`. Something to do with `.{sep}[something].exe`
 
 - Investigate the [WinError 2] thing happening with C++ solutions on windows.

@@ -598,6 +598,7 @@ def kg_test(format_, args):
     if time_limit == -1: time_limit = float('inf')
     print(info_text('Using problem time limit:'), key_text(time_limit), info_text('sec.'))
 
+    judge_strict_args = args.judge_strict_args
     solution.do_compile()
     judge.do_compile()
     if interactor: interactor.do_compile()
@@ -606,7 +607,7 @@ def kg_test(format_, args):
     max_time = 0
     for index, (input_, output_) in enumerate(format_.thru_io()):
         def get_score():
-            nonlocal max_time
+            nonlocal max_time, judge_strict_args
             with tempfile.NamedTemporaryFile(delete=False) as tmp:
                 with tempfile.NamedTemporaryFile(delete=False) as result_tmp:
                     info_print("\nFile", str(index).rjust(3), 'CHECKING AGAINST', input_)
@@ -643,11 +644,20 @@ def kg_test(format_, args):
                         err_print('The interactor did not accept the interaction...')
                         return False, 0.0
 
-                    jargs = list(map(os.path.abspath, (input_, tmp.name, output_)))
-                    if not args.judge_strict_args:
-                        jargs += [result_tmp.name, '-c', solution.filename, '-t', str(index), '-v']
+                    def run_judge():
+                        jargs = list(map(os.path.abspath, (input_, tmp.name, output_)))
+                        if not judge_strict_args:
+                            jargs += [result_tmp.name, '-c', solution.filename, '-t', str(index), '-v']
+                        return judge.do_run(*jargs, check=False).returncode
 
-                    correct = judge.do_run(*jargs, check=False).returncode == 0
+                    info_print("Checking the output...")
+                    returncode = run_judge()
+                    if returncode == 3 and not judge_strict_args: # try again but assume the judge is strict
+                        info_print("The error above might just be because of testlib... trying to judge again")
+                        judge_strict_args = True
+                        returncode = run_judge()
+                    correct = returncode == 0
+
                     try:
                         with open(result_tmp.name) as result_tmp_file:
                             score = json.load(result_tmp_file)['score']
@@ -675,7 +685,7 @@ def kg_test(format_, args):
     decor_print('.'*42)
     (succ_print if corrects == total else err_print)(str(corrects), end=' ')
     (succ_print if corrects == total else info_print)(f'out of {total} files correct')
-    info_print(f'Max running time (from time.time()): {max_time:.2f}sec')
+    info_print(f'Max running time: {max_time:.2f}sec')
     decor_print('.'*42)
     decor_print()
 
