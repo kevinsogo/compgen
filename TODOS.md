@@ -33,6 +33,8 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Implement 'or' in bounds/`Var` objects, e.g., `(1 <= +Var <= 100) | (200 <= +Var <= 300)`.  
 
+- `kg make` Warn when test cases are identical. Hash the files and compare hashes only.
+
 - Possibly use HJSON (or something) for config files, not pure JSON.
 
 - Warn if a constructed chain is never called

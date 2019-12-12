@@ -32,20 +32,20 @@
                 layout: fixed;
             }
 
-            .seating-table .occupied-space {
+            .seating-table .occupied-space, .seating-table .vacant-space {
                 vertical-align: middle;
                 text-align: center;
                 line-height: 1.2;
             }
 
-            .seating-table .occupied-space .entry-seat {
+            .seating-table .occupied-space .entry-seat, .seating-table .vacant-space .entry-seat {
                 font-size: 70%;
             }
-            .seating-table .occupied-space .entry-team {
+            .seating-table .occupied-space .entry-team, .seating-table .vacant-space .entry-team {
                 font-size: 72%;
                 font-weight: bold;
             }
-            .seating-table .occupied-space .entry-school {
+            .seating-table .occupied-space .entry-school, .seating-table .vacant-space .entry-school {
                 font-size: 52%;
                 font-style: italic;
             }
@@ -62,7 +62,13 @@
                             {% if entry.state == "none" %}
                                 <td class='empty-space'><small>&nbsp;</small></td>
                             {% elif entry.state == "vacant" %}
-                                <td class='full-space vacant-space active'><small>({{ entry.seat }})</small></td>
+                                <td class='full-space vacant-space active'>
+                                    <span class='entry-seat'>{{ entry.seat }}</span>
+                                    <br>
+                                    <span class='entry-team'>&nbsp;</span>
+                                    <br>
+                                    <span class='entry-school'>&nbsp;</span>
+                                </td>
                             {% elif entry.state == "occupied" %}
                                 <td class='full-space occupied-space info'>
                                     <span class='entry-seat'>{{ entry.seat }}</span>
