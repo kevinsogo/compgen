@@ -1,4 +1,4 @@
-# Important  
+ Important  
 
 - Write unit tests.  
 
@@ -53,9 +53,7 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Add docs for interactors.
 
-- Study pc2 interactors
-
-- Auto-attempt to apply `--judge-strict` in case the checker fails with RTE. If it still fails with RTE, then assume it's really because the answer is incorrect.
+- Study pc2 interactors.
 
 - More context/explanation:
 
@@ -314,7 +312,7 @@ new_case kwargs can still be passed as info.
 
 - Add kg.formatters if you can think of anything that can be given convenience functions for. TBH though, Python is mighty powerful enough on its own.
 
-- For the graphs module, maybe consider having  `uniform=True` option for tree generation, which guarantees equal probability for all trees? I doubt it's needed, though, and could just take up extra code. Maybe `kg.graphs.generators.uniform_tree.*` so it doesn't have to be included. 
+- For the graphs module, maybe consider having  `uniform=True` option for tree generation, which guarantees equal probability for all trees? I doubt it's needed, though, and could just take up extra code. Maybe `kg.graphs.generators.uniform_trees.*` so it doesn't have to be included all the time. 
 
 - maybe some add "convex increasing" or something, for generators?
  
