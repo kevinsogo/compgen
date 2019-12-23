@@ -47,6 +47,8 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Add "cms" format and write own Loader (compgen-cms).
 
+- More CMS task types (cms and cms-it)
+
 - Jinja for kg contest pc2
 
 - Cleanup kg_contest and kg_compile to be more modular

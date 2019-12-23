@@ -218,7 +218,7 @@ def _check_generic(checker, input_path, output_path, judge_path, **kwargs):
 
     kwargs.update({'input_path': input_path, 'output_path': output_path, 'judge_path': judge_path})
 
-    if CURR_PLATFORM == 'cms':
+    if CURR_PLATFORM in {'cms', 'cms-it'}:
         def handle_exc_verdict(exc, verdict):
             return verdict, getattr(exc, 'score', 0.0), ""
     else:
@@ -329,9 +329,10 @@ def write_xml_verdict(verdict, message, score, result_file):
     ElementTree(result).write(result_file, xml_declaration=True, encoding="utf-8")
 ### @@}
 
-### @@if format == 'cms' {
+### @@if format in ('cms', 'cms-it') {
 # CMS has a specific format in stdout and stderr, so we make it stricter
 @_register_platform('cms')
+@_register_platform('cms-it')
 def _check_cms(checker, *, score_file=stdout, message_file=stderr, title='', help=None, **kwargs):
     desc = help or CURR_PLATFORM + (' judge for the problem' + (f' "{title}"' if title else ''))
     parser = argparse.ArgumentParser(description=desc)
