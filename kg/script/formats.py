@@ -213,6 +213,9 @@ class Format:
         for inf, outf in self.thru_expected_io():
             yield outf
 
+    def expected_parts(self):
+        return self.generic_expected_parts()
+
 ###### Different formats:
 
 formats = {}
@@ -242,7 +245,7 @@ class HRFormat(Format):
                 raise FormatError(f"Expected {expinpf} but got {inputf}")
 
     @classmethod
-    def expected_parts(cls):
+    def generic_expected_parts(cls):
         for c in count():
             yield str(c).zfill(2),
 
@@ -261,7 +264,7 @@ class PGFormat(Format):
                 raise FormatError(f"Expected {expinpf} but got {inputf}")
 
     @classmethod
-    def expected_parts(cls):
+    def generic_expected_parts(cls):
         for c in count(1):
             yield str(c).zfill(2),
 
@@ -279,19 +282,71 @@ class KGFormat(Format):
                 raise FormatError(f"Expected {expinpf} but got {inputf}")
 
     @classmethod
-    def expected_parts(cls):
+    def generic_expected_parts(cls):
         for c in count():
             yield str(c).zfill(3),
 
 
-def get_format(args, *, read='', write='', clear=''):
+@set_format('cms', 'CMS')
+class CMSFormat(Format):
+    def __init__(self, loc='.', *, read='', write='', clear='', subtasks=None):
+        super().__init__(
+                os.path.join(loc, 'tests', '**.in'),
+                os.path.join(loc, 'tests', '**.ans'),
+            read=read, write=write, clear=clear)
+        self.subtasks = subtasks
+        testcode_re = re.compile(r'^(?P<pre>\d+)(?:_subs_(?:\d+_)+)?\.in$')
+        for inputf, ex in zip(natsorted(self.inputs), self.expected_parts()):
+            match = testcode_re.match(os.path.basename(inputf))
+            if not match or match.group('pre') != ex[0]:
+                raise FormatError(f"Expected {ex[0]}*.in but got {inputf}")
+
+    @classmethod
+    @apply_after(''.join)
+    def _get_subtasks(cls, index, subtasks):
+        assert index >= 0
+        if subtasks:
+            yield '_subs_'
+            for low, high, subs in subtasks:
+                if low <= index <= high:
+                    for sub in subs:
+                        yield f'{sub}_'
+
+    def expected_parts(self):
+        return self.generic_expected_parts(subtasks=self.subtasks)
+
+    @classmethod
+    def generic_expected_parts(cls, *, subtasks=None):
+        for c in count():
+            yield str(c).zfill(3), cls._get_subtasks(c, subtasks),
+
+
+@set_format('cms-it', 'CMS-Italian')
+class CMSItFormat(Format):
+    def __init__(self, loc='.', *, read='', write='', clear=''):
+        super().__init__(
+                os.path.join(loc, 'input', 'input*.txt'),
+                os.path.join(loc, 'output', 'output*.txt'),
+            read=read, write=write, clear=clear)
+        for inputf, ex in zip(natsorted(self.inputs), self.expected_parts()):
+            expinpf = self._join_iparts(*ex)
+            if inputf != expinpf:
+                raise FormatError(f"Expected {expinpf} but got {inputf}")
+
+    @classmethod
+    def generic_expected_parts(cls):
+        for c in count():
+            yield str(c),
+
+
+def get_format(args, *, read='', write='', clear='', **kwargs):
     if args.input:
-        return Format(args.input, args.output, read=read, write=write, clear=clear)
+        return Format(args.input, args.output, read=read, write=write, clear=clear, **kwargs)
     else:
         assert args.format
         if args.output: raise ValueError('-o/--output not allowed without -i/--input')
         if args.format in formats:
-            return formats[args.format](args.loc, read=read, write=write, clear=clear)
+            return formats[args.format](args.loc, read=read, write=write, clear=clear, **kwargs)
         else:
             raise ValueError(f'Unrecognized format: {args.format}')
 

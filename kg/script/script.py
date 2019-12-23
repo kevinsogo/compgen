@@ -4,16 +4,19 @@ from functools import wraps
 from html.parser import HTMLParser
 from operator import attrgetter
 from random import randrange
-from shutil import copyfile
+from shutil import copyfile, rmtree
 from string import ascii_letters, ascii_uppercase, digits
 from subprocess import PIPE, CalledProcessError, SubprocessError, TimeoutExpired
 from sys import stdin, stdout, stderr
 from textwrap import dedent
 import argparse
 import contextlib
+import os
 import os.path
 import re
+import stat
 import tempfile
+import yaml
 import zipfile
 
 from argcomplete import autocomplete
@@ -117,11 +120,11 @@ def kg_convert(format_, args):
     
     convert_formats(args.fr, args.to)
 
-def convert_formats(src, dest):
+def convert_formats(src, dest, *, src_kwargs={}, dest_kwargs={}):
     sformat, sloc = src
     dformat, dloc = dest
-    src_format = get_format(argparse.Namespace(format=sformat, loc=sloc, input=None, output=None), read='io')
-    dest_format = get_format(argparse.Namespace(format=dformat, loc=dloc, input=None, output=None), write='io')
+    src_format = get_format(argparse.Namespace(format=sformat, loc=sloc, input=None, output=None), read='io', **src_kwargs)
+    dest_format = get_format(argparse.Namespace(format=dformat, loc=dloc, input=None, output=None), write='io', **dest_kwargs)
 
     copied = 0
     info_print("Copying now...")
@@ -1154,14 +1157,14 @@ def _kg_compile(format_, args):
     kg_compile(
         format_,
         Details.from_format_loc(format_, args.details),
-        *(args.formats or ['hr', 'pg', 'pc2']),
+        *(args.formats or ['hr', 'pg', 'pc2', 'cms']),
         loc=args.loc,
         shift_left=args.shift_left,
         compress=args.compress,
         )
 
 def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, compress=False, python3='python3'):
-    valid_formats = {'hr', 'pg', 'pc2'}
+    valid_formats = {'hr', 'pg', 'pc2', 'cms', 'cms-it'}
     if not set(target_formats) <= valid_formats:
         raise CommandError(f"Invalid formats: {set(target_formats) - valid_formats}")
     if not is_same_format(format_, 'kg'):
@@ -1236,11 +1239,42 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
     if details.valid_subtasks:
         subtasks_files = details.load_subtasks_files()
 
+    # files that start with 'grader.'
+    graders = [file for file in details.other_programs if os.path.basename(file.filename).startswith('grader.')]
+
+    # extract problem code
+    # not really sure if this is the best way to extract the problem code.
+    # also, probably should be put elsewhere...
+    if details.relpath:
+        problem_code = os.path.basename(os.path.abspath(os.path.join(details.relpath, '.')))
+    elif details.source:
+        problem_code = os.path.basename(os.path.dirname(os.path.abspath(details.source)))
+    else:
+        problem_code = '-'.join(''.join(c if c.isalnum() else ' ' for c in details.title).lower().split())
+
+
+    def subtask_score(sub):
+        if sub in details.subtask_scores:
+            return details.subtask_scores[sub]
+        else:
+            default = 10 # hardcoded for now
+            warn_print(f'Warning: no score value found for subtask {sub}... using the default {default} points')
+            subtask_score.missing = True
+            return default
+    subtask_score.missing = False
+
     # convert to various formats
     for fmt, name, copy_files, to_compile in [
             ('pg', 'Polygon', True, [details.validator, details.interactor, details.checker] + details.generators),
             ('hr', 'HackerRank', True, [details.checker]),
             ('pc2', 'PC2', False, [details.validator, details.checker]),
+            ('cms', 'CMS', True, [(details.checker, "checker")] + graders),
+            ('cms-it', 'CMS Italian', False, [
+                        (details.checker, os.path.join("check", "checker")),
+                    ] + [
+                        (grader, os.path.join("sol", os.path.basename(grader.rel_filename)))
+                        for grader in graders
+                    ]),
         ]:
         if fmt not in target_formats: continue
 
@@ -1248,20 +1282,30 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
         decor_print('.. '*14)
         beginfo_print(f'Compiling for {fmt} ({name})')
         dest_folder = os.path.join(loc, 'kgkompiled', fmt)
-        to_translate = set()
-        to_copy = set()
+
+        # clear dest_folder (scary...)
+        if os.path.isdir(dest_folder):
+            rmtree(dest_folder)
+
+        to_translate = {}
+        to_copy = {}
         for g in to_compile:
+            target_name = None
+            if isinstance(g, tuple):
+                g, target_name = g
             if not g: continue
+            if target_name is None:
+                target_name = os.path.basename(g.rel_filename)
             if os.path.isfile(g.rel_filename):
-                (to_translate if get_module(g.rel_filename) else to_copy).add(g.rel_filename)
+                (to_translate if get_module(g.rel_filename) else to_copy)[g.rel_filename] = target_name
             else:
                 warn_print(f"Warning: {g.rel_filename} (in details.json) is not a file.", file=stderr)
 
         targets = {}
         found_targets = {}
-        for filename in to_translate:
+        for filename, target_name in to_translate.items():
             module = get_module(filename)
-            target = os.path.join(dest_folder, os.path.basename(filename))
+            target = os.path.join(dest_folder, target_name)
             targets[module] = target
             if target in found_targets:
                 warn_print(f"Warning: Files have the same destination file ({target}): "
@@ -1269,8 +1313,8 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
             found_targets[target] = filename
 
         copy_targets = {}
-        for filename in to_copy:
-            target = os.path.join(dest_folder, os.path.basename(filename))
+        for filename, target_name in to_copy.items():
+            target = os.path.join(dest_folder, target_name)
             copy_targets[filename] = target
             if target in found_targets:
                 warn_print(f"Warning: Files have the same destination file ({target}): "
@@ -1313,6 +1357,10 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                         print(shebang_line, file=f)
                     shebanged = True
                     print(line, file=f)
+            
+            # make it executable
+            os.chmod(targets[module], os.stat(targets[module]).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+
 
         # TODO for hackerrank, check that the last file for each subtask is unique to that subtask.
         if fmt == 'hr' and details.valid_subtasks:
@@ -1321,7 +1369,6 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
             except HRError:
                 err_print("Warning: HackerRank parsing of subtasks failed.")
                 raise
-
 
 
         if fmt == 'hr' and details.checker and get_module(details.checker.rel_filename): # snippets for hackerrank upload.
@@ -1394,10 +1441,146 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
         # copy over the files
         if copy_files:
             info_print('copying test data from', loc, 'to', dest_folder, '...')
-            convert_formats(
-                    (format_, loc),
-                    (fmt, dest_folder),
-                )
+            # TODO code this better.
+            if fmt == 'cms':
+                convert_formats(
+                        (format_, loc),
+                        (fmt, dest_folder),
+                        dest_kwargs=dict(subtasks=subtasks_files)
+                    )
+            else:
+                convert_formats(
+                        (format_, loc),
+                        (fmt, dest_folder),
+                    )
+
+
+        # do special things for cms
+        if fmt == 'cms-it':
+
+            # statement file (required)
+            # just write a dummy file for now, since kompgen doesn't require a pdf file
+            # TODO update this when we add 'statement' in details.json
+            info_print('creating statement file...')
+            source_file = os.path.join(kg_data_path, 'template', 'cms-it', 'statement.pdf')
+            target_file = os.path.join(dest_folder, 'statement', 'statement.pdf')
+            touch_container(target_file)
+            copyfile(source_file, target_file)
+
+            # task.yaml
+            info_print('writing task.yaml')
+            with open(os.path.join(kg_data_path, 'template', 'cms-it', 'task.yaml.j2')) as f:
+                task_template = Template(f.read())
+
+            if details.valid_subtasks:
+                input_count = sum((high - low + 1) * len(subs) for low, high, subs in subtasks_files)
+            else:
+                input_count = len(CMSItFormat(dest_folder, read='i').inputs)
+            task_config = task_template.render({
+                    'problem_code': problem_code,
+                    'details': details,
+                    'input_count': input_count,
+                })
+
+            with open(os.path.join(dest_folder, 'task.yaml'), 'w') as f:
+                print(task_config, file=f)
+
+            # test files
+            # need to replicate files that appear in multiple subtasks
+            i_os = get_format(argparse.Namespace(format=format_, loc=loc, input=None, output=None), read='io').thru_io()
+            if details.valid_subtasks:
+                i_o_reps = [i_os[index]
+                        for sub in details.valid_subtasks
+                        for low, high, subs in subtasks_files
+                        if sub in subs
+                        for index in range(low, high + 1)]
+            else:
+                i_o_reps = i_os
+
+            copied = 0
+            info_print("Copying now...")
+            for (srci, srco), (dsti, dsto) in zip(i_o_reps, CMSItFormat(dest_folder, write='io').thru_expected_io()):
+                touch_container(dsti)
+                touch_container(dsto)
+                copyfile(srci, dsti)
+                copyfile(srco, dsto)
+                copied += 2
+            succ_print(f"Copied {copied} files (originally {len(i_os)*2})")
+
+            # gen/GEN
+            if details.valid_subtasks:
+                info_print('writing gen/GEN (subtasks)')
+                gen_file = os.path.join(dest_folder, 'gen', 'GEN')
+                touch_container(gen_file)
+                with open(gen_file, 'w') as f:
+                    total_score = 0
+                    index = 0
+                    for sub in details.valid_subtasks:
+                        score = subtask_score(sub)
+                        total_score += score
+                        print(f"# ST: {score}", file=f)
+                        for low, high, subs in subtasks_files:
+                            if sub in subs:
+                                for it in range(low, high + 1):
+                                    index += 1
+                                    print(index, file=f)
+
+                    if index != input_count:
+                        raise CommandError("Count mismatch. This shouldn't happen :( Maybe subtasks_files is not up-to-date?")
+
+        if fmt == 'cms':
+
+            # create config file
+            config = {
+                'name': problem_code,
+                'title': details.title,
+                'time_limit': details.time_limit,
+                'task_type': 'Batch', # only Batch and OutputOnly for now.
+                                      # For OutputOnly, just override with cms_options.
+                                      # TODO support Communication
+                'checker': 'checker',
+            }
+            if details.valid_subtasks:
+                config['score_type'] = 'GroupMin'
+                config['score_param'] = [
+                    [subtask_score(sub), rf".+_subs.*_{sub}_.*"]
+                    for sub in details.valid_subtasks
+                ]
+                total_score = sum(score for score, *rest in config['score_param'])
+            else:
+                config['score_type'] = 'Sum'
+                config['score_param'] = total_score = 100 # hardcoded for now
+            (info_print if total_score == 100 else warn_print)('The total score is', total_score)
+
+            # override options
+            config.update(details.cms_options)
+
+            # write config file
+            config_file = os.path.join(dest_folder, 'cms_config.json')
+            info_print('writing config file...', config_file)
+            with open(config_file, 'w') as fl:
+                json.dump(config, fl, indent=4)
+
+            tests_folder = os.path.join(dest_folder, 'tests')
+
+            tests_zipname = os.path.join(dest_folder, 'cms_tests.zip')
+            info_print('making tests zip for CMS...', tests_zipname)
+            def get_arcname(filename):
+                assert os.path.samefile(tests_folder, os.path.commonpath([tests_folder, filename]))
+                return os.path.relpath(filename, start=tests_folder)
+            with zipfile.ZipFile(tests_zipname, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                for inp, outp in CMSFormat(dest_folder, read='io').thru_io():
+                    for fl in inp, outp:
+                        zipf.write(fl, arcname=get_arcname(fl))
+
+            all_zipname = os.path.join(dest_folder, 'cms_all.zip')
+            info_print('making whole zip for CMS...', all_zipname)
+            with zipfile.ZipFile(all_zipname, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                for fl in ([tests_zipname, config_file] + [
+                            os.path.join(dest_folder, filename)
+                            for filename in ['checker'] + [os.path.basename(grader.filename) for grader in graders]
+                        ]):
+                    zipf.write(fl, arcname=os.path.basename(fl))
 
         if fmt == 'pg':
             zipname = os.path.join(dest_folder, 'upload_this_to_polygon.zip')
@@ -1424,6 +1607,15 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
         succ_print(f'Done for {fmt} ({name})')
 
     decor_print('.. '*14)
+
+    if subtask_score.missing:
+        warn_print('Warning: some subtask scores missing. You may want to add "subtask_scores" to details.json, '
+                'which is a dict that looks like {"1": 20, "2": 30} ...')
+
+    if 'cms-it' in target_formats and total_score != 100:
+        err_print(f'ERROR: The total score is {total_score} but the Italian format requires a total score of 100.')
+        raise CommandError(f'The total score is {total_score} but the Italian format requires a total score of 100.')
+
 
 
 

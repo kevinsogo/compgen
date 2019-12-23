@@ -31,6 +31,12 @@ class Details(object):
         if len(set(self.valid_subtasks)) != len(self.valid_subtasks):
             raise ValueError("Duplicate values in valid_subtasks")
 
+        for key in ['subtask_scores', 'cms_options']:
+            setattr(self, key, self.details.get(key, defaults.get(key) or {}))
+
+        # convert to ints
+        self.subtask_scores = {int(sub): score for sub, score in self.subtask_scores.items()}
+
         for key in ['title', 'time_limit']:
             setattr(self, key, self.details.get(key, defaults.get(key)))
 

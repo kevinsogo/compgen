@@ -1,0 +1,16 @@
+name: {{ problem_code | tojson }}
+title: {{ details.title | tojson }}
+time_limit: {{ details.time_limit | tojson }}
+memory_limit: 512
+n_input: {{ input_count | tojson }}
+public_testcases: "all"
+score_mode: max
+token_mode: disabled
+infile: ""
+outfile: ""
+max_submission_number: 100
+max_user_test_number: 100
+min_submission_interval: 30
+min_user_test_interval: 30
+output_only: {{ "True" if details.cms_options.output_only else "False" }}
+primary_language: en

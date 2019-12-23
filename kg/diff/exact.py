@@ -10,7 +10,7 @@ def check_exactly_equal(input_file, output_file, judge_file, **kwargs):
     output_lines = list(output_file)
     judge_lines = list(judge_file)
     if not is_exactly_equal(output_lines, judge_lines):
-        ### @@if format not in ('pg', 'hr') {
+        ### @@if format not in ('pg', 'hr', 'cms') {
         if 'output_path' in kwargs and 'judge_path' in kwargs:
             import difflib
             diff = '\n'.join(difflib.unified_diff(output_lines, judge_lines, fromfile='Output File', tofile='Judge File'))

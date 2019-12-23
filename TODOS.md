@@ -21,6 +21,8 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Instead of needing `-js` in `kg test`, just switch to `-js` automatically if it issues an error.
 
+- Request CMS folks to allow external loaders.
+
 - Properly delete contest files in kgkompiled/ when recreating a contest.
 
 - Allow overriding of defaults when using Bounds & Bounds. Add stderr prints about "overriding" when one is not an Interval. Possibly disallow Interval & non-Interval.
@@ -38,6 +40,8 @@ This includes some disorganized ideas, TODOs, notes...
 - Possibly use HJSON (or something) for config files, not pure JSON.
 
 - Warn if a constructed chain is never called
+
+- Fix margins of \_boxes template again. Should not wrap.
 
 - kg make only a subrange of the cases.
 

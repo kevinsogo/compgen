@@ -13,6 +13,7 @@
     ],
     "subtask_detector": "!detector_through_validator",
     "valid_subtasks": [1, 2, 3],
+    "subtask_scores": {"1": 50, "2": 20, "3": 30},
     "subtasks_files": "subtasks.json",
     "time_limit": 2,
     "version": "0.2"

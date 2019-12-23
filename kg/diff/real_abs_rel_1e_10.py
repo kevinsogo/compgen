@@ -4,7 +4,7 @@
 # Don't edit this file. Edit real_abs_rel_template.py instead, and then run _real_check_gen.py
 
 from itertools import zip_longest
-from decimal import Decimal as D, InvalidOperation
+from decimal import Decimal, InvalidOperation
 from kg.checkers import * ### @import
 
 EPS = D('1e-10') 
@@ -22,14 +22,14 @@ def checker(input_file, output_file, judge_file, **kwargs):
         for v1, v2 in zip(p1, p2):
             if v1 != v2: # they're different as tokens. try considering them as numbers
                 try:
-                    err = abs_rel_error(D(v1), D(v2)) 
+                    err = abs_rel_error(Decimal(v1), Decimal(v2)) 
                 except InvalidOperation:
                     raise WA(f"Unequal tokens that are not numbers: {v1!r} != {v2!r}")
                 worst = max(worst, err)
                 if err > EPS:
-                    print('Found an error of', worst) ### @if format != 'hr'
+                    print('Found an error of', worst) ### @if format not in ('hr', 'cms')
                     raise WA("Bad precision.")
-    print('Worst error:', worst) ### @if format not in ('pg', 'hr')
+    print('Worst error:', worst) ### @if format not in ('pg', 'hr', 'cms')
 
 help_ = ('Compare if two sequences of real numbers are "close enough" (by 1e-10). ' 
     "Uses absolute/relative error.") 

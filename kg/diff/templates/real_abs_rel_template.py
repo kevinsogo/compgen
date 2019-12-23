@@ -6,7 +6,7 @@
 
 raise Exception("You're not supposed to run this!!!")                                            ### @if False
 from itertools import zip_longest
-from decimal import Decimal as D, InvalidOperation
+from decimal import Decimal, InvalidOperation
 from kg.checkers import * ### @keep @import
 
 EPS = 0 ### @replace 0, f"D('1e-{prec}')"
@@ -24,14 +24,14 @@ def checker(input_file, output_file, judge_file, **kwargs):
         for v1, v2 in zip(p1, p2):
             if v1 != v2: # they're different as tokens. try considering them as numbers
                 try:
-                    err = error(D(v1), D(v2)) ### @replace "error", "abs_rel_error" if has_rel else "abs_error"
+                    err = error(Decimal(v1), Decimal(v2)) ### @replace "error", "abs_rel_error" if has_rel else "abs_error"
                 except InvalidOperation:
                     raise WA(f"Unequal tokens that are not numbers: {v1!r} != {v2!r}")
                 worst = max(worst, err)
                 if err > EPS:
-                    print('Found an error of', worst) ### @keep @if format != 'hr'
+                    print('Found an error of', worst) ### @keep @if format not in ('hr', 'cms')
                     raise WA("Bad precision.")
-    print('Worst error:', worst) ### @keep @if format not in ('pg', 'hr')
+    print('Worst error:', worst) ### @keep @if format not in ('pg', 'hr', 'cms')
 
 help_ = ('Compare if two sequences of real numbers are "close enough" (by XXX). ' ### @replace 'XXX', '1e-' + str(prec)
     "Uses XXX error.") ### @replace 'XXX', 'absolute/relative' if has_rel else 'absolute'

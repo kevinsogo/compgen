@@ -218,9 +218,13 @@ def _check_generic(checker, input_path, output_path, judge_path, **kwargs):
 
     kwargs.update({'input_path': input_path, 'output_path': output_path, 'judge_path': judge_path})
 
-    def handle_exc_verdict(exc, verdict):
-        if kwargs.get('verbose'): traceback.print_exc()
-        return verdict, getattr(exc, 'score', 0.0), str(exc)
+    if CURR_PLATFORM == 'cms':
+        def handle_exc_verdict(exc, verdict):
+            return verdict, getattr(exc, 'score', 0.0), ""
+    else:
+        def handle_exc_verdict(exc, verdict):
+            if kwargs.get('verbose'): traceback.print_exc()
+            return verdict, getattr(exc, 'score', 0.0), str(exc)
 
     try:
         input_file, output_file, judge_file = map(open, (input_path, output_path, judge_path))
@@ -323,6 +327,36 @@ def write_xml_verdict(verdict, message, score, result_file):
     result.set('outcome', _xml_outcome[verdict])
     result.text = str(verdict) + ": " + message
     ElementTree(result).write(result_file, xml_declaration=True, encoding="utf-8")
+### @@}
+
+### @@if format == 'cms' {
+# CMS has a specific format in stdout and stderr, so we make it stricter
+@_register_platform('cms')
+def _check_cms(checker, *, score_file=stdout, message_file=stderr, title='', help=None, **kwargs):
+    desc = help or CURR_PLATFORM + (' judge for the problem' + (f' "{title}"' if title else ''))
+    parser = argparse.ArgumentParser(description=desc)
+    parser.add_argument('input_path', help='input file path')
+    parser.add_argument('judge_path', help='judge auxiliary data file path')
+    parser.add_argument('output_path', help="contestant's file path")
+    parser.add_argument('extra_args', nargs='*', help='extra arguments that will be ignored')
+    args = parser.parse_args()
+
+    verdict, score, message = _check_generic(checker,
+            input_path=args.input_path,
+            output_path=args.output_path,
+            judge_path=args.judge_path,
+        )
+
+    if not message:
+        if score >= 1.0:
+            message = 'translate:success'
+        elif score > 0:
+            message = 'translate:partial'
+        else:
+            message = 'translate:wrong'
+
+    print(score, file=score_file)
+    print(message, file=message_file)
 ### @@}
 
 ### @@if format in ('local', 'kg', 'pg', 'pc2') {
