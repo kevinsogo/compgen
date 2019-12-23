@@ -2,7 +2,15 @@
     "title": "My Example Programming Contest",
     "code": "EXAMPLECONTEST",
     "duration": "5:00:00",
-    "scoreboard_freeze_length": "01:00:00",
+    "scoreboard_freeze_length": "1:00:00",
+    "start_time": {
+        "year": 2019,
+        "month": 12,
+        "day": 31,
+        "hour": 23,
+        "minute": 11,
+        "second": 5
+    },
     "langs": [
         "java",
         "c",

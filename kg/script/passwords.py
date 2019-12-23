@@ -47,73 +47,76 @@ def create_passwords(accounts, *, short=False, seedval=None):
 
 def write_passwords_format(cont, format_, *, seedval=None, dest='.'):
 
-    if format_ != 'pc2':
+    # TODO clean this up
+
+    valid_formats = {'pc2', 'cms-it'}
+    if format_ not in valid_formats:
         raise PasswordError(f"Unsupported format: {format_}")
 
     accounts = [(key, account)
             for key in ['leaderboards', 'admins', 'judges', 'teams', 'feeders'] for account in getattr(cont, key)]
     passwords, seed = create_passwords(accounts, seedval=seedval)
 
+    def get_rows():
+        for row in [
+                ('site', 'account', 'displayname', 'password', 'group', 'permdisplay', 'permlogin', 'externalid',
+                'alias', 'permpassword'),
+        ]:
+            yield row, None
+
+        for idx, scoreboard in enumerate(cont.leaderboards, 1):
+            display = scoreboard
+            account = f'scoreboard{idx}'
+            password = passwords['leaderboards', scoreboard]
+            type_ = '[Scoreboard]'
+            yield (('1', account, display, password, '', 'false', 'true', str(1000 + idx), '', 'true'),
+                    (type_, display, account, password))
+
+        for idx, admin in enumerate(cont.admins, 1):
+            display = admin
+            account = f'administrator{idx}'
+            password = passwords['admins', admin]
+            type_ = '[Administrator]'
+            yield (('1', account, display, password, '', 'false', 'true', str(1000 + idx), '', 'true'),
+                    (type_, display, account, password))
+
+        for idx, judge in enumerate(cont.judges, 1):
+            display = 'Judge ' + judge
+            account = f'judge{idx}'
+            password = passwords['judges', judge]
+            type_ = '[Judge]'
+            yield (('1', account, display, password, '', 'false', 'true', str(1000 + idx), '', 'false'),
+                    (type_, display, account, password))
+
+        for idx, feeder in enumerate(cont.feeders, 1):
+            display = feeder
+            account = f'feeder{idx}'
+            password = passwords['feeders', feeder]
+            type_ = '[Feeder]'
+            yield (('1', account, display, password, '', 'false', 'true', str(1000 + idx), '', 'true'),
+                    (type_, display, account, password))
+        
+        def team_schools():
+            for ts in cont.team_schools:
+                for team in ts['teams']:
+                    yield ts['school'], team
+
+        for idx, (school_name, team_name) in enumerate(team_schools(), 1):
+            display = team_name
+            account = f'team{idx}'
+            password = passwords['teams', team_name]
+            type_= school_name
+            yield (('1', account, display, password, '', 'true', 'true', str(1000 + idx), '', 'false'),
+                    (type_, display, account, password))
+
+    rows = []
+    passrows = []
+    for row, passrow in get_rows():
+        rows.append(row)
+        if passrow:
+            passrows.append(passrow)
+
     if format_ == 'pc2':
-        def get_rows():
-            for row in [
-                    ('site', 'account', 'displayname', 'password', 'group', 'permdisplay', 'permlogin', 'externalid',
-                    'alias', 'permpassword'),
-            ]:
-                yield row, None
-
-            for idx, scoreboard in enumerate(cont.leaderboards, 1):
-                display = scoreboard
-                account = f'scoreboard{idx}'
-                password = passwords['leaderboards', scoreboard]
-                type_ = '[Scoreboard]'
-                yield (('1', account, display, password, '', 'false', 'true', str(1000 + idx), '', 'true'),
-                        (type_, display, account, password))
-
-            for idx, admin in enumerate(cont.admins, 1):
-                display = admin
-                account = f'administrator{idx}'
-                password = passwords['admins', admin]
-                type_ = '[Administrator]'
-                yield (('1', account, display, password, '', 'false', 'true', str(1000 + idx), '', 'true'),
-                        (type_, display, account, password))
-
-            for idx, judge in enumerate(cont.judges, 1):
-                display = 'Judge ' + judge
-                account = f'judge{idx}'
-                password = passwords['judges', judge]
-                type_ = '[Judge]'
-                yield (('1', account, display, password, '', 'false', 'true', str(1000 + idx), '', 'false'),
-                        (type_, display, account, password))
-
-            for idx, feeder in enumerate(cont.feeders, 1):
-                display = feeder
-                account = f'feeder{idx}'
-                password = passwords['feeders', feeder]
-                type_ = '[Feeder]'
-                yield (('1', account, display, password, '', 'false', 'true', str(1000 + idx), '', 'true'),
-                        (type_, display, account, password))
-            
-            def team_schools():
-                for ts in cont.team_schools:
-                    for team in ts['teams']:
-                        yield ts['school'], team
-
-            for idx, (school_name, team_name) in enumerate(team_schools(), 1):
-                display = team_name
-                account = f'team{idx}'
-                password = passwords['teams', team_name]
-                type_= school_name
-                yield (('1', account, display, password, '', 'true', 'true', str(1000 + idx), '', 'false'),
-                        (type_, display, account, password))
-
-        rows = []
-        passrows = []
-        for row, passrow in get_rows():
-            rows.append(row)
-            if passrow:
-                passrows.append(passrow)
-
         filename = os.path.join(dest, f'accounts_{cont.code}.txt')
         info_print("Writing to", filename, file=stderr)
         with io.open(filename, 'w', encoding='utf-8') as f:
@@ -126,7 +129,11 @@ def write_passwords_format(cont, format_, *, seedval=None, dest='.'):
             seedval=' or '.join([str(x) for x, g in groupby([seedval, seed]) if x is not None]),
             dest=dest, code=cont.code, title=cont.title)
 
+    return passwords
+
+
 def write_passwords(accounts, *, dest='.', **context):
+    # user-side password files [read-only]
     logins = [login for type_, display, login, password in accounts]
     displays = [display for type_, display, login, password in accounts]
     if len(set(logins)) != len(logins): raise PasswordError("Duplicate logins!")

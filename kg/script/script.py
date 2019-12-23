@@ -1,3 +1,4 @@
+import calendar
 from collections import defaultdict, OrderedDict
 from datetime import datetime
 from functools import wraps
@@ -1166,7 +1167,7 @@ def _kg_compile(format_, args):
         compress=args.compress,
         )
 
-def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, compress=False, python3='python3'):
+def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, compress=False, python3='python3', dest_loc=None):
     valid_formats = {'hr', 'pg', 'pc2', 'cms', 'cms-it'}
     if not set(target_formats) <= valid_formats:
         raise CommandError(f"Invalid formats: {set(target_formats) - valid_formats}")
@@ -1284,11 +1285,11 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
         decor_print()
         decor_print('.. '*14)
         beginfo_print(f'Compiling for {fmt} ({name})')
-        dest_folder = os.path.join(loc, 'kgkompiled', fmt)
+        dest_folder = dest_loc(loc, fmt) if dest_loc else os.path.join(loc, 'kgkompiled', fmt)
 
         # clear dest_folder (scary...)
-        if os.path.isdir(dest_folder):
-            rmtree(dest_folder)
+        if os.path.isdir(dest_folder): rmtree(dest_folder)
+        touch_dir(dest_folder)
 
         to_translate = {}
         to_copy = {}
@@ -1686,7 +1687,8 @@ def kg_contest(format_, args):
     if not is_same_format(format_, 'kg'):
         raise CommandError(f"You can't use '{format_}' format to 'kontest'.")
 
-    if args.format != 'pc2':
+    valid_formats = {'pc2', 'cms', 'cms-it'}
+    if args.format not in valid_formats:
         raise CommandError(f"Unsupported contest format: {args.format}")
 
     # TODO possibly use a yaml library here, but for now this will do.
@@ -1702,41 +1704,107 @@ def kg_contest(format_, args):
     if seedval is None: seedval = randrange(10**18)
     info_print(f"Using seedval = {seedval!r}", file=stderr)
 
+    contest_folder = os.path.join('kgkompiled', contest.code)
+
+    # clear contest_folder (scary...)
+    if os.path.isdir(contest_folder): rmtree(contest_folder)
+    touch_dir(contest_folder)
+
+
+
+    decor_print()
+    decor_print('-'*42)
+    beginfo_print('Making passwords')
+    passwords = write_passwords_format(contest, args.format, seedval=seedval, dest=contest_folder)
+    succ_print('Done passwords')
+
     def hms(x):
-        # x is in seconds
-        return f"{x//3600}:{x//60%60:02}:{x%60:02}"
+        seconds = int(x.total_seconds())
+        return f"{seconds // 3600}:{seconds // 60 % 60 :02}:{seconds % 60 :02}"
 
-    hms_re = re.compile(r'^(?P<h>\d+)\:(?P<m>\d\d)\:(?P<s>\d\d)$')
-    def parse_duration(x):
-        if isinstance(x, int):
-            return x
+    if args.format == 'cms-it':
 
-        match = hms_re.match(x)
-        if match:
-            h, m, s = map(int, (match.group(g) for g in 'hms'))
-            return (h*60 + m)*60 + s
+        # identify key folders
+        contest_template = os.path.join(kg_data_path, 'contest_template', 'cms-it')
+
+        contest_data_folder = os.path.join(contest_folder, 'contest')
+
+        # construct template environment
+        # TODO pass 'contest' instead of all these
+        env = {
+            "datetime_created": datetime.now(),
+            "title": contest.title,
+            "code": contest.code,
+            "duration": contest.duration,
+            "start_time": calendar.timegm(contest.start_time.utctimetuple()),
+            "end_time": calendar.timegm((contest.start_time + contest.duration).utctimetuple()),
+            "team_count": len(contest.teams),
+            "filename": "{:mainfile}",
+            "filename_base": "{:basename}",
+            "problems": contest.problems,
+            "teams": contest.teams,
+            "passwords": passwords,
+        }
+
+        # problem envs
+        found_codes = {}
+        for letter, problem_loc in zip(problem_letters(), contest.rel_problems):
+            details = Details.from_format_loc(format_, os.path.join(problem_loc, 'details.json'), relpath=problem_loc)
+
+            code_raw = os.path.basename(problem_loc)
+            code = ''.join(code_raw.split('._-')) # TODO check if this is necessary.
+            if code in found_codes:
+                found_codes[code] += 1
+                code += str(found_codes[code])
+            else:
+                found_codes[code] = 1
+            decor_print()
+            decor_print('-'*42)
+            print(beginfo_text("Getting problem"), key_text(repr(code)), beginfo_text(f"(from {problem_loc})"))
+
+            if args.make_all:
+                info_print('Running "kg make all"...')
+                kg_make(['all'], problem_loc, format_, details)
+
+            info_print('Running "kg kompile"...')
+            def dest_loc(loc, fmt):
+                return os.path.join(contest_data_folder, code)
+            kg_compile(format_, details, 'cms-it', loc=problem_loc, dest_loc=dest_loc)
+
+        decor_print()
+        decor_print('-'*42)
+        beginfo_print('Writing contest config file')
+        info_print('Writing contest.yaml')
+        source = os.path.join(contest_template, 'contest.yaml.j2')
+        target = os.path.join(contest_data_folder, 'contest.yaml')
+        touch_container(target)
+        with open(source) as source_f, open(target, 'w') as target_f:
+            target_f.write(Template(source_f.read()).render(**env))
+
 
 
     if args.format == 'pc2':
 
         # identify key folders
-        contest_folder = os.path.join('kgkompiled', contest.code)
         cdp_config = os.path.join(contest_folder, 'CDP', 'config')
         ext_data = os.path.join(contest_folder, 'ALLDATA')
         contest_template = os.path.join(kg_data_path, 'contest_template', 'pc2')
 
+        # folders in the judge computers where the files will eventually go in (needed for PC2)
         target_folder = os.path.join(target_loc, contest.code)
         target_cdp_config = os.path.join(target_folder, 'CDP', 'config')
         target_ext_data = os.path.join(target_folder, 'ALLDATA')
 
         # construct template environment
         if not contest.site_password: raise CommandError("site_password required for PC2")
+        # TODO hms filter [there's probably a Jinja2 default] and pass 'contest' instead of all these
         env = {
             "datetime_created": datetime.now(),
             "title": contest.title,
             "code": contest.code,
-            "duration": hms(parse_duration(contest.duration)),
-            "scoreboard_freeze_length": hms(parse_duration(contest.scoreboard_freeze_length)),
+            "duration": hms(contest.duration),
+            "scoreboard_freeze_length": hms(contest.scoreboard_freeze_length),
+            "start_time": contest.start_time,
             "site_password": contest.site_password,
             "team_count": len(contest.teams),
             "judge_count": len(contest.judges),
@@ -1879,12 +1947,6 @@ def kg_contest(format_, args):
                     copyfile(srco, dsto)
                     copied += 2
                 succ_print("Copied", copied, "files")
-
-    decor_print()
-    decor_print('-'*42)
-    beginfo_print('Making passwords')
-    write_passwords_format(contest, args.format, seedval=seedval, dest=contest_folder)
-    succ_print('Done passwords')
 
     if not args.no_seating and contest.seating:
         decor_print()

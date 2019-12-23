@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import json
 import os.path
 import re
@@ -27,10 +28,40 @@ class ContestDetails(object):
         self.source = source
         self.relpath = os.path.dirname(os.path.abspath(source)) if source is not None else None
 
-        # data validation
-        for key in ['title', 'code', 'duration', 'scoreboard_freeze_length', 'site_password', 'problems', 'seating', 'seed', 'target_loc', 'python3_command']:
+        hms_re = re.compile(r'^(?P<h>\d+)\:(?P<m>\d\d)\:(?P<s>\d\d)$')
+        def parse_duration(x):
+            if isinstance(x, int):
+                return timedelta(seconds=x)
+            if isinstance(x, dict):
+                return timedelta(**x)
+
+            match = hms_re.match(x)
+            if match:
+                h, m, s = map(int, (match.group(g) for g in 'hms'))
+                return timedelta(hours=h, minutes=m, seconds=s)
+
+            raise ValueError(f"Invalid duration: {x!r}")
+
+        def parse_time(x):
+            if isinstance(x, int):
+                return datetime.utcfromtimestamp(x)
+            if isinstance(x, dict):
+                return datetime(**x)
+
+            raise ValueError(f"Invalid time: {x!r}")
+
+        # durations
+        for key in ['duration', 'scoreboard_freeze_length']:
+            setattr(self, key, parse_duration(self.details.get(key, defaults.get(key))))
+
+        # times
+        for key in ['start_time']:
+            setattr(self, key, parse_time(self.details.get(key, defaults.get(key))))
+
+        for key in ['title', 'code', 'site_password', 'problems', 'seating', 'seed', 'target_loc', 'python3_command']:
             setattr(self, key, self.details.get(key, defaults.get(key)))
 
+        # data validation
         if not (self.code and valid_contestcode.match(self.code)):
             raise ValueError(f"Invalid contest code: {self.code!r}")
 

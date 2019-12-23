@@ -1,0 +1,19 @@
+name: {{ code | tojson }}
+description: "An IOI-style contest"
+tasks:
+{% for problem in problems %}
+  - {{ problem | tojson }}
+{% endfor %}
+users:
+{% for team in teams %}
+  - username: {{ team | tojson }}
+    password: {{ passwords["teams", team] | tojson }}
+    ip: null
+{% endfor %}
+start: {{ start_time | tojson }}
+stop: {{ end_time | tojson }}
+max_submission_number: 500
+max_user_test_number: 500
+min_submission_interval: 30
+min_user_test_interval: 30
+token_mode: disabled

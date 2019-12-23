@@ -41,6 +41,16 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Warn if a constructed chain is never called
 
+- Implement polygon-compatible partial scorer. The behavior should be equivalent to testlib `quitp(_pc(score-16))`
+
+- Add "pc2" kg kompile and add the yaml writing for a task there
+
+- Add "cms" format and write own Loader (compgen-cms).
+
+- Jinja for kg contest pc2
+
+- Cleanup kg_contest and kg_compile to be more modular
+
 - Fix margins of \_boxes template again. Should not wrap.
 
 - kg make only a subrange of the cases.

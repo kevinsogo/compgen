@@ -2,7 +2,8 @@
     "title": null,
     "code": null,
     "duration": "5:00:00",
-    "scoreboard_freeze_length": "01:00:00",
+    "scoreboard_freeze_length": "1:00:00",
+    "start_time": 4476683471,
     "langs": [
         "java",
         "c",
