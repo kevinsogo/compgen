@@ -10,7 +10,7 @@
         "formatter.py"
     ],
     {% if subtasks >= 1 %}"subtask_detector": "!detector_through_validator",
-    "valid_subtasks": {{ subtask_list }},
+    "valid_subtasks": {{ subtask_list_json | indent }},
     "subtasks_files": "subtasks.json",
     {% endif %}{% if checker %}"checker": "checker.py",
     {% endif %}

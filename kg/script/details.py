@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import json
 from sys import stderr
 
@@ -17,25 +18,39 @@ def detector_from_validator(validator, relpath=None):
                 ["kg-aux", "subtasks-from-validator", "-q", "-c"] + ['___' + part for part in validator.run] + ["--"],
                 relpath=relpath)
 
+class Subtask(object):
+    def __init__(self, subtask):
+        if isinstance(subtask, int):
+            subtask = {"id": subtask}
+        self.id = int(subtask['id'])
+        self.score = subtask.get('score')
+
+        # data validation
+        if not isinstance(self.id, int):
+            raise TypeError("Subtask values must be ints")
+
+        # TODO check that 'score' is int, float, Decimal, etc. or None
+            
+        super().__init__()
+
+    def serialize(self):
+        raise NotImplementedError # not implemented yet. returns a dict to be json'ed
+
 class Details(object):
     def __init__(self, details={}, source=None, relpath=None):
         self.details = details
         self.source = source
         self.relpath = relpath
-        self.valid_subtasks = self.details.get('valid_subtasks', [])
+
+        # make it a subtask list
+        self.valid_subtasks = OrderedDict((subtask.id, subtask) for subtask in map(Subtask, self.details.get('valid_subtasks', [])))
 
         # data validation
-        if not all(isinstance(v, int) for v in self.valid_subtasks):
-            raise TypeError("Subtask values must be ints")
-
         if len(set(self.valid_subtasks)) != len(self.valid_subtasks):
             raise ValueError("Duplicate values in valid_subtasks")
 
-        for key in ['subtask_scores', 'cms_options']:
+        for key in ['cms_options']:
             setattr(self, key, self.details.get(key, defaults.get(key) or {}))
-
-        # convert to ints
-        self.subtask_scores = {int(sub): score for sub, score in self.subtask_scores.items()}
 
         for key in ['title', 'time_limit']:
             setattr(self, key, self.details.get(key, defaults.get(key)))

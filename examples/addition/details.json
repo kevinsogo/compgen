@@ -12,8 +12,20 @@
         "formatter.py"
     ],
     "subtask_detector": "!detector_through_validator",
-    "valid_subtasks": [1, 2, 3],
-    "subtask_scores": {"1": 50, "2": 20, "3": 30},
+    "valid_subtasks": [
+        {
+            "id": 1,
+            "score": 50
+        },
+        {
+            "id": 2,
+            "score": 20
+        },
+        {
+            "id": 3,
+            "score": 30
+        }
+    ],
     "subtasks_files": "subtasks.json",
     "time_limit": 2,
     "version": "0.2"

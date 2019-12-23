@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from datetime import datetime
 from functools import wraps
 from html.parser import HTMLParser
@@ -1066,12 +1066,15 @@ def kg_init(format_, args):
 
     touch_dir(dest)
 
+    subtask_list = [OrderedDict(id=index, score=10) for index in range(1, args.subtasks + 1)]
     env = {
         'problem_title': args.title or ' '.join(re.split(r'[-_. ]+', prob)).title().strip(),
         'minimal': args.minimal,
         'checker': args.checker,
         'subtasks': args.subtasks,
-        'subtask_list': list(range(1, args.subtasks + 1)),
+        # Jinja's tojson doesn't seem to honor dict order, so let's just use json.dumps
+        "subtask_list": [OrderedDict(id=index, score=10) for index in range(1, args.subtasks + 1)],
+        'subtask_list_json': json.dumps(subtask_list, indent=4),
         'time_limit': args.time_limit,
         "version": VERSION,
     }
@@ -1254,8 +1257,8 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
 
 
     def subtask_score(sub):
-        if sub in details.subtask_scores:
-            return details.subtask_scores[sub]
+        if details.valid_subtasks[sub].score is not None:
+            return details.valid_subtasks[sub].score
         else:
             default = 10 # hardcoded for now
             warn_print(f'Warning: no score value found for subtask {sub}... using the default {default} points')
@@ -1609,8 +1612,8 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
     decor_print('.. '*14)
 
     if subtask_score.missing:
-        warn_print('Warning: some subtask scores missing. You may want to add "subtask_scores" to details.json, '
-                'which is a dict that looks like {"1": 20, "2": 30} ...')
+        warn_print('Warning: some subtask scores missing. You may want to turn "valid_subtasks" into a list that '
+                'looks like [{"id": 1, "score": 20}, {"id": 2, "score": 30}] ...')
 
     if 'cms-it' in target_formats and total_score != 100:
         err_print(f'ERROR: The total score is {total_score} but the Italian format requires a total score of 100.')
@@ -1699,6 +1702,21 @@ def kg_contest(format_, args):
     if seedval is None: seedval = randrange(10**18)
     info_print(f"Using seedval = {seedval!r}", file=stderr)
 
+    def hms(x):
+        # x is in seconds
+        return f"{x//3600}:{x//60%60:02}:{x%60:02}"
+
+    hms_re = re.compile(r'^(?P<h>\d+)\:(?P<m>\d\d)\:(?P<s>\d\d)$')
+    def parse_duration(x):
+        if isinstance(x, int):
+            return x
+
+        match = hms_re.match(x)
+        if match:
+            h, m, s = map(int, (match.group(g) for g in 'hms'))
+            return (h*60 + m)*60 + s
+
+
     if args.format == 'pc2':
 
         # identify key folders
@@ -1717,8 +1735,8 @@ def kg_contest(format_, args):
             "datetime_created": datetime.now(),
             "title": contest.title,
             "code": contest.code,
-            "duration": contest.duration,
-            "scoreboard_freeze_length": contest.scoreboard_freeze_length,
+            "duration": hms(parse_duration(contest.duration)),
+            "scoreboard_freeze_length": hms(parse_duration(contest.scoreboard_freeze_length)),
             "site_password": contest.site_password,
             "team_count": len(contest.teams),
             "judge_count": len(contest.judges),

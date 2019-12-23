@@ -2,7 +2,7 @@ from sys import *
 from kg.validators import * ### @import
 
 {% if subtasks >= 1 %}subtasks = {
-{% for sub in subtask_list %}    '{{ sub }}': {},
+{% for sub in subtask_list %}    '{{ sub.id }}': {},
 {% endfor %}}{% endif %}
 
 bounds = {
