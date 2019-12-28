@@ -8,9 +8,8 @@ bounds = {
     'm': 1 <= +Var <= 100,
 }
 
-@validator()
-def validate_file(file):
-    lim = Bounds(bounds)
+@validator(bounds=bounds)
+def validate_file(file, *, lim):
 
     [n, m] = file.read.int(lim.n).space.int(lim.m).eoln.eof
 

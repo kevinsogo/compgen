@@ -35,7 +35,7 @@ I'll assume you're familiar with the way that solutions to competitive programmi
 
 This introduces us to our first two programs. The first is the **model solution**. As the name suggests, it's the solution that a contestant's solution is compared against. The programs aren't directly compared, but their outputs are. Sometimes, this is also called the *judge solution*.
 
-The second is the **checker**. For most problems, the checker will simply determine if the outputs of the contestant and the model solution are the same. You may also be familiar that when the answer is a float, an answer is accepted if its absolute or relative error is within certain bounds—this is also handled by the checker. For problems with multiple possible solutions, it's also the checker that determines whether a contestant's output is correct.
+The second is the **checker**. For most problems, the checker will simply determine if the outputs of the contestant and the model solution are the same. You may also be familiar that when the answer is a float, an answer is accepted if its absolute or relative error is within certain bounds&mdash;this is also handled by the checker. For problems with multiple possible solutions, it's also the checker that determines whether a contestant's output is correct.
 
 ## Strong test cases and generators
 
@@ -222,15 +222,15 @@ Open the file `validator.py`. You should see a file that looks like:
 from sys import *
 from kg.validators import * ### @import
 
+bounds = {
+    't': 1 <= +Var <= 10**5,
+    'n': 1 <= +Var <= 10**5,
+}
+
 subtasks = {
     '1': {},
     '2': {},
     '3': {},
-}
-
-bounds = {
-    't': 1 <= +Var <= 10**5,
-    'n': 1 <= +Var <= 10**5,
 }
 
 @validator(bounds=bounds, subtasks=subtasks)
@@ -248,22 +248,20 @@ if __name__ == '__main__':
 
 We won't touch the header, which inputs the required stuff from KompGen. We also won't touch anything after `if __name__ == '__main__':`, so don't worry about it.
 
-First, let's specify the constraints on `t` and `n`, by changing `subtasks` and `bounds`:
+First, let's specify the constraints on `t` and `n`, by changing `bounds` and `subtasks`:
 
 ```python
+bounds = {
+    't': 1 <= +Var <= 10**5,
+    'n': -10**5 < +Var < 10**5,
+}
+
 subtasks = {
     '1': {},
     '2': { 'n': -10**3 < +Var < 10**3 },
     '3': { 'n': -10**5 < +Var < 10**5 },
 }
-
-bounds = {
-    't': 1 <= +Var <= 10**5,
-    'n': -10**5 < +Var < 10**5,
-}
 ```
-
-<!-- TODO I now actually want to swap bounds and subtasks in the generated template. -->
 
 Here, `bounds` should have the constraints for the variables across all subtasks, and `subtasks` should have any additional constraints. Currently, KompGen doesn't support `or` here. We can't write something like
 
@@ -282,7 +280,7 @@ Second, let's write the function `validate_file`, which reads the input format v
 
 The read integers are then placed in `x`, `y`, and `z` if we need to use them later on in the function. Note how everything here is specified, including the whitespace.
 
-More specifically, `int(lim.x)` reads an integer and checks if it follows the limits for `x`, specified in both `bounds` and `subtask`. Then `space` reads a space, `int(lim.y)` reads another integer, and so on. The `eoln` reads the end of line.
+More specifically, `int(lim.x)` reads an integer and checks if it follows the limits for `x`, specified in both `bounds` and `subtasks`. Then `space` reads a space, `int(lim.y)` reads another integer, and so on. The `eoln` reads the end of line.
 
 For this problem, our `validate_file` function will look like
 
@@ -320,15 +318,15 @@ Put it all together and we've got our validator!
 from sys import *
 from kg.validators import * ### @import
 
+bounds = {
+    't': 1 <= +Var <= 10**5,
+    'n': -10**5 < +Var < 10**5,
+}
+
 subtasks = {
     '1': {},
     '2': { 'n': -10**3 < +Var < 10**3 },
     '3': { 'n': -10**5 < +Var < 10**5 },
-}
-
-bounds = {
-    't': 1 <= +Var <= 10**5,
-    'n': -10**5 < +Var < 10**5,
 }
 
 @validator(bounds=bounds, subtasks=subtasks)
@@ -777,18 +775,18 @@ You can probably figure out how to write most of the validator yourself. The tri
 Ready? Here's the validator I wrote, without the header or footer. Yours might look a little different, but as long as it does the same thing, that's okay:
 
 ```python
+bounds = {
+    't': 1 <= +Var <= 11111,
+    'F': 1 <= +Var <= 10**9,
+    'm': 1 <= +Var <= 10**9,
+}
+
 subtasks = {
     '1': { 'F': 1 <= +Var <= 5, 'm': 1 <= +Var <= 5 },
     '2': { 'F': 1 <= +Var <= 100, 'm': 1 <= +Var <= 100 },
     '3': { },
     '4': { 'F': 1 <= +Var <= 100, 'm': 1 <= +Var <= 100 },
     '5': { },
-}
-
-bounds = {
-    't': 1 <= +Var <= 11111,
-    'F': 1 <= +Var <= 10**9,
-    'm': 1 <= +Var <= 10**9,
 }
 
 @validator(bounds=bounds, subtasks=subtasks)
@@ -813,19 +811,19 @@ for cas in range(t):
 and it would work: this is totally fine. However, the recommended solution is to add another attribute in `bounds` and `subtasks`. Change them to look like
 
 ```python
+bounds = {
+    't': 1 <= +Var <= 11111,
+    'F': 1 <= +Var <= 10**9,
+    'm': 1 <= +Var <= 10**9,
+    'ans_is_int': False,
+}
+
 subtasks = {
     '1': { 'F': 1 <= +Var <= 5, 'm': 1 <= +Var <= 5, 'ans_is_int': True },
     '2': { 'F': 1 <= +Var <= 100, 'm': 1 <= +Var <= 100, 'ans_is_int': True },
     '3': { 'ans_is_int': True },
     '4': { 'F': 1 <= +Var <= 100, 'm': 1 <= +Var <= 100 },
     '5': { },
-}
-
-bounds = {
-    't': 1 <= +Var <= 11111,
-    'F': 1 <= +Var <= 10**9,
-    'm': 1 <= +Var <= 10**9,
-    'ans_is_int': False,
 }
 ```
 
@@ -844,19 +842,19 @@ This is so that if we change which subtasks have an integer answer in the future
 from sys import *
 from kg.validators import * ### @import
 
+bounds = {
+    't': 1 <= +Var <= 11111,
+    'F': 1 <= +Var <= 10**9,
+    'm': 1 <= +Var <= 10**9,
+    'ans_is_int': False,
+}
+
 subtasks = {
     '1': { 'F': 1 <= +Var <= 5, 'm': 1 <= +Var <= 5, 'ans_is_int': True },
     '2': { 'F': 1 <= +Var <= 100, 'm': 1 <= +Var <= 100, 'ans_is_int': True },
     '3': { 'ans_is_int': True },
     '4': { 'F': 1 <= +Var <= 100, 'm': 1 <= +Var <= 100 },
     '5': { },
-}
-
-bounds = {
-    't': 1 <= +Var <= 11111,
-    'F': 1 <= +Var <= 10**9,
-    'm': 1 <= +Var <= 10**9,
-    'ans_is_int': False,
 }
 
 @validator(bounds=bounds, subtasks=subtasks)
@@ -1161,16 +1159,16 @@ where `valid_chars` is a string of all allowed characters, and `maxn` is the max
 That's the only additional information you need, so try to write the validator yourself! Here's mine, without the header or footer:
 
 ```python
-subtasks = {
-    '1': { 'n': 0 <= +Var <= 9 },
-    '2': { 'n': 0 <= +Var < 10**9 },
-    '3': { 'n': 0 <= +Var < 10**19 },
-}
-
 bounds = {
     't': 1 <= +Var <= 10**5,
     'n': 0 <= +Var < 10**19,
     'linelen': 80,
+}
+
+subtasks = {
+    '1': { 'n': 0 <= +Var <= 9 },
+    '2': { 'n': 0 <= +Var < 10**9 },
+    '3': { 'n': 0 <= +Var < 10**19 },
 }
 
 valid_chars = string.ascii_letters + string.digits + ' '
@@ -1225,7 +1223,7 @@ From here we see we can pass an argument `charset`, which we can guess from its 
 
 Since KompGen is in very early development, code is being written faster than it is being documented. So there are a lot of features of KompGen that aren't perfectly documented. Don't worry though: some day in the future there will be *actual* documentation, and then I can get rid of this section of the tutorial and we'll all be happy. *Some day.*
 
-But if you want to use the more advanced features of KompGen that aren't discussed here *now*, you might have to resort to reading the source code to figure out what you need. (Or ask the developers—we're friendly!) We'll give another example of this when we write generators.
+But if you want to use the more advanced features of KompGen that aren't discussed here *now*, you might have to resort to reading the source code to figure out what you need. (Or ask the developers&mdash;we're friendly!) We'll give another example of this when we write generators.
 
 ## Test planning and KompGen built-ins
 
@@ -1589,16 +1587,16 @@ bounds = { 'a': 1 <= +Var <= 10**9 }
 That means the validator will look like
 
 ```python
-subtasks = {
-    '1': { 'sum_s_i': 1 <= +Var <= 100 }
-    '2': { 'sum_s_i': 1 <= +Var <= 10**5 }
-}
-
 bounds = {
     't': 1 <= +Var <= 5,
     'p': 1 <= +Var <= 10**5,
     'a': 1 <= +Var <= 500,
     'sum_s_i': 1 <= +Var <= 10**5,
+}
+
+subtasks = {
+    '1': { 'sum_s_i': 1 <= +Var <= 100 }
+    '2': { 'sum_s_i': 1 <= +Var <= 10**5 }
 }
 
 @validator(bounds=bounds, subtasks=subtasks)

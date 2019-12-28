@@ -125,9 +125,8 @@ bounds = {
     'a': abs(+Var) <= 10**9,
 }
 
-@validator()
-def validate_file(file):
-    lim = Bounds(bounds)
+@validator(bounds=bounds)
+def validate_file(file, *, lim):
 
     t = file.read_int(lim.t)
     file.read_eoln()

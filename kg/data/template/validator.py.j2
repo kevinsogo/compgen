@@ -1,15 +1,15 @@
 from sys import *
 from kg.validators import * ### @import
 
-{% if subtasks >= 1 %}subtasks = {
-{% for sub in subtask_list %}    '{{ sub.id }}': {},
-{% endfor %}}{% endif %}
-
 bounds = {
     't': 1 <= +Var <= 10**5,
     'n': 1 <= +Var <= 10**5,
 }
 
+{% if subtasks >= 1 %}subtasks = {
+{% for sub in subtask_list %}    '{{ sub.id }}': {},
+{% endfor %}}
+{% endif %}
 @validator(bounds=bounds{{", subtasks=subtasks" if subtasks >= 1 else ""}})
 def validate_file(file{{", subtask=None" if subtasks >= 1 else ""}}, *, lim):
 
