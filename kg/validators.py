@@ -501,11 +501,16 @@ def _add_label(kw, label):
     return kw
 
 
-def validator(*, suppress_eof_warning=False):
+def validator(*, suppress_eof_warning=False, bounds=None, subtasks=None):
     def _validator(f):
         @wraps(f)
         def new_f(file, *args, **kwargs):
             sf = StrictStream(file)
+            if bounds or subtasks:
+                lim = Bounds(kwargs.get('lim'))
+                if bounds: lim &= Bounds(bounds)
+                if subtasks: lim &= Bounds(subtasks.get(kwargs['subtask']))
+                kwargs['lim'] = lim
             res = f(sf, *args, **kwargs)
             if sf.last != EOF and not suppress_eof_warning:
                 print("Warning: The validator didn't check for EOF at the end.", file=stderr)

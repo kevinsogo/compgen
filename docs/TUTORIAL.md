@@ -237,9 +237,8 @@ bounds = {
     'n': 1 <= +Var <= 10**5,
 }
 
-@validator()
-def validate_file(file, subtask=None):
-    lim = Bounds(bounds) & Bounds(subtasks.get(subtask))
+@validator(bounds=bounds, subtasks=subtasks)
+def validate_file(file, subtask=None, *, lim):
 
     ... # write your validator here
 
@@ -292,9 +291,8 @@ More specifically, `int(lim.x)` reads an integer and checks if it follows the li
 For this problem, our `validate_file` function will look like
 
 ```python
-@validator()
-def validate_file(file, subtask=None):
-    lim = Bounds(bounds) & Bounds(subtasks.get(subtask))
+@validator(bounds=bounds, subtasks=subtasks)
+def validate_file(file, subtask=None, *, lim):
 
     [t] = file.read.int(lim.t).eoln
     for cas in range(t):
@@ -308,9 +306,8 @@ The `eof` here is the end of file: remember to read it as well! Observe how the 
 Note how the limits on `t` and `n` are magically checked when we do `int(lim.t)` and `int(lim.n)`. However, as we noted earlier, we still have to check that `n` is one of 1, 2, 3, 69, 420 for the first subtask. To do this, we can use the function `ensure`, which is like `assert` in C++:
 
 ```python
-@validator()
-def validate_file(file, subtask=None):
-    lim = Bounds(bounds) & Bounds(subtasks.get(subtask))
+@validator(bounds=bounds, subtasks=subtasks)
+def validate_file(file, subtask=None, *, lim):
 
     [t] = file.read.int(lim.t).eoln
     for cas in range(t):
@@ -338,9 +335,8 @@ bounds = {
     'n': -10**5 < +Var < 10**5,
 }
 
-@validator()
-def validate_file(file, subtask=None):
-    lim = Bounds(bounds) & Bounds(subtasks.get(subtask))
+@validator(bounds=bounds, subtasks=subtasks)
+def validate_file(file, subtask=None, *, lim):
 
     [t] = file.read.int(lim.t).eoln
     for cas in range(t):
@@ -799,9 +795,8 @@ bounds = {
     'm': 1 <= +Var <= 10**9,
 }
 
-@validator()
-def validate_file(file, subtask=None):
-    lim = Bounds(bounds) & Bounds(subtasks.get(subtask))
+@validator(bounds=bounds, subtasks=subtasks)
+def validate_file(file, subtask=None, *, lim):
 
     [t] = file.read.int(lim.t).eoln
     for cas in range(t):
@@ -868,9 +863,8 @@ bounds = {
     'ans_is_int': False,
 }
 
-@validator()
-def validate_file(file, subtask=None):
-    lim = Bounds(bounds) & Bounds(subtasks.get(subtask))
+@validator(bounds=bounds, subtasks=subtasks)
+def validate_file(file, subtask=None, *, lim):
 
     [t] = file.read.int(lim.t).eoln
     for cas in range(t):
@@ -1186,9 +1180,8 @@ bounds = {
 valid_chars = string.ascii_letters + string.digits + ' '
 # the same as "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 "
 
-@validator()
-def validate_file(file, subtask=None):
-    lim = Bounds(bounds) & Bounds(subtasks.get(subtask))
+@validator(bounds=bounds, subtasks=subtasks)
+def validate_file(file, subtask=None, *, lim):
 
     [t] = file.read.int(lim.t).eoln
     for cas in range(t):
@@ -1612,9 +1605,8 @@ bounds = {
     'sum_s_i': 1 <= +Var <= 10**5,
 }
 
-@validator()
-def validate_file(file, subtask=None):
-    lim = Bounds(bounds) & Bounds(subtasks.get(subtask))
+@validator(bounds=bounds, subtasks=subtasks)
+def validate_file(file, subtask=None, *, lim):
 
     [t] = file.read.int(lim.t).eoln
     for cas in range(t):

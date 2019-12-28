@@ -10,9 +10,8 @@ bounds = {
     'n': 1 <= +Var <= 10**5,
 }
 
-@validator()
-def validate_file(file{{", subtask=None" if subtasks >= 1 else ""}}):
-    lim = Bounds(bounds){{" & Bounds(subtasks.get(subtask))" if subtasks >= 1 else ""}}
+@validator(bounds=bounds{{", subtasks=subtasks" if subtasks >= 1 else ""}})
+def validate_file(file{{", subtask=None" if subtasks >= 1 else ""}}, *, lim):
 
     ... {% if not minimal %}# write your validator here
 

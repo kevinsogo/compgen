@@ -167,9 +167,8 @@ bounds = {
     'a': abs(+Var) <= 10**9,
 }
 
-@validator()
-def validate_file(file, subtask=None):
-    lim = Bounds(bounds) & Bounds(subtasks.get(subtask))
+@validator(bounds=bounds, subtasks=subtasks)
+def validate_file(file, subtask=None, *, lim):
 
     t = file.read_int_eoln(lim.t)
     totaln = 0
