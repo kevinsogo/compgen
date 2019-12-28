@@ -28,5 +28,4 @@ def validate_file(file, subtask=None, *, lim):
     ensure(totaln in lim.totaln)
 
 if __name__ == '__main__':
-    subtask = argv[1] if len(argv) > 1 else None
-    validate_file(stdin, subtask=subtask)
+    validate_or_detect_subtasks(validate_file, subtasks, stdin)
