@@ -11,17 +11,14 @@ bounds = {
 @validator(bounds=bounds)
 def validate_file(file, *, lim):
 
-    t = file.read_int(lim.t)
-    file.read_eoln()
+    [t] = file.read.int(lim.t).eoln
     totaln = 0
     for cas in range(t):
-        n = file.read_int(lim.n)
+        [n] = file.read.int(lim.n).eoln
         totaln += n
-        file.read_eoln()
-        a = file.read_ints(n, lim.a)
-        file.read_eoln()
+        [a] = file.read.ints(n, lim.a).eoln
 
-    file.read_eof()
+    [] = file.read.eof
     ensure(totaln in lim.totaln)
 
 if __name__ == '__main__':

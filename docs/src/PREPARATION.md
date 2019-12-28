@@ -103,18 +103,17 @@ Here's a validator that can also check subtasks. It takes the subtask name as th
 
 - Use integer literals as subtask names.
 
-- You can also write `Interval(a, b)` in place of `a <= +Var <= b`, although the latter syntax is more flexible since you can also use something like `a < +Var < b`.  
+- Behind the scenes, `a <= +Var <= b` creates an instance of the `Interval` class, but the custom syntax is more flexible since you can also write something like `a < +Var < b`, and even `(a <= +Var <= b) & (+Var <= c)`.  
 
 - Don't crash or reject if `argv[1]` is not a valid subtask name (or even a valid integer literal); instead, proceed as if you're checking against the largest subtask. (Important for Polygon.)
 
-- The `&` operation is *not* commutative. Always use the subtask `Bounds` as the second argument.
+- The `&` operation is *not* commutative. Always use the subtask `Bounds` as the second argument. (It goes from general to specific.)
 
-- `.read_int` can also be called like `.read_int(1, 10**5)`.
+- `.int` can also be called like `.int(1, 10**5)`.
 
-- The method names (`read_int`, `read_space`, etc.) are inspired by testlib.
+- The method names (`.int`, `.space`, etc.) are inspired by testlib (`.read_int`, `.read_space`).
 
-
-Alternatively, you may use **chain-style validation**. Let's say you want to read `x`, `y` and `z` from a line, space-separated, and each with its own constraints. Then instead of writing this,
+The validators above use **chain-style validation**. Let's say you want to read `x`, `y` and `z` from a line, space-separated, and each with its own constraints. Then instead of writing this, as you would with a testlib-like library:
 
 ```python
 x = file.read_int(lim.x)
@@ -131,7 +130,7 @@ you can write it all in one line:
 [x, y, z] = file.read.int(lim.x).space.int(lim.y).space.int(lim.z).eoln
 ```
 
-The chain accepts `int`, `ints`, `token`, `tokens`, `real`, `reals`, `char`, `space`, `eoln`, `eof` and `line`. They accept the same arguments as their `read_*` counterparts.
+The chain accepts `int`, `ints`, `token`, `tokens`, `real`, `reals`, `char`, `space`, `eoln`, `eof` and `line`.
 
 I recommend the chain style since it more closely reflects the structure of each line, yet still requires you to exactly specify each byte.
 

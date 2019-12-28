@@ -1,5 +1,5 @@
 <!-- NOTE TO CONTRIBUTORS: PLEASE DON'T EDIT THIS FILE. -->
-<!-- Edit docs/src/PREPARATION.md instead, then run './makedocs'. -->
+<!-- Edit docs/src/PREPARATION.md instead, then run 'docs/src/makedocs'. -->
 
 
 This is a detailed guide on how to prepare a problem from scratch using KompGen. 
@@ -128,17 +128,14 @@ bounds = {
 @validator(bounds=bounds)
 def validate_file(file, *, lim):
 
-    t = file.read_int(lim.t)
-    file.read_eoln()
+    [t] = file.read.int(lim.t).eoln
     totaln = 0
     for cas in range(t):
-        n = file.read_int(lim.n)
+        [n] = file.read.int(lim.n).eoln
         totaln += n
-        file.read_eoln()
-        a = file.read_ints(n, lim.a)
-        file.read_eoln()
+        [a] = file.read.ints(n, lim.a).eoln
 
-    file.read_eof()
+    [] = file.read.eof
     ensure(totaln in lim.totaln)
 
 if __name__ == '__main__':
@@ -169,14 +166,14 @@ subtasks = {
 @validator(bounds=bounds, subtasks=subtasks)
 def validate_file(file, subtask=None, *, lim):
 
-    t = file.read_int_eoln(lim.t)
+    [t] = file.read.int(lim.t).eoln
     totaln = 0
     for cas in range(t):
-        n = file.read_int_eoln(lim.n) # convenience method for a read_int then a read_eoln
-        a = file.read_ints_eoln(n, lim.a)
+        [n] = file.read.int(lim.n).eoln
+        [a] = file.read.ints(n, lim.a).eoln
         totaln += n
 
-    file.read_eof()
+    [] = file.read.eof
     ensure(totaln in lim.totaln)
 
 if __name__ == '__main__':
@@ -187,18 +184,17 @@ if __name__ == '__main__':
 
 - Use integer literals as subtask names.
 
-- You can also write `Interval(a, b)` in place of `a <= +Var <= b`, although the latter syntax is more flexible since you can also use something like `a < +Var < b`.  
+- Behind the scenes, `a <= +Var <= b` creates an instance of the `Interval` class, but the custom syntax is more flexible since you can also write something like `a < +Var < b`, and even `(a <= +Var <= b) & (+Var <= c)`.  
 
 - Don't crash or reject if `argv[1]` is not a valid subtask name (or even a valid integer literal); instead, proceed as if you're checking against the largest subtask. (Important for Polygon.)
 
-- The `&` operation is *not* commutative. Always use the subtask `Bounds` as the second argument.
+- The `&` operation is *not* commutative. Always use the subtask `Bounds` as the second argument. (It goes from general to specific.)
 
-- `.read_int` can also be called like `.read_int(1, 10**5)`.
+- `.int` can also be called like `.int(1, 10**5)`.
 
-- The method names (`read_int`, `read_space`, etc.) are inspired by testlib.
+- The method names (`.int`, `.space`, etc.) are inspired by testlib (`.read_int`, `.read_space`).
 
-
-Alternatively, you may use **chain-style validation**. Let's say you want to read `x`, `y` and `z` from a line, space-separated, and each with its own constraints. Then instead of writing this,
+The validators above use **chain-style validation**. Let's say you want to read `x`, `y` and `z` from a line, space-separated, and each with its own constraints. Then instead of writing this, as you would with a testlib-like library:
 
 ```python
 x = file.read_int(lim.x)
@@ -215,7 +211,7 @@ you can write it all in one line:
 [x, y, z] = file.read.int(lim.x).space.int(lim.y).space.int(lim.z).eoln
 ```
 
-The chain accepts `int`, `ints`, `token`, `tokens`, `real`, `reals`, `char`, `space`, `eoln`, `eof` and `line`. They accept the same arguments as their `read_*` counterparts.
+The chain accepts `int`, `ints`, `token`, `tokens`, `real`, `reals`, `char`, `space`, `eoln`, `eof` and `line`.
 
 I recommend the chain style since it more closely reflects the structure of each line, yet still requires you to exactly specify each byte.
 

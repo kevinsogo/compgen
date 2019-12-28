@@ -3,6 +3,7 @@ from collections import deque
 from decimal import Decimal
 from functools import wraps
 from io import StringIO
+from itertools import islice
 from string import digits
 from sys import stdin, stdout, stderr, argv
 import re
@@ -443,20 +444,42 @@ class StrictStream:
         setattr(self.__class__, name, convenience)
         return getattr(self, name)
 
+    _read = None
+
     @property
-    def read(self): return _Read(self)
+    def read(self):
+        if self._read is None: self._read = _Read(self, _name='.read')
+        return self._read
+
+    ### @@ if False {
+    def uncalled_reads(self):
+        if self._read: yield from self.read.uncalled_reads()
+    ### @@ }
 
 # Chain validation:
 class _Read:
-    def __init__(self, ss, parent=None, op=None):
+    ''' This is immutable '''
+
+    def __init__(self, ss, parent=None, op=None, *, _name=None):
         self.ss = ss
         self.parent = parent
         self.op = op
+        self.children = []
+        if parent: self.parent.children.append(self)
+        self._name = _name
+        self.called = False ### @if False
         super().__init__()
 
     def __iter__(self):
         if self.parent: yield from self.parent
         if self.op: yield from self.op()
+        self.called = True ### @if False
+
+    ### @@ if False {
+    def uncalled_reads(self):
+        if not self.called: yield self._name if isinstance(self._name, str) else self._name()
+        for child in self.children: yield from child.uncalled_reads()
+    ### @@ }
 
     def consume(self):
         return list(self)
@@ -466,7 +489,10 @@ class _Read:
     def _make_chain(name):
         def chain(self, *a, **kw):
             def op(label=''): yield getattr(self.ss, 'read_' + name)(*a, **_add_label(kw, label))
-            return _Read(self.ss, self, op)
+            def _name():
+                arglist = *map(repr, a), *(f'{name}={value!r}' for name, value in kw.items())
+                return f'.{name}({", ".join(arglist)})'
+            return _Read(self.ss, self, op, _name=_name)
         chain.__name__ = name
         name = name.rstrip('_')
         return chain
@@ -476,23 +502,24 @@ class _Read:
 
     del _make_chain, _chain
 
-    def char(self, *a, **kw):
+    # TODO allow 'char' to accept a sequence of chars. Alternatively, 'chars'
+    def char(self, *a, _name='.char', **kw):
         def op():
             return self.ss.read_char(*a, **kw); yield
-        return _Read(self.ss, self, op)
+        return _Read(self.ss, self, op, _name=_name)
 
     def label(self, label):
         def nop(): return self.op(label=label)
-        return _Read(self.ss, self.parent, nop)
+        return _Read(self.ss, self.parent, nop, _name='.label')
 
     __getitem__ = label
 
     @property
-    def space(self): return self.char(' ')
+    def space(self): return self.char(' ', _name='.space')
     @property
-    def eoln(self): return self.char(EOLN) # ubuntu only (I think).
+    def eoln(self): return self.char(EOLN, _name='.eoln') # ubuntu only (I think).
     @property
-    def eof(self): return self.char(EOF)
+    def eof(self): return self.char(EOF, _name='.eof')
     
 def _add_label(kw, label):
     if label:
@@ -514,6 +541,11 @@ def validator(*, suppress_eof_warning=False, bounds=None, subtasks=None):
             res = f(sf, *args, **kwargs)
             if sf.last != EOF and not suppress_eof_warning:
                 print("Warning: The validator didn't check for EOF at the end.", file=stderr)
+            ### @@ if False {
+            # Don't include in uploaded files since it may be slow.
+            for uncalled_read in islice(sf.uncalled_reads(), 24):
+                print(f"Warning: .read chain {uncalled_read} constructed but not called", file=stderr)
+            ### @@ }
             ### @@ if format == 'pc2' {
             if CURR_PLATFORM == 'pc2':
                 exit(42) # magic number to indicate successful validation (PC^2)

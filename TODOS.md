@@ -19,15 +19,15 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Author/s fields.
 
-- Instead of needing `-js` in `kg test`, just switch to `-js` automatically if it issues an error.
-
 - Request CMS folks to allow external loaders.
 
-- Properly delete contest files in kgkompiled/ when recreating a contest.
+- Properly delete contest files in kgkompiled/ when running `kg kompile` again.
 
-- Give capability to kgkompile outside of `kg make`-created folders. Useful for one-off files like writing a one-off validator (then compiling)
+- Allow overriding of defaults when using Bounds & Bounds. 
 
-- Allow overriding of defaults when using Bounds & Bounds. Add stderr prints about "overriding" when one is not an Interval. Possibly disallow Interval & non-Interval.
+    - This has been implemented already, but the following might not be:
+
+    - Add stderr prints about "overriding" when one is not an Interval. Possibly disallow Interval & non-Interval.
 
 - Add warning in `KGRandom` about shuffling arbitrary collections, especially unordered ones like sets and dicts. It can override `.shuffle` by adding an optional kwarg, `sort`, which is `False` by default but also issues a warning. Add a way to suppress this warning safely.
 
@@ -42,8 +42,6 @@ This includes some disorganized ideas, TODOs, notes...
 - Rename `valid_subtasks` to just `subtasks`. (need backwards compatible)
 
 - Possibly use HJSON (or something) for config files, not pure JSON.
-
-- Warn if a constructed chain is never called
 
 - Find inspiration from jngen
 

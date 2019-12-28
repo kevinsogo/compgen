@@ -73,7 +73,7 @@ for location, target, rel_loc in get_templates():
 
     with open(target, 'w') as f:
         print("<!-- NOTE TO CONTRIBUTORS: PLEASE DON'T EDIT THIS FILE. -->", file=f)
-        print(f"<!-- Edit docs/src/{rel_loc} instead, then run './makedocs'. -->\n\n", file=f)
+        print(f"<!-- Edit docs/src/{rel_loc} instead, then run 'docs/src/makedocs'. -->\n\n", file=f)
         f.write(s)
 
     # TODO possibly use Jinja here instead of ad-hoc code

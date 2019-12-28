@@ -1,5 +1,5 @@
 <!-- NOTE TO CONTRIBUTORS: PLEASE DON'T EDIT THIS FILE. -->
-<!-- Edit docs/src/CONTEST.md instead, then run './makedocs'. -->
+<!-- Edit docs/src/CONTEST.md instead, then run 'docs/src/makedocs'. -->
 
 
 This assumes you have already written all the problems in your problem set using KompGen, and you would like to easily upload them to contest systems like PC2.  
