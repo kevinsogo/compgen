@@ -45,6 +45,12 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Find inspiration from jngen
 
+- Add "stress test" feature; run a given generator multiple times, and stop when a certain number of incorrect answers is detected (default 1).
+
+    - This generator must be able to ignore extra arguments (meant for changing seed)
+
+    - On --help, use "stop when it fails". (just introduce "--fail-threshold" or something as a normal arg.)
+
 - Implement polygon-compatible partial scorer. The behavior should be equivalent to testlib `quitp(_pc(score-16))`
     
 
