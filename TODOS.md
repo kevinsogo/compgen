@@ -39,6 +39,8 @@ This includes some disorganized ideas, TODOs, notes...
 
 - `kg make` Warn when test cases are identical. Hash the files and compare hashes only.
 
+- Rename `valid_subtasks` to just `subtasks`. (need backwards compatible)
+
 - Possibly use HJSON (or something) for config files, not pure JSON.
 
 - Warn if a constructed chain is never called
