@@ -236,15 +236,13 @@ This includes some disorganized ideas, TODOs, notes...
 
 - On kg kompile, add option to remove blank lines and trailing spaces?
 
-- Add natsorted as a python dependency of the kg python package. (?)
-
-- Maybe add a whitespace-sensitive version of checker "tokens"?
+- Maybe add a whitespace-sensitive version of checker "tokens"? (checkers)
 
 - "Chain-style" checkers.
 
     - Need to support strictness levels and options. Default is maximum for validators, and somewhere in the middle for checkers, but individual strictnesses should be toggleable, e.g., "trailing whitespace".
 
-- Utility to change line endings.
+- Utility to change line endings. (maybe some argparse args?)
 
 - Support line endings in multiple platforms.
 
@@ -255,8 +253,6 @@ This includes some disorganized ideas, TODOs, notes...
     - A lot of the scripts also rely on Ubuntu command-y things.  
 
 - Use gitlab's "Issues" feature and write these things there instead.  
-
-- Add `### @@ if False { ... }` around bulky docstrings.
 
 - pass stuff via default values, like:
 

@@ -502,7 +502,9 @@ class _Read:
 
     del _make_chain, _chain
 
-    # TODO allow 'char' to accept a sequence of chars. Alternatively, 'chars'
+    # TODO allow '.char' to accept a sequence of chars. Alternatively, 'chars'
+    # it might be better to allow .char/.read_char to accept a sequence because the "EOLN"
+    # object might be two letters
     def char(self, *a, _name='.char', **kw):
         def op():
             return self.ss.read_char(*a, **kw); yield
