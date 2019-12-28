@@ -1,8 +1,6 @@
 from sys import *
 from kg.validators import * ### @import
 
-
-
 bounds = {
     'n': abs(+Var) <= 10**9,
     'm': 1 <= +Var <= 100,

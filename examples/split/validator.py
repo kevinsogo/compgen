@@ -1,17 +1,17 @@
 from sys import *
 from kg.validators import * ### @import
 
-subtasks = {
-    '1': { 'n': 1 <= +Var <= 10 },
-    '2': { 'n': 1 <= +Var <= 1000 },
-    '3': { },
-}
-
 bounds = {
     't': 1 <= +Var <= 10**5,
     'n': 1 <= +Var <= 10**5,
     'totaln': +Var <= 5*10**5,
     'a': abs(+Var) <= 10**9,
+}
+
+subtasks = {
+    '1': { 'n': 1 <= +Var <= 10 },
+    '2': { 'n': 1 <= +Var <= 1000 },
+    '3': { },
 }
 
 @validator(bounds=bounds, subtasks=subtasks)
