@@ -257,26 +257,29 @@ More details can be found [here](docs/CONTEST.md), which includes additional thi
 If you wish to add the problem folder to a version control system but don't want to commit huge test files, you can use the following `.gitignore`:
 
 ```
-basura*
+tests/
+kgkompiled/
 input/
 output/
 temp/
 __pycache__
 *.pyc
-kgkompiled/
-build/
-*.egg-info/
-*.egg
-tests/
 *.class
 *.executable
 *.exe
+build/
+*.egg-info/
+*.egg
 .eggs
+garbage*
+basura*
 ```
 
 This also means that the folders `tests/` and `kgkompiled/` may be freely deleted if you're trying to free up space. They can always be regenerated from the other files.
 
 Feel free to include/exclude other files depending on your needs.
+
+*Note:* Whenever I want to add some code that I don't want to commit to the repo, I usually just prefix it with `basura` (e.g., `basura.cpp`), hence the `basura*` line in this `.gitignore`. "Basura" means "garbage" :D Feel free to replace that one with your own, or just use `garbage` (e.g., `garbage.cpp`).
 
 
 
