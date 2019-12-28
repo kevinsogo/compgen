@@ -1367,7 +1367,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
             targets[module] = target
             if target in found_targets:
                 warn_print(f"Warning: Files have the same destination file ({target}): "
-                           f"{found_targets[targets]} and {filename}", file=stderr)
+                           f"{found_targets[target]} and {filename}", file=stderr)
             found_targets[target] = filename
 
         copy_targets = {}
@@ -1376,7 +1376,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
             copy_targets[filename] = target
             if target in found_targets:
                 warn_print(f"Warning: Files have the same destination file ({target}): "
-                           f"{found_targets[targets]} and {filename}", file=stderr)
+                           f"{found_targets[target]} and {filename}", file=stderr)
             found_targets[target] = filename
 
         # copying
