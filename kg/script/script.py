@@ -55,13 +55,13 @@ parser = argparse.ArgumentParser(
 
                 - For one-off scripting tasks, e.g., testing a solution against a bunch of data.
 
-                    - (for problems) [*[kg gen]*], [*[kg test]*], [*[kg run]*], [*[kg subtasks]*]
+                    - (for problems) [*[kg gen]*], [*[kg test]*], [*[kg run]*], [*[kg subtasks]*], [*[kg compile]*]
                     - (for contests) [*[kg seating]*], [*[kg passwords]*]
                     - (others) [*[kg convert]*], [*[kg convert-sequence]*]
 
                 - For developing problems/contests from scratch (writing generators, validators, checkers, etc.)
 
-                    - (for problems) [*[kg init]*], [*[kg make]*], [*[kg gen]*]/[*[test]*]/[*[run]*], [*[kg compile]*]
+                    - (for problems) [*[kg init]*], [*[kg make]*], [*[kg gen]*]/[*[test]*]/[*[run]*]/[*[kg compile]*]
                     - (for contests) [*[kg contest]*]
 
                 See the individual --help texts for each command, e.g., [*[kg init --help]*].
@@ -1112,13 +1112,28 @@ compile_p = subparsers.add_parser('kompile',
         description=cformat_text(dedent('''\
                 Preprocess python source codes to be ready to upload.
 
-                This command is intended for problems created using "kg init". In that case, it will parse the
-                relevant information from the details.json file.
+
+                $ [*[kg kompile -f [program_files]]*]
 
 
-                The usage is very simple:
+                For example,
+
+                $ [*[kg kompile -f validator.py]*]
+                $ [*[kg kompile -f gen_random.py]*]
+                $ [*[kg kompile -f checker.py]*]
+
+                Or simultaneously,
+
+                $ [*[kg kompile -f validator.py gen_random.py checker.py]*]
+
+
+                If you wrote your problem using "kg init", then the usage is very simple:
 
                 $ [*[kg kompile]*]
+
+
+                It will kompile all relevant files in details.json: model solution, data maker, validator,
+                generators, and checker (if they exist).
 
 
                 Explanation:
@@ -1130,9 +1145,9 @@ compile_p = subparsers.add_parser('kompile',
                 Any "import star" line ending with the string "### @import" will be replaced inline with the
                 code from that file. This works recursively.  
 
-                Only "kg" library commnds and files explicitly added in details.json will be inlined. So if you
-                are importing from a separate file, ensure that it is in "other_programs" (or "generators",
-                "model_solution", etc.)
+                Only "kg" library commands and files that are explicitly added (in details.json and/or via
+                --files/--extra-files) will be inlined. So, if you are importing from a separate file, ensure
+                that it is in "other_programs" (or "generators", "model_solution", etc.) or in --extra-files.
 
                 Only Python files will be processed; it is up to you to ensure that the non-python programs you
                 write will be compatible with the contest system/judge they are using.
@@ -1141,7 +1156,13 @@ compile_p = subparsers.add_parser('kompile',
 
                 Other directives aside from "@import" are available; see the KompGen repo docs for more details.
         ''')))
-compile_p.add_argument('formats', nargs='*', help='contest formats to compile to (default ["hr", "pg", "pc2"])')
+compile_p.add_argument('formats', nargs='*',
+                                help='contest formats to compile to (default ["hr", "pg", "pc2", "cms"])')
+compile_p.add_argument('-f', '--files', nargs='*',
+                                help='files to compile (only needed if you didn\'t use "kg init")')
+compile_p.add_argument('-ef', '--extra-files', nargs='*',
+                                help='extra files imported via "@import" (only needed if you didn\'t use "kg init", '
+                                'otherwise, please use "other_programs")')
 compile_p.add_argument('-l', '--loc', default='.', help='location to run commands on')
 compile_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
 compile_p.add_argument('-S', '--shift-left', action='store_true',
@@ -1150,8 +1171,6 @@ compile_p.add_argument('-S', '--shift-left', action='store_true',
                                 '"kg" module.')
 compile_p.add_argument('-C', '--compress', action='store_true',
                                 help='compress the program by actually compressing it. Use at your own risk.')
-# TODO add option for format to "compile" to. No need for now since there are only a few,
-#      but later on this will eat up a lot of memory otherwise.
 
 @set_handler(compile_p)
 def _kg_compile(format_, args):
@@ -1165,9 +1184,13 @@ def _kg_compile(format_, args):
         loc=args.loc,
         shift_left=args.shift_left,
         compress=args.compress,
+        files=args.files,
+        extra_files=args.extra_files,
         )
 
-def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, compress=False, python3='python3', dest_loc=None):
+def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, compress=False, python3='python3',
+        dest_loc=None, files=[], extra_files=[]):
+
     valid_formats = {'hr', 'pg', 'pc2', 'cms', 'cms-it'}
     if not set(target_formats) <= valid_formats:
         raise CommandError(f"Invalid formats: {set(target_formats) - valid_formats}")
@@ -1175,6 +1198,53 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
         raise CommandError(f"You can't use '{format_}' format to 'kompile'.")
 
     # TODO clear kgkompiled first, or at least the target directory
+
+    # convert files to Programs
+    files = [Program.from_data(file, relpath=loc) for file in files or []]
+    extra_files = [Program.from_data(file, relpath=loc) for file in extra_files or []]
+
+    @memoize
+    def get_module(filename):
+        if filename and os.path.isfile(filename) and filename.endswith('.py'):
+            module, ext = os.path.splitext(os.path.basename(filename))
+            assert ext == '.py'
+            return module
+
+    @memoize
+    @listify
+    def load_module(module_id):
+        if module_id not in locations:
+            raise CommandError(f"Couldn't find module {module_id}! "
+                    f"(Add it to {'other_programs' if problem_code else '--extra-files'}?)")
+        with open(locations[module_id]) as f:
+            for line in f:
+                if not line.endswith('\n'):
+                    warn_print('Warning:', locations[module_id], "doesn't end with a new line.")
+                yield line.rstrip('\n')
+
+    def get_module_id(module, context):
+        nmodule = module
+        if nmodule.startswith('.'):
+            if context['module_id'] in kg_libs:
+                nmodule = 'kg' + nmodule
+
+        if nmodule.startswith('.'):
+            warn_print(f"Warning: Ignoring relative import for {module}", file=stderr)
+            nmodule = nmodule.lstrip('.')
+
+        return nmodule
+
+    # extract problem code
+    # not really sure if this is the best way to extract the problem code.
+    # also, probably should be put elsewhere...
+    if details.relpath:
+        problem_code = os.path.basename(os.path.abspath(os.path.join(details.relpath, '.')))
+    elif details.source:
+        problem_code = os.path.basename(os.path.dirname(os.path.abspath(details.source)))
+    elif details.title:
+        problem_code = '-'.join(''.join(c if c.isalnum() else ' ' for c in details.title).lower().split())
+    else:
+        problem_code = None # probably a one-off application
 
     # locate all necessary files
 
@@ -1198,64 +1268,52 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
     locations = {lib: os.path.join(kg_path, path) for lib, path in locations.items()}
     kg_libs = set(locations)
 
-    # current files
-    all_local = [details.validator, details.checker, details.interactor, details.model_solution] + (
-            details.generators + details.other_programs)
+    checkers = []
 
-    @memoize
-    def get_module(filename):
-        if filename and os.path.isfile(filename) and filename.endswith('.py'):
-            module, ext = os.path.splitext(os.path.basename(filename))
-            assert ext == '.py'
-            return module
+    # detect checkers (try to be smart)
+    for file in files:
+        base, ext = os.path.splitext(os.path.basename(file.rel_filename))
+        if 'checker' in base and ext == '.py':
+            checkers.append(file)
+
+    if problem_code:
+        # current files
+        checkers.append(details.checker)
+
+        all_local = [details.validator, details.interactor, details.model_solution] + (
+                details.generators + details.other_programs + files + extra_files + checkers)
+
+        # files that start with 'grader.' (for cms mainly)
+        graders = [file for file in details.other_programs if os.path.basename(file.filename).startswith('grader.')]
+
+        to_compiles = {
+            'pg': [details.validator, details.interactor] + checkers + details.generators,
+            'hr': checkers,
+            'pc2': [details.validator] + checkers,
+            'cms': [(checker, "checker") for checker in checkers] + graders,
+            'cms-it': [(checker, os.path.join("check", "checker")) for checker in checkers]
+                    + [
+                        (grader, os.path.join("sol", os.path.basename(grader.rel_filename)))
+                        for grader in graders
+                    ],
+        }
+    else:
+        all_local = files + extra_files
+        to_compiles = {}
+
+    if not problem_code and not files:
+        raise CommandError(f"Missing -f/--files. Run 'kg kompile -h' for more details.")
 
     # keep only python files
     all_local = [p for p in all_local if p and get_module(p.rel_filename)]
     for p in all_local:
         locations[get_module(p.rel_filename)] = p.rel_filename
 
-    @memoize
-    @listify
-    def load_module(module_id):
-        if module_id not in locations:
-            raise CommandError(f"Couldn't find module {module_id}! (Add it to other_programs?)")
-        with open(locations[module_id]) as f:
-            for line in f:
-                if not line.endswith('\n'):
-                    warn_print('Warning:', locations[module_id], "doesn't end with a new line.")
-                yield line.rstrip('\n')
-
-    def get_module_id(module, context):
-        nmodule = module
-        if nmodule.startswith('.'):
-            if context['module_id'] in kg_libs:
-                nmodule = 'kg' + nmodule
-
-        if nmodule.startswith('.'):
-            warn_print(f"Warning: Ignoring relative import for {module}", file=stderr)
-            nmodule = nmodule.lstrip('.')
-
-        return nmodule
-
     # get subtasks files
     subjson = details.subtasks_files
     subtasks_files = []
     if details.valid_subtasks:
         subtasks_files = details.load_subtasks_files()
-
-    # files that start with 'grader.'
-    graders = [file for file in details.other_programs if os.path.basename(file.filename).startswith('grader.')]
-
-    # extract problem code
-    # not really sure if this is the best way to extract the problem code.
-    # also, probably should be put elsewhere...
-    if details.relpath:
-        problem_code = os.path.basename(os.path.abspath(os.path.join(details.relpath, '.')))
-    elif details.source:
-        problem_code = os.path.basename(os.path.dirname(os.path.abspath(details.source)))
-    else:
-        problem_code = '-'.join(''.join(c if c.isalnum() else ' ' for c in details.title).lower().split())
-
 
     def subtask_score(sub):
         if details.valid_subtasks[sub].score is not None:
@@ -1268,19 +1326,15 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
     subtask_score.missing = False
 
     # convert to various formats
-    for fmt, name, copy_files, to_compile in [
-            ('pg', 'Polygon', True, [details.validator, details.interactor, details.checker] + details.generators),
-            ('hr', 'HackerRank', True, [details.checker]),
-            ('pc2', 'PC2', False, [details.validator, details.checker]),
-            ('cms', 'CMS', True, [(details.checker, "checker")] + graders),
-            ('cms-it', 'CMS Italian', False, [
-                        (details.checker, os.path.join("check", "checker")),
-                    ] + [
-                        (grader, os.path.join("sol", os.path.basename(grader.rel_filename)))
-                        for grader in graders
-                    ]),
+    for fmt, name, copy_files in [
+            ('pg', 'Polygon', True),
+            ('hr', 'HackerRank', True),
+            ('pc2', 'PC2', False),
+            ('cms', 'CMS', True),
+            ('cms-it', 'CMS Italian', False),
         ]:
         if fmt not in target_formats: continue
+        to_compile = files + to_compiles.get(fmt, [])
 
         decor_print()
         decor_print('.. '*14)
@@ -1375,54 +1429,57 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                 raise
 
 
-        if fmt == 'hr' and details.checker and get_module(details.checker.rel_filename): # snippets for hackerrank upload.
-            # pastable version of grader
-            filename = details.checker.rel_filename
-            module = get_module(filename)
+        # snippets for hackerrank upload
+        if fmt == 'hr':
+            for checker in checkers:
+                if get_module(checker.rel_filename):
+                    # pastable version of grader
+                    filename = checker.rel_filename
+                    module = get_module(filename)
 
-            target = os.path.join(dest_folder, 'hr.pastable.version.' + os.path.basename(filename))
-            info_print(f'[{module}] writing snippet version of {filename} to {target}')
-            touch_container(target)
-            lines = list(compile_lines(load_module(module),
-                    module_id=module,
-                    module_file=filename,
-                    load_module=load_module,
-                    get_module_id=get_module_id,
-                    format=fmt,
-                    details=details,
-                    subtasks_files=subtasks_files,
-                    snippet=True,
-                    subtasks_only=False,
-                    shift_left=shift_left,
-                    compress=compress,
-                ))
-            with open(target, 'w') as f:
-                print("# NOTE: THIS SCRIPT IS MEANT TO BE PASTED TO HACKERRANK'S CUSTOM CHECKER, NOT RUN ON ITS OWN.",
-                        file=f)
-                for line in lines:
-                    assert not line.endswith('\n')
-                    print(line, file=f)
+                    target = os.path.join(dest_folder, 'hr.pastable.version.' + os.path.basename(filename))
+                    info_print(f'[{module}] writing snippet version of {filename} to {target}')
+                    touch_container(target)
+                    lines = list(compile_lines(load_module(module),
+                            module_id=module,
+                            module_file=filename,
+                            load_module=load_module,
+                            get_module_id=get_module_id,
+                            format=fmt,
+                            details=details,
+                            subtasks_files=subtasks_files,
+                            snippet=True,
+                            subtasks_only=False,
+                            shift_left=shift_left,
+                            compress=compress,
+                        ))
+                    with open(target, 'w') as f:
+                        print("# NOTE: THIS SCRIPT IS MEANT TO BE PASTED TO HACKERRANK'S CUSTOM CHECKER, NOT RUN ON ITS OWN.",
+                                file=f)
+                        for line in lines:
+                            assert not line.endswith('\n')
+                            print(line, file=f)
 
-            target = os.path.join(dest_folder, 'hr.subtasks.only.' + os.path.basename(filename))
-            info_print(f'[{module}] writing the subtasks snippet of {filename} to {target}')
-            touch_container(target)
-            lines = list(compile_lines(load_module(module),
-                    module_id=module,
-                    module_file=filename,
-                    load_module=load_module,
-                    get_module_id=get_module_id,
-                    format=fmt,
-                    details=details,
-                    subtasks_files=subtasks_files,
-                    snippet=True,
-                    subtasks_only=True,
-                    write=False,
-                ))
-            with open(target, 'w') as f:
-                print('# NOTE: THIS SCRIPT IS NOT MEANT TO BE RUN ON ITS OWN.', file=f)
-                for line in lines:
-                    assert not line.endswith('\n')
-                    print(line, file=f)
+                    target = os.path.join(dest_folder, 'hr.subtasks.only.' + os.path.basename(filename))
+                    info_print(f'[{module}] writing the subtasks snippet of {filename} to {target}')
+                    touch_container(target)
+                    lines = list(compile_lines(load_module(module),
+                            module_id=module,
+                            module_file=filename,
+                            load_module=load_module,
+                            get_module_id=get_module_id,
+                            format=fmt,
+                            details=details,
+                            subtasks_files=subtasks_files,
+                            snippet=True,
+                            subtasks_only=True,
+                            write=False,
+                        ))
+                    with open(target, 'w') as f:
+                        print('# NOTE: THIS SCRIPT IS NOT MEANT TO BE RUN ON ITS OWN.', file=f)
+                        for line in lines:
+                            assert not line.endswith('\n')
+                            print(line, file=f)
 
 
         # convert testscript
@@ -1443,7 +1500,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                     print(line, file=f)
 
         # copy over the files
-        if copy_files:
+        if copy_files and problem_code:
             info_print('copying test data from', loc, 'to', dest_folder, '...')
             # TODO code this better.
             if fmt == 'cms':
@@ -1460,7 +1517,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
 
 
         # do special things for cms
-        if fmt == 'cms-it':
+        if fmt == 'cms-it' and problem_code:
 
             # statement file (required)
             # just write a dummy file for now, since kompgen doesn't require a pdf file
@@ -1532,7 +1589,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                     if index != input_count:
                         raise CommandError("Count mismatch. This shouldn't happen :( Maybe subtasks_files is not up-to-date?")
 
-        if fmt == 'cms':
+        if fmt == 'cms' and problem_code:
 
             # create config file
             config = {
@@ -1586,7 +1643,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                         ]):
                     zipf.write(fl, arcname=os.path.basename(fl))
 
-        if fmt == 'pg':
+        if fmt == 'pg' and problem_code:
             zipname = os.path.join(dest_folder, 'upload_this_to_polygon.zip')
             info_print('making zip for Polygon...', zipname)
             tests_folder = os.path.join(dest_folder, 'tests')
@@ -1597,7 +1654,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                 for inp in PGFormat(dest_folder, read='i').thru_inputs():
                     zipf.write(inp, arcname=get_arcname(inp))
 
-        if fmt == 'hr':
+        if fmt == 'hr' and problem_code:
             zipname = os.path.join(dest_folder, 'upload_this_to_hackerrank.zip')
             info_print('making zip for HackerRank...', zipname)
             def get_arcname(filename):
@@ -1616,7 +1673,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
         warn_print('Warning: some subtask scores missing. You may want to turn "valid_subtasks" into a list that '
                 'looks like [{"id": 1, "score": 20}, {"id": 2, "score": 30}] ...')
 
-    if 'cms-it' in target_formats and total_score != 100:
+    if 'cms-it' in target_formats and details.valid_subtasks and total_score != 100:
         err_print(f'ERROR: The total score is {total_score} but the Italian format requires a total score of 100.')
         raise CommandError(f'The total score is {total_score} but the Italian format requires a total score of 100.')
 
