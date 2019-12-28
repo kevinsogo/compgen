@@ -42,17 +42,27 @@ $ kg some-command --help  # help for command 'some-command'
 
 ## Test with local data
 
+Generate the output from input. The output file names will be inferred from the patterns.
+
 ```bash
-# generate the output from input. The output file names will be inferred from the patterns.
 $ kg gen -i "tests/*.in" -o "tests/*.ans" -f Solution.java
+```
 
-# test solution against the input and output files.
+Test a solution program against the input and output files.
+
+```bash
 $ kg test -i "tests/*.in" -o "tests/*.ans" -f other_sol.cpp
+```
 
-# test solution, with custom checker
+Test a solution, with custom checker.
+
+```bash
 $ kg test -i "tests/*.in" -o "tests/*.ans" -f other_sol.cpp -jf checker.py
+```
 
-# just run the program against the inputs
+Just run a program against the inputs.
+
+```bash
 $ kg run -i "tests/*.in" -f YetAnotherSol.java
 ```
 
@@ -93,7 +103,7 @@ $ kg subtasks -i "tests/*.in" -f Detector.java
 $ kg subtasks -i "tests/*.in" -c java Detector # alternative
 ```
 
-### Method 2: Using a validator which can detect subtasks
+### Method 2: Using a validator which can validate against subtasks
 
 Write a program (say `Validator.java`) that takes the subtask number as the first argument and an input file from stdin, and exits with code 0 iff the file is valid for that subtask. Then run the following:
 
@@ -103,6 +113,24 @@ $ kg subtasks -i "tests/*.in" -vc java Validator -s 1 2 3 # alternative
 ```
 
 Here, `-s` is the list of subtasks. 
+
+
+## Writing validators, generators, or checkers  
+
+You can write validators, generators, or checkers using KompGen. You do this by following [this tutorial](docs/PREPARATION.md) and/or [this tutorial](docs/TUTORIAL.md). There, it is explained how to write them in the context of preparing the whole problem via KompGen, but you can also write these scripts independently.
+
+You may then use the following command:
+
+```bash
+$ kg kompile -f validator.py
+$ kg kompile -f gen_random.py
+$ kg kompile -f checker.py
+# etc.
+```
+
+to compile them into files that you can upload to your respective online judge (Polygon, etc.). The compiled files that you can upload will be placed in the `kgkompiled/` folder.
+
+You have to do this because online judges and contest systems sometimes require programs to be self-contained in a single file, hence, all imports must be "inlined" automatically. Behind the scenes, a directive called `@import` is used for this. See the longer [tutorial](docs/PREPARATION.md) for more details.  
 
 
 ## Convenience  
@@ -207,7 +235,7 @@ You can still run `kg make all` if you wish.
 
 3. Upload the files in `kgkompiled`.  
 
-Behind the scenes, some programs need to be self-contained in a single file before uploading, hence, all imports are "inlined" automatically. A directive called `@import` is used for this. See the longer [tutorial](docs/PREPARATION.md#Some restrictions) for more details.  
+Behind the scenes, some programs need to be self-contained in a single file before uploading, hence, all imports are "inlined" automatically. A directive called `@import` is used for this. See the longer [tutorial](docs/PREPARATION.md) for more details.  
 
 
 ## Phase D. Compiling a Contest  

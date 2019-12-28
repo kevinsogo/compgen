@@ -76,4 +76,4 @@ for location, target, rel_loc in get_templates():
         print(f"<!-- Edit docs/src/{rel_loc} instead, then run './makedocs'. -->\n\n", file=f)
         f.write(s)
 
-    # TODO possibly use a templating engine here instead of ad-hoc code
+    # TODO possibly use Jinja here instead of ad-hoc code
