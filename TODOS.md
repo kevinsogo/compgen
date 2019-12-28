@@ -25,6 +25,8 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Properly delete contest files in kgkompiled/ when recreating a contest.
 
+- Give capability to kgkompile outside of `kg make`-created folders. Useful for one-off files like writing a one-off validator (then compiling)
+
 - Allow overriding of defaults when using Bounds & Bounds. Add stderr prints about "overriding" when one is not an Interval. Possibly disallow Interval & non-Interval.
 
 - Add warning in `KGRandom` about shuffling arbitrary collections, especially unordered ones like sets and dicts. It can override `.shuffle` by adding an optional kwarg, `sort`, which is `False` by default but also issues a warning. Add a way to suppress this warning safely.
@@ -41,7 +43,25 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Warn if a constructed chain is never called
 
+- Find inspiration from jngen
+
 - Implement polygon-compatible partial scorer. The behavior should be equivalent to testlib `quitp(_pc(score-16))`
+    
+
+    - Some links:
+
+        google: partial scoring codeforces polygon
+        google: quitp _pc site:codeforces.com
+        https://codeforces.com/blog/entry/47523
+        https://codeforces.com/blog/entry/48241
+        https://codeforces.com/blog/entry/59886
+        https://codeforces.com/blog/entry/63042
+        https://codeforces.com/blog/entry/18426
+        https://codeforces.com/blog/entry/18455
+        https://codeforces.com/blog/entry/18431
+        https://codeforces.com/blog/entry/51019
+        https://codeforces.com/blog/entry/59886
+
 
 - Add "pc2" kg kompile and add the yaml writing for a task there
 
