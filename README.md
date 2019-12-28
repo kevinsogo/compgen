@@ -157,7 +157,7 @@ This generates the files `kgkompiled/logins_*.html` which contain the same passw
 
 The teams can be grouped by school. See the example in `examples/teams.json`. The school names will be included in the output.
 
-This uses [bootstrap](https://getbootstrap.com/) for styling, so the output would look great with internet access. If you don't have internet access, find [a copy](https://getbootstrap.com/docs/3.3/getting-started/) of `bootstrap.min.css` and place it in the same folder as the `*.html` files.  
+This uses [bootstrap](https://getbootstrap.com/) for styling, so the output would look great if you have internet access. If you don't have internet access, find [a copy](https://getbootstrap.com/docs/3.3/getting-started/) of `bootstrap.min.css` and place it in the same folder as the `*.html` files.  
 
 
 ## Generate seating arrangements

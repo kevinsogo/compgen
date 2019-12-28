@@ -36,21 +36,21 @@
 
             <table class="table pass-table">
                 <tbody>
-                    {% for row in accounts | batch(per_row, ('', '', '', '')) %}
+                    {% for row in accounts | batch(per_row, None) %}
                         <tr>
-                            {% for type, display, account, password in row %}
+                            {% for account in row %}
                                 <td>
-                                    {% if display %}
+                                    {% if account %}
                                         <div>
-                                            <strong>{{ display }}</strong>
+                                            <strong>{{ account.display_name }}</strong>
                                             {% if code %}<small><em>({{ code }})</em></small>{% endif %}
                                         </div>
-                                        <div><small>{{ type }}</small></div>
+                                        <div><small>{{ account.display_sub }}</small></div>
                                         <div class="team-details">
                                             <span class="pass-field">Login:</span>
-                                            <span class="pass-value"><code>{{ account }}</code></span>
+                                            <span class="pass-value"><code>{{ account.username }}</code></span>
                                             <span class="pass-field">Pass:</span>
-                                            <span class="pass-value"><code>{{ password }}</code></span>
+                                            <span class="pass-value"><code>{{ account.password }}</code></span>
                                         </div>
                                     {% endif %}
                                 </td>

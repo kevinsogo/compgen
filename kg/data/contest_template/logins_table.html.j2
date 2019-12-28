@@ -27,12 +27,12 @@
             <table class="table table-hover table-bordered">
                 <thead><tr><th>University/School</th> <th>Display name</th> <th>Login name</th> <th>Password</th></tr></thead>
                 <tbody>
-                    {% for type, display, account, password in accounts %}
+                    {% for account in accounts %}
                         <tr class="pass-entry">
-                            <td>{{type}}</td>
-                            <td>{{display}}</td>
-                            <td><code>{{account}}</code></td>
-                            <td><code>{{password}}</code></td>
+                            <td>{{ account.display_sub }}</td>
+                            <td>{{ account.display_name }}</td>
+                            <td><code>{{ account.username }}</code></td>
+                            <td><code>{{ account.password }}</code></td>
                         </tr>
                     {% endfor %}
                 </tbody>

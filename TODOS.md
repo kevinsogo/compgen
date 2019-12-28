@@ -279,6 +279,8 @@ new_case kwargs can still be passed as info.
 
 - Future backwards incompatible: use hashlib for hashing purposes (e.g. generating seeds from args)
 
+- Make "black magic" its separate package (maybe? lol)
+
 - use polygon multifile generator [at least support for this]
 
 - for multi-file generators:

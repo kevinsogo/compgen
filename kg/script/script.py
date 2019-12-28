@@ -1744,7 +1744,7 @@ def kg_contest(format_, args):
     if not is_same_format(format_, 'kg'):
         raise CommandError(f"You can't use '{format_}' format to 'kontest'.")
 
-    valid_formats = {'pc2', 'cms', 'cms-it'}
+    valid_formats = {'pc2', 'cms', 'cms-it', 'dom'}
     if args.format not in valid_formats:
         raise CommandError(f"Unsupported contest format: {args.format}")
 

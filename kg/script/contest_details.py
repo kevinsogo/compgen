@@ -129,6 +129,12 @@ class ContestDetails(object):
             elif not isinstance(teamo['school'], str):
                 raise TypeError(f"School must be a string, got {teamo['school']!r}")
             team_schools.append(teamo)
+
+        # attach default values for 'school_short' and 'country_code'
+        for team_school in team_schools:
+            team_school.setdefault('school_short', team_school['school'])
+            team_school.setdefault('country_code', 'XXX')
+
         return team_schools
 
     @classmethod
