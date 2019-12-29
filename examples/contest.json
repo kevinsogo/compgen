@@ -34,5 +34,6 @@
     "admin_count": 3,
     "leaderboard_count": 2,
     "default_country_code": "PHL",
+    "global_statements": "statements.txt",
     "seating": "seating.txt"
 }

@@ -2004,13 +2004,13 @@ def kg_contest(format_, args):
             kg_compile(format_, details, args.format, loc=problem_loc, python3=contest.python3_command)
 
 
-            # copy statement. for now, dummy, but in the future, include cms.
-            # we will also have global_statements
+            # copy statement. TODO incorporate "statement" in details.json in the future
             if args.format == 'dom':
-                source = os.path.join(problem_loc, 'kgkompiled', args.format, 'statement.pdf')
-                target = os.path.join(problems_folder, problem_code, 'problem_statement', 'statement.pdf')
+                source = contest.rel_global_statements
+                base, ext = os.path.splitext(source)
+                target = os.path.join(problems_folder, problem_code, 'problem_statement', 'statement' + ext)
                 copy_file(source, target)
-                target = os.path.join(problems_folder, problem_code, 'problem.pdf')
+                target = os.path.join(problems_folder, problem_code, 'problem' + ext)
                 copy_file(source, target)
 
 
@@ -2081,7 +2081,7 @@ def kg_contest(format_, args):
         write_seating(contest, seedval=seedval, dest=contest_folder)
 
     if args.format == 'dom':
-        warn_print("Note: There seems to be no way to import contest configuration to DOMjudge")
+        warn_print("Note: There seems to be no way to import contest configuration to DOMjudge, ")
         warn_print("so you'll have to do that manually.")
 
     decor_print()

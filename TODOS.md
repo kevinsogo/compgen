@@ -25,7 +25,7 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Check if pc2 still works
 
-- hms filter and calendar.timegm Jinja filters. [must be done alongside checking that PC2 still works]
+- Have "statement" in details.json. It will override global_statements (or join with it; the point is, it has higher priority)
 
 - reorganize `formats.py`, `kg_compile` and `kg_contest`.
     
@@ -91,10 +91,6 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Add "cms" format and write own Loader (compgen-cms).
 
-- More CMS task types (cms and cms-it)
-
-- Jinja for kg contest pc2
-
 - Cleanup kg_contest and kg_compile to be more modular
 
 - Fix margins of \_boxes template again. Should not wrap.
@@ -156,10 +152,6 @@ This includes some disorganized ideas, TODOs, notes...
     
     - Similar to polygon.
 
-- Allow compilation of a single file. `kg kompile -f`.
-    
-    - Maybe params for imported packages, like `kg kompile -f [...] -i [... [...]]`.  
-
 - Geometry library (`kg.geom.*` or `kg.math.geom.*`.)
     
     - Nice things include random polygon, and random convex polygon given number of sides.
@@ -178,7 +170,7 @@ This includes some disorganized ideas, TODOs, notes...
 
     - has an optional argument `file=file`.  
 
-- Use Jinja templating for makedocs, seating and passwords
+- Use Jinja templating for makedocs
 
 - Improve the seating algorithm. Maybe use some simulated annealing or something? haha
 
@@ -213,8 +205,6 @@ This includes some disorganized ideas, TODOs, notes...
 - Support for stress testing. `kg.stresses`, I guess.
 
 - Export to .tex format, both for Kattis and for `\newproblem{title}{TL}` format.
-
-- Use a YAML library.
 
 - don't make the kg checkers strict. use parse_known_args
 

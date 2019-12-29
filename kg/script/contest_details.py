@@ -59,8 +59,8 @@ class ContestDetails(object):
             setattr(self, key, parse_time(self.details.get(key, defaults.get(key))))
 
         # others
-        for key in ['title', 'code', 'site_password', 'problems', 'seating',
-                'seed', 'target_loc', 'python3_command', 'default_country_code']:
+        for key in ['title', 'code', 'site_password', 'problems', 'seating', 'seed', 'target_loc',
+                'python3_command', 'default_country_code', 'global_statements']:
             setattr(self, key, self.details.get(key, defaults.get(key)))
 
         # data validation
@@ -156,6 +156,11 @@ class ContestDetails(object):
     @property
     def rel_seating(self):
         return attach_relpath(self.relpath, self.seating)
+
+    @property
+    def rel_global_statements(self):
+        return attach_relpath(self.relpath, self.global_statements)
+    
     
 
     def serialize(self):
