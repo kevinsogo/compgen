@@ -1,11 +1,11 @@
 from collections import defaultdict
 from functools import wraps
 from sys import stderr
+from threading import Thread
 import json
 import os
 import os.path
 import subprocess
-from threading import Thread
 import time as timel
 
 from .utils import *

@@ -1,11 +1,11 @@
 {
     "python3": {
-        "compile": "kg-aux assert-exist {filename}",
+        "compile": "{python3} -m py_compile {filename}",
         "run": "{python3} {filename}",
         "endings": [".py", ".py3"]
     },
     "python2": {
-        "compile": "kg-aux assert-exist {filename}",
+        "compile": "python2 -m py_compile {filename}",
         "run": "python2 {filename}",
         "endings": [".py2"]
     },

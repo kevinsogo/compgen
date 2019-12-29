@@ -28,5 +28,6 @@
     "feeder_count": 0,
     "target_loc": null,
     "seating": null,
+    "default_country_code": "XXX",
     "python3_command": "python3"
 }

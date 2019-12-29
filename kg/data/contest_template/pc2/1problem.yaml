@@ -1,6 +1,0 @@
-  - letter: {letter}
-    short-name: {problem_code}
-    name: "{letter_title}"
-    color: 
-    rgb: ''
-    load-data-files: false

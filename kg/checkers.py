@@ -1,5 +1,6 @@
+from contextlib import ExitStack
 from enum import Enum
-from sys import stdout, stderr
+from sys import stdin, stdout, stderr
 import os.path
 import itertools, functools, argparse, traceback
 
@@ -210,13 +211,11 @@ class Checker:
         return aggregate(iterator(It))
 
 
-def _check_generic(checker, input_path, output_path, judge_path, **kwargs):
+def _check_generic(checker, input=None, output=None, judge=None, **kwargs):
     ### @@if format == 'pc2' {
     if CURR_PLATFORM == 'pc2' and os.path.isfile('EXITCODE.TXT'): # WTH undocumented shit PC^2 !?!?
         return Verdict.RTE, 0.0, "The solution didn't return a 0 exit code (maybe... because EXITCODE.TXT exists)."
     ### @@}
-
-    kwargs.update({'input_path': input_path, 'output_path': output_path, 'judge_path': judge_path})
 
     if CURR_PLATFORM in {'cms', 'cms-it'}:
         def handle_exc_verdict(exc, verdict):
@@ -226,11 +225,16 @@ def _check_generic(checker, input_path, output_path, judge_path, **kwargs):
             if kwargs.get('verbose'): traceback.print_exc()
             return verdict, getattr(exc, 'score', 0.0), str(exc)
 
-    try:
-        input_file, output_file, judge_file = map(open, (input_path, output_path, judge_path))
-    except Exception as exc:
-        return handle_exc_verdict(exc, Verdict.EXC)
-    with input_file, output_file, judge_file:
+    files = []
+    for name, file in [('input', input), ('output', output), ('judge', judge)]:
+        to_open = isinstance(file, str)
+        kwargs[f'{name}_path'], file = (file, open(file)) if to_open else file
+        files.append((file, to_open))
+
+    with ExitStack() as stack:
+        input_file, output_file, judge_file = [
+                stack.enter_context(file) if to_open else file
+                for file, to_open in files]
         try:
             score = checker(input_file, output_file, judge_file, **kwargs)
             if not (0.0 <= score <= 1.0): return Verdict.FAIL, 0.0, f"The checker returned an invalid score: {score!r}"
@@ -275,9 +279,9 @@ def _check_hr(checker, t_obj, r_obj, *, print_message=False):
         r_obj.message = "Runtime Error"
     else:
         verdict, r_obj.score, message = _check_generic(checker,
-                input_path=t_obj.testcase_input_path,
-                output_path=t_obj.testcase_output_path,
-                judge_path=t_obj.testcase_expected_output_path,
+                input=t_obj.testcase_input_path,
+                output=t_obj.testcase_output_path,
+                judge=t_obj.testcase_expected_output_path,
                 code_path=t_obj.submission_code_path,
                 tc_id=t_obj.testcase_id,
                 identical=t_obj.testcase_result,
@@ -298,6 +302,19 @@ _polygon_rcode = {
     Verdict.FAIL: 3,
     Verdict.EXC: 3,
 }
+
+### @@ if format == 'dom' {
+_domjudge_rcode = {
+    Verdict.AC: 42,
+    Verdict.CE: 43,
+    Verdict.PAE: 43,
+    Verdict.WA: 43,
+    Verdict.RTE: 43,
+    Verdict.TLE: 43,
+    Verdict.FAIL: 3,
+    Verdict.EXC: 3,
+}
+### @@ }
 
 ### @@if format in ('local', 'kg') {
 def write_json_verdict(verdict, message, score, result_file):
@@ -343,9 +360,9 @@ def _check_cms(checker, *, score_file=stdout, message_file=stderr, title='', hel
     args = parser.parse_args()
 
     verdict, score, message = _check_generic(checker,
-            input_path=args.input_path,
-            output_path=args.output_path,
-            judge_path=args.judge_path,
+            input=args.input_path,
+            output=args.output_path,
+            judge=args.judge_path,
         )
 
     if not message:
@@ -359,6 +376,35 @@ def _check_cms(checker, *, score_file=stdout, message_file=stderr, title='', hel
     print(score, file=score_file)
     print(message, file=message_file)
 ### @@}
+
+### @@if format == 'dom' {
+@_register_platform('dom')
+def _check_dom(checker, title='', file=stdout, help=None, **kwargs):
+    desc = help or (CURR_PLATFORM + (' judge for the problem' + (f' "{title}"' if title else '')) +
+            " (it takes the contestant's output file from stdin)")
+    parser = argparse.ArgumentParser(description=desc)
+    parser.add_argument('input_path', help='input file path')
+    parser.add_argument('judge_path', help='judge auxiliary data file path')
+    parser.add_argument('feedback_dir', nargs='?', help='location to write auxiliary data to')
+    parser.add_argument('extra_args', nargs='*', help='extra arguments that will be ignored')
+    args = parser.parse_args()
+
+    if args.extra_args: print(f"Received extra args {args.extra_args}... ignoring them.", file=file)
+    print(f"Checking the output...", file=file)
+
+    verdict, score, message = _check_generic(checker,
+            input=args.input_path,
+            output=['<stdin>', stdin],
+            judge=args.judge_path,
+            verbose=True,
+        )
+
+    print(f"Result:  {verdict}", file=file)
+    print(f"Score:   {score}", file=file)
+    if message: print(f"Message: {overflow_ell(message, 1000)}", file=file)
+
+    exit(_domjudge_rcode[verdict])
+### @@ }
 
 ### @@if format in ('local', 'kg', 'pg', 'pc2') {
 @_register_platform('local')
@@ -390,9 +436,9 @@ def _check_local(checker, title='', file=stdout, help=None, force_verbose=False)
         print(f"{tc_id:>2} Checking the output...", file=file)
 
     verdict, score, message = _check_generic(checker,
-            input_path=args.input_path,
-            output_path=args.output_path,
-            judge_path=args.judge_path,
+            input=args.input_path,
+            output=args.output_path,
+            judge=args.judge_path,
             code_path=args.code,
             tc_id=args.tc_id,
             identical=args.identical,
@@ -401,7 +447,6 @@ def _check_local(checker, title='', file=stdout, help=None, force_verbose=False)
 
     if verbose:
         print(f"{tc_id:>2} Result:  {verdict}", file=file)
-        print(f"{tc_id:>2} on HR:   {_hr_verdict_name[verdict]}", file=file)
         print(f"{tc_id:>2} Score:   {score}", file=file)
         if message: print(f"{tc_id:>2} Message: {overflow_ell(message, 100)}", file=file)
     else:

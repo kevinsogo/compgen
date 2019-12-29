@@ -58,7 +58,9 @@ class ContestDetails(object):
         for key in ['start_time']:
             setattr(self, key, parse_time(self.details.get(key, defaults.get(key))))
 
-        for key in ['title', 'code', 'site_password', 'problems', 'seating', 'seed', 'target_loc', 'python3_command']:
+        # others
+        for key in ['title', 'code', 'site_password', 'problems', 'seating',
+                'seed', 'target_loc', 'python3_command', 'default_country_code']:
             setattr(self, key, self.details.get(key, defaults.get(key)))
 
         # data validation
@@ -95,6 +97,7 @@ class ContestDetails(object):
                 self.team_schools = self.get_team_schools(value_list)
                 value_list = [team for ts in self.team_schools for team in ts['teams']]
                 schools = [ts['school'] for ts in self.team_schools]
+                for ts in self.team_schools: ts.setdefault('country_code', self.default_country_code)
                 if len(set(schools)) != len(schools):
                     raise ValueError("Duplicate school found!")
 
@@ -132,8 +135,7 @@ class ContestDetails(object):
 
         # attach default values for 'school_short' and 'country_code'
         for team_school in team_schools:
-            team_school.setdefault('school_short', team_school['school'])
-            team_school.setdefault('country_code', 'XXX')
+            team_school.setdefault('school_short', shorten_school(team_school['school']))
 
         return team_schools
 
@@ -154,3 +156,15 @@ class ContestDetails(object):
     def serialize(self):
         raise NotImplementedError # not implemented yet. returns a dict to be json'ed
 
+
+def shorten_school(school):
+    ''' best effort shortening the school name (University of the Philippines --> U Philippines) '''
+    # TODO improve this
+    if not isinstance(school, str): return ''
+    short = ''
+    for part in school.split():
+        if len(part) < 4: continue
+        if part.lower() == 'university': part = 'U'
+        if len(short + part) > 20: part = part[:1]
+        short += part
+    return short[:20] or ' '

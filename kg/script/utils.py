@@ -1,6 +1,9 @@
 from sys import stdout
+import os
 import os.path
 import pathlib
+import shutil
+import stat
 
 from jinja2 import Environment, select_autoescape, PackageLoader
 
@@ -10,11 +13,68 @@ from ..utils.hr import *
 script_path = os.path.dirname(os.path.realpath(__file__))
 kg_path = os.path.normpath(os.path.join(script_path, '..'))
 kg_data_path = os.path.normpath(os.path.join(kg_path, 'data'))
+kg_contest_template = os.path.join(kg_data_path, 'contest_template')
+kg_problem_template = os.path.join(kg_data_path, 'template')
+
+
+# aux functions
+
+def touch_container(file):
+    ''' ensures that the folder containing "file" exists, possibly creating the nested directory path to it '''
+    touch_dir(os.path.dirname(file))
+
+
+def touch_dir(dirname):
+    if not os.path.exists(dirname): info_print('Creating folder:', dirname)
+    pathlib.Path(dirname).mkdir(parents=True, exist_ok=True)
+
+
+def copy_file(source, dest, ensure_container=True):
+    if ensure_container: touch_container(dest)
+    shutil.copyfile(source, dest)
+
+def make_executable(filename):
+    os.chmod(filename, os.stat(filename).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+
+
+
+# Jinja stuff
 
 kg_template_env = Environment(loader=PackageLoader('kg', 'data'),
-                           autoescape=select_autoescape(
+                              autoescape=select_autoescape(
                                 enabled_extensions=('html.j2', 'xml.j2'),
                                 default_for_string=True))
+
+def set_template_filter(filter_name):
+    def _set_template_filter(f):
+        if filter_name in kg_template_env.filters: raise
+        kg_template_env.filters[filter_name] = f
+        return f
+    return _set_template_filter
+
+
+@set_template_filter('basename')
+def basename_filter(file):
+    return os.path.basename(file)
+
+
+@set_template_filter('hms')
+def hms_filter(dt):
+    seconds = int(dt.total_seconds())
+    return f"{seconds // 3600}:{seconds // 60 % 60 :02}:{seconds % 60 :02}"
+
+
+def kg_render_template(template_filename, **env):
+    return kg_template_env.get_template(os.path.relpath(template_filename, kg_data_path)).render(**env)
+
+
+def kg_render_template_to(template_filename, dest_filename, **env):
+    touch_container(dest_filename)
+    with open(dest_filename, 'w') as dest_file:
+        dest_file.write(kg_render_template(template_filename, **env))
+
+
+# Color stuff
 
 def colored(text, *a, **kw): return text
 try:
@@ -40,16 +100,6 @@ def set_handler(parser, default_file=stdout):
         parser.set_defaults(handler=handler, default_file=default_file)
         # return handler # Let's not return this, to ensure that they are not called.
     return _set_handler
-
-
-def touch_container(file):
-    ''' ensures that the folder containing "file" exists, possibly creating the nested directory path to it '''
-    touch_dir(os.path.dirname(file))
-
-
-def touch_dir(dirname):
-    if not os.path.exists(dirname): info_print('Creating folder:', dirname)
-    pathlib.Path(dirname).mkdir(parents=True, exist_ok=True)
 
 
 krazy = False

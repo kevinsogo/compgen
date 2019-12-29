@@ -41,6 +41,8 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Rename `valid_subtasks` to just `subtasks`. (need backwards compatible)
 
+- Copy statement in dom/problem.tex.j2
+
 - Possibly use HJSON (or something) for config files, not pure JSON.
 
 - Find inspiration from jngen

@@ -1,0 +1,68 @@
+# Contest Configuration, generated from KompGen
+# Created: {{ datetime_created }}
+--- 
+
+name: '{{ title }}'
+short-name: 'null'
+elapsed: 0:00:00
+remaining: {{ duration }}
+running: false
+auto-stop-clock-at-end: false
+start-time: 2111-11-11 11:11:11 PHT
+duration: {{ duration }}
+scoreboard-freeze-length: {{ scoreboard_freeze_length }}
+# load-data-files: false
+judge-config-path: {{ alldata }}
+
+default-clars:
+  - No response, read problem statement
+
+clar-categories:
+  - General
+
+languages:
+{% for lang in langs %}  - name: '{{ lang.display_name }}'
+    active: true
+    compilerCmd: '{{ lang.compile }}'
+    exemask: '{{ lang.compiled_file }}'
+    execCmd: '{{ lang.run }}'
+    runner: '{{ lang.run_first }}'
+    runner-args: '{{ lang.run_rest }}'
+    interpreted: {{ lang.interpreted }}
+    use-judge-cmd: false
+    judge-exec-cmd: '{{ lang.run }}'
+
+{% endfor %}
+
+sites:
+  - number: 1
+    name: 'Site 1'
+    password: '{{ site_password }}'
+    IP: localhost
+    port: 50002
+
+
+accounts:
+  - account: TEAM
+    site: 1
+    count: {{ team_count }}
+
+  - account: JUDGE
+    site: 1
+    count: {{ judge_count }}
+
+  - account: SCOREBOARD
+    site: 1
+    count: {{ leaderboard_count }}
+
+  - account: FEEDER
+    site: 1
+    count: {{ feeder_count }}
+
+  - account: ADMINISTRATOR
+    site: 1
+    count: {{ admin_count }}
+
+
+# EOF Contest Configuration
+

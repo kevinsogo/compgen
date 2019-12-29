@@ -197,9 +197,7 @@ class Seating:
             "table": make_table(),
         })
 
-        targetfile.write(
-            kg_template_env.get_template(os.path.join('contest_template', 'seating.html.j2')).render(**context)
-        )
+        targetfile.write(kg_render_template(os.path.join(kg_contest_template, 'seating.html.j2'), **context))
 
 
 def attempt_assignment(seed, nodes, edge_cost, groups):

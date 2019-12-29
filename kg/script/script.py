@@ -1,16 +1,16 @@
-import calendar
 from collections import defaultdict, OrderedDict
 from datetime import datetime
 from functools import wraps
 from html.parser import HTMLParser
 from operator import attrgetter
-from random import randrange
-from shutil import copyfile, rmtree
+from random import randrange, shuffle
+from shutil import rmtree, make_archive
 from string import ascii_letters, ascii_uppercase, digits
 from subprocess import PIPE, CalledProcessError, SubprocessError, TimeoutExpired
 from sys import stdin, stdout, stderr
 from textwrap import dedent
 import argparse
+import calendar
 import contextlib
 import os
 import os.path
@@ -130,10 +130,8 @@ def convert_formats(src, dest, *, src_kwargs={}, dest_kwargs={}):
     copied = 0
     info_print("Copying now...")
     for (srci, srco), (dsti, dsto) in zip(src_format.thru_io(), dest_format.thru_expected_io()):
-        touch_container(dsti)
-        touch_container(dsto)
-        copyfile(srci, dsti)
-        copyfile(srco, dsto)
+        copy_file(srci, dsti)
+        copy_file(srco, dsto)
         copied += 2
     succ_print("Copied", copied, "files")
 
@@ -190,8 +188,7 @@ def convert_sequence(src, dest):
     copied = 0
     info_print("Copying now...")
     for srcf, destf in format_.thru_io():
-        touch_container(destf)
-        copyfile(srcf, destf)
+        copy_file(srcf, destf)
         copied += 1
     succ_print("Copied", copied, "files")
 
@@ -958,10 +955,10 @@ def construct_subs_files(subtasks_of, inputs):
         subs = subtasks_of[file]
         assert subs
         if prev != subs:
-            if prev: yield lf, rg, list(sorted(map(int, prev)))
+            if prev: yield lf, rg, sorted(map(int, prev))
             prev, lf = subs, idx
         rg = idx
-    if prev: yield lf, rg, list(sorted(map(int, prev)))
+    if prev: yield lf, rg, sorted(map(int, prev))
 
 
 
@@ -1055,7 +1052,7 @@ def kg_init(format_, args):
         raise CommandError("No special characters allowed for the problem code, "
                 "and the first and last characters must be a letter or a digit.")
 
-    src = os.path.join(kg_data_path, 'template')
+    src = kg_problem_template
     dest = os.path.join(args.loc, prob)
 
     print(info_text('The destination folder will be'), key_text(dest))
@@ -1083,12 +1080,13 @@ def kg_init(format_, args):
     fmt = Format(os.path.join(src, '*'), os.path.join(dest, '*'), read='i', write='o')
     for inp, outp in fmt.thru_io():
         if not os.path.isfile(inp): continue
-        with open(inp) as inpf:
-            res = inpf.read()
         if os.path.splitext(inp)[1] == '.j2':
-            res = Template(res).render(**env)
+            res = kg_render_template(inp, **env)
             outp, ext = os.path.splitext(outp)
             assert ext == '.j2'
+        else:
+            with open(inp) as inpf:
+                res = inpf.read()
         touch_container(outp)
         if res.strip('\n'):
             info_print(f'Writing {os.path.basename(outp)}')
@@ -1157,7 +1155,7 @@ compile_p = subparsers.add_parser('kompile',
                 Other directives aside from "@import" are available; see the KompGen repo docs for more details.
         ''')))
 compile_p.add_argument('formats', nargs='*',
-                                help='contest formats to compile to (default ["hr", "pg", "pc2", "cms"])')
+                                help='contest formats to compile to (["hr", "pg", "pc2", "dom", "cms"], default ["pg"])')
 compile_p.add_argument('-f', '--files', nargs='*',
                                 help='files to compile (only needed if you didn\'t use "kg init")')
 compile_p.add_argument('-ef', '--extra-files', nargs='*',
@@ -1180,7 +1178,7 @@ def _kg_compile(format_, args):
     kg_compile(
         format_,
         Details.from_format_loc(format_, args.details),
-        *(args.formats or ['hr', 'pg', 'pc2', 'cms']),
+        *(args.formats or ['pg']),
         loc=args.loc,
         shift_left=args.shift_left,
         compress=args.compress,
@@ -1191,7 +1189,7 @@ def _kg_compile(format_, args):
 def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, compress=False, python3='python3',
         dest_loc=None, files=[], extra_files=[]):
 
-    valid_formats = {'hr', 'pg', 'pc2', 'cms', 'cms-it'}
+    valid_formats = {'hr', 'pg', 'pc2', 'dom', 'cms', 'cms-it'}
     if not set(target_formats) <= valid_formats:
         raise CommandError(f"Invalid formats: {set(target_formats) - valid_formats}")
     if not is_same_format(format_, 'kg'):
@@ -1263,6 +1261,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
         'kg.grids.utils': os.path.join('grids', 'utils.py'),
         'kg.grids.generators': os.path.join('grids', 'generators.py'),
         'kg.math': os.path.join('math', '__init__.py'),
+        'kg.math.geom2d': os.path.join('math', 'geom2d.py'),
         'kg.math.primes': os.path.join('math', 'primes.py'),
     }
     locations = {lib: os.path.join(kg_path, path) for lib, path in locations.items()}
@@ -1290,6 +1289,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
             'pg': [details.validator, details.interactor] + checkers + details.generators,
             'hr': checkers,
             'pc2': [details.validator] + checkers,
+            'dom': [details.validator] + checkers,
             'cms': [(checker, "checker") for checker in checkers] + graders,
             'cms-it': [(checker, os.path.join("check", "checker")) for checker in checkers]
                     + [
@@ -1330,11 +1330,14 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
             ('pg', 'Polygon', True),
             ('hr', 'HackerRank', True),
             ('pc2', 'PC2', False),
+            ('dom', 'DOMjudge', False),
             ('cms', 'CMS', True),
             ('cms-it', 'CMS Italian', False),
         ]:
         if fmt not in target_formats: continue
         to_compile = files + to_compiles.get(fmt, [])
+
+        problem_template = os.path.join(kg_problem_template, fmt)
 
         decor_print()
         decor_print('.. '*14)
@@ -1342,6 +1345,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
         dest_folder = dest_loc(loc, fmt) if dest_loc else os.path.join(loc, 'kgkompiled', fmt)
 
         # clear dest_folder (scary...)
+        info_print('Clearing folder:', dest_folder, '...')
         if os.path.isdir(dest_folder): rmtree(dest_folder)
         touch_dir(dest_folder)
 
@@ -1417,7 +1421,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                     print(line, file=f)
             
             # make it executable
-            os.chmod(targets[module], os.stat(targets[module]).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+            make_executable(targets[module])
 
 
         # TODO for hackerrank, check that the last file for each subtask is unique to that subtask.
@@ -1516,6 +1520,15 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                     )
 
 
+        if fmt == 'dom' and problem_code:
+            # statement file
+            # just write a dummy file for now, since kompgen doesn't require a pdf file
+            # TODO update this when we add 'statement' in details.json
+            info_print('creating statement file...')
+            source_file = os.path.join(problem_template, 'statement.pdf')
+            target_file = os.path.join(dest_folder, 'statement.pdf')
+            copy_file(source_file, target_file)
+
         # do special things for cms
         if fmt == 'cms-it' and problem_code:
 
@@ -1523,28 +1536,9 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
             # just write a dummy file for now, since kompgen doesn't require a pdf file
             # TODO update this when we add 'statement' in details.json
             info_print('creating statement file...')
-            source_file = os.path.join(kg_data_path, 'template', 'cms-it', 'statement.pdf')
+            source_file = os.path.join(problem_template, 'statement.pdf')
             target_file = os.path.join(dest_folder, 'statement', 'statement.pdf')
-            touch_container(target_file)
-            copyfile(source_file, target_file)
-
-            # task.yaml
-            info_print('writing task.yaml')
-            with open(os.path.join(kg_data_path, 'template', 'cms-it', 'task.yaml.j2')) as f:
-                task_template = Template(f.read())
-
-            if details.valid_subtasks:
-                input_count = sum((high - low + 1) * len(subs) for low, high, subs in subtasks_files)
-            else:
-                input_count = len(CMSItFormat(dest_folder, read='i').inputs)
-            task_config = task_template.render({
-                    'problem_code': problem_code,
-                    'details': details,
-                    'input_count': input_count,
-                })
-
-            with open(os.path.join(dest_folder, 'task.yaml'), 'w') as f:
-                print(task_config, file=f)
+            copy_file(source_file, target_file)
 
             # test files
             # need to replicate files that appear in multiple subtasks
@@ -1561,12 +1555,25 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
             copied = 0
             info_print("Copying now...")
             for (srci, srco), (dsti, dsto) in zip(i_o_reps, CMSItFormat(dest_folder, write='io').thru_expected_io()):
-                touch_container(dsti)
-                touch_container(dsto)
-                copyfile(srci, dsti)
-                copyfile(srco, dsto)
+                copy_file(srci, dsti)
+                copy_file(srco, dsto)
                 copied += 2
             succ_print(f"Copied {copied} files (originally {len(i_os)*2})")
+
+            # task.yaml
+            info_print('writing task.yaml')
+            if details.valid_subtasks:
+                input_count = sum((high - low + 1) * len(subs) for low, high, subs in subtasks_files)
+            else:
+                input_count = len(CMSItFormat(dest_folder, read='i').inputs)
+
+            kg_render_template_to(
+                    os.path.join(problem_template, 'task.yaml.j2'),
+                    os.path.join(dest_folder, 'task.yaml'),
+                    problem_code=problem_code,
+                    details=details,
+                    input_count=input_count,
+                )
 
             # gen/GEN
             if details.valid_subtasks:
@@ -1644,7 +1651,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                     zipf.write(fl, arcname=os.path.basename(fl))
 
         if fmt == 'pg' and problem_code:
-            zipname = os.path.join(dest_folder, 'upload_this_to_polygon.zip')
+            zipname = os.path.join(dest_folder, 'upload_this_to_polygon_but_rarely.zip')
             info_print('making zip for Polygon...', zipname)
             tests_folder = os.path.join(dest_folder, 'tests')
             def get_arcname(filename):
@@ -1665,7 +1672,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                     for fl in inp, outp:
                         zipf.write(fl, arcname=get_arcname(fl))
 
-        succ_print(f'Done for {fmt} ({name})')
+        succ_print(f'Done compiling problem "{problem_code}"" for {fmt} ({name})')
 
     decor_print('.. '*14)
 
@@ -1698,8 +1705,8 @@ contest_p = subparsers.add_parser('kontest',
 
                 $ [*[kg contest [format] [config_file]]*]
 
-                Here, [format] is the contest format (currently, only "pc2" is supported), and [config_file] is a
-                path to a json file containing the contest metadata. 
+                Here, [format] is the contest format, and [config_file] is a path to a json file containing the
+                contest metadata. 
 
                 An example [config_file] can be seen in examples/contest.json.
 
@@ -1724,7 +1731,7 @@ contest_p = subparsers.add_parser('kontest',
 
                 See the KompGen repo docs for more details.
         ''')))
-contest_p.add_argument('format', help='Contest format to compile to')
+contest_p.add_argument('format', help='Contest format to compile to ("pc2", "dom", etc.)')
 contest_p.add_argument('config', help='JSON file containing the contest configuration')
 contest_p.add_argument('-m', '--make-all', action='store_true', help='Run "kg make all" in all problems')
 contest_p.add_argument('-ns', '--no-seating', action='store_true', help='Skip the creation of the seating arrangement')
@@ -1748,7 +1755,6 @@ def kg_contest(format_, args):
     if args.format not in valid_formats:
         raise CommandError(f"Unsupported contest format: {args.format}")
 
-    # TODO possibly use a yaml library here, but for now this will do.
     contest = ContestDetails.from_loc(args.config)
 
     target_loc = args.target_loc or contest.target_loc or os.path.abspath('kgkompiled')
@@ -1760,13 +1766,14 @@ def kg_contest(format_, args):
     if seedval is None: seedval = contest.seed
     if seedval is None: seedval = randrange(10**18)
     info_print(f"Using seedval = {seedval!r}", file=stderr)
+    rand = Random(seedval)
 
     contest_folder = os.path.join('kgkompiled', contest.code)
 
     # clear contest_folder (scary...)
+    info_print('Clearing folder:', contest_folder, '...')
     if os.path.isdir(contest_folder): rmtree(contest_folder)
     touch_dir(contest_folder)
-
 
 
     decor_print()
@@ -1775,15 +1782,18 @@ def kg_contest(format_, args):
     passwords = write_passwords_format(contest, args.format, seedval=seedval, dest=contest_folder)
     succ_print('Done passwords')
 
+    # TODO filterize
     def hms(x):
         seconds = int(x.total_seconds())
         return f"{seconds // 3600}:{seconds // 60 % 60 :02}:{seconds % 60 :02}"
 
+    # TODO maybe filterize calendar.timegm too?
+
+    contest_template = os.path.join(kg_contest_template, args.format)
+
     if args.format == 'cms-it':
 
         # identify key folders
-        contest_template = os.path.join(kg_data_path, 'contest_template', 'cms-it')
-
         contest_data_folder = os.path.join(contest_folder, 'contest')
 
         # construct template environment
@@ -1834,26 +1844,28 @@ def kg_contest(format_, args):
         info_print('Writing contest.yaml')
         source = os.path.join(contest_template, 'contest.yaml.j2')
         target = os.path.join(contest_data_folder, 'contest.yaml')
-        touch_container(target)
-        with open(source) as source_f, open(target, 'w') as target_f:
-            target_f.write(Template(source_f.read()).render(**env))
+        kg_render_template_to(source, target, **env)
 
 
 
-    if args.format == 'pc2':
+    if args.format == 'pc2' or args.format == 'dom':
 
         # identify key folders
-        cdp_config = os.path.join(contest_folder, 'CDP', 'config')
-        ext_data = os.path.join(contest_folder, 'ALLDATA')
-        contest_template = os.path.join(kg_data_path, 'contest_template', 'pc2')
-
-        # folders in the judge computers where the files will eventually go in (needed for PC2)
+        # folder in the judge computers where the files will eventually go in (needed for PC2)
         target_folder = os.path.join(target_loc, contest.code)
-        target_cdp_config = os.path.join(target_folder, 'CDP', 'config')
-        target_ext_data = os.path.join(target_folder, 'ALLDATA')
+
+        if args.format == 'pc2':
+            problems_folder = os.path.join(contest_folder, 'CDP', 'config')
+            ext_data = os.path.join(contest_folder, 'ALLDATA')
+            target_problems_folder = os.path.join(target_folder, 'CDP', 'config')
+            target_ext_data = os.path.join(target_folder, 'ALLDATA')
+        else:
+            problems_folder = os.path.join(contest_folder, 'PROBLEMS')
+            target_problems_folder = os.path.join(target_folder, 'PROBLEMS')
+            target_ext_data = None
 
         # construct template environment
-        if not contest.site_password: raise CommandError("site_password required for PC2")
+        if not contest.site_password: raise CommandError(f"site_password required for {args.format}")
         # TODO hms filter [there's probably a Jinja2 default] and pass 'contest' instead of all these
         env = {
             "datetime_created": datetime.now(),
@@ -1873,10 +1885,15 @@ def kg_contest(format_, args):
             "alldata": target_ext_data,
         }
 
+        # load colors
+        with open(os.path.join(kg_data_path, 'css_colors.txt')) as file:
+            css_colors = [line.strip() for line in file]
+        rand.shuffle(css_colors)
+
         # problem envs
         found_codes = {}
-        problem_env = {}
         letters = []
+        problems = []
         for letter, problem_loc in zip(problem_letters(), contest.rel_problems):
             details = Details.from_format_loc(format_, os.path.join(problem_loc, 'details.json'), relpath=problem_loc)
 
@@ -1892,7 +1909,7 @@ def kg_contest(format_, args):
             print(beginfo_text("Getting problem"), key_text(repr(code)), beginfo_text(f"(from {problem_loc})"))
 
             if details.valid_subtasks:
-                warn_print("Warning: The problem has subtasks, but 'pc2' contests only support binary tasks. "
+                warn_print(f"Warning: The problem has subtasks, but '{args.format}' contests only support binary tasks. "
                         "Ignoring subtasks.")
 
             if args.make_all:
@@ -1901,10 +1918,10 @@ def kg_contest(format_, args):
 
             time_limit = int(round(details.time_limit))
             if time_limit != details.time_limit:
-                raise TypeError(f"The time limit must be an integer for PC2: {problem_loc} {time_limit}")
+                raise TypeError(f"The time limit must be an integer for {args.format}: {problem_loc} {time_limit}")
 
             letters.append(letter)
-            problem_env[letter] = {
+            problem = {
                 'problem_loc': problem_loc,
                 'details': details,
                 'letter': letter,
@@ -1913,10 +1930,74 @@ def kg_contest(format_, args):
                 'title': details.title,
                 'letter_title': f'{letter}: {details.title}',
                 'time_limit': time_limit,
+                'color': css_colors.pop(),
             }
 
+            problems.append(problem)
+
+            # TODO actually organize the code better so we don't have lots of variables in the same scope...
+            del letter, details, problem_loc, problem, time_limit, code_raw, code
+
+        def yaml_lang(lang):
+            lenv = {key: (
+                value.format(**env) if isinstance(value, str) else
+                str(value).lower() if isinstance(value, bool) else value) for key, value in lang.items()}
+            run = lenv['run'] + ' '
+            spacei = run.index(' ')
+            lenv.update({
+                    "run_first": run[:spacei],
+                    "run_rest": run[spacei+1:-1]
+                })
+            return lenv
+
+        env['langs'] = [yaml_lang(lang) for lang in contest.langs]
+        env['problems'] = problems
+
+        if args.format == 'pc2':
+            decor_print()
+            decor_print('-'*42)
+            beginfo_print('Writing contest config files')
+            for file in ['contest.yaml', 'problemset.yaml']:
+                info_print('Writing', file)
+                source = os.path.join(contest_template, file + '.j2')
+                target = os.path.join(problems_folder, file)
+                kg_render_template_to(source, target, **env)
+
+        decor_print()
+        decor_print('-'*42)
+        beginfo_print('Writing problem files')
+        for problem in problems:
+            letter = problem['letter']
+            problem_code = problem['problem_code']
+            details = problem['details']
+            problem_loc = problem['problem_loc']
+
+            # write config files
+            problem_files = ['problem.yaml']
+            if args.format == 'dom':
+                problem_files.append('domjudge-problem.ini')
+            else:
+                problem_files.append(os.path.join('problem_statement', 'problem.tex'))
+            for file in problem_files:
+                info_print('Writing', file, 'for', problem_code)
+                source = os.path.join(contest_template, os.path.basename(file) + '.j2')
+                target = os.path.join(problems_folder, problem_code, file)
+                kg_render_template_to(source, target, **{**env, **problem})
+
+            kg_compile(format_, details, args.format, loc=problem_loc, python3=contest.python3_command)
+
+
+            # copy statement. for now, dummy, but in the future, include cms.
+            # we will also have global_statements
+            if args.format == 'dom':
+                source = os.path.join(problem_loc, 'kgkompiled', args.format, 'statement.pdf')
+                target = os.path.join(problems_folder, problem_code, 'problem_statement', 'statement.pdf')
+                copy_file(source, target)
+                target = os.path.join(problems_folder, problem_code, 'problem.pdf')
+                copy_file(source, target)
+
+
             # put validator in input_validators/, and checker to output_validators/
-            kg_compile(format_, details, 'pc2', loc=problem_loc, python3=contest.python3_command)
             for name, targ in [
                     ('validator', 'input_validators'),
                     ('checker', 'output_validators'),
@@ -1924,92 +2005,81 @@ def kg_contest(format_, args):
                 src = getattr(details, name)
                 # TODO handle the case where src is not Python.
                 # We need to compile it and "pass the compiled file" somehow.
-                srcf = os.path.join(problem_loc, 'kgkompiled', 'pc2', os.path.basename(src.filename)) 
-                rel_targf = os.path.join(code, targ, os.path.basename(src.filename))
-                targf = os.path.join(cdp_config, rel_targf)
-                touch_container(targf)
-                copyfile(srcf, targf)
-                problem_env[letter][name] = os.path.join(target_cdp_config, rel_targf)
+                srcf = os.path.join(problem_loc, 'kgkompiled', args.format, os.path.basename(src.filename)) 
+                rel_targf = os.path.join(problem_code, targ, os.path.basename(src.filename))
+                targf = os.path.join(problems_folder, rel_targf)
+                info_print('Copying', srcf, 'to', targf)
+                copy_file(srcf, targf)
+                problem[name] = os.path.join(target_problems_folder, rel_targf)
 
-        def yaml_lang(lang):
-            with open(os.path.join(contest_template, '1language.yaml')) as f:
-                lenv = {key: (
-                    value.format(**env) if isinstance(value, str) else
-                    str(value).lower() if isinstance(value, bool) else value) for key, value in lang.items()}
-                run = lenv['run'] + ' '
-                spacei = run.index(' ')
-                lenv.update({
-                        "run_first": run[:spacei],
-                        "run_rest": run[spacei+1:-1]
-                    })
-                return f.read().format(**lenv)
+                if args.format == 'dom':
+                    # TODO assumes python. careful: abs path issues
+                    # TODO make this better
+                    # I think this part is easier to adjust to handle non-python code
+                    # needs to use src.compile and src.run and should use a 'build' file instead of just 'run'
+                    # (but again be careful of abs path issues)
 
-        def yaml_problem(letter):
-            with open(os.path.join(contest_template, '1problem.yaml')) as f:
-                return f.read().format(**problem_env[letter])
+                    info_print('Creating run file for', name)
+                    make_executable(targf)
 
-        env['yaml_langs'] = '\n'.join(map(yaml_lang, contest.langs))
-        env['yaml_problems'] = '\n'.join(map(yaml_problem, letters))
+                    source_f = os.path.join(contest_template, 'run.j2')
+                    target_f = os.path.join(problems_folder, problem_code, targ, 'run')
+                    
+                    kg_render_template_to(source_f, target_f, **{**env, **problem})
 
-        decor_print()
-        decor_print('-'*42)
-        beginfo_print('Writing contest config files')
-        for file in ['contest.yaml', 'problemset.yaml']:
-            info_print('Writing', file)
-            source = os.path.join(contest_template, file)
-            target = os.path.join(cdp_config, file)
-            touch_container(target)
-            with open(source) as source_f, open(target, 'w') as target_f:
-                target_f.write(source_f.read().format(**env))
+                    make_executable(target_f)
 
-        decor_print()
-        decor_print('-'*42)
-        beginfo_print('Writing problem files')
-        for letter in letters:
-            penv = dict(env)
-            penv.update(problem_env[letter])
-            code = penv['problem_code']
-            for file in ['problem.yaml', os.path.join('problem_statement', 'problem.tex')]:
-                info_print('Writing', file, 'for', code)
-                source = os.path.join(contest_template, os.path.basename(file))
-                target = os.path.join(cdp_config, code, file)
-                touch_container(target)
-                with open(source) as source_f, open(target, 'w') as target_f:
-                    target_f.write(source_f.read().format(**penv))
+                    dest = os.path.join(contest_folder, 'UPLOADS', 'UPLOAD_1ST_executables', f'{name}_{problem_code}')
+                    info_print('Zipping', name, 'to', f'{dest}.zip')
+                    make_archive(dest, 'zip', os.path.join(problems_folder, problem_code, targ))
 
+            # copy model solution
             info_print("Copying model solution")
-            source = penv['details'].model_solution.rel_filename
-            target = os.path.join(cdp_config, code, 'submissions', 'accepted', os.path.basename(source))
-            touch_container(target)
+            source = problem['details'].model_solution.rel_filename
+            target = os.path.join(problems_folder, problem_code, 'submissions', 'accepted', os.path.basename(source))
+            copy_file(source, target)
 
-            copyfile(source, target)
-
-            info_print(f"Copying data for {code}...")
+            # copy test data
+            info_print(f"Copying data for {problem_code}...")
             try:
-                src_format = KGFormat(penv['problem_loc'], read='io')
+                src_format = KGFormat(problem['problem_loc'], read='io')
             except FormatError as exc:
-                raise CommandError(f"No tests found for '{penv['problem_loc']}'. Please run 'kg make all' "
+                raise CommandError(f"No tests found for '{problem['problem_loc']}'. Please run 'kg make all' "
                         "to generate the files, or call 'kg kontest' with the '-m' option.") from exc
-            for data_loc in [
-                    os.path.join(cdp_config, code, 'data', 'secret'),
-                    os.path.join(ext_data, code),
-                ]:
+            data_locs = [
+                os.path.join(problems_folder, problem_code, 'data', 'secret'),
+            ]
+            if args.format == 'pc2':
+                data_locs.append(os.path.join(ext_data, problem_code))
+            for data_loc in data_locs:
                 info_print("Copying to", data_loc)
                 dest_format = KGFormat(write='io', tests_folder=data_loc)
                 copied = 0
                 for (srci, srco), (dsti, dsto) in zip(src_format.thru_io(), dest_format.thru_expected_io()):
-                    touch_container(dsti)
-                    touch_container(dsto)
-                    copyfile(srci, dsti)
-                    copyfile(srco, dsto)
+                    copy_file(srci, dsti)
+                    copy_file(srco, dsto)
                     copied += 2
                 succ_print("Copied", copied, "files")
+
+            if args.format == 'dom':
+                # zip the whole problem folder (for upload)
+                dest = os.path.join(contest_folder, 'UPLOADS', 'UPLOAD_2ND_problems', problem_code)
+                
+                info_print('Zipping the whole thing...')
+                print(info_text('target is'), key_text(dest + '.zip'))
+                make_archive(dest, 'zip', os.path.join(problems_folder, problem_code))
+                info_print('Done.')
+
 
     if not args.no_seating and contest.seating:
         decor_print()
         decor_print('-'*42)
         beginfo_print('Writing seating arrangement')
         write_seating(contest, seedval=seedval, dest=contest_folder)
+
+    decor_print()
+    decor_print('-'*42)
+    succ_print('See docs/CONTEST.md for the next steps to finish preparing the contest.')
 
 
 
@@ -2088,6 +2158,57 @@ def kg_passwords(format_, args):
             seedval=' or '.join({str(x) for x in [args.seed, seed] if x is not None}),
             code=args.code, title=args.title)
     succ_print(f'Passwords done')
+
+
+
+
+
+def set_default_subparser(self, name, args=None, positional_args=0):
+    """default subparser selection. Call after setup, just before parse_args()
+    name: is the name of the subparser to call by default
+    args: if set is the argument list handed to parse_args()
+
+    , tested with 2.7, 3.2, 3.3, 3.4
+    it works with 2.6 assuming argparse is installed
+    """
+    subparser_found = False
+    existing_default = False # check if default parser previously defined
+    for arg in sys.argv[1:]:
+        if arg in ['-h', '--help']:  # global help if no subparser
+            break
+    else:
+        for x in self._subparsers._actions:
+            if not isinstance(x, argparse._SubParsersAction):
+                continue
+            for sp_name in x._name_parser_map.keys():
+                if sp_name in sys.argv[1:]:
+                    subparser_found = True
+                if sp_name == name: # check existance of default parser
+                    existing_default = True
+        if not subparser_found:
+            # If the default subparser is not among the existing ones,
+            # create a new parser.
+            # As this is called just before 'parse_args', the default
+            # parser created here will not pollute the help output.
+
+            if not existing_default:
+                for x in self._subparsers._actions:
+                    if not isinstance(x, argparse._SubParsersAction):
+                        continue
+                    x.add_parser(name)
+                    break # this works OK, but should I check further?
+
+            # insert default in last position before global positional
+            # arguments, this implies no global options are specified after
+            # first positional argument
+            if args is None:
+                sys.argv.insert(len(sys.argv) - positional_args, name)
+            else:
+                args.insert(len(args) - positional_args, name)
+
+argparse.ArgumentParser.set_default_subparser = set_default_subparser
+
+
 
 
 

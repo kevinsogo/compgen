@@ -1,8 +1,8 @@
 # Problem configuration, generated from KompGen
-# Created: {datetime_created}
+# Created: {{ datetime_created }}
 --- 
 
-name: "{letter_title}"
+name: {{ letter_title | tojson }}
 source: 
 author: 
 license: 
@@ -13,7 +13,7 @@ showOutputWindow: true
 showCompare: true
 showValidationResults: true
 load-data-files: false
-stop-on-first-failed-test-case: false
+stop-on-first-failed-test-case: true
 
 # groups: 
 
@@ -23,11 +23,11 @@ answerfile: 000.ans
 # validator_flags: 
 
 limits:
-    timeout: {time_limit}
+    timeout: {{ time_limit }}
 
 validator: 
-    validatorProg: '{checker}'
-    validatorCmd: '{{:validator}} {{:infile}} {{:outfile}} {{:ansfile}} {{:resfile}} '
+    validatorProg: '{{ checker }}'
+    validatorCmd: '{:validator} {:infile} {:outfile} {:ansfile} {:resfile} '
     usingInternal: false
     validatorOption: 0
 
@@ -43,3 +43,4 @@ judging-type:
 
 input:
     readFromSTDIN: true
+

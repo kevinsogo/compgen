@@ -1,6 +1,5 @@
 from collections import defaultdict
 from itertools import islice, count
-from shutil import copyfile
 from subprocess import PIPE
 import os.path
 

@@ -60,12 +60,6 @@ class Account:
         self.country_code = country_code
         super().__init__()
 
-    def get_pc2_row(self):
-        permdisplay = 'true' if self.type_ == 'team' else 'false'
-        permpassword = 'true' if self.type_ not in {'judge', 'team'} else 'false'
-        yield ('1', self.username, self.display_name, self.password, '', permpassword,
-                'true', self.external_id, '', permpassword)
-
     @property
     def display_sub(self):
         if self.type == 'scoreboard': return '[Scoreboard]'
@@ -92,7 +86,12 @@ class Account:
         # TODO check. not sure what this is for, but I guess we should replace '1000'
         # with values distinct per type?
         return 1000 + self.type_index
-    
+
+    def get_pc2_row(self):
+        permdisplay = 'true' if self.type == 'team' else 'false'
+        permpassword = 'true' if self.type not in {'judge', 'team'} else 'false'
+        return ('1', self.username, self.display_name, self.password, '', permpassword,
+                'true', self.external_id, '', permpassword)
 
     def get_dom_row(self):
         # TODO probably rename to "icpc" row, since it follows ICPC standards:
@@ -102,6 +101,13 @@ class Account:
                     self.school_short, self.country_code)
         else:
             return (self.type, self.display_name, self.username, self.password)
+    
+    def get_dom_utdata_row(self):
+        if self.type == 'team':
+            return (self.username, self.password, self.school or ' ', self.school_short or ' ',
+                   self.country_code, self.display_name)
+        else:
+            raise PasswordError("Non-team accounts don't have user_team_data rows.")
 
 
 def write_passwords_format(cont, format_, *, seedval=None, dest='.'):
@@ -116,110 +122,87 @@ def write_passwords_format(cont, format_, *, seedval=None, dest='.'):
             for key in ['leaderboards', 'admins', 'judges', 'teams', 'feeders'] for account in getattr(cont, key)]
     passwords, seed = create_passwords(accounts, seedval=seedval)
 
-    def get_accounts():
-        oidx = 0
+    def _get_account_tuples():
         for idx , scoreboard in enumerate(cont.leaderboards, 1):
-            oidx += 1
-            yield Account(
-                display_name=scoreboard,
-                username=f'scoreboard{idx}',
-                password=passwords['leaderboards', scoreboard],
-                type='scoreboard',
-                index=oidx,
-                type_index=idx)
+            yield dict(display_name=scoreboard,
+                       username=f'scoreboard{idx}',
+                       password=passwords['leaderboards', scoreboard],
+                       type='scoreboard',
+                       type_index=idx)
 
         for idx, admin in enumerate(cont.admins, 1):
-            oidx += 1
-            yield Account(
-                display_name=admin,
-                username=f'administrator{idx}',
-                password=passwords['admins', admin],
-                type='admin',
-                index=oidx,
-                type_index=idx)
+            yield dict(display_name=admin,
+                       username=f'administrator{idx}',
+                       password=passwords['admins', admin],
+                       type='admin',
+                       type_index=idx)
 
         for idx, judge in enumerate(cont.judges, 1):
-            oidx += 1
-            yield Account(
-                display_name='Judge ' + judge,
-                username=f'judge{idx}',
-                password=passwords['judges', judge],
-                type='judge',
-                index=oidx,
-                type_index=idx)
+            yield dict(display_name='Judge ' + judge,
+                       username=f'judge{idx}',
+                       password=passwords['judges', judge],
+                       type='judge',
+                       type_index=idx)
 
         for idx, feeder in enumerate(cont.feeders, 1):
-            oidx += 1
-            yield Account(
-                display_name=feeder,
-                username=f'feeder{idx}',
-                password=passwords['feeders', feeder],
-                type='feeder',
-                index=oidx,
-                type_index=idx)
+            yield dict(display_name=feeder,
+                       username=f'feeder{idx}',
+                       password=passwords['feeders', feeder],
+                       type='feeder',
+                       type_index=idx)
         
-        def team_schools():
-            for ts in cont.team_schools:
-                for team in ts['teams']:
-                    yield ts, team
+        team_schools = ((ts, team) for ts in cont.team_schools for team in ts['teams'])
+        for idx, (school_data, team_name) in enumerate(team_schools, 1):
+            yield dict(display_name=team_name,
+                       username=f'team{idx}',
+                       password=passwords['teams', team_name],
+                       type='team',
+                       type_index=idx,
+                       school=school_data['school'],
+                       school_short=school_data['school_short'],
+                       country_code=school_data['country_code'])
 
-        for idx, (school_data, team_name) in enumerate(team_schools(), 1):
-            oidx += 1
-            yield Account(
-                display_name=team_name,
-                username=f'team{idx}',
-                password=passwords['teams', team_name],
-                type='team',
-                index=oidx,
-                type_index=idx,
-                school=school_data['school'],
-                school_short=school_data['school_short'],
-                country_code=school_data['country_code'])
-
-    accounts = list(get_accounts()) # reuses the 'accounts' variable so be careful
+    # reuses the 'accounts' variable so be careful
+    accounts = [Account(index=idx, **args) for idx, args in enumerate(_get_account_tuples(), 1)]
 
     if format_ == 'pc2':
         filename = os.path.join(dest, f'accounts_{cont.code}.txt')
         def get_pc2_rows():
             yield ('site', 'account', 'displayname', 'password', 'group', 'permdisplay', 'permlogin', 'externalid',
                     'alias', 'permpassword')
-            for account in accounts:
-                yield account.get_pc2_row()
-        _write_tsv(filename, get_pc2_rows())
+            yield from (account.get_pc2_row() for account in accounts)
+        write_tsv(filename, get_pc2_rows())
 
     if format_ == 'dom':
         # https://www.domjudge.org/pipermail/domjudge-devel/2015-September/001753.html
+        # probably not applicable anymore; if so, feel free to replace "File_Version"
         accounts_dom_rows = {'teams': [['File_Version', 1]], 'accounts': [['File_Version', 1]]}
         dom_groups = {'teams': ['team'], 'accounts': ['judge', 'admin', 'analyst']}
-        dom_group = {type_: group for group, types in dom_groups.items() for type_ in types}
+        dom_group = {type: group for group, types in dom_groups.items() for type in types}
         for account in accounts:
             if account.type in dom_group:
                 accounts_dom_rows[dom_group[account.type]].append(account.get_dom_row())
         for type_, rows in accounts_dom_rows.items():
-            _write_tsv(os.path.join(dest, f'{type_}.tsv'), rows)
+            write_tsv(os.path.join(dest, f'{type_}.tsv'), rows)
 
-        def get_user_team_data_rows():
-            for account in accounts:
-                if account.type == 'team':
-                    yield (
-                            account.username,
-                            account.password,
-                            account.school or ' ',
-                            account.school_short or ' ',
-                            account.country_code,
-                            account.display_name)
+        dom_utdata_rows = [account.get_dom_utdata_row() for account in accounts if account.type == 'team']
+        write_separated_values(os.path.join(dest, 'user_team_data.txt'), dom_utdata_rows, sep=u'\n', disallowed='\t\n')
 
-        _write_separated(os.path.join(dest, 'user_team_data.txt'), get_user_team_data_rows(), sep=u'\n', disallowed='\t\n')
+        # copy the php script (sad, php)
+        source = os.path.join(kg_contest_template, 'dom', 'dom_create_teams.php')
+        target = os.path.join(dest, 'dom_create_teams')
+        copy_file(source, target)
+        make_executable(target)
 
         print()
         warn_print('NOTE: Passwords are not automatically set if you import teams.tsv to DOMjudge!')
-        info_print('Instead, use user_team_data.txt to directly import the team data (including passwords) to the '
+        warn_print('Instead, use user_team_data.txt to import the team data (including passwords) directly to the '
                 'database by doing the following:')
-        info_print('1. Copy user_team_data.txt into your domserver machine.')
-        info_print('2. Copy the kg/data/dom_create_teams.php file into the bin/ folder of your domserver machine. '
-                '(Note: this folder is found in the docker container at /opt/domjudge/domserver/bin/)')
-        info_print('3. Run chmod +x dom_create_teams.php (in your domserver machine).')
-        info_print('4. Run ./dom_create_teams.php < path/to/user_team_data.txt (in your domserver machine).')
+        warn_print('1. Copy user_team_data.txt into your domserver machine.')
+        warn_print('2. Copy the dom_create_teams file into the bin/ folder of your domserver machine. '
+                '(Note: for reference, this folder is found in the docker container at /opt/domjudge/domserver/bin/)')
+        warn_print('3. Go to the said bin folder, then run ./dom_create_teams < path/to/user_team_data.txt '
+                '(in your domserver machine).')
         print()
 
     write_passwords(accounts,
@@ -229,13 +212,13 @@ def write_passwords_format(cont, format_, *, seedval=None, dest='.'):
     return passwords
 
 
-def _write_tsv(filename, rows):
-    _write_separated(filename, rows, sep=u'\t', disallowed='\t\n')
+def write_tsv(filename, rows):
+    write_separated_values(filename, rows, sep=u'\t', disallowed='\t\n')
 
-def _write_csv(filename, rows):
-    _write_separated(filename, rows, sep=u',', disallowed=',\n')
+def write_csv(filename, rows):
+    write_separated_values(filename, rows, sep=u',', disallowed=',\n')
 
-def _write_separated(filename, rows, *, sep=' ', disallowed=' \n'):
+def write_separated_values(filename, rows, *, sep=' ', disallowed=' \n'):
     info_print("Writing to", filename, file=stderr)
     with io.open(filename, 'w', encoding='utf-8') as f:
         for row in rows:
@@ -259,7 +242,4 @@ def write_passwords(accounts, *, dest='.', **context):
     for template in ['table', 'boxes']:
         filename = os.path.join(dest, '_'.join(filter(None, ['logins', context['code'], template])) + '.html')
         info_print("Writing to", filename, file=stderr)
-        with open(filename, 'w') as f:
-            f.write(
-                kg_template_env.get_template(os.path.join('contest_template', f'logins_{template}.html.j2')).render(**context)
-            )
+        kg_render_template_to(os.path.join(kg_contest_template, f'logins_{template}.html.j2'), filename, **context)

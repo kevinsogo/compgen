@@ -1,6 +1,7 @@
 [
     {
         "school": "Diliman de Manila University",
+        "school_short": "DmMU",
         "teams": [
             ";pack",
             "Scc:"
@@ -8,6 +9,7 @@
     },
     {
         "school": "University of the Philippines - Ateneo",
+        "school_short": "UP Ateneo",
         "teams": [
             "Quimoth",
             "Fuchsia Warriors"

@@ -33,5 +33,6 @@
     "seed": 123456789098765432111111,
     "admin_count": 3,
     "leaderboard_count": 2,
+    "default_country_code": "PHL",
     "seating": "seating.txt"
 }
