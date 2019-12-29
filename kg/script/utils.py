@@ -1,4 +1,5 @@
 from sys import stdout
+import calendar
 import os
 import os.path
 import pathlib
@@ -62,6 +63,14 @@ def basename_filter(file):
 def hms_filter(dt):
     seconds = int(dt.total_seconds())
     return f"{seconds // 3600}:{seconds // 60 % 60 :02}:{seconds % 60 :02}"
+
+@set_template_filter('timestamp')
+def timestamp_filter(dt):
+    return calendar.timegm(dt.utctimetuple())
+
+@set_template_filter('with_letter')
+def with_letter_filter(title, letter=None):
+    return f"{letter}: {title}"
 
 
 def kg_render_template(template_filename, **env):

@@ -3,7 +3,7 @@
 problems:
 {% for problem in problems %}  - letter: {{ problem.letter }}
     short-name: {{ problem.problem_code | tojson }}
-    name: {{ problem.letter_title | tojson }}
+    name: {{ problem.details.title | with_letter(problem.letter) | tojson }}
     color: 
     rgb: ''
     load-data-files: false

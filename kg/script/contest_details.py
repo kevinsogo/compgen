@@ -145,6 +145,11 @@ class ContestDetails(object):
             return cls(json.load(f), source=loc)
 
     @property
+    def end_time(self):
+        return self.start_time + self.duration
+    
+
+    @property
     def rel_problems(self):
         return [attach_relpath(self.relpath, prob) for prob in self.problems]
 

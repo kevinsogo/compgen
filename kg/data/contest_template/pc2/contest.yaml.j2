@@ -2,15 +2,15 @@
 # Created: {{ datetime_created }}
 --- 
 
-name: '{{ title }}'
+name: '{{ contest.title }}'
 short-name: 'null'
 elapsed: 0:00:00
-remaining: {{ duration }}
+remaining: {{ contest.duration | hms }}
 running: false
 auto-stop-clock-at-end: false
 start-time: 2111-11-11 11:11:11 PHT
-duration: {{ duration }}
-scoreboard-freeze-length: {{ scoreboard_freeze_length }}
+duration: {{ contest.duration | hms }}
+scoreboard-freeze-length: {{ contest.scoreboard_freeze_length | hms }}
 # load-data-files: false
 judge-config-path: {{ alldata }}
 
@@ -37,7 +37,7 @@ languages:
 sites:
   - number: 1
     name: 'Site 1'
-    password: '{{ site_password }}'
+    password: '{{ contest.site_password }}'
     IP: localhost
     port: 50002
 
@@ -45,23 +45,23 @@ sites:
 accounts:
   - account: TEAM
     site: 1
-    count: {{ team_count }}
+    count: {{ contest.teams | length }}
 
   - account: JUDGE
     site: 1
-    count: {{ judge_count }}
+    count: {{ contest.judges | length }}
 
   - account: SCOREBOARD
     site: 1
-    count: {{ leaderboard_count }}
+    count: {{ contest.leaderboards | length }}
 
   - account: FEEDER
     site: 1
-    count: {{ feeder_count }}
+    count: {{ contest.feeders | length }}
 
   - account: ADMINISTRATOR
     site: 1
-    count: {{ admin_count }}
+    count: {{ contest.admins | length }}
 
 
 # EOF Contest Configuration

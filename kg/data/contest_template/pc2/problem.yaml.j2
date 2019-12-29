@@ -2,7 +2,7 @@
 # Created: {{ datetime_created }}
 --- 
 
-name: {{ letter_title | tojson }}
+name: {{ details.title | with_letter(letter) | tojson }}
 source: 
 author: 
 license: 
@@ -26,7 +26,7 @@ limits:
     timeout: {{ time_limit }}
 
 validator: 
-    validatorProg: '{{ checker }}'
+    validatorProg: '{{ details.checker.rel_filename }}'
     validatorCmd: '{:validator} {:infile} {:outfile} {:ansfile} {:resfile} '
     usingInternal: false
     validatorOption: 0

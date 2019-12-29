@@ -10,12 +10,9 @@ from subprocess import PIPE, CalledProcessError, SubprocessError, TimeoutExpired
 from sys import stdin, stdout, stderr
 from textwrap import dedent
 import argparse
-import calendar
 import contextlib
-import os
 import os.path
 import re
-import stat
 import tempfile
 import yaml
 import zipfile
@@ -1782,13 +1779,6 @@ def kg_contest(format_, args):
     passwords = write_passwords_format(contest, args.format, seedval=seedval, dest=contest_folder)
     succ_print('Done passwords')
 
-    # TODO filterize
-    def hms(x):
-        seconds = int(x.total_seconds())
-        return f"{seconds // 3600}:{seconds // 60 % 60 :02}:{seconds % 60 :02}"
-
-    # TODO maybe filterize calendar.timegm too?
-
     contest_template = os.path.join(kg_contest_template, args.format)
 
     if args.format == 'cms-it':
@@ -1800,16 +1790,7 @@ def kg_contest(format_, args):
         # TODO pass 'contest' instead of all these
         env = {
             "datetime_created": datetime.now(),
-            "title": contest.title,
-            "code": contest.code,
-            "duration": contest.duration,
-            "start_time": calendar.timegm(contest.start_time.utctimetuple()),
-            "end_time": calendar.timegm((contest.start_time + contest.duration).utctimetuple()),
-            "team_count": len(contest.teams),
-            "filename": "{:mainfile}",
-            "filename_base": "{:basename}",
-            "problems": contest.problems,
-            "teams": contest.teams,
+            "contest": contest,
             "passwords": passwords,
         }
 
@@ -1866,47 +1847,40 @@ def kg_contest(format_, args):
 
         # construct template environment
         if not contest.site_password: raise CommandError(f"site_password required for {args.format}")
-        # TODO hms filter [there's probably a Jinja2 default] and pass 'contest' instead of all these
+        # TODO pass 'contest' instead of all these
         env = {
             "datetime_created": datetime.now(),
-            "title": contest.title,
-            "code": contest.code,
-            "duration": hms(contest.duration),
-            "scoreboard_freeze_length": hms(contest.scoreboard_freeze_length),
-            "start_time": contest.start_time,
-            "site_password": contest.site_password,
-            "team_count": len(contest.teams),
-            "judge_count": len(contest.judges),
-            "admin_count": len(contest.admins),
-            "leaderboard_count": len(contest.leaderboards),
-            "feeder_count": len(contest.feeders),
+            "contest": contest,
             "filename": "{:mainfile}",
             "filename_base": "{:basename}",
             "alldata": target_ext_data,
+            "problems": [],
         }
 
         # load colors
-        with open(os.path.join(kg_data_path, 'css_colors.txt')) as file:
-            css_colors = [line.strip() for line in file]
-        rand.shuffle(css_colors)
+        def css_colors():
+            with open(os.path.join(kg_data_path, 'css_colors.txt')) as file:
+                css_colors = [line.strip() for line in file]
+            rand.shuffle(css_colors)
+            while True: yield from css_colors
+        css_colors = css_colors()
 
         # problem envs
         found_codes = {}
         letters = []
-        problems = []
         for letter, problem_loc in zip(problem_letters(), contest.rel_problems):
             details = Details.from_format_loc(format_, os.path.join(problem_loc, 'details.json'), relpath=problem_loc)
 
-            code_raw = os.path.basename(problem_loc)
-            code = ''.join(code_raw.split('._-')) # TODO check if this is necessary.
-            if code in found_codes:
-                found_codes[code] += 1
-                code += str(found_codes[code])
+            problem_code_raw = os.path.basename(problem_loc)
+            problem_code = ''.join(problem_code_raw.split('._-')) # TODO check if this is necessary.
+            if problem_code in found_codes:
+                found_codes[problem_code] += 1
+                problem_code += str(found_codes[problem_code])
             else:
-                found_codes[code] = 1
+                found_codes[problem_code] = 1
             decor_print()
             decor_print('-'*42)
-            print(beginfo_text("Getting problem"), key_text(repr(code)), beginfo_text(f"(from {problem_loc})"))
+            print(beginfo_text("Getting problem"), key_text(repr(problem_code)), beginfo_text(f"(from {problem_loc})"))
 
             if details.valid_subtasks:
                 warn_print(f"Warning: The problem has subtasks, but '{args.format}' contests only support binary tasks. "
@@ -1925,20 +1899,35 @@ def kg_contest(format_, args):
                 'problem_loc': problem_loc,
                 'details': details,
                 'letter': letter,
-                'problem_code_raw': code_raw,
-                'problem_code': code,
-                'title': details.title,
-                'letter_title': f'{letter}: {details.title}',
+                'problem_code_raw': problem_code_raw,
+                'problem_code': problem_code,
                 'time_limit': time_limit,
-                'color': css_colors.pop(),
+                'color': next(css_colors),
             }
 
-            problems.append(problem)
+            # put validator in input_validators/, and checker to output_validators/
+            for name, targ in [
+                    ('validator', 'input_validators'),
+                    ('checker', 'output_validators'),
+                ]:
+                src = getattr(details, name)
+                # TODO handle the case where src is not Python.
+                # We need to compile it and "pass the compiled file" somehow.
+                srcf = os.path.join(problem_loc, 'kgkompiled', args.format, os.path.basename(src.filename)) 
+                rel_targf = os.path.join(problem_code, targ, os.path.basename(src.filename))
+                targf = os.path.join(problems_folder, rel_targf)
+                info_print('Copying', srcf, 'to', targf)
+                copy_file(srcf, targf)
+                make_executable(targf)
+                problem[name] = os.path.join(target_problems_folder, rel_targf)
+
+            env['problems'].append(problem)
 
             # TODO actually organize the code better so we don't have lots of variables in the same scope...
-            del letter, details, problem_loc, problem, time_limit, code_raw, code
+            del letter, details, problem_loc, problem, time_limit, problem_code_raw, problem_code
 
         def yaml_lang(lang):
+            # TODO fix this?
             lenv = {key: (
                 value.format(**env) if isinstance(value, str) else
                 str(value).lower() if isinstance(value, bool) else value) for key, value in lang.items()}
@@ -1951,7 +1940,6 @@ def kg_contest(format_, args):
             return lenv
 
         env['langs'] = [yaml_lang(lang) for lang in contest.langs]
-        env['problems'] = problems
 
         if args.format == 'pc2':
             decor_print()
@@ -1966,7 +1954,7 @@ def kg_contest(format_, args):
         decor_print()
         decor_print('-'*42)
         beginfo_print('Writing problem files')
-        for problem in problems:
+        for problem in env['problems']:
             letter = problem['letter']
             problem_code = problem['problem_code']
             details = problem['details']
@@ -1997,22 +1985,11 @@ def kg_contest(format_, args):
                 copy_file(source, target)
 
 
-            # put validator in input_validators/, and checker to output_validators/
-            for name, targ in [
-                    ('validator', 'input_validators'),
-                    ('checker', 'output_validators'),
-                ]:
-                src = getattr(details, name)
-                # TODO handle the case where src is not Python.
-                # We need to compile it and "pass the compiled file" somehow.
-                srcf = os.path.join(problem_loc, 'kgkompiled', args.format, os.path.basename(src.filename)) 
-                rel_targf = os.path.join(problem_code, targ, os.path.basename(src.filename))
-                targf = os.path.join(problems_folder, rel_targf)
-                info_print('Copying', srcf, 'to', targf)
-                copy_file(srcf, targf)
-                problem[name] = os.path.join(target_problems_folder, rel_targf)
-
-                if args.format == 'dom':
+            if args.format == 'dom':
+                for name, targ in [
+                        ('validator', 'input_validators'),
+                        ('checker', 'output_validators'),
+                    ]:
                     # TODO assumes python. careful: abs path issues
                     # TODO make this better
                     # I think this part is easier to adjust to handle non-python code
@@ -2020,11 +1997,8 @@ def kg_contest(format_, args):
                     # (but again be careful of abs path issues)
 
                     info_print('Creating run file for', name)
-                    make_executable(targf)
-
                     source_f = os.path.join(contest_template, 'run.j2')
                     target_f = os.path.join(problems_folder, problem_code, targ, 'run')
-                    
                     kg_render_template_to(source_f, target_f, **{**env, **problem})
 
                     make_executable(target_f)
@@ -2076,6 +2050,10 @@ def kg_contest(format_, args):
         decor_print('-'*42)
         beginfo_print('Writing seating arrangement')
         write_seating(contest, seedval=seedval, dest=contest_folder)
+
+    if args.format == 'dom':
+        warn_print("Note: There seems to be no way to import contest configuration to DOMjudge")
+        warn_print("so you'll have to do that manually.")
 
     decor_print()
     decor_print('-'*42)
