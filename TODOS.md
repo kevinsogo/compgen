@@ -23,6 +23,8 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Properly delete contest files in kgkompiled/ when running `kg kompile` again.
 
+- DOM, important: can't upload files because of max packet thing. fix it.
+
 - DOM: Importing contest info directly to the database (similar to user_team_data.txt). /api/doc has models at the bottom, which is helpful.
 
 - Check if pc2 still works

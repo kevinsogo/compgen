@@ -225,6 +225,8 @@ Unfortunately, the contest config settings cannot be imported into DOMjudge :( S
 
     - Be sure to select the correct contest!
 
+    - If this fails, one reason might be because of large test data. See the "other notes" section below.
+
 
 ### D. Verify
 
@@ -240,6 +242,8 @@ Then you're done! You should verify that things went well by doing the following
 You can easily do the same process if you're planning on hosting a practice round.
 
 Interactive problem support to come soon. (For now, you can still do it, but you'll have to manually set up the run and compare commands yourself, so KompGen saves you 80% of the work.)
+
+It may happen that DOMjudge doesn't accept some problem because or large test data. In this case, please follow the ["Fine tuning server settings"](https://www.domjudge.org/docs/admin-manual.pdf) section of the [DOMjudge admin manual](https://www.domjudge.org/docs/admin-manual.pdf) to change MySQL settings. `max_allowed_packet` is the most relevant, although you may want to adjust the others as well just to be sure.
 
 
 
