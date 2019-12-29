@@ -27,6 +27,7 @@
         }
     ],
     "subtasks_files": "subtasks.json",
+    "statement": "statement.md",
     "time_limit": 2,
     "version": "0.2"
 }

@@ -14,6 +14,7 @@
     "checker": "checker.py",
 
     "time_limit": 2,
+    "statement": "statement.md",
     "version": "0.2",
     "comments": [
         "The checker and data maker is not actually required to implement interaction;",

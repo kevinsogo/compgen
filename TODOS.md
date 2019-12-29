@@ -25,6 +25,10 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Check if pc2 still works
 
+- Consider: Rename `details.json`? `kg_problem_config.json` or something.
+
+    - We can have the name "details.json" written in `__init__.py` or something
+
 - Have "statement" in details.json. It will override global_statements (or join with it; the point is, it has higher priority)
 
 - reorganize `formats.py`, `kg_compile` and `kg_contest`.

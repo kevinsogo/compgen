@@ -79,7 +79,9 @@ class Details(object):
         # subtasks_files
         self.subtasks_files = self.details.get('subtasks_files', "")
 
-        for key in ['testscript', 'subtasks_files']:
+        self.statement = self.details.get('statement')
+
+        for key in ['testscript', 'subtasks_files', 'statement']:
             setattr(self, key, attach_relpath(relpath, getattr(self, key)))
 
         # check for extra keys

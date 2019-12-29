@@ -2004,9 +2004,14 @@ def kg_contest(format_, args):
             kg_compile(format_, details, args.format, loc=problem_loc, python3=contest.python3_command)
 
 
-            # copy statement. TODO incorporate "statement" in details.json in the future
-            if args.format == 'dom':
-                source = contest.rel_global_statements
+            # copy statement. find one with compatible ending
+            statements = [s for s in [details.statement, contest.rel_global_statements] if s]
+            if args.format == 'dom' and statements:
+                for source in statements:
+                    base, ext = os.path.splitext(source)
+                    if ext in {'.pdf', '.html', '.txt'}: break
+                else:
+                    source = statements[0] # just take the first one
                 base, ext = os.path.splitext(source)
                 target = os.path.join(problems_folder, problem_code, 'problem_statement', 'statement' + ext)
                 copy_file(source, target)

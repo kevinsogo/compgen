@@ -12,6 +12,7 @@
     "valid_subtasks": [],
     "cms_options": null,
     "subtasks_files": "subtasks.json",
+    "statement": null,
     "time_limit": 3,
     "version": null
 }
