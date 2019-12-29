@@ -1934,22 +1934,6 @@ def kg_contest(format_, args):
                 'color': next(css_colors),
             }
 
-            # put validator in input_validators/, and checker to output_validators/
-            for name, targ in [
-                    ('validator', 'input_validators'),
-                    ('checker', 'output_validators'),
-                ]:
-                src = getattr(details, name)
-                # TODO handle the case where src is not Python.
-                # We need to compile it and "pass the compiled file" somehow.
-                srcf = os.path.join(problem_loc, 'kgkompiled', args.format, os.path.basename(src.filename)) 
-                rel_targf = os.path.join(problem_code, targ, os.path.basename(src.filename))
-                targf = os.path.join(problems_folder, rel_targf)
-                info_print('Copying', srcf, 'to', targf)
-                copy_file(srcf, targf)
-                make_executable(targf)
-                problem[name] = os.path.join(target_problems_folder, rel_targf)
-
             env['problems'].append(problem)
 
             # TODO actually organize the code better so we don't have lots of variables in the same scope...
@@ -1989,6 +1973,26 @@ def kg_contest(format_, args):
             details = problem['details']
             problem_loc = problem['problem_loc']
 
+
+            kg_compile(format_, details, args.format, loc=problem_loc, python3=contest.python3_command)
+
+            # put validator in input_validators/, and checker to output_validators/
+            for name, targ in [
+                    ('validator', 'input_validators'),
+                    ('checker', 'output_validators'),
+                ]:
+                src = getattr(details, name)
+                # TODO handle the case where src is not Python.
+                # We need to compile it and "pass the compiled file" somehow.
+                srcf = os.path.join(problem_loc, 'kgkompiled', args.format, os.path.basename(src.filename)) 
+                rel_targf = os.path.join(problem_code, targ, os.path.basename(src.filename))
+                targf = os.path.join(problems_folder, rel_targf)
+                info_print('Copying', srcf, 'to', targf)
+                copy_file(srcf, targf)
+                make_executable(targf)
+                problem[name] = os.path.join(target_problems_folder, rel_targf)
+                
+
             # write config files
             problem_files = ['problem.yaml']
             if args.format == 'dom':
@@ -2000,8 +2004,6 @@ def kg_contest(format_, args):
                 source = os.path.join(contest_template, os.path.basename(file) + '.j2')
                 target = os.path.join(problems_folder, problem_code, file)
                 kg_render_template_to(source, target, **{**env, **problem})
-
-            kg_compile(format_, details, args.format, loc=problem_loc, python3=contest.python3_command)
 
 
             # copy statement. find one with compatible ending
