@@ -2073,7 +2073,7 @@ def kg_contest(format_, args):
 
             if args.format == 'dom':
                 # zip the whole problem folder (for upload)
-                dest = os.path.join(contest_folder, 'UPLOADS', 'UPLOAD_2ND_problems', problem_code)
+                dest = os.path.join(contest_folder, 'UPLOADS', 'UPLOAD_2ND_problems', letter)
                 
                 info_print('Zipping the whole thing...')
                 info_print('target is', dest + '.zip')
