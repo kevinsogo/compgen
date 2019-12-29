@@ -273,6 +273,15 @@ def kg_subtasks(format_, args):
     format_ = get_format(args, read='i')
     details = Details.from_format_loc(args.format, args.details, relpath=args.loc)
 
+    subtasks = args.subtasks or list(map(str, details.valid_subtasks))
+    detector = _get_subtask_detector_from_args(args, purpose='subtask computation', details=details)
+
+    compute_subtasks(subtasks, detector, format=format_)
+
+def _get_subtask_detector_from_args(args, *, purpose, details=None):
+    if details is None:
+        details = Details.from_format_loc(args.format, args.details, relpath=args.loc)
+
     # build detector
     validator = None
     detector = Program.from_args(args.file, args.command)
@@ -283,58 +292,83 @@ def kg_subtasks(format_, args):
     # try detector from details
     if not detector: detector = details.subtask_detector
     # can't build any detector!
-    if not detector: raise CommandError("Missing detector/validator")
+    if not detector: raise CommandError(f"Missing detector/validator (for {purpose})")
     # find subtask list
-    subtasks = args.subtasks or list(map(str, details.valid_subtasks))
 
     if validator and not subtasks: # subtask list required for detectors from validator
-        raise CommandError("Missing subtask list")
+        raise CommandError(f"Missing subtask list (for {purpose})")
 
-    get_subtasks(subtasks, detector, format_)
+    return detector
 
-def get_subtasks(subtasks, detector, format_, relpath=None):
+def _collect_subtasks(input_subs):
+    @wraps(input_subs)
+    def _input_subs(subtasks, *args, **kwargs):
+        subtset = set(subtasks)
+
+        # iterate through inputs, run our detector against them
+        subtasks_of = OrderedDict()
+        all_subtasks = set()
+        files_of_subtask = {sub: set() for sub in subtset}
+        for input_, subs in input_subs(subtasks, *args, **kwargs):
+            subtasks_of[input_] = set(subs)
+            if not subtasks_of[input_]:
+                raise CommandError(f"No subtasks found for {input_}")
+            if subtset and not (subtasks_of[input_] <= subtset):
+                raise CommandError("Found invalid subtasks! " + ' '.join(map(repr, sorted(subtasks_of[input_] - subtset))))
+            all_subtasks |= subtasks_of[input_]
+            for sub in subtasks_of[input_]: files_of_subtask[sub].add(input_)
+            info_print(f"Subtasks found for {input_}:", end=' ')
+            key_print(*sorted(subtasks_of[input_]))
+
+        info_print("Distinct subtasks found:", end=' ')
+        key_print(*natsorted(all_subtasks))
+
+        if subtset:
+            assert all_subtasks <= subtset
+            if all_subtasks != subtset:
+                warn_print('Warning: Some subtasks not found:', *natsorted(subtset - all_subtasks), file=stderr)
+
+        info_print("Subtask dependencies:")
+        for sub in natsorted(subtset):
+            if files_of_subtask[sub]:
+                deps = [dep for dep in natsorted(subtset) if dep != sub and files_of_subtask[dep] <= files_of_subtask[sub]]
+                print(info_text("Subtask"), key_text(sub), info_text("contains the ff subtasks:"), key_text(*deps))
+
+        return subtasks_of, all_subtasks
+
+    return _input_subs
+
+@_collect_subtasks
+def extract_subtasks(subtasks, subtasks_files, *, format=None, inputs=None):
+    if not inputs: inputs = []
+    thru_expected_inputs = format.thru_expected_inputs() if format else None
+    def get_expected_input(i):
+        while i >= len(inputs):
+            if not thru_expected_inputs: raise CommandError("Missing format or input")
+            inputs.append(next(thru_expected_inputs))
+        return inputs[i]
+
+    input_ids = set()
+    for lf, rg, subs in subtasks_files:
+        for index in range(lf, rg + 1):
+            if index in input_ids: raise CommandError(f"File {index} appears multiple times in subtasks_files")
+            input_ids.add(index)
+            yield get_expected_input(index), {*map(str, subs)}
+
+@_collect_subtasks
+def compute_subtasks(subtasks, detector, *, format=None, relpath=None):
     subtset = set(subtasks)
 
     # iterate through inputs, run our detector against them
-    subtasks_of = {}
-    all_subtasks = set()
-    files_of_subtask = {sub: set() for sub in subtset}
     detector.do_compile()
-    inputs = []
-    for input_ in format_.thru_inputs():
-        inputs.append(input_)
+    for input_ in format.thru_inputs():
         with open(input_) as f:
             try:
                 result = detector.do_run(*subtasks, stdin=f, stdout=PIPE, check=True)
             except CalledProcessError as cpe:
                 err_print(f"The detector raised an error for {input_}", file=stderr)
                 raise CommandError(f"The detector raised an error for {input_}") from cpe
-        subtasks_of[input_] = set(result.stdout.decode('utf-8').split())
-        if not subtasks_of[input_]:
-            raise CommandError(f"No subtasks found for {input_}")
-        if subtset and not (subtasks_of[input_] <= subtset):
-            raise CommandError("Found invalid subtasks! " + ' '.join(map(repr, sorted(subtasks_of[input_] - subtset))))
-
-        all_subtasks |= subtasks_of[input_]
-        for sub in subtasks_of[input_]: files_of_subtask[sub].add(input_)
-        info_print(f"Subtasks found for {input_}:", end=' ')
-        key_print(*sorted(subtasks_of[input_]))
-
-    info_print("Distinct subtasks found:", end=' ')
-    key_print(*natsorted(all_subtasks))
-
-    if subtset:
-        assert all_subtasks <= subtset
-        if all_subtasks != subtset:
-            warn_print('Warning: Some subtasks not found:', *natsorted(subtset - all_subtasks), file=stderr)
-
-    info_print("Subtask dependencies:")
-    for sub in natsorted(subtset):
-        if files_of_subtask[sub]:
-            deps = [dep for dep in natsorted(subtset) if dep != sub and files_of_subtask[dep] <= files_of_subtask[sub]]
-            print(info_text("Subtask"), key_text(sub), info_text("contains the ff subtasks:"), key_text(*deps))
-
-    return subtasks_of, all_subtasks, inputs
+        yield input_, set(result.stdout.decode('utf-8').split())
 
 
 
@@ -689,39 +723,34 @@ def kg_test(format_, args):
 
     # also print subtask grades
     if details.valid_subtasks:
-        validator = Program.from_args(args.validator_file, args.validator_command)
-        detector = None
-        if validator:
-            detector = detector_from_validator(validator)
-            assert detector
-            info_print("Found a validator.", end=' ')
-        elif details.subtask_detector:
-            detector = details.subtask_detector
-            info_print(f"Found a detector in {details.source}.", end=' ')
-        if detector:
-            info_print('Proceeding with subtask grading...')
-            # find subtask list
+        def get_all_subtasks():
             subtasks = args.subtasks or list(map(str, details.valid_subtasks))
-            if validator and not subtasks: # subtask list required for detectors from validator
-                raise CommandError("Missing subtask list (for subtask grading)")
-            subtasks_of, all_subtasks, inputs = get_subtasks(subtasks, detector, format_)
+            if os.path.isfile(details.subtasks_files):
+                inputs = [input_ for index, input_, *rest in scoresheet]
+                subtasks_of, all_subtasks = extract_subtasks(subtasks, details.load_subtasks_files(), inputs=inputs)
+            else:
+                detector = _get_subtask_detector_from_args(args, purpose='subtask scoring', details=details)
+                subtasks_of, all_subtasks = compute_subtasks(subtasks, detector, format=format_)
+
             # normal grading
-            min_score = {sub: 1 for sub in all_subtasks}
+            all_subtasks = {sub: {'min_score': 1} for sub in all_subtasks}
             for index, input_, correct, score in scoresheet:
                 for sub in subtasks_of[input_]:
-                    min_score[sub] = min(min_score[sub], score)
+                    all_subtasks[sub]['min_score'] = min(all_subtasks[sub]['min_score'], score)
 
-            decor_print()
-            decor_print('.'*42)
-            beginfo_print('SUBTASK REPORT:')
-            for sub in natsorted(all_subtasks):
-                print(info_text("Subtask ="),
-                      key_text(str(sub).rjust(4)),
-                      info_text(": Score = "),
-                      (succ_text if min_score[sub] == 1 else
-                       info_text if min_score[sub] > 0 else
-                       err_text)(f"{float(min_score[sub]):.3f}"),
-                      sep='')
+            return all_subtasks
+
+        decor_print()
+        decor_print('.'*42)
+        beginfo_print('SUBTASK REPORT:')
+        for sub, details in natsorted(get_all_subtasks().items()):
+            print(info_text("Subtask ="),
+                  key_text(str(sub).rjust(4)),
+                  info_text(": Score = "),
+                  (succ_text if details['min_score'] == 1 else
+                   info_text if details['min_score'] > 0 else
+                   err_text)(f"{float(details['min_score']):.3f}"),
+                  sep='')
 
 
 
@@ -936,18 +965,18 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
                 raise CommandError("Missing subtask list")
 
             # iterate through inputs, run our detector against them
-            subtasks_of, all_subtasks, inputs = get_subtasks(
-                    subtasks, detector, get_format_from_type(format_, loc, read='i'), relpath=loc)
+            subtasks_of, all_subtasks = compute_subtasks(
+                    subtasks, detector, format=get_format_from_type(format_, loc, read='i'), relpath=loc)
 
             info_print(f'WRITING TO {details.subtasks_files}')
-            details.dump_subtasks_files(construct_subs_files(subtasks_of, inputs))
+            details.dump_subtasks_files(construct_subs_files(subtasks_of))
 
             succ_print('DONE MAKING SUBTASKS.')
 
 
-def construct_subs_files(subtasks_of, inputs):
+def construct_subs_files(subtasks_of):
     prev, lf, rg = None, 0, -1
-    for idx, file in enumerate(inputs):
+    for idx, file in enumerate(subtasks_of):
         assert rg == idx - 1
         subs = subtasks_of[file]
         assert subs

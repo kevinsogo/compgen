@@ -43,6 +43,8 @@ This includes some disorganized ideas, TODOs, notes...
 
 - make kg contest work for non-python programs.
 
+- fix: if validator missing, "kg make all" gives "NoneType has no attribute do_compile"
+
 - Add warning in `KGRandom` about shuffling arbitrary collections, especially unordered ones like sets and dicts. It can override `.shuffle` by adding an optional kwarg, `sort`, which is `False` by default but also issues a warning. Add a way to suppress this warning safely.
 
     - Maybe `.shuffle_sort` ? (also `.shuffled_sorted` and `.shuff_sorted`)
