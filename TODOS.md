@@ -39,6 +39,8 @@ This includes some disorganized ideas, TODOs, notes...
     - "Compile a problem as part of a contest package". (sometimes, this just delegates to "compile a problem")
     - "Compile a contest".
 
+- Allow setting of problem colors (should be in contest.json, not in details.json)
+
 - Allow overriding of defaults when using Bounds & Bounds. 
 
     - This has been implemented already, but the following might not be:

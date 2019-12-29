@@ -195,14 +195,19 @@ def write_passwords_format(cont, format_, *, seedval=None, dest='.'):
         make_executable(target)
 
         print()
+        warn_print('!!!!!!!!!!')
         warn_print('NOTE: Passwords are not automatically set if you import teams.tsv to DOMjudge!')
         warn_print('Instead, use user_team_data.txt to import the team data (including passwords) directly to the '
                 'database by doing the following:')
-        warn_print('1. Copy user_team_data.txt into your domserver machine.')
-        warn_print('2. Copy the dom_create_teams file into the bin/ folder of your domserver machine. '
-                '(Note: for reference, this folder is found in the docker container at /opt/domjudge/domserver/bin/)')
-        warn_print('3. Go to the said bin folder, then run ./dom_create_teams < path/to/user_team_data.txt '
-                '(in your domserver machine).')
+        print()
+        warn_print('1. Copy the files "dom_create_teams" and "user_team_data.txt" into the bin/ folder of your '
+                'domserver machine. ')
+        warn_print('   (Note: for reference, this folder is found in the domserver Docker container at '
+                '/opt/domjudge/domserver/bin/)')
+        warn_print('2. Go to the said bin/ folder (in the domserver machine), then run '
+                './dom_create_teams < user_team_data.txt')
+        print()
+        warn_print('!!!!!!!!!!')
         print()
 
     write_passwords(accounts,

@@ -2074,7 +2074,7 @@ def kg_contest(format_, args):
                 dest = os.path.join(contest_folder, 'UPLOADS', 'UPLOAD_2ND_problems', problem_code)
                 
                 info_print('Zipping the whole thing...')
-                print(info_text('target is'), key_text(dest + '.zip'))
+                info_print('target is', dest + '.zip')
                 make_archive(dest, 'zip', os.path.join(problems_folder, problem_code))
                 info_print('Done.')
 

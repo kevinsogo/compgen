@@ -17,11 +17,11 @@ $1 \le T \le 10^5$
 $1 \le n \le 10^5$  
 The sum of the $n$s in a single file is $\le 5\cdot 10^5$  
 $-10^9 \le A_i \le 10^9$  
-
-**Subtask 1**: $n \le 10$  
-**Subtask 2**: $n \le 1000$  
-**Subtask 3**: No additional constraints  
-
+{% if subtasks >= 1 %}
+{% for subtask in subtask_list %}**Subtask {{ subtask.id }}** ({{ subtask.score }} points): {% if subtask.id == 1 %}$n \le 10$  
+{% elif subtask.id == 2 %}$n \le 1000$  
+{% else %}No additional constraints  
+{% endif %}{% endfor %}{% endif %}
 **Output Format**  
 
 For each test case, output a single line containing a single integer denoting the answer

@@ -147,7 +147,6 @@ class ContestDetails(object):
     @property
     def end_time(self):
         return self.start_time + self.duration
-    
 
     @property
     def rel_problems(self):
@@ -160,7 +159,6 @@ class ContestDetails(object):
     @property
     def rel_global_statements(self):
         return attach_relpath(self.relpath, self.global_statements)
-    
     
 
     def serialize(self):

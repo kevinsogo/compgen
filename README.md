@@ -244,11 +244,11 @@ Say you have created a bunch of problems and you would now like to easily upload
 
 1. Create a `contest.json` file which will contain the details of the contest, including allowed languages and list of problems. A template exists in `examples/templates/contest.json` for you.  
 
-2. Run `kg kontest pc2 path/to/contest.json`. Here, `pc2` indicates the format. For now, only `pc2` is supported, but this may change in the future.  
+2. Run `kg kontest pc2 path/to/contest.json`. Here, `pc2` indicates that we're compiling the contest for use in the PC2 platform. Use `dom` for DOMjudge.
 
-    In the case of `pc2`, this will create a folder in `kgkompiled` containing (among other things) `contest.yaml`, which can be loaded by PC2. It also contains randomly generated passwords for all accounts.  
+    This will create a folder in `kgkompiled` containing configuration files which can be loaded by the corresponding contest platform, which automatically sets up the contest. It also contains randomly generated passwords for all accounts.  
 
-More details can be found [here](docs/CONTEST.md), which includes additional things you need to do, like configuring settings that can't be set automatically due to technical limitations (mostly theirs).  
+More details can be found [here](docs/CONTEST.md), which includes additional things you need to do, like configuring settings that can't be set automatically due to technical limitations (e.g., the absence of ways to set some things automatically).  
 
 
 
