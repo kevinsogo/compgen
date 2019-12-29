@@ -1875,7 +1875,7 @@ def kg_contest(format_, args):
             target_ext_data = None
 
         # construct template environment
-        if not contest.site_password: raise CommandError(f"site_password required for {args.format}")
+        if args.format == 'pc2' and not contest.site_password: raise CommandError(f"site_password required for {args.format}")
         # TODO pass 'contest' instead of all these
         env = {
             "datetime_created": datetime.now(),
