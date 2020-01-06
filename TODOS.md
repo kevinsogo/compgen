@@ -43,6 +43,10 @@ This includes some disorganized ideas, TODOs, notes...
     - "Compile a problem as part of a contest package". (sometimes, this just delegates to "compile a problem")
     - "Compile a contest".
 
+- labels for Var/Interval objects. (passed through validator(), the labels can be acquired)
+
+- Have `2 <= Var('x') <= 10` and have incompatibility checks when using `&` with different labels?
+
 - Allow setting of problem colors (should be in contest.json, not in details.json)
 
 - Allow overriding of defaults when using Bounds & Bounds. 
@@ -99,7 +103,31 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Add "pc2" kg kompile and add the yaml writing for a task there
 
-- Add "cms" format and write own Loader (compgen-cms).
+- Add "cms" format and write own Loader (compgen-cms). Notes:
+
+        kg kompile cms:
+            creates kgkompiled/cms/ and all its stuff
+            also the zipped version for easy portability
+
+            kgkompiled/cms will have:
+                checker (shebanged python3 checker). It must be exactly "checker".
+                "grader.*" will be copied if it is in other_programs
+
+            so it makes the kgkompiled/cms/ folder
+            it makes a json file to make things easy to read
+                files to load
+                config options
+            it also makes kgkompiled/cms/tests.zip
+            it also makes kgkompiled/cms/problem_[problemcode].zip
+                includes the whole folder (except tests.zip)
+        kg contest cms:
+            creates a single zip file or something
+            So it makes the kgkompiled/CONTESTCODE/ folder
+                just contains the problem_[problemcode].zip files and maybe a json file that contains easy-to-read data
+            it also makes kgkompiled/CONTESTCODE.zip
+        separate package [not directly included in kg] that reads off the zip files. should be "easy to read" at this point. "compgen-cms"
+
+        compgen-cms will contain the loader. the idea is to make it easily included in judging setups without having to add the whole kompgen library. of course, if we're able to make the installation of kompgen smooth, then we can just use kompgen itself.
 
 - Cleanup kg_contest and kg_compile to be more modular
 
@@ -149,6 +177,10 @@ This includes some disorganized ideas, TODOs, notes...
 - validator read_while
     
     - Also think about how to unify them, i.e., reduce code duplication as much as possible
+
+- implement or by slightly adjusting "Var" representation. make it a tree. have a method that enumerate all conditions.
+    
+    - but do consider efficiency too. this could be a bit slow
 
 - Create a more flexible "testscript" that kgkompiles to a polygon-compatible one.
     

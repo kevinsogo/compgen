@@ -1155,7 +1155,7 @@ Now this is on you: initialize the folder with the appropriate number of subtask
 Then let's write the validator. To read in the whole line, you can do something like
 
 ```python
-[ln] = read.line(charset=valid_chars, maxn=lim.linelen).eoln
+[ln] = file.read.line(charset=valid_chars, maxn=lim.linelen).eoln
 ```
 
 where `valid_chars` is a string of all allowed characters, and `maxn` is the maximum number of characters to read. Then `ln` will have the whole line, like `"It is April 2018"` or something. Also, recall that for a string `s`, `s.isdigit()` is `True` if `s` consists of only digits, and `False` otherwise.

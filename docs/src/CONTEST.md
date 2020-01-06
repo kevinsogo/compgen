@@ -77,7 +77,7 @@ A working example is provided in `examples/contest.json`. You can run this to te
 $ kg kontest pc2 examples/contest.json   # add --make-all if you want
 ```
 
-This will create the folder `kgkompiled/EXAMPLECONTEST` from the two example problems.
+This will create the folder `kgkompiled/EXAMPLECONTEST` from two example problems.
 
 
 ## Loading to PC2
@@ -149,6 +149,16 @@ $ kg kontest dom path/to/contest.json
 
 This will create a folder `kgkompiled/[contestcode]/`. 
 
+Note that `kg kontest` expects that `kg make all` has been run for every problem. If you want to force run `kg make all` across all problems, pass the `--make-all` option to `kg kontest`.
+
+A working example is provided in `examples/contest.json`. You can run this to test it:
+
+```bash
+$ kg kontest dom examples/contest.json   # add --make-all if you want
+```
+
+This will create the folder `kgkompiled/EXAMPLECONTEST` from two example problems.
+
 After doing this, and after getting the domserver and at least one judgehost working, and logging in as an admin, here are the steps you should take:
 
 
@@ -215,7 +225,7 @@ You can easily do the same process if you're planning on hosting a practice roun
 
 Interactive problem support to come soon. (For now, you can still do it, but you'll have to manually set up the run and compare commands yourself, so KompGen saves you 80% of the work.)
 
-It may happen that DOMjudge doesn't accept some problem because or large test data. In this case, please follow the ["Fine tuning server settings"](https://www.domjudge.org/docs/admin-manual.pdf) section of the [DOMjudge admin manual](https://www.domjudge.org/docs/admin-manual.pdf) to change MySQL settings. `max_allowed_packet` is the most relevant, although you may want to adjust the others as well just to be sure.
+It may happen that DOMjudge doesn't accept some problem because of large test data. In this case, please follow the ["Fine tuning server settings"](https://www.domjudge.org/docs/admin-manual.pdf) section of the [DOMjudge admin manual](https://www.domjudge.org/docs/admin-manual.pdf) to change MySQL settings. `max_allowed_packet` is the most relevant, although you may want to adjust the others as well just to be sure.
 
 
 
@@ -234,6 +244,16 @@ $ kg kontest cms-it contest.json
 ```
 
 This will generate the contest problems in Italian format in `kgkompiled/[contestcode]`.  
+
+Note that `kg kontest` expects that `kg make all` has been run for every problem. If you want to force run `kg make all` across all problems, pass the `--make-all` option to `kg kontest`.
+
+A working example is provided in `examples/contest.json`. You can run this to test it:
+
+```bash
+$ kg kontest cms-it examples/contest.json   # add --make-all if you want
+```
+
+This will create the folder `kgkompiled/EXAMPLECONTEST` from two example problems.
 
 Please keep in mind though that the Italian format is very limited (acknowledged even by the [official CMS docs](https://cms.readthedocs.io/en/v1.4/External%20contest%20formats.html)), so, as with DOMjudge, a lot of the contest config settings are thrown away.
 
