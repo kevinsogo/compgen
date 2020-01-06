@@ -34,12 +34,24 @@ class Var(metaclass=VarMeta):
             return NotImplemented
         append((self.pref + t, v))
         return self
-    def __le__(self, v): return self.add('le', v)
-    def __lt__(self, v): return self.add('lt', v)
-    def __ge__(self, v): return self.add('ge', v)
-    def __gt__(self, v): return self.add('gt', v)
-    def __eq__(self, v): return self.add('eq', v)
-    def __ne__(self, v): return self.add('ne', v)
+    def __le__(self, v):
+        if isinstance(v, str): return False
+        return self.add('le', v)
+    def __lt__(self, v):
+        if isinstance(v, str): return False
+        return self.add('lt', v)
+    def __ge__(self, v):
+        if isinstance(v, str): return False
+        return self.add('ge', v)
+    def __gt__(self, v):
+        if isinstance(v, str): return False
+        return self.add('gt', v)
+    def __eq__(self, v):
+        if isinstance(v, str): return False
+        return self.add('eq', v)
+    def __ne__(self, v):
+        if isinstance(v, str): return False
+        return self.add('ne', v)
     def __abs__(self): return Var(pref=self.pref+'abs ', lims=self.lims)
 
     def __and__(self, other):
