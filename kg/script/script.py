@@ -1098,7 +1098,8 @@ def kg_init(format_, args):
         'subtasks': args.subtasks,
         # Jinja's tojson doesn't seem to honor dict order, so let's just use json.dumps
         "subtask_list": [OrderedDict(id=index, score=10) for index in range(1, args.subtasks + 1)],
-        'subtask_list_json': json.dumps(subtask_list, indent=4),
+        # TODO find a way to indent only up to a certain level
+        'subtask_list_json': "[" + ','.join('\n    ' + json.dumps(sub) for sub in subtask_list) + "\n]",
         'time_limit': args.time_limit,
         "version": VERSION,
     }
