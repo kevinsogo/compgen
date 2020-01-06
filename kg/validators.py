@@ -22,7 +22,7 @@ class VarMeta(type):
 class Var(metaclass=VarMeta):
     def __init__(self, *, pref='', lims=None):
         self.pref = pref
-        self.lims = lims if lims is not None else []
+        self.lims = list(lims) if lims is not None else []
         if any(isinstance(v, Var) for t, v in self.lims): raise TypeError("Operand cannot be Var")
         super().__init__()
 
@@ -345,7 +345,7 @@ class StrictStream:
         return self._buff[0]
 
     @save_on_label
-    def read_until(self, ends, *, charset=(), n=None, maxn=None, include_end=False, _called="token"):
+    def read_until(self, ends, *, charset=(), l=None, n=None, maxn=None, include_end=False, _called="token"):
         ends = set(ends)
         charset = set(charset)
         n = self._get(n)
@@ -360,6 +360,7 @@ class StrictStream:
             if n is not None and len(res) > n: raise StreamError(f"Expected exactly {n} characters, got more.")
             if len(res) > maxn: raise StreamError(f"Took too many characters! Expected at most {maxn}")
         if n is not None and len(res) != n: raise StreamError(f"Expected exactly {n} characters, got {len(res)}")
+        if l is not None: ensure(len(res) in l, f"Expected length in {l}, got {len(res)}")
         if include_end: res.append(self._next_char())
         return ''.join(res)
 
