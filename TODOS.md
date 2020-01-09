@@ -6,7 +6,7 @@
 
 - Support pc2 input validator. (right now I can't get it to work. email thread with PC2 team.)
 
-- Support more formats: Kattis, CodeChef, DOM?.  
+- Support more formats: Kattis, CodeChef.  
 
 
 # To consider  
@@ -21,9 +21,17 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Request CMS folks to allow external loaders.
 
+- Chef: on kg kompile, create a script that uploads. Alternatively, kg chefupload (or something similar).
+
 - Properly delete contest files in kgkompiled/ when running `kg kompile` again.
 
 - DOM, important: can't upload files because of max packet thing. fix it.
+
+- Make +Var non-sticky; perhaps "freeze" it when it is passed through validator.
+
+    probably: with +Var (or something similar)
+
+    probably wouldn't hurt to freeze them anyway again.
 
 - DOM: Importing contest info directly to the database (similar to user_team_data.txt). /api/doc has models at the bottom, which is helpful.
 

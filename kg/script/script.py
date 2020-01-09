@@ -722,7 +722,7 @@ def kg_test(format_, args):
     decor_print()
 
     # also print subtask grades
-    if details.valid_subtasks:
+    if format_.name and details.valid_subtasks:
         def get_all_subtasks():
             subtasks = args.subtasks or list(map(str, details.valid_subtasks))
             if os.path.isfile(details.subtasks_files):
@@ -743,15 +743,31 @@ def kg_test(format_, args):
         decor_print()
         decor_print('.'*42)
         beginfo_print('SUBTASK REPORT:')
-        for sub, details in natsorted(get_all_subtasks().items()):
+        max_overall_score = 0
+        total_score = 0
+        all_correct = True
+        for sub, sub_details in natsorted(get_all_subtasks().items()):
+            max_score = details.valid_subtasks[int(sub)].score if isinstance(details.valid_subtasks, dict) else 1.0
+            if max_score is None: max_score = 1.0
+            score = float(sub_details['min_score']) * max_score
+            max_overall_score += max_score
+            total_score += score
+            all_correct &= sub_details['min_score'] == 1
             print(info_text("Subtask ="),
                   key_text(str(sub).rjust(4)),
                   info_text(": Score = "),
-                  (succ_text if details['min_score'] == 1 else
-                   info_text if details['min_score'] > 0 else
-                   err_text)(f"{float(details['min_score']):.3f}"),
+                  (succ_text if sub_details['min_score'] == 1 else
+                   info_text if sub_details['min_score'] > 0 else
+                   err_text)(f"{score:.3f}"),
                   sep='')
 
+        print()
+        print(info_text("Total Score =",
+              (succ_text if all_correct else
+               info_text if total_score > 0 else
+               err_text)(f"{total_score:.3f}"),),
+              info_text(f" out of {max_overall_score:.3f}"),
+              sep='')
 
 
 

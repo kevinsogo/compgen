@@ -16,7 +16,7 @@ def _check_simple(x, name):
         raise FormatError(f"Invalid {name} pattern: {x} ... cannot handle patterns with {invalid}")
 
 class Format:
-    def __init__(self, inputg=None, outputg=None, *, read='', write='', clear=''):
+    def __init__(self, inputg=None, outputg=None, *, read='', write='', clear='', name=None):
         if not read and not write: raise FormatError("read and write modes cannot both be empty")
         if not set(read) <= set('io'): raise FormatError(f"Unknown read mode: {read}")
         if not set(write) <= set('io'): raise FormatError(f"Unknown write mode: {write}")
@@ -35,6 +35,8 @@ class Format:
                 raise FormatError("Cannot clear outputs: outputg not found!")
             else:
                 for outputf in glob(outputg): os.remove(outputf)
+
+        self.name = name
 
         self._checked = False
         self._i_re = None
@@ -238,7 +240,7 @@ class HRFormat(Format):
         super().__init__(
                 os.path.join(loc, 'input', 'input*.txt'),
                 os.path.join(loc, 'output', 'output*.txt'),
-            read=read, write=write, clear=clear)
+            read=read, write=write, clear=clear, name='hr')
         for inputf, ex in zip(natsorted(self.inputs), self.expected_parts()):
             expinpf = self._join_iparts(*ex)
             if inputf != expinpf:
@@ -257,7 +259,7 @@ class PGFormat(Format):
         super().__init__(
                 os.path.join(loc, 'tests', '*'),
                 os.path.join(loc, 'tests', '*.a'),
-            read=read, write=write, clear=clear)
+            read=read, write=write, clear=clear, name='pg')
         for inputf, ex in zip(natsorted(self.inputs), self.expected_parts()):
             expinpf = self._join_iparts(*ex)
             if inputf != expinpf:
@@ -275,7 +277,7 @@ class KGFormat(Format):
         super().__init__(
                 os.path.join(loc, tests_folder, '*.in'),
                 os.path.join(loc, tests_folder, '*.ans'),
-            read=read, write=write, clear=clear)
+            read=read, write=write, clear=clear, name='kg')
         for inputf, ex in zip(natsorted(self.inputs), self.expected_parts()):
             expinpf = self._join_iparts(*ex)
             if inputf != expinpf:
@@ -293,7 +295,7 @@ class CMSFormat(Format):
         super().__init__(
                 os.path.join(loc, 'tests', '**.in'),
                 os.path.join(loc, 'tests', '**.ans'),
-            read=read, write=write, clear=clear)
+            read=read, write=write, clear=clear, name='cms')
         self.subtasks = subtasks
         testcode_re = re.compile(r'^(?P<pre>\d+)(?:_subs_(?:\d+_)+)?\.in$')
         for inputf, ex in zip(natsorted(self.inputs), self.expected_parts()):
@@ -327,7 +329,7 @@ class CMSItFormat(Format):
         super().__init__(
                 os.path.join(loc, 'input', 'input*.txt'),
                 os.path.join(loc, 'output', 'output*.txt'),
-            read=read, write=write, clear=clear)
+            read=read, write=write, clear=clear, name='cms-it')
         for inputf, ex in zip(natsorted(self.inputs), self.expected_parts()):
             expinpf = self._join_iparts(*ex)
             if inputf != expinpf:
