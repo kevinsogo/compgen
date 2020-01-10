@@ -68,6 +68,7 @@ def rand_swaps(rand, nodes, edges):
 def rand_traverse(*args, **kwargs):
     return [i for i, p, d in rand_traverse_data(*args, **kwargs)]
 
+# TODO add start_all, etc.
 def rand_traverse_data(rand, nodes, edges, *, start=None):
     nodes = make_nodes(nodes)
     if start is None: start = nodes[0]
@@ -79,7 +80,7 @@ def rand_traverse_data(rand, nodes, edges, *, start=None):
         idx = rand.randrange(len(coll))
         coll[idx], coll[-1] = coll[-1], coll[idx]
         i, d = coll.pop()
-        yield i, parent[i], d
+        yield GraphTraversalData(i, parent[i], d, source=start)
         for j in adj[i]:
             if j not in parent:
                 parent[j] = i

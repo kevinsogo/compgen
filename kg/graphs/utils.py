@@ -3,6 +3,7 @@ from collections import deque
 from kg.utils import * ### @import
 
 class GraphError(Exception): ...
+class ToposortError(GraphError): ...
 
 class _NodeList(list): ...
 class _Adj(dict): ...
@@ -46,42 +47,69 @@ def is_simple(nodes, edges, *, directed=False):
     return True
 
 def bfs(*args, **kwargs):
-    return [i for i, p, d in bfs_data(*args, **kwargs)]
+    return [data.node for data in bfs_data(*args, **kwargs)]
 
 def dfs(*args, **kwargs):
-    return [i for i, p, d in dfs_data(*args, **kwargs)]
+    return [data.node for data in dfs_data(*args, **kwargs)]
 
-def bfs_data(nodes, edges, *, start=None, directed=False):
-    nodes = make_nodes(nodes)
-    if start is None: start = nodes[0]
-    adj = make_adj(nodes, edges, directed=directed)
-    if start not in adj: raise GraphError(f"Failed to BFS: {start} not in nodes (n={len(nodes)})")
-    queue = deque([(start, 0)])
-    parent = {start: start}
-    while queue:
-        i, d = queue.popleft()
-        yield i, parent[i], d
-        for j in adj[i]:
-            if j not in parent:
-                parent[j] = i
-                queue.append((j, d + 1))
+class GraphTraversalData:
+    def __init__(self, node, parent, depth, **extras):
+        self.node = node
+        self.parent = parent
+        self.depth = depth
+        self.extras = extras
+        super().__init__()
 
-def dfs_data(nodes, edges, *, start=None, directed=False):
+    def __iter__(self):
+        yield self.node
+        yield self.parent
+        yield self.depth
+
+def bfs_data(nodes, edges, *, start=None, start_all=False, directed=False):
     nodes = make_nodes(nodes)
-    if start is None: start = nodes[0]
+    if start_all and start is not None:
+        raise GraphError(
+                f"You can't pass start={start} if "
+                f"start_all={start_all} is true (n={len(nodes)})")
+    starts = nodes if start_all else [start] if start is not None else [nodes[0]]
     adj = make_adj(nodes, edges, directed=directed)
-    if start not in adj: raise GraphError(f"Failed to DFS: {start} not in nodes (n={len(nodes)})")
-    # reverse adjacency for "canonicity"
-    for i, adg in adj: adg[:] = adg[::-1]
-    stack = [(start, 0)]
-    parent = {start: start}
-    while stack:
-        i, d = stack.pop()
-        yield i, parent[i], d
-        for j in adj[i]:
-            if j not in parent:
-                parent[j] = i
-                stack.append((j, d + 1))
+    if any(start not in adj for start in starts):
+        raise GraphError(f"Failed to BFS: {start} not in nodes (n={len(nodes)})")
+    parent = {}
+    for start in starts:
+        if start in parent: continue
+        queue = deque([(start, 0)])
+        parent[start] = start
+        while queue:
+            i, d = queue.popleft()
+            yield GraphTraversalData(i, parent[i], d, source=start)
+            for j in adj[i]:
+                if j not in parent:
+                    parent[j] = i
+                    queue.append((j, d + 1))
+
+def dfs_data(nodes, edges, *, start=None, start_all=False, directed=False):
+    nodes = make_nodes(nodes)
+    if start_all and start is not None:
+        raise GraphError(
+                f"You can't pass start={start} if "
+                f"start_all={start_all} is true (n={len(nodes)})")
+    starts = nodes if start_all else [start] if start is not None else [nodes[0]]
+    adj = make_adj(nodes, edges, directed=directed)
+    if any(start not in adj for start in starts):
+        raise GraphError(f"Failed to DFS: {start} not in nodes (n={len(nodes)})")
+    parent = {}
+    for start in starts:
+        if start in parent: continue
+        stack = [(start, 0)]
+        parent[start] = start
+        while stack:
+            i, d = stack.pop()
+            yield GraphTraversalData(i, parent[i], d, source=start)
+            for j in reversed(adj[i]): # reverse adjacency for "canonicity"
+                if j not in parent:
+                    parent[j] = i
+                    stack.append((j, d + 1))
 
 def farthest(nodes, edges, *, start):
     return bfs(nodes, edges, start=start)[-1]
@@ -92,7 +120,7 @@ def diameter(nodes, edges):
     i = farthest(nodes, adj, start=nodes[0])
     b = list(bfs_data(nodes, adj, start=i))
     j, p, d = b[-1]
-    return i, j, d
+    return i, b[-1].node, b[-1].depth
 
 @listify
 def bipartition(nodes, edges):
@@ -102,9 +130,9 @@ def bipartition(nodes, edges):
     for s in nodes:
         if s in vis: continue
         gr = ([], [])
-        for i, p, d in bfs_data(nodes, edges, start=s):
-            vis.add(i)
-            gr[d % 2].append(i)
+        for data in bfs_data(nodes, edges, start=s):
+            vis.add(data.node)
+            gr[data.depth % 2].append(data.node)
         yield gr
 
 def graph_relabel(nodes, edges, new_nodes):
@@ -124,3 +152,35 @@ def connected_components(nodes, edges):
             js = bfs(nodes, adj, start=i)
             vis |= set(js)
             yield js
+
+@listify
+def topologically_sort(nodes, edges):
+    nodes = make_nodes(nodes)
+    adj = make_adj(nodes, edges, directed=True)
+
+    deg = {node: 0 for node in nodes}
+    for i in nodes:
+        for j in adj[i]: deg[j] += 1
+    goods = deque(i for i in nodes if deg[i] == 0)
+    while goods:
+        i = goods.popleft()
+        yield i
+        for j in adj[i]:
+            deg[j] -= 1
+            if deg[j] == 0: goods.append(j)
+
+    if any(deg.values()):
+        raise ToposortError(f"Failed to toposort: the graph is not acyclic (n={len(nodes)})")
+
+def is_acyclic(nodes, edges, *, directed=False):
+    if directed:
+        try:
+            topologically_sort(nodes, edges)
+            return True
+        except ToposortError:
+            return False
+    else:
+        raise GraphError("is_acyclic not yet supported for undirected graphs. "
+                "I know, I know, it's not hard to code, but I'm lazy. I'll code it "
+                "when I need it :D If you need it now, either tell me, or just write "
+                "it yourself and make a pull/merge request. Thanks!!")

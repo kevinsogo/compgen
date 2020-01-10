@@ -11,8 +11,8 @@ def tree_details(nodes, edges, *, root=None):
     max_depth = -float('inf')
     max_deg = max(map(len, adj.values()))
     diami, diamj, diam = diameter(nodes, adj)
-    for i, parent, depth in bfs_data(nodes, adj):
-        max_depth = max(depth, max_depth)
+    for data in bfs_data(nodes, adj):
+        max_depth = max(data.depth, max_depth)
     return {
         'root': root,
         'diameter': diam,
