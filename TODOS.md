@@ -21,6 +21,8 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Request CMS folks to allow external loaders.
 
+- Stronger args support for generators.
+
 - Chef: on kg kompile, create a script that uploads. Alternatively, kg chefupload (or something similar).
 
 - Properly delete contest files in kgkompiled/ when running `kg kompile` again.

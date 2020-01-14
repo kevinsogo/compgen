@@ -61,7 +61,7 @@ class KGRandom(Random):
         if max_ is not None and max_*count < total: raise ValueError(
                 f"The total must be at most {max_}*{count}={max_*count} "
                 f"when count={count} and max_={max_}")
-        if skew_ <= 0:
+        if skew <= 0:
             raise ValueError("The skew has to be at least 1.")
         if max_ is None:
             max_ = total
@@ -72,12 +72,13 @@ class KGRandom(Random):
             while True:
                 assert inds
                 idx = min(self.randrange(len(inds)) for it in range(skew))
-                inds[idx], inds[-1] = inds[-1], inds[idx]
-                i = inds[-1]
-                if dist[i] < max_:
-                    dist[i] += 1
+                if dist[inds[idx]] < max_:
+                    dist[inds[idx]] += 1
                     break
                 else:
+                    # TODO this somehow destroys the distribution, so this whole function needs a better implementation.
+                    # for now, this will do.
+                    inds[idx], inds[-1] = inds[-1], inds[idx]
                     inds.pop()
 
         assert sum(dist) == total
