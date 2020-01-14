@@ -1,7 +1,10 @@
 {% if not minimal %}# print the data into the correct input format
 
-{% endif %}def print_to_file(file, cases):
-    print(len(cases), file=file)
+{% endif %}from kg.formatters import * ### @import
+
+@formatter()
+def print_to_file(file, cases, *, print):
+    print(len(cases))
     for arr in cases:
-        print(len(arr), file=file)
-        print(*arr, file=file)
+        print(len(arr))
+        print(*arr)

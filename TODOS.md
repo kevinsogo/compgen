@@ -25,7 +25,13 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Properly delete contest files in kgkompiled/ when running `kg kompile` again.
 
+- Add something like Jinja support for testscript?
+
 - DOM, important: can't upload files because of max packet thing. fix it.
+
+- more efficient handling of regex and .token. 
+
+- kg.formatters with a @formatter() decorator. it passes a "print" function.
 
 - Make +Var non-sticky; perhaps "freeze" it when it is passed through validator.
 
@@ -40,6 +46,8 @@ This includes some disorganized ideas, TODOs, notes...
 - Consider: Rename `details.json`? `kg_problem_config.json` or something.
 
     - We can have the name "details.json" written in `__init__.py` or something
+
+- Print out which lines were skipped when compiling the testscript to a polygon testscript.
 
 - Have "statement" in details.json. It will override global_statements (or join with it; the point is, it has higher priority)
 
