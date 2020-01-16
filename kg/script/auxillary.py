@@ -3,10 +3,11 @@ from subprocess import PIPE
 from sys import stdin, stderr
 from textwrap import dedent
 import argparse
+import json
 import os
 
 from .programs import get_python3_command, Program
-from .utils import set_handler
+from .utils import *
 
 class KGAuxError(Exception): ...
 
@@ -99,6 +100,30 @@ mc_p = subparsers.add_parser('kg-main-commands', help='Print all main kg command
 @set_handler(mc_p)
 def kgutil_mc(args):
     print('kg', 'kg-pg', 'kg-polygon', 'kg-kg', 'kg-kompgen', 'kg-hr', 'kg-hackerrank')
+
+
+
+
+
+oneindex_p = subparsers.add_parser('pg-1index',
+            help='Convert the subtasks file to use 1-indexing. (For polygon)',
+     description='Convert the subtasks file to use 1-indexing. (For polygon)')
+oneindex_p.add_argument('subtask_file', help='The subtask file. Typically subtasks.json')
+
+@set_handler(oneindex_p)
+def kgutil_oneindex(args):
+    with open(args.subtask_file) as f:
+        subtasks_file = json.load(f)
+    print()
+    beginfo_print('The following list is one-indexed. Be careful.')
+    print()
+    for low, high, subs in subtasks_file:
+        low += 1; high += 1
+        print(info_text('Files'), key_text(f'{low:4}'), info_text('to'), key_text(f'{high:4}'), info_text('have the following subtasks:'), key_text(*subs))
+
+
+
+
 
 
 
