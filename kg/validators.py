@@ -333,6 +333,10 @@ class StrictStream:
         self._found = {}
         super().__init__()
 
+    @classmethod
+    def from_string(self, s):
+        return StrictStream(StringIO(s))
+
     def __getitem__(self, key):
         return self._found[key]
 
@@ -400,8 +404,8 @@ class StrictStream:
         return self.read_until([EOLN] + ([EOF] if eof else []), _called=_called, **kwargs)
 
     @save_on_label
-    def read_token(self, regex=None, *, other_ends=[], _called="token", **kwargs): # optimize this. 
-        tok = self.read_until([EOF, ' ', '\t', EOLN] + other_ends, _called=_called, **kwargs)
+    def read_token(self, regex=None, *, ends=[EOF, ' ', '\t', EOLN], other_ends=[], _called="token", **kwargs): # optimize this. 
+        tok = self.read_until([*ends, *other_ends], _called=_called, **kwargs)
         if regex is not None and not re.match('^' + regex + '$', tok):
             raise StreamError(f"Expected token with regex {regex!r}, got {tok!r}")
         return tok
@@ -425,11 +429,11 @@ class StrictStream:
 
     @save_on_label
     def read_int(self, *a, **kw):
-        return strict_int(self.read_token(charset=intchars, _called="int"), *map(self._get, a), **kw)
+        return strict_int(self.read_token(charset=intchars, _called="int", **kw), *map(self._get, a))
 
     @save_on_label
     def read_real(self, *a, **kw):
-        return strict_real(self.read_token(charset=realchars, _called="real"), *map(self._get, a), **kw)
+        return strict_real(self.read_token(charset=realchars, _called="real", **kw), *map(self._get, a))
 
     def read_space(self): return self.read_char(' ')
     def read_eoln(self): return self.read_char(EOLN) # ubuntu only (I think).
