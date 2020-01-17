@@ -195,5 +195,7 @@ def convert_testscript(testscript, generators, *, relpath=None):
     filecount, gens = parse_testscript(testscript, generators, relpath=relpath)
 
     for gen, args, single, target, otarget, src_line in gens:
-        if src_line[0] != '!':
+        if src_line[0] == '!':
+            warn_print(f"Warning: The following testscript line cannot be added to Polygon: '{src_line}'. Add it manually.")
+        else:
             yield ' '.join([os.path.splitext(os.path.basename(gen.filename))[0], *args, '>', otarget])
