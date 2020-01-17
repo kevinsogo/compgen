@@ -119,7 +119,7 @@ def kgutil_oneindex(args):
     print()
     for low, high, subs in subtasks_file:
         low += 1; high += 1
-        print(info_text('Files'), key_text(f'{low:4}'), info_text('to'), key_text(f'{high:4}'), info_text('have the following subtasks:'), key_text(*subs))
+        print(info_text('The subtasks of files'), key_text(f'{low:4}'), info_text('to'), key_text(f'{high:4}'), info_text('are'), key_text(*subs))
 
 
 
