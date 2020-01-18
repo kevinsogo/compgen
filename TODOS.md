@@ -23,6 +23,8 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Stronger args support for generators.
 
+- Flag to use a custom python3 script. Useful in case some generators use later python features not available in the latest pypy3.
+
 - Chef: on kg kompile, create a script that uploads. Alternatively, kg chefupload (or something similar).
 
 - Properly delete contest files in kgkompiled/ when running `kg kompile` again.

@@ -295,7 +295,7 @@ def _get_subtask_detector_from_args(args, *, purpose, details=None):
     if not detector: raise CommandError(f"Missing detector/validator (for {purpose})")
     # find subtask list
 
-    if validator and not subtasks: # subtask list required for detectors from validator
+    if validator and not args.subtasks: # subtask list required for detectors from validator
         raise CommandError(f"Missing subtask list (for {purpose})")
 
     return detector
