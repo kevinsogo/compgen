@@ -58,14 +58,17 @@ parser = argparse.ArgumentParser(
 
                 - For developing problems/contests from scratch (writing generators, validators, checkers, etc.)
 
-                    - (for problems) [*[kg init]*], [*[kg make]*], [*[kg gen]*]/[*[test]*]/[*[run]*]/[*[kg compile]*]
+                    - (for problems) [*[kg init]*], [*[kg make]*], [*[kg gen]*], [*[kg test]*], [*[kg run]*], [*[kg compile]*]
                     - (for contests) [*[kg contest]*]
 
                 See the individual --help texts for each command, e.g., [*[kg init --help]*].
         ''')))
 parser.add_argument('--krazy', action='store_true', help="Go krazy. (Don't use unless drunk)")
 # TODO add 'verbose' option here
-subparsers = parser.add_subparsers(help='which operation to perform', dest='main_command')
+subparsers = parser.add_subparsers(
+        help='which operation to perform',
+        dest='main_command',
+        metavar='{konvert,konvert-sequence,subtasks,gen,test,run,make,joke,init,kompile,kontest,seating,passwords}')
 subparsers.required = True
 
 

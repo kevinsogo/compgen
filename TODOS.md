@@ -27,9 +27,13 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Chef: on kg kompile, create a script that uploads. Alternatively, kg chefupload (or something similar).
 
+- On versioning and backwards compatibility: only the @import-able functions need to be thoroughly backwards compatible. make a mechanism there that imports specific versions.
+
 - Properly delete contest files in kgkompiled/ when running `kg kompile` again.
 
 - Add something like Jinja support for testscript?
+
+- kg run without -i
 
 - DOM, important: can't upload files because of max packet thing. fix it.
 
