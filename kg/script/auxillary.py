@@ -1,3 +1,4 @@
+from collections import defaultdict
 from io import StringIO
 from subprocess import PIPE
 from sys import stdin, stderr
@@ -117,9 +118,23 @@ def kgutil_oneindex(args):
     print()
     beginfo_print('The following list is one-indexed. Be careful.')
     print()
+
+    files_of_subtask = defaultdict(set)
+    subtset = set()
     for low, high, subs in subtasks_file:
         low += 1; high += 1
+        subtset |= set(subs)
+        if low > high: raise KGAuxError(f"Invalid range of files: {low} to {high}")
+        for fileid in range(low, high + 1):
+            for sub in subs:
+                files_of_subtask[sub].add(fileid)
         print(info_text('The subtasks of files'), key_text(f'{low:4}'), info_text('to'), key_text(f'{high:4}'), info_text('are'), key_text(*subs))
+
+    print()
+    for sub in sorted(subtset):
+        if files_of_subtask[sub]:
+            deps = [dep for dep in sorted(subtset) if dep != sub and files_of_subtask[dep] <= files_of_subtask[sub]]
+            print(info_text("Subtask"), key_text(sub), info_text("contains the ff subtasks:"), key_text(*deps))
 
 
 
