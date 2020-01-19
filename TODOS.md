@@ -31,6 +31,8 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Properly delete contest files in kgkompiled/ when running `kg kompile` again.
 
+- Allow a program to be under testscript. It will then generate the actual testscript.
+
 - Add something like Jinja support for testscript?
 
 - kg run without -i

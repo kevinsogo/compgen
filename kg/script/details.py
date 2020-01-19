@@ -127,8 +127,8 @@ class Details(object):
                     raise ValueError("Empty list of subtasks in subtasks_files")
 
                 if not (set(subs) <= set(self.valid_subtasks)):
-                    raise ValueError(f"Invalid subtasks found in subtasks_files:" +
-                            ' '.join(sorted(set(subs) - set(self.valid_subtasks))))
+                    raise ValueError(f"Invalid subtasks found in subtasks_files: " +
+                            ' '.join(map(str, sorted(set(subs) - set(self.valid_subtasks)))))
 
             return subf
 

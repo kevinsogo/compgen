@@ -1294,6 +1294,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
 
     # kg libs
     locations = {
+        'kg.formatters': 'formatters.py',
         'kg.generators': 'generators.py',
         'kg.validators': 'validators.py',
         'kg.checkers': 'checkers.py',
