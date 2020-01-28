@@ -27,11 +27,15 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Chef: on kg kompile, create a script that uploads. Alternatively, kg chefupload (or something similar).
 
+- On kg kompile pg, on ignored testscript lines, store them in a separate folder/archive so that they can upload easily.
+
 - On versioning and backwards compatibility: only the @import-able functions need to be thoroughly backwards compatible. make a mechanism there that imports specific versions.
 
 - Properly delete contest files in kgkompiled/ when running `kg kompile` again.
 
-- Allow a program to be under testscript. It will then generate the actual testscript.
+- Allow a program to be under "testscript" in details.json. It will then generate the actual testscript.
+
+- Allow to mark lines in the testscript as "to-upload-manually", perhaps with a special first/last token like ":". Require them to be the first few files if polygon (on kg kompile). "!" are automatically manual-upload and thus required to be the first few files.
 
 - Add something like Jinja support for testscript?
 
