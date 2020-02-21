@@ -9,9 +9,9 @@ from itertools import zip_longest
 from decimal import Decimal, InvalidOperation
 from kg.checkers import * ### @keep @import
 
-EPS = 0 ### @replace 0, f"D('1e-{prec}')"
+EPS = 0 ### @replace 0, f"Decimal('1e-{prec}')"
 
-EPS *= 1+D('1e-5') # add some leniency
+EPS *= 1+Decimal('1e-5') # add some leniency
 @set_checker()
 @default_score
 def checker(input_file, output_file, judge_file, **kwargs):
