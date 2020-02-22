@@ -23,11 +23,15 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Stronger args support for generators.
 
+- maybe pass newline='' in checker streams?
+
 - Flag to use a custom python3 script. Useful in case some generators use later python features not available in the latest pypy3.
 
 - Chef: on kg kompile, create a script that uploads. Alternatively, kg chefupload (or something similar).
 
 - On kg kompile pg, on ignored testscript lines, store them in a separate folder/archive so that they can upload easily.
+
+- Separate the kg-cli from the @importable kg's, and make the latter freezable. Maybe have kg init freeze them and have a kg init --update to update the files. have them connect to version number? this is so that we can make backwards-incompatible changes.
 
 - On versioning and backwards compatibility: only the @import-able functions need to be thoroughly backwards compatible. make a mechanism there that imports specific versions.
 
