@@ -45,6 +45,8 @@ This includes some disorganized ideas, TODOs, notes...
 
 - kg run without -i
 
+- Additional info after kg run (e.g., how many successfully finished, etc.)
+
 - DOM, important: can't upload files because of max packet thing. fix it.
 
 - more efficient handling of regex and .token. 

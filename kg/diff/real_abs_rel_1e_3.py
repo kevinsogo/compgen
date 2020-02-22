@@ -7,9 +7,9 @@ from itertools import zip_longest
 from decimal import Decimal, InvalidOperation
 from kg.checkers import * ### @import
 
-EPS = D('1e-3') 
+EPS = Decimal('1e-3') 
 
-EPS *= 1+D('1e-5') # add some leniency
+EPS *= 1+Decimal('1e-5') # add some leniency
 @set_checker()
 @default_score
 def checker(input_file, output_file, judge_file, **kwargs):
