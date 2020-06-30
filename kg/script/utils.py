@@ -74,7 +74,8 @@ def with_letter_filter(title, letter=None):
 
 
 def kg_render_template(template_filename, **env):
-    return kg_template_env.get_template(os.path.relpath(template_filename, kg_data_path)).render(**env)
+    template_name = '/'.join(os.path.split(os.path.relpath(template_filename, kg_data_path)))
+    return kg_template_env.get_template(template_name).render(**env)
 
 
 def kg_render_template_to(template_filename, dest_filename, **env):
