@@ -25,6 +25,10 @@ This includes some disorganized ideas, TODOs, notes...
 
 - maybe pass newline='' in checker streams?
 
+- Make pypy3 default for .py solution files with unspecified language. For parts requiring kg (checkers, validators, etc.), only use pypy3 if it has kg, and python3 otherwise.
+
+- Tutorial update: don't remove the .md then replace with .tex so that "error missing statement" doesn't occur. Maybe write it as markdown and then just replace the contents?
+
 - Flag to use a custom python3 script. Useful in case some generators use later python features not available in the latest pypy3.
 
 - Chef: on kg kompile, create a script that uploads. Alternatively, kg chefupload (or something similar).
@@ -50,8 +54,6 @@ This includes some disorganized ideas, TODOs, notes...
 - DOM, important: can't upload files because of max packet thing. fix it.
 
 - more efficient handling of regex and .token. 
-
-- kg.formatters with a @formatter() decorator. it passes a "print" function.
 
 - Make +Var non-sticky; perhaps "freeze" it when it is passed through validator.
 
