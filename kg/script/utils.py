@@ -6,7 +6,7 @@ import pathlib
 import shutil
 import stat
 
-from jinja2 import Environment, select_autoescape, PackageLoader
+from jinja2 import Environment, select_autoescape, FileSystemLoader
 
 from ..utils import *
 from ..utils.hr import *
@@ -41,7 +41,7 @@ def make_executable(filename):
 
 # Jinja stuff
 
-kg_template_env = Environment(loader=PackageLoader('kg', 'data'),
+kg_template_env = Environment(loader=FileSystemLoader(kg_data_path),
                               autoescape=select_autoescape(
                                 enabled_extensions=('html.j2', 'xml.j2'),
                                 default_for_string=True))
