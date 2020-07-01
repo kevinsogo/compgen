@@ -27,6 +27,8 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Update pypy integration (snap installation)
 
+- `kg test` for specific subtasks, or subsets of subtasks
+
 - Make pypy3 default for .py solution files with unspecified language. For parts requiring kg (checkers, validators, etc.), only use pypy3 if it has kg, and python3 otherwise.
 
 - Tutorial update: don't remove the .md then replace with .tex so that "error missing statement" doesn't occur. Maybe write it as markdown and then just replace the contents?
