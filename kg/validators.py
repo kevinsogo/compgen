@@ -552,7 +552,7 @@ def validator(*, suppress_eof_warning=False, bounds=None, subtasks=None):
         @wraps(f)
         def new_f(file, *args, **kwargs):
             sf = StrictStream(file)
-            if bounds or subtasks:
+            if bounds is not None or subtasks is not None:
                 lim = Bounds(kwargs.get('lim'))
                 if bounds: lim &= Bounds(bounds)
                 if subtasks: lim &= Bounds(subtasks.get(kwargs['subtask']))
