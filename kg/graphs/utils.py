@@ -38,7 +38,7 @@ def is_connected(nodes, edges, *, directed=False):
 def is_simple(nodes, edges, *, directed=False):
     nodes = make_nodes(nodes)
     found_edges = set()
-    for a, b in edges:
+    for a, b, *rest in edges:
         if a not in nodes: raise ValueError(f"Invalid node: {a}")
         if b not in nodes: raise ValueError(f"Invalid node: {b}")
         if not directed and a > b: a, b = b, a
