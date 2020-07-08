@@ -117,7 +117,7 @@ Here, `-s` is the list of subtasks.
 
 ## Writing validators, generators, or checkers  
 
-You can write validators, generators, or checkers using KompGen. You do this by following [this tutorial](docs/PREPARATION.md) and/or [this tutorial](docs/TUTORIAL.md). There, it is explained how to write them in the context of preparing the whole problem via KompGen, but you can also write these scripts independently.
+You can write validators, generators, or checkers using KompGen. You do this by following [this tutorial](docs/PREPARATION.md) and/or [this tutorial](docs/TUTORIAL.md). There, it is explained how to write them in the context of preparing the *whole* problem via KompGen, but you can also write these scripts independently.
 
 You may then use the following command:
 

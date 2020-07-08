@@ -25,6 +25,8 @@ This includes some disorganized ideas, TODOs, notes...
 
 - maybe pass newline='' in checker streams?
 
+- Don't crash if details.json isn't valid; report the error and then go on as if the current folder isn't a kg folder.
+
 - Update pypy integration (snap installation)
 
 - `kg test` for specific subtasks, or subsets of subtasks
