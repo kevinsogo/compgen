@@ -371,7 +371,10 @@ if __name__ == '__main__':
 Note that `gen_random` doesn't actually write to the file, it just outputs the integers to be written in the file. The output of `gen_random` will be something like `[5, 10, 2]`. The actual writing is done by the **formatter**, which is saved in a file called `formatter.py`:
 
 ```python
-def print_to_file(file, cases):
+from kg.formatters import * ### @import
+
+@formatter()
+def print_to_file(file, cases, *, print):
     print(len(cases), file=file)
     for n in cases:
         print(n, file=file)
