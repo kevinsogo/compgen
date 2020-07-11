@@ -312,7 +312,7 @@ def _collect_subtasks(input_subs):
         subtasks_of = OrderedDict()
         all_subtasks = set()
         files_of_subtask = {sub: set() for sub in subtset}
-        test_groups = set()
+        test_groups = {}
         for input_, subs in input_subs(subtasks, *args, **kwargs):
             subtasks_of[input_] = set(subs)
             if not subtasks_of[input_]:
@@ -323,7 +323,7 @@ def _collect_subtasks(input_subs):
             for sub in subtasks_of[input_]: files_of_subtask[sub].add(input_)
             info_print(f"Subtasks found for {input_}:", end=' ')
             key_print(*sorted(subtasks_of[input_]))
-            test_groups.add(' '.join(sorted(subtasks_of[input_])))
+            test_groups[' '.join(sorted(subtasks_of[input_]))] = set(subtasks_of[input_])
 
         info_print("Distinct subtasks found:", end=' ')
         key_print(*natsorted(all_subtasks))
@@ -334,7 +334,7 @@ def _collect_subtasks(input_subs):
                 warn_print('Warning: Some subtasks not found:', *natsorted(subtset - all_subtasks), file=stderr)
 
         info_print("Subtask dependencies:")
-        depends_on = {sub: set(sub) for sub in subtset}
+        depends_on = {sub: {sub} for sub in subtset}
         for sub in natsorted(subtset):
             if files_of_subtask[sub]:
                 deps = [dep for dep in natsorted(subtset) if dep != sub and files_of_subtask[dep] <= files_of_subtask[sub]]
@@ -344,38 +344,40 @@ def _collect_subtasks(input_subs):
         representing = {}
         represented_by = {}
         for sub in all_subtasks:
-            try:
-                group = next(group for group in test_groups if sub in group.split() and all(not other in group.split() for other in all_subtasks - depends_on[sub]))
-                representing[sub] = group
-                represented_by[group] = sub
-            except StopIteration:
-                pass
+            candidates = {key: group for key, group in test_groups.items() if sub in group and group <= depends_on[sub]}
+            if candidates:
+                try:
+                    group_key = next(key for key, group in candidates.items() if all(other <= group for other in candidates.values()))
+                    representing[sub] = group_key
+                    represented_by[group_key] = sub
+                except StopIteration:
+                    pass
 
         info_print("Test groups:")
-        for group in test_groups:
-            if group in represented_by:
-                print(key_text(group), info_text("AKA subtask"), key_text(represented_by[group]))
+        for group_key in natsorted(test_groups):
+            if group_key in represented_by:
+                print(key_text(group_key), info_text("AKA subtask"), key_text(represented_by[group_key]))
             else:
-                key_print(group)
+                key_print(group_key)
 
         for sub in natsorted(all_subtasks):
             if sub in representing:
                 print(info_text("Subtask"), key_text(sub), info_text("is represented by test group:"), key_text(representing[sub]))
             else:
-                warn_print('Warning: Set of test cases for subtask', sub, 'is not unique among sets for all subtasks', file=stderr)
+                warn_print('Warning: No test group represents subtask', sub, file=stderr)
 
         info_print("Test group dependencies:")
-        for group in natsorted(test_groups):
-            deps = [dep for dep in natsorted(test_groups) if dep != group and set(group.split()) < set(dep.split())]
-            if group in represented_by:
-                print(info_text("Test group"), key_text(group), info_text("AKA subtask"), key_text(represented_by[group]), info_text("contains the ff subtask groups:"))
+        for key, group in natsorted(test_groups.items()):
+            deps = [depkey for depkey, dep in natsorted(test_groups.items()) if dep != group and group < dep]
+            if key in represented_by:
+                print(info_text("Test group"), key_text(key), info_text("AKA subtask"), key_text(represented_by[key]), info_text("contains the ff subtask groups:"))
             else:
-                print(info_text("Test group"), key_text(group), info_text("contains the ff test groups:"))
-            for dep in deps:
-                if dep in represented_by:
-                    print(key_text(dep), info_text("AKA subtask"), key_text(represented_by[dep]))
+                print(info_text("Test group"), key_text(key), info_text("contains the ff test groups:"))
+            for depkey in deps:
+                if depkey in represented_by:
+                    print(key_text(depkey), info_text("AKA subtask"), key_text(represented_by[depkey]))
                 else:
-                    print(key_text(dep))
+                    print(key_text(depkey))
         
         return subtasks_of, all_subtasks
 
