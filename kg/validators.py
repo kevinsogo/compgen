@@ -22,7 +22,7 @@ class VarMeta(type):
 class Var(metaclass=VarMeta):
     def __init__(self, *, pref='', lims=None):
         self.pref = pref
-        self.lims = list(lims) if lims is not None else []
+        self.lims = lims if isinstance(lims, tuple) else list(lims) if lims is not None else []
         if any(isinstance(v, Var) for t, v in self.lims): raise TypeError("Operand cannot be Var")
         super().__init__()
 
