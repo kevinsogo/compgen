@@ -306,8 +306,6 @@ def _get_subtask_detector_from_args(args, *, purpose, details=None):
 def _collect_subtasks(input_subs):
     @wraps(input_subs)
     def _input_subs(subtasks, *args, **kwargs):
-        print(args, file=stderr)
-        print(kwargs, file=stderr)
         subtset = set(subtasks)
 
         # iterate through inputs, run our detector against them
