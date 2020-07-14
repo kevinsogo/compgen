@@ -646,6 +646,7 @@ def kg_test(format_, args):
             with tempfile.NamedTemporaryFile(delete=False) as tmp:
                 with tempfile.NamedTemporaryFile(delete=False) as result_tmp:
                     info_print("\nFile", str(index).rjust(3), 'CHECKING AGAINST', input_)
+                    interactor_res = None
                     try:
                         if interactor:
                             solution_res, interactor_res = solution.do_interact(interactor,
@@ -655,7 +656,6 @@ def kg_test(format_, args):
                                     time_limit=time_limit,
                                 )
                         else:
-                            interactor_res = None
                             with open(input_) as inp:
                                 solution_res = solution.do_run(
                                         stdin=inp,
@@ -671,8 +671,9 @@ def kg_test(format_, args):
                         return False, 0.0
                     finally:
                         # save the running time now, since we're monkeying around...
-                        running_time = solution.last_running_time
-                        max_time = max(max_time, running_time)
+                        if hasattr(solution, 'last_running_time'):
+                            running_time = solution.last_running_time
+                            max_time = max(max_time, running_time)
 
                     # Check if the interactor issues WA by itself. Don't invoke the judge
                     if getattr(interactor_res, 'returncode', 0):

@@ -152,12 +152,12 @@ class Program:
                 self.last_running_time = elapsed = timel.time() - start_time
                 info_print(f'{time_name or ""}. ELAPSED TIME: {elapsed:.2f}sec', file=stderr)
 
-    def _do_run_process(self, process, *, time=False, check=False):
+    def _do_run_process(self, process, *, time=False, check=False, timeout=None):
         if time:
             start_time = timel.time()
         with process as proc:  # just to be safe; maybe in the future, Popen.__enter__ might return something else
             try:
-                retcode = proc.wait()
+                retcode = proc.wait(timeout=timeout)
             except:
                 proc.kill()
                 raise
@@ -183,6 +183,10 @@ class Program:
 
         _fix_timeout(kwargs)
 
+        # we can't pass timeout to the process constructor, so we take it, and then
+        # pass it to when we run it.
+        timeout = kwargs.pop('timeout', None)
+
         process = self.get_runner_process(*args,
                 time=time, stdin=subprocess.PIPE, stdout=subprocess.PIPE, **kwargs)
 
@@ -196,7 +200,7 @@ class Program:
         interactor_run = attach_results()(interactor.do_run)
         interactor_thread = Thread(target=interactor_run, args=interactor_args, kwargs=interactor_kwargs)
         interactor_thread.start()
-        result = self._do_run_process(process, time=time, check=check)
+        result = self._do_run_process(process, time=time, check=check, timeout=timeout)
         interactor_thread.join()
 
         # too much monkeying around!! help. also, think about thread safety...
