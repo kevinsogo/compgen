@@ -343,11 +343,13 @@ def _collect_subtasks(input_subs):
         
         representing = {}
         represented_by = {}
-        for sub in all_subtasks:
+        for sub in natsorted(all_subtasks):
             candidates = {key: group for key, group in test_groups.items() if sub in group and group <= depends_on[sub]}
             if candidates:
                 try:
                     group_key = next(key for key, group in candidates.items() if all(other <= group for other in candidates.values()))
+                    if group_key in represented_by:
+                        del representing[represented_by[group_key]]
                     representing[sub] = group_key
                     represented_by[group_key] = sub
                 except StopIteration:
