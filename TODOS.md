@@ -29,6 +29,8 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Update pypy integration (snap installation)
 
+- Allow the syntax `1 <= Var['t'] <= 10**18` or `1 <= Var('t') <= 10**18` or something.
+
 - `kg test` for specific subtasks, or subsets of subtasks
 
 - Make pypy3 default for .py solution files with unspecified language. For parts requiring kg (checkers, validators, etc.), only use pypy3 if it has kg, and python3 otherwise.
