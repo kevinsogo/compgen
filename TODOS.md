@@ -129,6 +129,8 @@ This includes some disorganized ideas, TODOs, notes...
 
     - On --help, use "stop when it fails". (just introduce "--fail-threshold" or something as a normal arg.)
 
+- Allow interactors in `kg test`. maybe `-intj` or `-intf`. Should work standalone and in kg folder. Also maybe `kg run` too?
+
 - Implement polygon-compatible partial scorer. The behavior should be equivalent to testlib `quitp(_pc(score-16))`
     
 
