@@ -1,4 +1,4 @@
-from collections import defaultdict, OrderedDict
+from collections import defaultdict, OrderedDict, Counter
 from datetime import datetime
 from functools import wraps
 from html.parser import HTMLParser
@@ -279,7 +279,7 @@ def kg_subtasks(format_, args):
     subtasks = args.subtasks or list(map(str, details.valid_subtasks))
     detector = _get_subtask_detector_from_args(args, purpose='subtask computation', details=details)
 
-    compute_subtasks(subtasks, detector, format=format_)
+    compute_subtasks(subtasks, detector, format=format_, include_test_groups=True)
 
 def _get_subtask_detector_from_args(args, *, purpose, details=None):
     if details is None:
@@ -312,6 +312,7 @@ def _collect_subtasks(input_subs):
         subtasks_of = OrderedDict()
         all_subtasks = set()
         files_of_subtask = {sub: set() for sub in subtset}
+        test_groups = {}
         for input_, subs in input_subs(subtasks, *args, **kwargs):
             subtasks_of[input_] = set(subs)
             if not subtasks_of[input_]:
@@ -322,6 +323,7 @@ def _collect_subtasks(input_subs):
             for sub in subtasks_of[input_]: files_of_subtask[sub].add(input_)
             info_print(f"Subtasks found for {input_}:", end=' ')
             key_print(*sorted(subtasks_of[input_]))
+            test_groups[' '.join(sorted(subtasks_of[input_]))] = set(subtasks_of[input_])
 
         info_print("Distinct subtasks found:", end=' ')
         key_print(*natsorted(all_subtasks))
@@ -332,11 +334,54 @@ def _collect_subtasks(input_subs):
                 warn_print('Warning: Some subtasks not found:', *natsorted(subtset - all_subtasks), file=stderr)
 
         info_print("Subtask dependencies:")
+        depends_on = {sub: {sub} for sub in subtset}
         for sub in natsorted(subtset):
             if files_of_subtask[sub]:
                 deps = [dep for dep in natsorted(subtset) if dep != sub and files_of_subtask[dep] <= files_of_subtask[sub]]
                 print(info_text("Subtask"), key_text(sub), info_text("contains the ff subtasks:"), key_text(*deps))
+                for dep in deps: depends_on[dep].add(sub)
+        
+        if kwargs.get('include_test_groups'):
+            representing = {}
+            represented_by = {}
+            for sub in natsorted(all_subtasks):
+                candidates = {key: group for key, group in test_groups.items() if sub in group and group <= depends_on[sub]}
+                if candidates:
+                    try:
+                        group_key = next(key for key, group in candidates.items() if all(other <= group for other in candidates.values()))
+                        if group_key in represented_by:
+                            del representing[represented_by[group_key]]
+                        representing[sub] = group_key
+                        represented_by[group_key] = sub
+                    except StopIteration:
+                        pass
 
+            info_print("Test groups:")
+            for group_key in natsorted(test_groups):
+                if group_key in represented_by:
+                    print(key_text(group_key), info_text("AKA subtask"), key_text(represented_by[group_key]))
+                else:
+                    key_print(group_key)
+
+            for sub in natsorted(all_subtasks):
+                if sub in representing:
+                    print(info_text("Subtask"), key_text(sub), info_text("is represented by test group:"), key_text(representing[sub]))
+                else:
+                    warn_print('Warning: No test group represents subtask', sub, file=stderr)
+
+            info_print("Test group dependencies:")
+            for key, group in natsorted(test_groups.items()):
+                deps = [depkey for depkey, dep in natsorted(test_groups.items()) if dep != group and group < dep]
+                if key in represented_by:
+                    print(info_text("Test group"), key_text(key), info_text("AKA subtask"), key_text(represented_by[key]), info_text("contains the ff subtask groups:"))
+                else:
+                    print(info_text("Test group"), key_text(key), info_text("contains the ff test groups:"))
+                for depkey in deps:
+                    if depkey in represented_by:
+                        print(key_text(depkey), info_text("AKA subtask"), key_text(represented_by[depkey]))
+                    else:
+                        print(key_text(depkey))
+        
         return subtasks_of, all_subtasks
 
     return _input_subs
@@ -359,7 +404,7 @@ def extract_subtasks(subtasks, subtasks_files, *, format=None, inputs=None):
             yield get_expected_input(index), {*map(str, subs)}
 
 @_collect_subtasks
-def compute_subtasks(subtasks, detector, *, format=None, relpath=None):
+def compute_subtasks(subtasks, detector, *, format=None, relpath=None, include_test_groups):
     subtset = set(subtasks)
 
     # iterate through inputs, run our detector against them
@@ -734,7 +779,7 @@ def kg_test(format_, args):
                 subtasks_of, all_subtasks = extract_subtasks(subtasks, details.load_subtasks_files(), inputs=inputs)
             else:
                 detector = _get_subtask_detector_from_args(args, purpose='subtask scoring', details=details)
-                subtasks_of, all_subtasks = compute_subtasks(subtasks, detector, format=format_)
+                subtasks_of, all_subtasks = compute_subtasks(subtasks, detector, format=format_, include_test_groups=False)
 
             # normal grading
             all_subtasks = {sub: {'min_score': 1} for sub in all_subtasks}
@@ -986,7 +1031,7 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
 
             # iterate through inputs, run our detector against them
             subtasks_of, all_subtasks = compute_subtasks(
-                    subtasks, detector, format=get_format_from_type(format_, loc, read='i'), relpath=loc)
+                    subtasks, detector, format=get_format_from_type(format_, loc, read='i'), relpath=loc, include_test_groups=True)
 
             info_print(f'WRITING TO {details.subtasks_files}')
             details.dump_subtasks_files(construct_subs_files(subtasks_of))
