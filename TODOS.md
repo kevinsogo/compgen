@@ -27,6 +27,8 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Don't crash if details.json isn't valid; report the error and then go on as if the current folder isn't a kg folder.
 
+- Rename WA to Wrong (and keep WA as an alias).
+
 - Update pypy integration (snap installation)
 
 - Allow the syntax `1 <= Var['t'] <= 10**18` or `1 <= Var('t') <= 10**18` or something.
