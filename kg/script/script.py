@@ -318,12 +318,12 @@ def _collect_subtasks(input_subs):
             if not subtasks_of[input_]:
                 raise CommandError(f"No subtasks found for {input_}")
             if subtset and not (subtasks_of[input_] <= subtset):
-                raise CommandError("Found invalid subtasks! " + ' '.join(map(repr, sorted(subtasks_of[input_] - subtset))))
+                raise CommandError("Found invalid subtasks! " + ' '.join(map(repr, natsorted(subtasks_of[input_] - subtset))))
             all_subtasks |= subtasks_of[input_]
             for sub in subtasks_of[input_]: files_of_subtask[sub].add(input_)
             info_print(f"Subtasks found for {input_}:", end=' ')
-            key_print(*sorted(subtasks_of[input_]))
-            test_groups[' '.join(sorted(subtasks_of[input_]))] = set(subtasks_of[input_])
+            key_print(*natsorted(subtasks_of[input_]))
+            test_groups[' '.join(natsorted(subtasks_of[input_]))] = set(subtasks_of[input_])
 
         info_print("Distinct subtasks found:", end=' ')
         key_print(*natsorted(all_subtasks))
