@@ -5,6 +5,7 @@
     "checker": "!diff.exact",
     "interactor": null,
     "testscript": null,
+    "scoring": null,
     "generators": [],
     "subtask_detector": null,
     "judge_data_maker": null,

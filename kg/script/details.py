@@ -61,6 +61,8 @@ class Details(object):
         for key in ['generators', 'other_programs']:
             setattr(self, key, [self._maybe_prog(x, key=key) for x in self.details.get(key, [])])
 
+        self.scoring = self._get_scoring(self.details.get('scoring'))
+
         if not self.subtask_detector:
             self.subtask_detector = detector_from_validator(self.validator, relpath=relpath)
             assert (not self.subtask_detector) == (not self.validator)
@@ -149,6 +151,79 @@ class Details(object):
                 v = os.path.join(kg_path, 'diff', v[len(diff_pref):] + '.py')
         prog = Program.from_data(v, relpath=self.relpath) if v else None
         return prog
+
+    def _get_scoring(self, scoring):
+        if scoring is None:
+            if self.binary:
+                # the default for binary tasks is to take the minimum across all tests
+                scoring = '!min'
+            else:
+                # the default for tasks with subtasks is to take the minimum for each
+                # subtask group and then add the (weighted) scores
+                scoring = {
+                    'overall': '!sum',
+                    'per_subtask': '!min',
+                }
+
+        if isinstance(scoring, str):
+            scoring = {'overall': scoring}
+
+        # check type
+        if not isinstance(scoring, dict):
+            raise TypeError(f"The scoring object must be str or dict, got {type(scoring)}")
+
+        scoring.setdefault('per_subtask', '!min')
+        scoring.setdefault('default_weight', 1)
+
+        # check values
+        if 'overall' not in scoring:
+            raise ValueError("The scoring object must have the 'overall' key")
+
+        scoring_keys = {'overall', 'per_subtask', 'default_weight'}
+        if not all(key in scoring_keys for key in scoring):
+            raise ValueError(f"The scoring object must only have the following keys: {scoring_keys}")
+
+        overall_values = {'!ave', '!sum', '!min'}
+        if scoring['overall'] not in overall_values:
+            raise ValueError(
+                    f"The scoring object's value for 'overall' must be in {overall_values},"
+                    f"got {scoring['overall']}")
+
+        per_subtask_values = {'!ave', '!min'}
+        if scoring['per_subtask'] not in per_subtask_values:
+            raise ValueError(
+                    f"The scoring object's value for 'per_subtask' must be in {per_subtask_values},"
+                    f"got {scoring['per_subtask']}")
+
+        if not scoring['default_weight'] > 0:
+            raise ValueError(
+                    f"The scoring default weight must be positive, got {scoring['default_weight']}")
+
+        return scoring
+
+    @property
+    def scoring_overall(self):
+        assert 'overall' in self.scoring
+        return self.scoring['overall']
+
+    @property
+    def scoring_per_subtask(self):
+        assert 'per_subtask' in self.scoring
+        return self.scoring['per_subtask']
+
+    @property
+    def scoring_default_weight(self):
+        assert 'default_weight' in self.scoring
+        return self.scoring['default_weight']
+
+    @property
+    def logical_scoring(self):
+        keys = ['overall', 'default_weight'] if self.binary else ['overall', 'per_subtask', 'default_weight']
+        return {key: self.scoring[key] for key in keys}
+
+    @property
+    def binary(self):
+        return not self.valid_subtasks
 
     def serialize(self):
         raise NotImplementedError # not implemented yet. returns a dict to be json'ed

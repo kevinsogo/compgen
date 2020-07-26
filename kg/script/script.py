@@ -682,12 +682,11 @@ def kg_test(format_, args):
     solution.do_compile()
     judge.do_compile()
     if interactor: interactor.do_compile()
-    total = corrects = 0
-    scoresheet = []
-    max_time = 0
+    scoresheet = {}
     for index, (input_, output_) in enumerate(format_.thru_io()):
         def get_score():
-            nonlocal max_time, judge_strict_args
+            nonlocal judge_strict_args
+            get_score.running_time = None
             with tempfile.NamedTemporaryFile(delete=False) as tmp:
                 with tempfile.NamedTemporaryFile(delete=False) as result_tmp:
                     info_print("\nFile", str(index).rjust(3), 'CHECKING AGAINST', input_)
@@ -713,17 +712,16 @@ def kg_test(format_, args):
                         pass
                     except CalledProcessError:
                         err_print('The solution issued a runtime error...')
-                        return False, 0.0
+                        return False, 0
                     finally:
                         # save the running time now, since we're monkeying around...
                         if hasattr(solution, 'last_running_time'):
-                            running_time = solution.last_running_time
-                            max_time = max(max_time, running_time)
+                            get_score.running_time = solution.last_running_time
 
                     # Check if the interactor issues WA by itself. Don't invoke the judge
                     if getattr(interactor_res, 'returncode', 0):
                         err_print('The interactor did not accept the interaction...')
-                        return False, 0.0
+                        return False, 0
 
                     def run_judge():
                         jargs = list(map(os.path.abspath, (input_, tmp.name, output_)))
@@ -743,81 +741,161 @@ def kg_test(format_, args):
                         with open(result_tmp.name) as result_tmp_file:
                             score = json.load(result_tmp_file)['score']
                     except Exception as exc:
-                        score = 1.0 if correct else 0.0 # can't read score. use binary scoring
+                        score = 1 if correct else 0 # can't read score. use binary scoring
 
-                    if running_time > time_limit:
+                    if get_score.running_time is None:
+                        warn_print("Warning: The running time cannot be extracted from this run.")
+                    elif get_score.running_time > time_limit:
                         err_print(f"The solution exceeded the time limit of {time_limit:.3f}sec; "
-                                  f"it didn't finish after {running_time:.3f}sec...")
+                                  f"it didn't finish after {get_score.running_time:.3f}sec...")
                         if score > 0: info_print(f"It would have gotten a score of {score} otherwise...")
-                        return False, 0.0
+                        return False, 0
 
                     return correct, score
 
         correct, score = get_score()
-        total += 1
-        corrects += correct
+        scoresheet[index] = {
+            'input': input_,
+            'correct': correct,
+            'score': score,
+            'running_time': get_score.running_time,
+        }
         if correct:
             succ_print("File", str(index).rjust(3), 'correct')
         else:
             err_print("File", str(index).rjust(3), 'WRONG' + '!'*11)
-        scoresheet.append((index, input_, correct, score))
+        if not 0 <= score <= 1:
+            warn_print(f"Warning: The score '{score}' is invalid; it must be in the interval [0, 1].")
 
-    decor_print()
-    decor_print('.'*42)
-    (succ_print if corrects == total else err_print)(str(corrects), end=' ')
-    (succ_print if corrects == total else info_print)(f'out of {total} files correct')
-    info_print(f'Max running time: {max_time:.2f}sec')
-    decor_print('.'*42)
-    decor_print()
+    def abbreviate_indices(indices):
+        if not indices: return 'none'
+        return compress_t_sequence(','.join(map(str, sorted(indices))))
 
-    # also print subtask grades
-    if format_.name and details.valid_subtasks:
-        def get_all_subtasks():
-            subtasks = args.subtasks or list(map(str, details.valid_subtasks))
-            if os.path.isfile(details.subtasks_files):
-                inputs = [input_ for index, input_, *rest in scoresheet]
-                subtasks_of, all_subtasks = extract_subtasks(subtasks, details.load_subtasks_files(), inputs=inputs)
-            else:
-                detector = _get_subtask_detector_from_args(args, purpose='subtask scoring', details=details)
-                subtasks_of, all_subtasks = compute_subtasks(subtasks, detector, format=format_, include_test_groups=False)
-
-            # normal grading
-            all_subtasks = {sub: {'min_score': 1} for sub in all_subtasks}
-            for index, input_, correct, score in scoresheet:
-                for sub in subtasks_of[input_]:
-                    all_subtasks[sub]['min_score'] = min(all_subtasks[sub]['min_score'], score)
-
-            return all_subtasks
-
+    def write_raw_summary():
+        """ print the raw files gotten correct and wrong """
+        corrects = [index for index, score_row in sorted(scoresheet.items()) if score_row['correct']]
+        wrongs = [index for index, score_row in sorted(scoresheet.items()) if not score_row['correct']]
+        running_times = filter(None, (score_row['running_time'] for score_row in scoresheet.values()))
+        max_time = max(running_times) if running_times else None
         decor_print()
         decor_print('.'*42)
-        beginfo_print('SUBTASK REPORT:')
-        max_overall_score = 0
-        total_score = 0
-        all_correct = True
-        for sub, sub_details in natsorted(get_all_subtasks().items()):
-            max_score = details.valid_subtasks[int(sub)].score if isinstance(details.valid_subtasks, dict) else 1.0
-            if max_score is None: max_score = 1.0
-            score = float(sub_details['min_score']) * max_score
-            max_overall_score += max_score
-            total_score += score
-            all_correct &= sub_details['min_score'] == 1
-            print(info_text("Subtask ="),
-                  key_text(str(sub).rjust(4)),
-                  info_text(": Score = "),
-                  (succ_text if sub_details['min_score'] == 1 else
-                   info_text if sub_details['min_score'] > 0 else
-                   err_text)(f"{score:.3f}"),
-                  sep='')
+        beginfo_print('SUMMARY:')
+        info_print(f'{len(corrects):3} files gotten correct:', abbreviate_indices(corrects))
+        info_print(f'{len(wrongs):3} files gotten wrong:', abbreviate_indices(wrongs))
+        (succ_print if len(corrects) == len(scoresheet) else err_print)(len(corrects), end=' ')
+        (succ_print if len(corrects) == len(scoresheet) else info_print)(f'out of {len(scoresheet)} files correct')
+        if max_time is None:
+            warn_print('Warning: No running time was extracted from any run')
+        else:
+            info_print(f'Max running time: {max_time:.2f}sec')
+        decor_print('.'*42)
 
+    @memoize
+    def get_all_subtask_details():
         print()
-        print(info_text("Total Score =",
-              (succ_text if all_correct else
-               info_text if total_score > 0 else
-               err_text)(f"{total_score:.3f}"),),
-              info_text(f" out of {max_overall_score:.3f}"),
-              sep='')
+        info_print('Obtaining subtask info...')
+        subtasks = args.subtasks or list(map(str, details.valid_subtasks))
+        if os.path.isfile(details.subtasks_files):
+            inputs = [score_row['input'] for index, score_row in sorted(scoresheet.items())]
+            subtasks_of, all_subtasks = extract_subtasks(subtasks, details.load_subtasks_files(), inputs=inputs)
+        else:
+            detector = _get_subtask_detector_from_args(args, purpose='subtask scoring', details=details)
+            subtasks_of, all_subtasks = compute_subtasks(subtasks, detector, format=format_, include_test_groups=False)
 
+        def get_max_score(sub):
+            max_score = details.valid_subtasks[int(sub)].score if isinstance(details.valid_subtasks, dict) else 1
+            if max_score is None: max_score = 1
+            return max_score
+
+        # normal grading
+        all_subtasks = {sub: {
+                'weight': get_max_score(sub),
+                'indices': [],
+                'scores': [],
+                'running_times': [],
+            } for sub in all_subtasks}
+        for index, score_row in sorted(scoresheet.items()):
+            for sub in subtasks_of[score_row['input']]:
+                all_subtasks[sub]['indices'].append(index)
+                all_subtasks[sub]['scores'].append(score_row['score'])
+                all_subtasks[sub]['running_times'].append(score_row['running_time'])
+
+        # compute scores per subtask using the per-subtask scoring policy
+        for sub, sub_details in all_subtasks.items():
+            if details.scoring_per_subtask == '!min':
+                sub_details['score'] = min(score for score in sub_details['scores'])
+            elif details.scoring_per_subtask == '!ave':
+                sub_details['score'] = sum(sub_details['scores']) / len(sub_details['scores'])
+            else:
+                raise ValueError(f"Unknown/Unsupported per-subtask scoring policy: {details.scoring_per_subtask}")
+
+            sub_details['weighted_score'] = sub_details['weight'] * sub_details['score']
+            sub_details['max_running_time'] = max(sub_details['running_times']) if sub_details['running_times'] else None
+        return all_subtasks
+
+    def get_score_for(group_scores):
+        if details.scoring_overall == '!sum':
+            return sum(weight * score for weight, score in group_scores)
+        if details.scoring_overall == '!ave':
+            return sum(weight * score for weight, score in group_scores) / sum(weight for weight, score in group_scores)
+        if details.scoring_overall == '!min':
+            return min(weight * score for weight, score in group_scores)
+
+        raise ValueError(f"Unknown/Unsupported overall scoring policy: {details.scoring_overall}")
+
+    write_raw_summary()
+
+    if format_.name and details.valid_subtasks:
+        # groups are subtasks
+        group_scores = [(sub_details['weight'], sub_details['score'])
+            for sub, sub_details in natsorted(get_all_subtask_details().items())
+        ]
+    else:
+        # groups are individual files
+        group_scores = [(details.scoring_default_weight, score_row['score']) for index, score_row in sorted(scoresheet.items())]
+
+    scoring_result = get_score_for(group_scores)
+    max_scoring_result = get_score_for([(weight, 1) for weight, score in group_scores])
+
+    # print the subtask grades
+    if format_.name and details.valid_subtasks:
+        # print the raw summary again (because get_subtasks has huge output)
+        write_raw_summary()
+        beginfo_print('SUBTASK REPORT:')
+        for sub, sub_details in natsorted(get_all_subtask_details().items()):
+            score = sub_details['weighted_score']
+            weight = sub_details['weight']
+            max_running_time = sub_details['max_running_time']
+            times = []
+            print(
+                info_text("Subtask ="),
+                key_text(str(sub).rjust(4)),
+                info_text(": Score = "),
+                (
+                    succ_text if score >= weight else
+                    info_text if score > 0 else
+                    err_text
+                )(f"{score:8.3f}"),
+                info_text(f" out of {weight:8.3f}"),
+                (
+                    warn_text("  No running time was extracted")
+                    if max_running_time is None else
+                    info_text(f"  w/ max running time: {max_running_time:.2f}sec")
+                ), sep='')
+
+            if not 0 <= score <= weight:
+                warn_print(f"Warning: The score {score} is invalid: "
+                           f"it must be in the interval [0, {weight}]")
+
+    # print the overall score
+    print()
+    print(info_text("Total Score =",
+          (succ_text if scoring_result >= max_scoring_result else
+           info_text if scoring_result > 0 else
+           err_text)(f"{scoring_result:8.3f}"),),
+          info_text(f" out of {max_scoring_result:8.3f}"),
+          sep='')
+    info_print(f'using the scoring policy {details.logical_scoring}')
 
 
 
