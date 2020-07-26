@@ -66,6 +66,8 @@ Most fields should be self-explanatory, but here are things to keep in mind:
 
 - The `teams`, `judges`, etc., fields can also contain a string pointing to a separate `.json` file which contains the list. This is useful if you want to pregenerate them with a different program.
 
+- There are also the `start_time` and `duration` fields. (Will document soon)
+
 <!-- TODO document more of the fields -->
 
 
@@ -284,6 +286,8 @@ $ kg kontest cms-it examples/contest.json   # add --make-all if you want
 This will create the folder `kgkompiled/EXAMPLECONTEST` from two example problems.
 
 Please keep in mind though that the Italian format is very limited (acknowledged even by the [official CMS docs](https://cms.readthedocs.io/en/v1.4/External%20contest%20formats.html)), so, as with DOMjudge, a lot of the contest config settings are thrown away.
+
+Be sure to set the `start_time` and `duration` fields, otherwise you might get errors importing the contest.
 
 
 
