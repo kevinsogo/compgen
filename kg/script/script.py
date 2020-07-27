@@ -1231,7 +1231,7 @@ def kg_init(format_, args):
         raise CommandError("No special characters allowed for the problem code, "
                 "and the first and last characters must be a letter or a digit.")
 
-    src = kg_problem_template
+    src = os.path.join(kg_problem_template, 'kg')
     dest = os.path.join(args.loc, prob)
 
     print(info_text('The destination folder will be'), key_text(dest))

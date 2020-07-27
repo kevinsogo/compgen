@@ -41,6 +41,7 @@ setup(name='KompGen',
           'kg': [
               'data/*.*',
               'data/template/*',
+              'data/template/kg/*',
               'data/template/cms-it/*',
               'data/template/dom/*',
               'data/contest_template/*',
