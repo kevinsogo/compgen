@@ -48,7 +48,7 @@ def create_passwords(accounts, *, short=False, seedval=None):
 # TODO put this into its own file (accounts.py?)
 class Account:
     def __init__(self, username, display_name, password, type, index, type_index, *,
-                school=None, school_short=None, country_code=None):
+                school=None, school_short=None, country_code=None, first_name=None, last_name=None):
         self.username = username
         self.display_name = display_name
         self.password = password
@@ -59,6 +59,8 @@ class Account:
         self._school = school
         self._school_short = school_short
         self.country_code = country_code
+        self.first_name = first_name
+        self.last_name = last_name
         super().__init__()
 
     @property
@@ -119,11 +121,13 @@ def write_passwords_format(cont, format_, *, seedval=None, dest='.'):
     if format_ not in valid_formats:
         raise PasswordError(f"Unsupported format: {format_}")
 
-    # for now, assume that CMS contests are individuals, while everything else are team-based
-    team_base = 'user' if format_ in {'cms', 'cms-it'} else 'team'
-
     accounts = [(key, account)
-            for key in ['leaderboards', 'admins', 'judges', 'teams', 'feeders'] for account in getattr(cont, key)]
+            for key in ['leaderboards', 'admins', 'judges', 'teams', 'feeders']
+            for account in getattr(cont, key)]
+
+    # add users
+    accounts += [('users', account['username']) for account in cont.users]
+
     passwords, seed = create_passwords(accounts, seedval=seedval)
 
     def _get_account_tuples():
@@ -155,16 +159,32 @@ def write_passwords_format(cont, format_, *, seedval=None, dest='.'):
                        type='feeder',
                        type_index=idx)
         
-        team_schools = ((ts, team) for ts in cont.team_schools for team in ts['teams'])
-        for idx, (school_data, team_name) in enumerate(team_schools, 1):
+        team_schools_iter = ((ts, team) for ts in cont.team_schools for team in ts['teams'])
+        for idx, (school_data, team_name) in enumerate(team_schools_iter, 1):
             yield dict(display_name=team_name,
-                       username=f'{team_base}{idx}',
+                       username=f'team{idx}',
                        password=passwords['teams', team_name],
-                       type=team_base,
+                       type='team',
                        type_index=idx,
                        school=school_data['school'],
                        school_short=school_data['school_short'],
                        country_code=school_data['country_code'])
+
+        user_schools_iter = ((us, user) for us in cont.user_schools for user in us['users'])
+        for idx, (school_data, user_name_data) in enumerate(user_schools_iter, 1):
+            display_name = ' '.join(
+                    user_name_data[key] for key in ('first_name', 'last_name') if user_name_data.get(key)
+                )
+            yield dict(display_name=display_name,
+                       username=user_name_data.get('username', f'user{idx}'),
+                       password=passwords['users', user_name_data['username']],
+                       type='user',
+                       type_index=idx,
+                       school=school_data['school'],
+                       school_short=school_data['school_short'],
+                       country_code=school_data['country_code'],
+                       first_name=user_name_data.get('first_name'),
+                       last_name=user_name_data.get('last_name'))
 
     # reuses the 'accounts' variable so be careful
     accounts = [Account(index=idx, **args) for idx, args in enumerate(_get_account_tuples(), 1)]

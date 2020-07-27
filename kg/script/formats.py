@@ -179,6 +179,7 @@ class Format:
     def _check_patterns(self):
         if not self._checked:
             if self.inputg is not None:
+                # TODO use re.escape here...
                 _check_simple(self.inputg, 'input')
                 pat = '(.*)'.join(self.inputg.replace('\\', '\\\\').replace('.', r'\.').split('*'))
                 # info_print(f'Interpreting {self.inputg} as regex: {pat}', file=stderr)

@@ -1469,6 +1469,8 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
         # files that start with 'grader.' (for cms mainly)
         graders = [file for file in details.other_programs if os.path.basename(file.filename).startswith('grader.')]
 
+        cms_attachments = [os.path.join(loc, attachment) for attachment in details.cms_options.get('attachments', [])]
+
         # files that need to be either translated (kg python codes) or just copied (everything else)
         to_compiles = {
             'pg': [details.validator, details.interactor] + checkers + details.generators,
@@ -1547,6 +1549,10 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                 (to_translate if get_module(g.rel_filename) else to_copy)[g.rel_filename] = target_name
             else:
                 warn_print(f"Warning: {g.rel_filename} (in details.json) is not a file.", file=stderr)
+
+        if fmt == 'cms':
+            for attachment in cms_attachments:
+                to_copy[attachment] = os.path.join('attachments', os.path.basename(attachment))
 
         targets = {}
         found_targets = {}
@@ -1793,6 +1799,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                                       # For OutputOnly, just override with cms_options.
                                       # TODO support Communication
                 'checker': 'checker',
+                'statement': 'statement.pdf',
             }
 
             scoring_overall = details.scoring_overall
@@ -1800,22 +1807,26 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                 if scoring_overall == '!min':
                     # this is just like a problem with a single subtask
                     config['score_type'] = 'GroupMin'
-                    config['score_param'] = [[details.scoring_default_weight, '.*']]
-                    total_score = sum(score for score, *rest in config['score_param'])
+                    config['score_type_parameters'] = [[details.scoring_default_weight, '.*']]
+                    total_score = sum(score for score, *rest in config['score_type_parameters'])
                 elif scoring_overall == '!sum':
                     # this is just like a problem with a separate subtask per file
+                    def input_base_regex(input_file):
+                        base, ext = os.path.splitext(os.path.basename(input_file))
+                        if ext != '.in': raise CommandError(f"Expected input file extension '.in', got {ext}")
+                        return re.escape(base)
                     config['score_type'] = 'GroupMin'
-                    config['score_param'] = [[
-                        details.scoring_default_weight, re.escape(os.path.basename(input_file)),
+                    config['score_type_parameters'] = [[
+                        details.scoring_default_weight, input_base_regex(input_file),
                         ] for input_file in input_files
                     ]
-                    total_score = sum(score for score, *rest in config['score_param'])
+                    total_score = sum(score for score, *rest in config['score_type_parameters'])
                 elif scoring_overall == '!ave':
-                    # this is just like !sum, but we can hardcode the score_param to 100
-                    # unfortunately, the test weight can only be an integer, so we have to floor
+                    # this is just like !sum, but we can hardcode the score_type_parameters to 100/len(tests).
+                    # The docs say score_type_parameters should be an int, but that's a lie.
                     config['score_type'] = 'Sum'
-                    config['score_param'] = max(1, 100 // len(input_files))
-                    total_score = config['score_param'] * len(input_files)
+                    config['score_type_parameters'] = 100 / len(input_files)
+                    total_score = config['score_type_parameters'] * len(input_files)
                 else:
                     raise CommandError(
                         f"Unsupported scoring policy {scoring_overall} for binary task")
@@ -1828,11 +1839,11 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
 
                 if scoring_overall == '!sum':
                     config['score_type'] = 'GroupMin'
-                    config['score_param'] = [
+                    config['score_type_parameters'] = [
                         [subtask_score(sub), rf".+_subs.*_{sub}_.*"]
                         for sub in details.valid_subtasks
                     ]
-                    total_score = sum(score for score, *rest in config['score_param'])
+                    total_score = sum(score for score, *rest in config['score_type_parameters'])
                 else:
                     raise CommandError(
                         f"Unsupported scoring policy {scoring_overall} for task with "
@@ -2067,12 +2078,15 @@ def kg_contest(format_, args):
         beginfo_print('Writing contest config files')
         # write config
         config_file = os.path.join(contest_data_folder, 'kg_cms_contest.json')
+        warn_print("Note: For CMS, we're ignoring compilation and run options. We're only taking the names.")
         config = {
-            "title": contest.title,
-            "code": contest.code,
+            "description": contest.title,
+            "name": contest.code,
             "problems": codes,
-            "start_time": contest.start_time.timestamp(),
+            "start": contest.start_time.timestamp(),
+            "stop": contest.end_time.timestamp(),
             "duration": contest.duration.total_seconds(),
+            "languages": [lang['lang'] for lang in contest.langs],
         }
         info_print('writing config file...', config_file)
         with open(config_file, 'w') as fl:
@@ -2080,8 +2094,11 @@ def kg_contest(format_, args):
 
         # write users
         users_file = os.path.join(contest_data_folder, 'kg_cms_users.json')
+        touch_container(users_file)
         users = [{
-            "first_name": account.display_name,
+            "first_name": account.first_name,
+            "last_name": account.last_name,
+            "display_name": account.display_name,
             "username": account.username,
             "type": account.type,
             "password": account.password,

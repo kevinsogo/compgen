@@ -21,6 +21,7 @@ def get_lang(lang):
     return lang
 
 valid_contestcode = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$')
+valid_username = re.compile(r'^[A-Za-z0-9_-]+$')
 
 class ContestDetails(object):
     def __init__(self, details={}, source=None):
@@ -68,6 +69,7 @@ class ContestDetails(object):
             raise ValueError(f"Invalid contest code: {self.code!r}")
 
         for key, long_name in [
+                    ('user', 'user'),
                     ('team', 'team'),
                     ('judge', 'judge'),
                     ('admin', 'administrator'),
@@ -76,6 +78,7 @@ class ContestDetails(object):
                 ]:
             key_list = key + 's'
             key_count = key + '_count'
+            identifier = lambda i: i
             if key_list in self.details:
                 if key_count in self.details:
                     raise ValueError(f"{key_list} and {key_count} cannot appear simultaneously")
@@ -101,8 +104,18 @@ class ContestDetails(object):
                 if len(set(schools)) != len(schools):
                     raise ValueError("Duplicate school found!")
 
-            if len(set(value_list)) != len(value_list):
+            if key == 'user':
+                self.user_schools = self.get_user_schools(value_list)
+                value_list = [user for us in self.user_schools for user in us['users']]
+                schools = [us['school'] for us in self.user_schools]
+                for us in self.user_schools: us.setdefault('country_code', self.default_country_code)
+                if len(set(schools)) != len(schools):
+                    raise ValueError("Duplicate school found!")
+                identifier = lambda user: user['username']
+
+            if len(set(map(identifier, value_list))) != len(value_list):
                 raise ValueError(f"Duplicate {key} found!")
+
             setattr(self, key_list, value_list)
 
         # languages
@@ -117,27 +130,74 @@ class ContestDetails(object):
         super().__init__()
 
     @classmethod
-    def get_team_schools(cls, teamf):
-        if not isinstance(teamf, list):
-            raise TypeError(f"The team and school data must be a list: got {type(teamf)}")
+    def get_team_schools(cls, orig_team_list):
+        if not isinstance(orig_team_list, list):
+            raise TypeError(f"The team and school data must be a list: got {type(orig_team_list)}")
         team_schools = []
-        schooli = 0
-        for teamo in teamf:
-            if isinstance(teamo, str):
-                schooli += 1
-                teamo = {
-                    'school': schooli,
-                    'teams': [teamo],
+        temp_school = 0
+        for team in orig_team_list:
+            if isinstance(team, str):
+                temp_school += 1
+                team = {
+                    'school': temp_school,
+                    'teams': [team],
                 }
-            elif not isinstance(teamo['school'], str):
-                raise TypeError(f"School must be a string, got {teamo['school']!r}")
-            team_schools.append(teamo)
+            elif not isinstance(team['school'], str):
+                raise TypeError(f"School must be a string, got {team['school']!r}")
+            team_schools.append(team)
 
         # attach default values for 'school_short' and 'country_code'
         for team_school in team_schools:
-            team_school.setdefault('school_short', shorten_school(team_school['school']))
+            if 'school_short' not in team_school:
+                team_school['school_short'] = shorten_school(team_school['school'])
 
         return team_schools
+
+    @classmethod
+    def get_user_schools(cls, orig_user_list):
+        if not isinstance(orig_user_list, list):
+            raise TypeError(f"The user and school data must be a list: got {type(orig_user_list)}")
+
+        def is_user_name(obj):
+            return isinstance(obj, dict) and (
+                set(obj.keys()) == {'first_name', 'last_name', 'username'}
+                and (obj['first_name'] or obj['last_name']) # has a name
+                and isinstance(obj['username'], str) and valid_username.match(obj['username'])
+            )
+        user_schools = []
+        temp_school = 0
+        for user in orig_user_list:
+            if isinstance(user, str) or is_user_name(user):
+                temp_school += 1
+                user = {
+                    'school': temp_school,
+                    'users': [user],
+                }
+            elif not isinstance(user['school'], str):
+                raise TypeError(f"School must be a string, got {user['school']!r}")
+            user_schools.append(user)
+
+        # convert names
+        def convert_name(name):
+            if isinstance(name, str):
+                name = {'first_name': name, 'last_name': None, 'username': name}
+            name.setdefault('first_name', None)
+            name.setdefault('last_name', None)
+            if not is_user_name(name):
+                raise TypeError(
+                        f"{name!r} cannot be interpreted as a name of a contestant. "
+                        f"Note that usernames must match the pattern {valid_username.pattern!r}")
+            return name
+
+        for us in user_schools:
+            us['users'] = [convert_name(user) for user in us['users']]
+
+        # attach default values for 'school_short' and 'country_code'
+        for user_school in user_schools:
+            if 'school_short' not in user_school:
+                user_school['school_short'] = shorten_school(user_school['school'])
+
+        return user_schools
 
     @classmethod
     def from_loc(cls, loc):
@@ -166,7 +226,7 @@ class ContestDetails(object):
 
 
 def shorten_school(school):
-    ''' best effort shortening the school name (University of the Philippines --> U Philippines) '''
+    ''' best-effort shortening the school name (University of the Philippines --> U Philippines) '''
     # TODO improve this
     if not isinstance(school, str): return ''
     short = ''
