@@ -67,6 +67,8 @@ This includes some disorganized ideas, TODOs, notes...
 
 - more efficient handling of regex and .token. 
 
+- Support testlib-obtained partial points.
+
 - Make +Var non-sticky; perhaps "freeze" it when it is passed through validator.
 
     probably: with +Var (or something similar)

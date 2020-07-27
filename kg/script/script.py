@@ -127,13 +127,16 @@ def convert_formats(src, dest, *, src_kwargs={}, dest_kwargs={}):
     src_format = get_format(argparse.Namespace(format=sformat, loc=sloc, input=None, output=None), read='io', **src_kwargs)
     dest_format = get_format(argparse.Namespace(format=dformat, loc=dloc, input=None, output=None), write='io', **dest_kwargs)
 
-    copied = 0
+    copied_i = []
+    copied_o = []
     info_print("Copying now...")
     for (srci, srco), (dsti, dsto) in zip(src_format.thru_io(), dest_format.thru_expected_io()):
         copy_file(srci, dsti)
         copy_file(srco, dsto)
-        copied += 2
-    succ_print("Copied", copied, "files")
+        copied_i.append(dsti)
+        copied_o.append(dsto)
+    succ_print("Copied", len(copied_i) + len(copied_o), "files")
+    return copied_i, copied_o
 
 
 
@@ -1336,7 +1339,7 @@ compile_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
 compile_p.add_argument('-S', '--shift-left', action='store_true',
                                 help='compress the program by reducing the indentation size from 4 spaces to 1 tab. '
                                 'Use at your own risk. (4 is hardcoded because it is the indentation level of the '
-                                '"kg" module.')
+                                '"kg" module.)')
 compile_p.add_argument('-C', '--compress', action='store_true',
                                 help='compress the program by actually compressing it. Use at your own risk.')
 
@@ -1357,15 +1360,13 @@ def _kg_compile(format_, args):
         )
 
 def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, compress=False, python3='python3',
-        dest_loc=None, files=[], extra_files=[]):
+        dest_loc=None, files=[], extra_files=[], statement_file=None, global_statement_file=None):
 
     valid_formats = {'hr', 'pg', 'pc2', 'dom', 'cms', 'cms-it'}
     if not set(target_formats) <= valid_formats:
         raise CommandError(f"Invalid formats: {set(target_formats) - valid_formats}")
     if not is_same_format(format_, 'kg'):
         raise CommandError(f"You can't use '{format_}' format to 'kompile'.")
-
-    # TODO clear kgkompiled first, or at least the target directory
 
     # convert files to Programs
     files = [Program.from_data(file, relpath=loc) for file in files or []]
@@ -1401,6 +1402,11 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
             nmodule = nmodule.lstrip('.')
 
         return nmodule
+
+    # get the statement file
+    dummy_statement_file = os.path.join(kg_problem_template, 'statement.pdf')
+    statement_file = statement_file or details.statement_compiled or global_statement_file or details.statement_base or dummy_statement_file
+
 
     # extract problem code
     # not really sure if this is the best way to extract the problem code.
@@ -1456,6 +1462,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
         # files that start with 'grader.' (for cms mainly)
         graders = [file for file in details.other_programs if os.path.basename(file.filename).startswith('grader.')]
 
+        # files that need to be either translated (kg python codes) or just copied (everything else)
         to_compiles = {
             'pg': [details.validator, details.interactor] + checkers + details.generators,
             'hr': checkers,
@@ -1490,8 +1497,8 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
         if details.valid_subtasks[sub].score is not None:
             return details.valid_subtasks[sub].score
         else:
-            default = 10 # hardcoded for now
-            warn_print(f'Warning: no score value found for subtask {sub}... using the default {default} points')
+            default = 1 # hardcoded for now
+            warn_print(f'Warning: no score value found for subtask {sub}... using the default {default} point(s)')
             subtask_score.missing = True
             return default
     subtask_score.missing = False
@@ -1679,13 +1686,13 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
             info_print('copying test data from', loc, 'to', dest_folder, '...')
             # TODO code this better.
             if fmt == 'cms':
-                convert_formats(
+                input_files, output_files = convert_formats(
                         (format_, loc),
                         (fmt, dest_folder),
                         dest_kwargs=dict(subtasks=subtasks_files)
                     )
             else:
-                convert_formats(
+                input_files, output_files = convert_formats(
                         (format_, loc),
                         (fmt, dest_folder),
                     )
@@ -1693,10 +1700,8 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
 
         if fmt == 'dom' and problem_code:
             # statement file
-            # just write a dummy file for now, since kompgen doesn't require a pdf file
-            # TODO update this when we add 'statement' in details.json
             info_print('creating statement file...')
-            source_file = os.path.join(problem_template, 'statement.pdf')
+            source_file = statement_file
             target_file = os.path.join(dest_folder, 'statement.pdf')
             copy_file(source_file, target_file)
 
@@ -1704,10 +1709,8 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
         if fmt == 'cms-it' and problem_code:
 
             # statement file (required)
-            # just write a dummy file for now, since kompgen doesn't require a pdf file
-            # TODO update this when we add 'statement' in details.json
             info_print('creating statement file...')
-            source_file = os.path.join(problem_template, 'statement.pdf')
+            source_file = statement_file
             target_file = os.path.join(dest_folder, 'statement', 'statement.pdf')
             copy_file(source_file, target_file)
 
@@ -1768,6 +1771,11 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                         raise CommandError("Count mismatch. This shouldn't happen :( Maybe subtasks_files is not up-to-date?")
 
         if fmt == 'cms' and problem_code:
+            # copy statement file
+            info_print('creating statement file...')
+            source_file = statement_file
+            target_file = os.path.join(dest_folder, 'statement.pdf')
+            copy_file(source_file, target_file)
 
             # create config file
             config = {
@@ -1779,23 +1787,60 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                                       # TODO support Communication
                 'checker': 'checker',
             }
-            if details.valid_subtasks:
-                config['score_type'] = 'GroupMin'
-                config['score_param'] = [
-                    [subtask_score(sub), rf".+_subs.*_{sub}_.*"]
-                    for sub in details.valid_subtasks
-                ]
-                total_score = sum(score for score, *rest in config['score_param'])
+
+            scoring_overall = details.scoring_overall
+            if details.binary:
+                if scoring_overall == '!min':
+                    # this is just like a problem with a single subtask
+                    config['score_type'] = 'GroupMin'
+                    config['score_param'] = [[details.scoring_default_weight, '.*']]
+                    total_score = sum(score for score, *rest in config['score_param'])
+                elif scoring_overall == '!sum':
+                    # this is just like a problem with a separate subtask per file
+                    config['score_type'] = 'GroupMin'
+                    config['score_param'] = [[
+                        details.scoring_default_weight, re.escape(os.path.basename(input_file)),
+                        ] for input_file in input_files
+                    ]
+                    total_score = sum(score for score, *rest in config['score_param'])
+                elif scoring_overall == '!ave':
+                    # this is just like !sum, but we can hardcode the score_param to 100
+                    # unfortunately, the test weight can only be an integer, so we have to floor
+                    config['score_type'] = 'Sum'
+                    config['score_param'] = max(1, 100 // len(input_files))
+                    total_score = config['score_param'] * len(input_files)
+                else:
+                    raise CommandError(
+                        f"Unsupported scoring policy {scoring_overall} for binary task")
             else:
-                config['score_type'] = 'Sum'
-                config['score_param'] = total_score = 100 # hardcoded for now
-            (info_print if total_score == 100 else warn_print)('The total score is', total_score)
+                if scoring_overall != '!sum':
+                    warn_print(
+                        f"WARNING: Unsupported scoring policy {scoring_overall} for "
+                        "task with subtasks, defaulting to !sum")
+                    scoring_overall = '!sum'
+
+                if scoring_overall == '!sum':
+                    config['score_type'] = 'GroupMin'
+                    config['score_param'] = [
+                        [subtask_score(sub), rf".+_subs.*_{sub}_.*"]
+                        for sub in details.valid_subtasks
+                    ]
+                    total_score = sum(score for score, *rest in config['score_param'])
+                else:
+                    raise CommandError(
+                        f"Unsupported scoring policy {scoring_overall} for task with "
+                        "subtasks")
+
+            if total_score == 100:
+                info_print('The total score is', total_score)
+            else:
+                warn_print(f'WARNING: The total score is {total_score}, but we want 100')
 
             # override options
             config.update(details.cms_options)
 
             # write config file
-            config_file = os.path.join(dest_folder, 'cms_config.json')
+            config_file = os.path.join(dest_folder, 'kg_cms_task.json')
             info_print('writing config file...', config_file)
             with open(config_file, 'w') as fl:
                 json.dump(config, fl, indent=4)
@@ -1950,18 +1995,17 @@ def kg_contest(format_, args):
     decor_print()
     decor_print('-'*42)
     beginfo_print('Making passwords')
-    passwords = write_passwords_format(contest, args.format, seedval=seedval, dest=contest_folder)
+    passwords, accounts = write_passwords_format(contest, args.format, seedval=seedval, dest=contest_folder)
     succ_print('Done passwords')
 
     contest_template = os.path.join(kg_contest_template, args.format)
 
-    if args.format == 'cms-it':
+    if args.format == 'cms-it' or args.format == 'cms':
 
         # identify key folders
         contest_data_folder = os.path.join(contest_folder, 'contest')
 
         # construct template environment
-        # TODO pass 'contest' instead of all these
         env = {
             "datetime_created": datetime.now(),
             "contest": contest,
@@ -1970,6 +2014,7 @@ def kg_contest(format_, args):
 
         # problem envs
         found_codes = {}
+        codes = []
         for letter, problem_loc in zip(problem_letters(), contest.rel_problems):
             details = Details.from_format_loc(format_, os.path.join(problem_loc, 'details.json'), relpath=problem_loc)
 
@@ -1980,6 +2025,7 @@ def kg_contest(format_, args):
                 code += str(found_codes[code])
             else:
                 found_codes[code] = 1
+            codes.append(code)
             decor_print()
             decor_print('-'*42)
             print(beginfo_text("Getting problem"), key_text(repr(code)), beginfo_text(f"(from {problem_loc})"))
@@ -1991,16 +2037,51 @@ def kg_contest(format_, args):
             info_print('Running "kg kompile"...')
             def dest_loc(loc, fmt):
                 return os.path.join(contest_data_folder, code)
-            kg_compile(format_, details, 'cms-it', loc=problem_loc, dest_loc=dest_loc)
 
+            kg_compile(format_, details, args.format,
+                    loc=problem_loc,
+                    dest_loc=dest_loc,
+                    global_statement_file=contest.rel_global_statements)
+
+    # cms-it specific stuff
+    if args.format == 'cms-it':
         decor_print()
         decor_print('-'*42)
-        beginfo_print('Writing contest config file')
-        info_print('Writing contest.yaml')
+        beginfo_print('Writing contest config files')
+        info_print(f'Writing contest.yaml')
         source = os.path.join(contest_template, 'contest.yaml.j2')
         target = os.path.join(contest_data_folder, 'contest.yaml')
         kg_render_template_to(source, target, **env)
+        
+    if args.format == 'cms':
 
+        decor_print()
+        decor_print('-'*42)
+        beginfo_print('Writing contest config files')
+        # write config
+        config_file = os.path.join(contest_data_folder, 'kg_cms_contest.json')
+        config = {
+            "title": contest.title,
+            "code": contest.code,
+            "problems": codes,
+            "start_time": contest.start_time.timestamp(),
+            "duration": contest.duration.total_seconds(),
+        }
+        info_print('writing config file...', config_file)
+        with open(config_file, 'w') as fl:
+            json.dump(config, fl, indent=4)
+
+        # write users
+        users_file = os.path.join(contest_data_folder, 'kg_cms_users.json')
+        users = [{
+            "first_name": account.display_name,
+            "username": account.username,
+            "type": account.type,
+            "password": account.password,
+        } for account in accounts]
+        info_print('writing users file...', users_file)
+        with open(users_file, 'w') as fl:
+            json.dump(users, fl, indent=4)
 
 
     if args.format == 'pc2' or args.format == 'dom':
@@ -2139,6 +2220,7 @@ def kg_contest(format_, args):
                 
 
             # write config files
+            # TODO fix problem statement integration
             problem_files = ['problem.yaml']
             if args.format == 'dom':
                 problem_files.append('domjudge-problem.ini')
@@ -2152,7 +2234,7 @@ def kg_contest(format_, args):
 
 
             # copy statement. find one with compatible ending
-            statements = [s for s in [details.statement, contest.rel_global_statements] if s]
+            statements = [s for s in [details.statement_compiled, contest.rel_global_statements, details.statement_base] if s]
             if args.format == 'dom' and statements:
                 for source in statements:
                     base, ext = os.path.splitext(source)
@@ -2296,21 +2378,31 @@ def kg_passwords(format_, args):
     def get_team_schools():
         for ts in team_schools:
             for idx, team in enumerate(ts['teams'], 1):
-                yield ts['school'], team, idx
+                yield ts, team, idx
 
     def get_accounts():
-        for idx, (school_name, team_name, school_idx) in enumerate(get_team_schools(), 1):
-            account = args.account_format.format(
+        for idx, (school, team_name, school_idx) in enumerate(get_team_schools(), 1):
+            account_name = args.account_format.format(
                     idx=idx,
                     school_idx=school_idx,
-                    school_name=school_name,
+                    school_name=school['school'],
                     team_name=team_name,
                     first1=team_name.split()[0][0],
                     first=team_name.split()[0],
                     last1=team_name.split()[-1][0],
                     last=team_name.split()[-1],
                 )
-            yield school_name, team_name, account, passwords[team_name]
+            yield Account(
+                username=account_name,
+                display_name=team_name,
+                password=passwords[team_name],
+                type='team',
+                index=idx,
+                type_index=idx,
+                school=school['school'],
+                school_short=school.get('school_short'),
+                country_code=school.get('country_code'),
+            )
 
     beginfo_print(f'Writing passwords for {len(team_names)} teams')
     write_passwords(list(get_accounts()), dest='kgkompiled',

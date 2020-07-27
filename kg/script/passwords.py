@@ -45,6 +45,7 @@ def create_passwords(accounts, *, short=False, seedval=None):
 
     return {account: make_password() for account in accounts}, seedval
 
+# TODO put this into its own file (accounts.py?)
 class Account:
     def __init__(self, username, display_name, password, type, index, type_index, *,
                 school=None, school_short=None, country_code=None):
@@ -52,7 +53,7 @@ class Account:
         self.display_name = display_name
         self.password = password
         self.type = type
-        assert self.type in {'scoreboard', 'admin', 'judge', 'feeder', 'team'}
+        assert self.type in {'scoreboard', 'admin', 'judge', 'feeder', 'team', 'user'}
         self.index = index # one-based
         self.type_index = type_index # one-based
         self._school = school
@@ -66,7 +67,7 @@ class Account:
         if self.type == 'admin': return '[Administrator]'
         if self.type == 'judge': return '[Judge]'
         if self.type == 'feeder': return '[Feeder]'
-        if self.type == 'team': return self.school
+        if self.type in {'team', 'user'}: return self.school
         raise Exception
 
     @property
@@ -114,9 +115,12 @@ def write_passwords_format(cont, format_, *, seedval=None, dest='.'):
 
     # TODO clean this up
 
-    valid_formats = {'pc2', 'cms-it', 'dom'}
+    valid_formats = {'pc2', 'cms-it', 'cms', 'dom'}
     if format_ not in valid_formats:
         raise PasswordError(f"Unsupported format: {format_}")
+
+    # for now, assume that CMS contests are individuals, while everything else are team-based
+    team_base = 'user' if format_ in {'cms', 'cms-it'} else 'team'
 
     accounts = [(key, account)
             for key in ['leaderboards', 'admins', 'judges', 'teams', 'feeders'] for account in getattr(cont, key)]
@@ -154,9 +158,9 @@ def write_passwords_format(cont, format_, *, seedval=None, dest='.'):
         team_schools = ((ts, team) for ts in cont.team_schools for team in ts['teams'])
         for idx, (school_data, team_name) in enumerate(team_schools, 1):
             yield dict(display_name=team_name,
-                       username=f'team{idx}',
+                       username=f'{team_base}{idx}',
                        password=passwords['teams', team_name],
-                       type='team',
+                       type=team_base,
                        type_index=idx,
                        school=school_data['school'],
                        school_short=school_data['school_short'],
@@ -214,7 +218,7 @@ def write_passwords_format(cont, format_, *, seedval=None, dest='.'):
             seedval=' or '.join([str(x) for x, g in groupby([seedval, seed]) if x is not None]),
             dest=dest, code=cont.code, title=cont.title)
 
-    return passwords
+    return passwords, accounts
 
 
 def write_tsv(filename, rows):

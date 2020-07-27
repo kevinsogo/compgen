@@ -81,9 +81,9 @@ class Details(object):
         # subtasks_files
         self.subtasks_files = self.details.get('subtasks_files', "")
 
-        self.statement = self.details.get('statement')
+        self.statement = self._get_statement(self.details.get('statement'))
 
-        for key in ['testscript', 'subtasks_files', 'statement']:
+        for key in ['testscript', 'subtasks_files']:
             setattr(self, key, attach_relpath(relpath, getattr(self, key)))
 
         # check for extra keys
@@ -201,6 +201,38 @@ class Details(object):
 
         return scoring
 
+    def _get_statement(self, statement):
+        if statement is None or isinstance(statement, str):
+            statement = {'base': statement}
+
+        if not isinstance(statement, dict):
+            raise TypeError(f"'statement' should be a str or dict, got {type(statement)}")
+
+        if 'base' not in statement:
+            raise ValueError("'statement' should have a 'base' key")
+
+        statement.setdefault('compiled',
+                statement['base'] if statement['base'] and statement['base'].endswith('.pdf') else None)
+
+        for key in 'base', 'compiled':
+            if statement[key]:
+                statement[key] = attach_relpath(self.relpath, statement[key])
+
+        if statement['compiled'] and not statement['compiled'].endswith('.pdf'):
+            raise ValueError("The compiled statement must be a pdf file")
+
+        return statement
+
+    @property
+    def statement_base(self):
+        assert 'base' in self.statement
+        return self.statement['base']
+
+    @property
+    def statement_compiled(self):
+        assert 'compiled' in self.statement
+        return self.statement['compiled']
+
     @property
     def scoring_overall(self):
         assert 'overall' in self.scoring
@@ -218,6 +250,7 @@ class Details(object):
 
     @property
     def logical_scoring(self):
+        """ Read-only view of self.scoring that contains only the logical keys for the task type """
         keys = ['overall', 'default_weight'] if self.binary else ['overall', 'per_subtask', 'default_weight']
         return {key: self.scoring[key] for key in keys}
 
