@@ -321,7 +321,8 @@ def _collect_subtasks(input_subs):
             if not subtasks_of[input_]:
                 raise CommandError(f"No subtasks found for {input_}")
             if subtset and not (subtasks_of[input_] <= subtset):
-                raise CommandError("Found invalid subtasks! " + ' '.join(map(repr, natsorted(subtasks_of[input_] - subtset))))
+                raise CommandError("Found invalid subtasks! "
+                    + ' '.join(map(repr, natsorted(subtasks_of[input_] - subtset))))
             all_subtasks |= subtasks_of[input_]
             for sub in subtasks_of[input_]: files_of_subtask[sub].add(input_)
             info_print(f"Subtasks found for {input_}:", end=' ')
@@ -351,7 +352,9 @@ def _collect_subtasks(input_subs):
                 candidates = {key: group for key, group in test_groups.items() if sub in group and group <= depends_on[sub]}
                 if candidates:
                     try:
-                        group_key = next(key for key, group in candidates.items() if all(other <= group for other in candidates.values()))
+                        group_key = next(key
+                            for key, group in candidates.items()
+                            if all(other <= group for other in candidates.values()))
                         if group_key in represented_by:
                             del representing[represented_by[group_key]]
                         representing[sub] = group_key
@@ -368,7 +371,8 @@ def _collect_subtasks(input_subs):
 
             for sub in natsorted(all_subtasks):
                 if sub in representing:
-                    print(info_text("Subtask"), key_text(sub), info_text("is represented by test group:"), key_text(representing[sub]))
+                    print(info_text("Subtask"), key_text(sub), info_text("is represented by test group:"),
+                          key_text(representing[sub]))
                 else:
                     warn_print('Warning: No test group represents subtask', sub, file=stderr)
 
@@ -376,7 +380,8 @@ def _collect_subtasks(input_subs):
             for key, group in natsorted(test_groups.items()):
                 deps = [depkey for depkey, dep in natsorted(test_groups.items()) if dep != group and group < dep]
                 if key in represented_by:
-                    print(info_text("Test group"), key_text(key), info_text("AKA subtask"), key_text(represented_by[key]), info_text("contains the ff subtask groups:"))
+                    print(info_text("Test group"), key_text(key), info_text("AKA subtask"), key_text(represented_by[key]),
+                          info_text("contains the ff subtask groups:"))
                 else:
                     print(info_text("Test group"), key_text(key), info_text("contains the ff test groups:"))
                 for depkey in deps:
@@ -862,7 +867,9 @@ def kg_test(format_, args):
         ]
     else:
         # groups are individual files
-        group_scores = [(details.scoring_default_weight, score_row['score']) for index, score_row in sorted(scoresheet.items())]
+        group_scores = [(details.scoring_default_weight, score_row['score'])
+            for index, score_row in sorted(scoresheet.items())
+        ]
 
     scoring_result = get_score_for(group_scores)
     max_scoring_result = get_score_for([(weight, 1) for weight, score in group_scores])
@@ -1119,7 +1126,8 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
 
             # iterate through inputs, run our detector against them
             subtasks_of, all_subtasks = compute_subtasks(
-                    subtasks, detector, format=get_format_from_type(format_, loc, read='i'), relpath=loc, include_test_groups=True)
+                    subtasks, detector,
+                    format=get_format_from_type(format_, loc, read='i'), relpath=loc, include_test_groups=True)
 
             info_print(f'WRITING TO {details.subtasks_files}')
             details.dump_subtasks_files(construct_subs_files(subtasks_of))
@@ -1411,8 +1419,11 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
         return nmodule
 
     # get the statement file
-    dummy_statement_file = os.path.join(kg_problem_template, 'statement.pdf')
-    statement_file = statement_file or details.statement_compiled or global_statement_file or details.statement_base or dummy_statement_file
+    statement_file = (
+        statement_file or details.statement_compiled or global_statement_file or
+        details.statement_base or os.path.join(kg_problem_template, 'statement.pdf')
+        # the last one is a dummy statement file...because some platforms require a statement file
+    )
 
 
     # extract problem code
@@ -1823,7 +1834,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                     total_score = sum(score for score, *rest in config['score_type_parameters'])
                 elif scoring_overall == '!ave':
                     # this is just like !sum, but we can hardcode the score_type_parameters to 100/len(tests).
-                    # The docs say score_type_parameters should be an int, but that's a lie.
+                    # The docs say 'score_type_parameters' should be an int, but that's a lie.
                     config['score_type'] = 'Sum'
                     config['score_type_parameters'] = 100 / len(input_files)
                     total_score = config['score_type_parameters'] * len(input_files)
@@ -2078,7 +2089,9 @@ def kg_contest(format_, args):
         beginfo_print('Writing contest config files')
         # write config
         config_file = os.path.join(contest_data_folder, 'kg_cms_contest.json')
-        warn_print("Note: For CMS, we're ignoring compilation and run options. We're only taking the names.")
+        warn_print(
+            "Note: For CMS, we're ignoring compilation and run options of languages. "
+            "We're only taking the names.")
         config = {
             "description": contest.title,
             "name": contest.code,

@@ -137,6 +137,8 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Allow interactors in `kg test`. maybe `-intj` or `-intf`. Should work standalone and in kg folder. Also maybe `kg run` too?
 
+- After implementing kg interactors, integrate it with CMS. (Communication task type)
+
 - Implement polygon-compatible partial scorer. The behavior should be equivalent to testlib `quitp(_pc(score-16))`
     
 
