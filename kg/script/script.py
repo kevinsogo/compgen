@@ -774,6 +774,13 @@ def kg_test(format_, args):
         if not indices: return 'none'
         return compress_t_sequence(','.join(map(str, sorted(indices))))
 
+    def print_file_list(description, indices):
+        if indices:
+            info_print(f"{len(indices):3} file(s) {description}:", abbreviate_indices(indices))
+        else:
+            info_print(f"{len(indices):3} file(s) {description}")
+
+
     def write_raw_summary():
         """ print the raw files gotten correct and wrong """
         corrects = [index for index, score_row in sorted(scoresheet.items()) if score_row['correct']]
@@ -783,8 +790,8 @@ def kg_test(format_, args):
         decor_print()
         decor_print('.'*42)
         beginfo_print('SUMMARY:')
-        info_print(f'{len(corrects):3} files gotten correct:', abbreviate_indices(corrects))
-        info_print(f'{len(wrongs):3} files gotten wrong:', abbreviate_indices(wrongs))
+        print_file_list('gotten correct', corrects)
+        print_file_list('gotten wrong  ', wrongs)
         (succ_print if len(corrects) == len(scoresheet) else err_print)(len(corrects), end=' ')
         (succ_print if len(corrects) == len(scoresheet) else info_print)(f'out of {len(scoresheet)} files correct')
         if max_time is None:
