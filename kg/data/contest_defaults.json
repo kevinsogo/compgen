@@ -13,6 +13,7 @@
         "pypy2",
         "pypy3"
     ],
+    "display_timezone": null,
     "problems": [],
     "site_password": null,
     "teams": [],

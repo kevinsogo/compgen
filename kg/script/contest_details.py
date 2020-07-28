@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
 import os.path
 import re
@@ -31,7 +31,7 @@ class ContestDetails(object):
 
         hms_re = re.compile(r'^(?P<h>\d+)\:(?P<m>\d\d)\:(?P<s>\d\d)$')
         def parse_duration(x):
-            if isinstance(x, int):
+            if isinstance(x, (int, float)):
                 return timedelta(seconds=x)
             if isinstance(x, dict):
                 return timedelta(**x)
@@ -43,11 +43,16 @@ class ContestDetails(object):
 
             raise ValueError(f"Invalid duration: {x!r}")
 
+        self.display_timezone = self.details.get('display_timezone')
+
         def parse_time(x):
-            if isinstance(x, int):
-                return datetime.utcfromtimestamp(x)
+            if isinstance(x, (int, float)):
+                return datetime.fromtimestamp(x, timezone.utc)
             if isinstance(x, dict):
-                return datetime(**x)
+                if 'tzinfo' in x:
+                    raise ValueError("'tzinfo' not allowed as a key for time")
+                x['tzinfo'] = timezone(timedelta(hours=x.pop('utcoffset', 0)))
+                return datetime(**x).astimezone(timezone.utc)
 
             raise ValueError(f"Invalid time: {x!r}")
 

@@ -31,6 +31,10 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Update pypy integration (snap installation)
 
+- Handle graders for some formats like CMS. Maybe also handle graders in general.
+
+- Add the remaining fields in the CMS-IT format.
+
 - Allow the syntax `1 <= Var['t'] <= 10**18` or `1 <= Var('t') <= 10**18` or something.
 
 - `kg test` for specific subtasks, or subsets of subtasks

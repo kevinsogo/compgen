@@ -1336,7 +1336,7 @@ compile_p = subparsers.add_parser('kompile',
                 that it is in "other_programs" (or "generators", "model_solution", etc.) or in --extra-files.
 
                 Only Python files will be processed; it is up to you to ensure that the non-python programs you
-                write will be compatible with the contest system/judge they are using.
+                write will be compatible with the contest system/judge you are using.
 
                 The generated files will be in "kgkompiled/".  
 
@@ -2044,6 +2044,7 @@ def kg_contest(format_, args):
         # problem envs
         found_codes = {}
         codes = []
+        problem_details = []
         for letter, problem_loc in zip(problem_letters(), contest.rel_problems):
             details = Details.from_format_loc(format_, os.path.join(problem_loc, 'details.json'), relpath=problem_loc)
 
@@ -2055,6 +2056,7 @@ def kg_contest(format_, args):
             else:
                 found_codes[code] = 1
             codes.append(code)
+            problem_details.append(details)
             decor_print()
             decor_print('-'*42)
             print(beginfo_text("Getting problem"), key_text(repr(code)), beginfo_text(f"(from {problem_loc})"))
@@ -2099,7 +2101,10 @@ def kg_contest(format_, args):
             "start": contest.start_time.timestamp(),
             "stop": contest.end_time.timestamp(),
             "duration": contest.duration.total_seconds(),
+            "timezone": contest.display_timezone,
             "languages": [lang['lang'] for lang in contest.langs],
+            # compute score precision based on the individual problems' score precision
+            "score_precision": max(problem.cms_options.get('score_precision', 0) for problem in problem_details),
         }
         info_print('writing config file...', config_file)
         with open(config_file, 'w') as fl:

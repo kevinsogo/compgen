@@ -59,6 +59,7 @@ setup(name='KompGen',
           'termcolor',
           'Jinja2',
           'argcomplete',
+          'pytz',
       ],
       setup_requires=[
           'setupext-janitor',
