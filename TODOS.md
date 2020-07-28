@@ -35,6 +35,8 @@ This includes some disorganized ideas, TODOs, notes...
 
 - `kg test` for specific subtasks, or subsets of subtasks
 
+- Unify file-stream handling. (validator, checker, etc)
+
 - (kg kompile) produce a javascript script that when pasted into the Tests tab of Polygon will set up the stuff correctly in Polygon.
 
 - Make pypy3 default for .py solution files with unspecified language. For parts requiring kg (checkers, validators, etc.), only use pypy3 if it has kg, and python3 otherwise.
