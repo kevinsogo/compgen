@@ -2072,7 +2072,8 @@ def kg_contest(format_, args):
             kg_compile(format_, details, args.format,
                     loc=problem_loc,
                     dest_loc=dest_loc,
-                    global_statement_file=contest.rel_global_statements)
+                    global_statement_file=contest.rel_global_statements,
+                    python3=contest.python3_command)
 
     # cms-it specific stuff
     if args.format == 'cms-it':
