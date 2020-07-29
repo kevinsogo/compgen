@@ -29,6 +29,8 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Rename WA to Wrong (and keep WA as an alias).
 
+- Include info on test data hashes, so test data differing in different machines may be detected. (A warning will be issued)
+
 - Update pypy integration (snap installation)
 
 - Handle graders for some formats like CMS. Maybe also handle graders in general.
