@@ -1374,6 +1374,9 @@ def _kg_compile(format_, args):
         extra_files=args.extra_files,
         )
 
+def _get_cms_code(details, code_raw):
+    return details.cms_options.get('name', ''.join(re.split(r'[._-]', code_raw)))
+
 def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, compress=False, python3='python3',
         dest_loc=None, files=[], extra_files=[], statement_file=None, global_statement_file=None):
 
@@ -1564,6 +1567,14 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
         if fmt == 'cms':
             for attachment in cms_attachments:
                 to_copy[attachment] = os.path.join('attachments', os.path.basename(attachment))
+
+        if fmt in {'cms-it', 'cms'} and problem_code:
+            cms_code = _get_cms_code(details, problem_code)
+            if cms_code != problem_code:
+                info_print(f"Using the code name {cms_code!r} instead of {problem_code!r}.")
+                if 'name' not in details.cms_options:
+                    warn_print(f"Warning: Using {cms_code!r} instead of {problem_code!r}. "
+                                "(CMS problem code names should contain only letters and digits)")
 
         targets = {}
         found_targets = {}
@@ -1768,7 +1779,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
             kg_render_template_to(
                     os.path.join(problem_template, 'task.yaml.j2'),
                     os.path.join(dest_folder, 'task.yaml'),
-                    problem_code=problem_code,
+                    problem_code=cms_code,
                     details=details,
                     input_count=input_count,
                 )
@@ -1803,7 +1814,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
 
             # create config file
             config = {
-                'name': problem_code,
+                'name': cms_code,
                 'title': details.title,
                 'time_limit': details.time_limit,
                 'task_type': 'Batch', # only Batch and OutputOnly for now.
@@ -2049,7 +2060,7 @@ def kg_contest(format_, args):
             details = Details.from_format_loc(format_, os.path.join(problem_loc, 'details.json'), relpath=problem_loc)
 
             code_raw = os.path.basename(problem_loc)
-            code = ''.join(code_raw.split('._-')) # TODO check if this is necessary.
+            code = _get_cms_code(details, code_raw)
             if code in found_codes:
                 found_codes[code] += 1
                 code += str(found_codes[code])
@@ -2059,7 +2070,12 @@ def kg_contest(format_, args):
             problem_details.append(details)
             decor_print()
             decor_print('-'*42)
-            print(beginfo_text("Getting problem"), key_text(repr(code)), beginfo_text(f"(from {problem_loc})"))
+            print(beginfo_text("Getting problem"), key_text(repr(code_raw)), beginfo_text(f"(from {problem_loc})"))
+            if code != code_raw:
+                info_print(f"Using the code name {code!r} instead of {code_raw!r}.")
+                if 'name' not in details.cms_options:
+                    warn_print(f"Warning: Using {code!r} instead of {code_raw!r}. "
+                                "(CMS problem code names should contain only letters and digits)")
 
             if args.make_all:
                 info_print('Running "kg make all"...')
