@@ -2138,6 +2138,9 @@ def kg_contest(format_, args):
             "type": account.type,
             "password": account.password,
         } for account in accounts]
+        if contest.display_timezone:
+            for user in users:
+                user['timezone'] = contest.display_timezone
         info_print('writing users file...', users_file)
         with open(users_file, 'w') as fl:
             json.dump(users, fl, indent=4)
