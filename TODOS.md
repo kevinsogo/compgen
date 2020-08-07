@@ -25,11 +25,19 @@ This includes some disorganized ideas, TODOs, notes...
 
 - maybe pass newline='' in checker streams?
 
+- Don't run !diff.exact on kg make all
+
+- Add `parse_args`, visible to generators, which tries to parse ints, floats, etc., maybe add some custom types there like intervals?
+
 - Add functionality to detect "extreme" cases per subtask. Each Var object must have its extreme values triggered by some file, per subtask.
 
 - Don't crash if details.json isn't valid; report the error and then go on as if the current folder isn't a kg folder.
 
 - Rename WA to Wrong (and keep WA as an alias).
+
+- Option for kg run to stop at first failure (RTE, also TLE?).
+
+- Option for kg test to stop at first failure.
 
 - Include info on test data hashes, so test data differing in different machines may be detected. (A warning will be issued)
 
