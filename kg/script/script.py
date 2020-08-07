@@ -1878,6 +1878,10 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
             # override options
             config.update(details.cms_options)
 
+            # make attachments 'basename'
+            if 'attachments' in config:
+                config['attachments'] = [os.path.basename(attachment) for attachment in config['attachments']]
+
             # write config file
             config_file = os.path.join(dest_folder, 'kg_cms_task.json')
             info_print('writing config file...', config_file)
