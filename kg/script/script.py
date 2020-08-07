@@ -1601,8 +1601,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
             target = copy_targets[filename]
             info_print(f'[... non-python ...] converting {filename} to {target} (kopying only)', file=stderr)
             touch_container(target)
-            with open(filename) as srcf, open(target, 'w') as targf:
-                targf.write(srcf.read())
+            copy_file(filename, target)
 
         # translating
         for filename in natsorted(to_translate):
