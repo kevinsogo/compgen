@@ -36,9 +36,15 @@ Most fields should be self-explanatory, but here are things to keep in mind:
 
 - The `teams` field is also a bit special: you can group teams/contestants by university/school. See `examples/contest.json` for an example.
 
+- For some platforms (e.g. CMS), use `users` instead of `teams`. Instead of just a single string (representing the username), you can use a dictionary with keys `first_name`, `last_name` and `username`.
+
 - The `teams`, `judges`, etc., fields can also contain a string pointing to a separate `.json` file which contains the list. This is useful if you want to pregenerate them with a different program.
 
 - There are also the `start_time` and `duration` fields. (Will document soon)
+
+    - By default, it is in UTC. Use `utcoffset` if you prefer to write the time in UTC plus a fixed integer offset.
+
+- The `display_timezone` to show the times to the users (contestants, etc.) in a different timezone. (But note that internally, all times are processed in UTC.)
 
 <!-- TODO document more of the fields -->
 
@@ -141,6 +147,7 @@ Unfortunately, PC2 is quite buggy, so I would like to mention a few important on
 
 DOMjudge has been used in several ICPC world finals and several ICPC regionals. Thus, it mainly supports ICPC-style contests, i.e., binary problems.
 
+
 ## Compiling to DOMjudge-readable format
 
 After writing a `contest.json`, the next step is to run:
@@ -227,7 +234,18 @@ You can easily do the same process if you're planning on hosting a practice roun
 
 Interactive problem support to come soon. (For now, you can still do it, but you'll have to manually set up the run and compare commands yourself, so KompGen saves you 80% of the work.)
 
-It may happen that DOMjudge doesn't accept some problem because of large test data. In this case, please follow the ["Fine tuning server settings"](https://www.domjudge.org/docs/admin-manual.pdf) section of the [DOMjudge admin manual](https://www.domjudge.org/docs/admin-manual.pdf) to change MySQL settings. `max_allowed_packet` is the most relevant, although you may want to adjust the others as well just to be sure.
+It may happen that DOMjudge doesn't accept some problem because of large test data. In this case, please follow these instructions I found in an old document called the "DOMjudge admin manual" (which I somehow cannot find anymore in the DOMjudge site) to change MySQL settings. The most relevant setting is `max_allowed_packet`, although you may want to set/update the others as well just to be sure.
+
+> For Apache, there are countless documents on how to maximise performance. Of particular importance is to ensure that the MaxClients setting is high enough to receive the number of parallel requests you expect, but not higher than your amount of RAM allows.
+> 
+> As for PHP, the use of an opcode cache like the Alternative PHP Cache (Debian package: `php-apc`) is beneficial for performance. For uploading large testcases, see the section about memory limits.
+> 
+> It may be desirable or even necessary to fine tune some MySQL default settings:
+> 
+> - `max_connections`: The default 100 is too low, because of the connection caching by Apache threads. 1000 is more appropriate.
+> - `max_allowed_packet`: The default of 16MB might be too low when using large testcases. This should be changed both in the MySQL server and client configuration and be set to about twice the maximum testcase size.
+> - Root password: MySQL does not have a password for the root user by default. It's very desirable to set one.
+> - When maximising performance is required, you can consider to use the *Memory* table storage engine for the `scorecache_public` and `scorecache_jury` tables. They will be lost in case of a full crash, but can be recalculated from the jury interface.
 
 
 
@@ -235,9 +253,63 @@ It may happen that DOMjudge doesn't accept some problem because of large test da
 
 CMS is the official platform used at the IOI and maintained by the IOI. Thus, it mainly supports IOI-style contests, i.e., non-binary problems.
 
-## Compiling to CMS-readable format
 
-At the moment, it's not possible to add custom Loaders for CMS with an external Python library, so our power to set things up automatically is a bit limited. I'll work on it soon; meanwhile, I've implemented a compiler towards the "Italian format", which, while not perfect, at least helps out a bit.
+## Compiling to CMS-readable format (KompGen loader)
+
+A loader for KompGen-created contests is available. However, you have to use the `kompgen` branch of [this fork of CMS](https://github.com/kevinsogo/cms). I will try my best to maintain that the latest CMS branch is merged here, but one consequence is that you have to use the bleeding-edge CMS, not the latest CMS release. (This is not a problem in our experience.) Also, when I finish polishing the KompGen loader, I will work on getting it accepted into CMS, so you don't have to use the KompGen format.
+
+After writing a `contest.json`, run:
+
+```bash
+$ kg kontest cms contest.json
+```
+
+This will generate the contest problems in KompGen format in `kgkompiled/[contestcode]`.  
+
+Note that `kg kontest` expects that `kg make all` has been run for every problem. If you want to force run `kg make all` across all problems, pass the `--make-all` option to `kg kontest`.
+
+A working example is provided in `examples/contest.json`. You can run this to test it:
+
+```bash
+$ kg kontest cms examples/contest.json   # add --make-all if you want
+```
+
+This will create the folder `kgkompiled/EXAMPLECONTEST` from two example problems.
+
+The contest configuration file also has the `cms_option` field, which should be a dictionary containing additional CMS settings, e.g.,
+
+```json
+    "cms_option": {
+        "name": "add",
+        "max_submission_number": 80,
+        "max_user_test_number": 11,
+        "min_submission_interval": 69,
+        "min_user_test_interval": null
+    }
+```
+
+All fields here are optional. (The list above is not exhaustive.)
+
+After doing this, and after running all CMS services, you can now easily upload the contest to CMS by taking the following steps:
+
+- Run `cmsImportUsers path/to/kgkompiled/[contestcode]/contest/ -A` to import all users.
+
+    - You only need to do this once, even if you have multiple contests.
+
+- Run `cmsImportContest path/to/kgkompiled/[contestcode]/contest/ --import-tasks` to import the contest and all its tasks.
+
+You might need to restart CMS with the updated contest ID (printed by the `cmsImportContest` command) to enable the contest.
+
+You can do the same process for each contest, even using the same CMS instance (e.g., practice rounds, multiple rounds).
+
+
+## Compiling to CMS-readable format (Italian format loader)
+
+If it is not possible for you to use the branch above, you can use the "Italian format" which is also supported by KompGen. While not perfect, it at least helps out a bit. However, please keep in mind that the Italian format is very limited (acknowledged even by the [official CMS docs](https://cms.readthedocs.io/en/v1.4/External%20contest%20formats.html)), so, as with DOMjudge, a lot of the contest config settings are thrown away. So please take note of the following:
+
+- Some settings are not supported. (Will document soon)
+
+- The test data will be bloated, since files belonging to multiple subtasks will need to be added several times. (due to the Italian format) This also affects the judgment speed, since the submission will be run for some files several times.
 
 After writing a `contest.json`, run:
 
@@ -257,7 +329,7 @@ $ kg kontest cms-it examples/contest.json   # add --make-all if you want
 
 This will create the folder `kgkompiled/EXAMPLECONTEST` from two example problems.
 
-Please keep in mind though that the Italian format is very limited (acknowledged even by the [official CMS docs](https://cms.readthedocs.io/en/v1.4/External%20contest%20formats.html)), so, as with DOMjudge, a lot of the contest config settings are thrown away.
+
 
 Be sure to set the `start_time` and `duration` fields, otherwise you might get errors importing the contest.
 
