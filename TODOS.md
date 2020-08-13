@@ -159,7 +159,7 @@ This includes some disorganized ideas, TODOs, notes...
 
 - After implementing kg interactors, integrate it with CMS. (Communication task type)
 
-- Implement polygon-compatible partial scorer. The behavior should be equivalent to testlib `quitp(_pc(score-16))`
+- Implement polygon-compatible partial scorer. The behavior should be equivalent to testlib `quitp(_pc(score-16))` (`16 == _partially`)
     
 
     - Some links:
