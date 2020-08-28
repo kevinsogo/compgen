@@ -107,6 +107,7 @@ def kgutil_mc(args):
 
 
 oneindex_p = subparsers.add_parser('pg-1index',
+         aliases=['1index', 'pg-oneindex', 'oneindex', 'pg-one-index', 'one-index'],
             help='Convert the subtasks file to use 1-indexing. (For polygon)',
      description='Convert the subtasks file to use 1-indexing. (For polygon)')
 oneindex_p.add_argument('subtask_file', help='The subtask file. Typically subtasks.json')
