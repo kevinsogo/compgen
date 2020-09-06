@@ -41,8 +41,13 @@ class Point:
     def rotright(self):
         return Point(self.y, -self.x)
 
+    def on_axis(self):
+        return any(self.dot(axis) == 0 for axis in (Point(1, 0), Point(0, 1)))
+
+    rectilinear = on_axis
+
     def __eq__(self, other):
-        return self.x == other.x and self.y == other.y
+        return isinstance(other, Point) and self.x == other.x and self.y == other.y
 
     def __ne__(self, other):
         return not (self == other)
@@ -78,6 +83,8 @@ class Seg:
     # TODO maybe create a Line class, Ray class, etc.? and have meaningful interactions and conversions
     # between them?
     def __init__(self, a, b):
+        if not (isinstance(a, Point) and isinstance(b, Point)):
+            raise GeomError("Both endpoints must be Point instances")
         self.a = a
         self.b = b
         super().__init__()
@@ -102,7 +109,9 @@ class Seg:
         return self.vec.dot(other.vec) == 0
 
     def rectilinear(self):
-        return any(self.vec.dot(axis) == 0 for axis in (Point(1, 0), Point(0, 1)))
+        return self.vec.on_axis()
+
+    axis_aligned = rectilinear
 
     def intersects(self, other):
         return self.vec and other.vec and self.crosses(other) or any(p in other for p in self) or any(p in self for p in other)
