@@ -60,6 +60,7 @@ setup(name='KompGen',
           'Jinja2',
           'argcomplete',
           'pytz',
+          'PyYAML'
       ],
       setup_requires=[
           'setupext-janitor',
