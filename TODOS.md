@@ -1,4 +1,4 @@
- Important  
+# Important  
 
 - Write unit tests.  
 
@@ -27,7 +27,19 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Don't run !diff.exact on kg make all
 
+- Use metaclasses to have a nice declaration syntax for generator args, which can also be printed via --help
+    
+    - Try to pattern after add_argument of argparse
+
+    - Extend
+
+        - for 'ranges' (a,b)
+
+        - for lists with a given delimiter
+
 - Add `parse_args`, visible to generators, which tries to parse ints, floats, etc., maybe add some custom types there like intervals?
+
+- Fix bug of kg test where it tries to compile the solution itself as the validator/subtask detector because `_get_subtask_detector_from_args` is being called somehow, taking the `-f`. It happens if `subtasks.json` is missing.
 
 - Add functionality to detect "extreme" cases per subtask. Each Var object must have its extreme values triggered by some file, per subtask.
 
@@ -43,6 +55,28 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Update pypy integration (snap installation)
 
+- Configuration:
+
+    - Allow both yaml and json
+
+    - Find a better name for "details" (but allow "details.json" for compatibility). "config" or "kgconfig"
+
+    - still need to find a way to typecheck parsed yaml.
+
+        - https://json-schema.org/learn/getting-started-step-by-step.html (has union types and stuff)
+
+            - https://stackoverflow.com/questions/12465588/convert-a-json-schema-to-a-python-class
+
+        - https://stackoverflow.com/questions/12370498/parse-json-and-store-data-in-python-class
+
+        - There's also TJSON, check that out
+
+    - add a "format" option for kg init
+
+    - https://pypi.org/project/schema/
+
+- `kg add`
+
 - Handle graders for some formats like CMS. Maybe also handle graders in general.
 
 - Add the remaining fields in the CMS-IT format.
@@ -54,6 +88,8 @@ This includes some disorganized ideas, TODOs, notes...
 - Unify file-stream handling. (validator, checker, etc)
 
 - Make a non-platform-specific version of `cms_options.name`.
+
+- Add "language checks", i.e., check if javac or g++ is available.
 
 - (kg kompile) produce a javascript script that when pasted into the Tests tab of Polygon will set up the stuff correctly in Polygon.
 
@@ -484,6 +520,8 @@ new_case kwargs can still be passed as info.
  
 - Have `kg.validators.get.*` for the `GET` functionality. Move stuff to `validators/{__init__,get}.py`. In general, split up modules so features can be imported individually, so they don't take up space. Only essential ones go to `/__init__.py`.  
     - This requires generalizing `kg kompile`'s current approach, not too hard I think.
+
+- Try to find a nicer way to do `GET` stuff. Need some amount of overhaul of StrictStream (e.g., store variables that were 'read').
 
 - For uniformity:
     

@@ -588,7 +588,7 @@ test_p = subparsers.add_parser('test',
         description=cformat_text(dedent('''\
                 Test a program against given input and output files.
 
-                $ [*[kg gen -i [input_pattern] -o [output_pattern] -f [solution_program]]*]
+                $ [*[kg test -i [input_pattern] -o [output_pattern] -f [solution_program]]*]
 
                 This runs [solution_program] for every file in [input_pattern], and compares it against the
                 corresponding files in [output_pattern]. [solution_program] must be a program that takes an
@@ -634,13 +634,13 @@ test_p = subparsers.add_parser('test',
                 You may also pass a full checker command via -jc, similar to -c for the solution file.
 
 
-                If you wrote your problem using "kg init", then you may omit "-i", "-o", "-f" and "-jf; they will
+                If you wrote your problem using "kg init", then you may omit "-i", "-o", "-f" and "-jf"; they will
                 default to the KompGen format ("tests/*.in" and "tests/*.ans"), and other details will be parsed
                 from details.json, so for example, "[*[kg test]*]" without options would just work. (You can still pass
                 them of course.)
 
 
-                If your command (-c, -jc or -vc) requires leading dashes, then the argument parser might interpret
+                If your command (-c or -jc) requires leading dashes, then the argument parser might interpret
                 them as options to "kg test" itself. To work around this, prepend "___" (triple underscore) to each
                 part containing a "-". The "___" will be ignored. For example,
 

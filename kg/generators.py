@@ -72,6 +72,7 @@ class KGRandom(Random):
             while True:
                 assert inds
                 idx = min(self.randrange(len(inds)) for it in range(skew))
+                # TODO optimize this part. It will be backwards incompatible, so we can only do it in the next "version".
                 if dist[inds[idx]] < max_:
                     dist[inds[idx]] += 1
                     break
