@@ -118,9 +118,9 @@ def diameter(nodes, edges):
     nodes = make_nodes(nodes)
     adj = make_adj(nodes, edges)
     i = farthest(nodes, adj, start=nodes[0])
-    b = list(bfs_data(nodes, adj, start=i))
-    j, p, d = b[-1]
-    return i, b[-1].node, b[-1].depth
+    for b in bfs_data(nodes, adj, start=i):
+        ...
+    return i, b.node, b.depth
 
 @listify
 def bipartition(nodes, edges):
