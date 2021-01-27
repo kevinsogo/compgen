@@ -64,6 +64,7 @@ def is_prime_miller_rabin(n, *, more_witnesses=()): ### @@if False {
     if n < 2^64, then is_prime(n) never returns a wrong answer. (hopefully!)
     """
     ### @@}
+    if n < 2: return False
     # if too small, check _sieve_is_prime   ### @if False
     if n < len(_sieve_is_prime): return _sieve_is_prime[n]
     # check divisibility with _small primes   ### @if False
