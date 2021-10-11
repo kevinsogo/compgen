@@ -13,7 +13,7 @@ python3 -m pip install --user setupext-janitor
 
 # install the 'kg' (and related) packages and dependencies.
 python3 setup.py clean --all
-python3 setup.py install
+python3 setup.py install --user
 python3 setup.py clean --all
 
 # also try installing for pypy3. (It should just skip if you don't have pypy3)
