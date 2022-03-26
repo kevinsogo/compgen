@@ -1,0 +1,79 @@
+#!/usr/bin/python3
+
+# Set this to False before uploading to CMS
+KOMPGEN = True
+
+###############################################
+# COPY THIS CODE INTO YOUR OWN CMS INTERACTOR #
+###############################################
+import sys
+
+_ok = 0
+_wa = 1
+_fail = 3
+
+
+if KOMPGEN:
+    fifo_to_user = sys.stdout.buffer
+    fifo_from_user = sys.stdin.buffer
+
+    inf = open(sys.argv[1], mode='rb', buffering=0)
+
+    def quitf(status, message=''):
+        print(message, file=sys.stderr)
+        exit(status)
+
+else:
+    fifo_path_from_user, fifo_path_to_user = sys.argv[1:]
+    fifo_to_user = open(fifo_path_to_user, mode='wb', buffering=0)
+    fifo_from_user = open(fifo_path_from_user, mode='rb', buffering=0)
+
+    inf = sys.stdin.buffer
+
+    def quitf(status, message=''):
+        print(1 if status == _ok else 0)
+        if message != '':
+            print(message, file=sys.stderr)
+        exit()
+
+def read_input_line():
+    return inf.readline().decode('utf-8')
+
+def send_contestant_line(string):
+    fifo_to_user.write(bytes(f'{string}\n', encoding='utf-8'))
+    fifo_to_user.flush()
+
+def read_contestant_line():
+    return fifo_from_user.readline().decode('utf-8')
+
+###############
+# END COPYING #
+###############
+
+
+target, moves = map(int, read_input_line().split())
+
+if moves < 0:
+    quitf(_fail, 'invalid number of moves!')
+
+send_contestant_line(moves)
+
+while True:
+    line = read_contestant_line().split()
+    if line == '':
+        quitf(_wa, 'expected more lines of output but got none')
+
+    if len(line) != 2:
+        quitf(_wa, 'invalid action')
+
+    tok, value = line[0], int(line[1])
+
+    if tok == 'answer':
+        quitf(_ok if target == value else _wa)
+    elif tok == 'ask':
+        if moves == 0:
+            quitf(_wa, 'ran out of moves')
+        moves -= 1
+        send_contestant_line(value - target)
+    else:
+        quitf(_wa, f'unknown action: {tok}')

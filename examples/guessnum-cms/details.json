@@ -1,0 +1,22 @@
+{
+    "title": "Guess Num",
+    "model_solution": "solution.py",
+    "validator": "validator.py",
+    "testscript": "testscript",
+    "generators": [
+        "gen_random.py"
+    ],
+    "other_programs": [
+        "formatter.py"
+    ],
+    "interactor": ["manager", "python3 {filename_base}"],
+    "judge_data_maker": "data_maker.py",
+
+    "time_limit": 2,
+    "statement": "statement.md",
+    "version": "0.2",
+    "comments": [
+        "The checker and data maker is not actually required to implement interaction;",
+        "they are just used here for convenience."
+    ]
+}
