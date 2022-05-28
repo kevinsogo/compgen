@@ -31,9 +31,9 @@ def is_tree(nodes, edges):
     edges = list(edges)
     return len(edges) == len(nodes) - 1 and is_connected(nodes, edges)
 
-def is_connected(nodes, edges, *, directed=False):
+def is_connected(nodes, edges):
     nodes = make_nodes(nodes)
-    return len(nodes) == len(bfs(nodes, edges, directed=directed))
+    return len(nodes) == len(bfs(nodes, edges, directed=False))
 
 def is_simple(nodes, edges, *, directed=False):
     nodes = make_nodes(nodes)
