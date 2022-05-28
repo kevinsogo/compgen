@@ -4,7 +4,7 @@ from setuptools import setup
 
 cmd_classes = {}
 try:
-    from setupext import janitor
+    from setupext_janitor import janitor
     cmd_classes['clean'] = janitor.CleanCommand
 except ImportError:
     import traceback
