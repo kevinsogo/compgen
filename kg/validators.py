@@ -169,7 +169,7 @@ class Bounds:
         return '{{Bounds:\n{}}}'.format(''.join(f'\t{a}: {getattr(self, a)}\n' for a in self._attrs))
 
 
-_int_re = re.compile(r'0|(?:-?[1-9]\d*)$')
+_int_re = re.compile(r'(?:0|-?[1-9]\d*)$')
 intchars = set('-' + digits)
 EOLN = '\n'
 
