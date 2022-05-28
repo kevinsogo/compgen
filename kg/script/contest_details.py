@@ -20,8 +20,10 @@ def get_lang(lang):
         lang.setdefault(key, value)
     return lang
 
-valid_contestcode = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$')
-valid_username = re.compile(r'^[A-Za-z0-9_-]+$')
+# We disallow single-character names because some contest systems do so.
+# But maybe we should allow it? I'm open for discussion. -Kevin
+valid_contestcode = re.compile(r'^[a-zA-Z][a-zA-Z0-9_-]*[a-zA-Z]\Z')
+valid_username = re.compile(r'^[A-Za-z0-9_-]+\Z')
 
 class ContestDetails(object):
     def __init__(self, details={}, source=None):
@@ -29,7 +31,7 @@ class ContestDetails(object):
         self.source = source
         self.relpath = os.path.dirname(os.path.abspath(source)) if source is not None else None
 
-        hms_re = re.compile(r'^(?P<h>\d+)\:(?P<m>\d\d)\:(?P<s>\d\d)$')
+        hms_re = re.compile(r'^(?P<h>\d+)\:(?P<m>\d\d)\:(?P<s>\d\d)\Z')
         def parse_duration(x):
             if isinstance(x, (int, float)):
                 return timedelta(seconds=x)

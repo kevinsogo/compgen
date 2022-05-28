@@ -298,7 +298,7 @@ class CMSFormat(Format):
                 os.path.join(loc, 'tests', '**.ans'),
             read=read, write=write, clear=clear, name='cms')
         self.subtasks = subtasks
-        testcode_re = re.compile(r'^(?P<pre>\d+)(?:_subs_(?:\d+_)+(?:end|))?\.in$')
+        testcode_re = re.compile(r'^(?P<pre>\d+)(?:_subs_(?:\d+_)+(?:end|))?\.in\Z')
         for inputf, ex in zip(natsorted(self.inputs), self.expected_parts()):
             match = testcode_re.match(os.path.basename(inputf))
             if not match or match.group('pre') != ex[0]:

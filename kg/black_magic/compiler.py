@@ -169,6 +169,7 @@ def compile_lines(lines, **context):
                 yield line
 
     if context['compress']:
+        # don't try this at home!
         enc = base64.b64encode(zlib.compress('\n'.join(get_lines()).encode('utf-8'), level=9))
         yield f"import base64,zlib;exec(zlib.decompress(base64.b64decode({enc!r})).decode('utf-8'))"
     else:

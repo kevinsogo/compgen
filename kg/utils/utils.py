@@ -49,7 +49,7 @@ t_inf = 10**18
 r_int = r'0|(?:-?[1-9]\d*)'
 r_sint = r'[+-](?:0|(?:[1-9]\d*))'
 
-t_patterns = [re.compile('^' + pat + '$') for pat in [
+t_patterns = [re.compile(rf'^{pat}\Z') for pat in [
     rf'(?P<start>{r_int})(?P<range>(?:\.\.)|-)(?P<end>{r_int})\((?P<step>{r_sint})\)',
     rf'(?P<start>{r_int})(?P<range>(?:\.\.)|-)(?P<end>{r_int})',
     rf'(?P<start>{r_int})(?P<range>\.\.)\((?P<step>{r_sint})\)',

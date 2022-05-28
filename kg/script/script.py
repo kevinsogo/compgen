@@ -1226,7 +1226,9 @@ init_p.add_argument('-m', '--minimal', action='store_true', help="Only put the e
 init_p.add_argument('-c', '--checker', action='store_true', help="Include a checker")
 init_p.add_argument('-tl', '--time-limit', type=int, default=2, help='Time limit.')
 
-valid_problemcode = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$')
+# We disallow single-character names because some contest systems do so.
+# But maybe we should allow it? I'm open for discussion. -Kevin
+valid_problemcode = re.compile(r'^[a-zA-Z][a-zA-Z0-9_-]*[a-zA-Z]\Z')
 
 @set_handler(init_p)
 def kg_init(format_, args):
