@@ -91,9 +91,12 @@ def _fix_timeout(kwargs):
     # be careful with timeout when the program creates subprocesses... the children processes are not killed,
     # so multiple slow (and potentially memory-consuming) programs could be running in the background!!
     kwargs.setdefault('timeout', float('inf'))
+
+    # cap the timeout to min(TL*4, TL+15) so it doesn't run that slowly
     if 'time_limit' in kwargs:
-        kwargs['timeout'] = min(kwargs['timeout'], kwargs['time_limit'] * 4)
+        kwargs['timeout'] = min(kwargs['timeout'], kwargs['time_limit'] * 4, kwargs['time_limit'] + 15)
         del kwargs['time_limit']
+
     if kwargs['timeout'] >= float('inf'):
         del kwargs['timeout']
 
