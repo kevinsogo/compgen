@@ -222,7 +222,7 @@ def strict_real(x, *args, max_places=None, places=None, negzero=False, dotlead=F
     dottrail: If True, then a trailing dot, like, "420.", is allowed. (default False)
     '''
     ### @@ }
-    if not _real_re.match(x) and x != '.':
+    if not (_real_re.match(x) and x != '.'):
         raise ValidationError(f"Expected real literal, got: {x!r}")
     if not negzero and _real_neg_zero_re.match(x):
         raise ValidationError(f"Real negative zero not allowed: {x!r}")
@@ -433,7 +433,12 @@ class StrictStream:
 
     @save_on_label
     def read_real(self, *a, **kw):
-        return strict_real(self.read_token(charset=realchars, _called="real", **kw), *map(self._get, a))
+        real_kw = {
+            k: kw.pop(k)
+            for k in ('max_places', 'places', 'negzero', 'dotlead', 'dottrail')
+            if k in kw
+        }
+        return strict_real(self.read_token(charset=realchars, _called="real", **kw), *map(self._get, a), **real_kw)
 
     def read_space(self): return self.read_char(' ')
     def read_eoln(self): return self.read_char(EOLN) # ubuntu only (I think).
