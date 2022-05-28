@@ -12,7 +12,7 @@ Intended for Ubuntu (and probably some other Unix-based systems) for now, althou
 
 # Setup
 
-- Run `bash setup.sh` as root or superuser (sudo), or `setup.bat` if you're using Windows. If it prints `DONE`, then it was successful. Make sure you have `python3` and `pip3`.  
+- Run `bash setup.sh`, or `setup.bat` if you're using Windows. If it prints `DONE`, then it was successful. Make sure you have `python3` and `pip3`.  
 
     *Note:* Among other things, it installs a bunch of python packages (via `setuptools`). Feel free to modify `setup.sh` if you don't want to install globally, e.g., if you want to use virtualenv or something. 
 
