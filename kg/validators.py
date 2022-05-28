@@ -1,5 +1,5 @@
 import argparse
-from collections import deque
+from collections import deque, namedtuple
 from decimal import Decimal
 from functools import wraps
 from io import StringIO
@@ -169,12 +169,14 @@ class Bounds:
         return '{{Bounds:\n{}}}'.format(''.join(f'\t{a}: {getattr(self, a)}\n' for a in self._attrs))
 
 
-_int_re = re.compile(r'(?:0|-?[1-9]\d*)$')
-intchars = set('-' + digits)
+_int_re = re.compile(r'^(?:0|-?[1-9]\d*)\Z')
+intchars = {'-', *digits}
 EOLN = '\n'
 
-def strict_int(x, *args): ### @@ if False {
+def strict_int(x, *args, as_str=False): ### @@ if False {
     ''' Check if the string x is a valid integer token, and that it satisfies certain constraints.
+
+    as_str: if True, return the string as is, rather than parsing. (default False)
 
     Sample usage:
     strict_int(x) # just checks if the token is a valid integer.
@@ -183,19 +185,32 @@ def strict_int(x, *args): ### @@ if False {
     strict_int(x, interval) # check if  is in the Interval 'interval'
     '''
     ### @@ }
+    
+    # validate
     if not _int_re.match(x):
-        raise ValidationError(f"Expected integer literal, got: {x!r}")
-    if args == ['str']: return x
+        raise ValidationError(f"Expected integer literal, got {x!r}")
+    
+    # allow to return as string
+    if [*args] == ['str']:
+        print("Warning: passing 'str' is deprecated. Use as_str=True instead.", file=stderr)
+        as_str = True
+        args = []
+    if as_str:
+        if args:
+            raise ValidationError("Additional arguments not allowed if as_str is True")
+        return x
+    
+    # parse and check range
     x = int(x)
     _check_range(x, *args, type="Integer")
     return x
+
 
 def _check_range(x, *args, type="Number"):
     if len(args) == 2:
         l, r = args
         if not (l <= x <= r): raise ValidationError(f"{type} {x} not in [{l}, {r}]")
     elif len(args) == 1:
-        if args[0] == 'str': return x
         r, = args
         if isinstance(r, Var):
             if x not in r: raise ValidationError(f"{type} {x} not in {r}")
@@ -207,42 +222,81 @@ def _check_range(x, *args, type="Number"):
         raise ValidationError(f"Invalid arguments for range check: {args}")
     return x
 
-_real_re = re.compile(r'-?(?:0?|(?:[1-9]\d*))(?:\.\d*)?$')
-_real_neg_zero_re = re.compile(r'-0(?:\.0*)')
-realchars = intchars | {'.'}
 
-def strict_real(x, *args, max_places=None, places=None, negzero=False, dotlead=False, dottrail=False): ### @@ if False {
-    ''' Check if the string x is a valid real token, and that it satisfies certain constraints.
+_real_re = re.compile(r'^(?P<sign>[+-]?)(?P<int>0?|(?:[1-9]\d*))(?:(?P<dot>\.)(?P<frac>\d*))?\Z')
+realchars = intchars | {'+', '-', '.'}
+
+_StrictRealData = namedtuple('_StrictRealData', ['sign', 'dot', 'neg_zero', 'dot_lead', 'dot_trail', 'places'])
+def _strict_real_data(x):
+    match = _real_re.match(x)
+    if match is None: return None
+
+    sign, int_, dot, frac = map(match.group, ('sign', 'int', 'dot', 'frac'))
+
+    # must have at least one digit
+    if not (int_ or frac): return None
+
+    return _StrictRealData(
+        sign=sign,
+        dot=dot,
+        neg_zero=sign == '-' and not int_.strip('0') and not frac.strip('0'),
+        dot_lead=dot and not int_,
+        dot_trail=dot and not frac,
+        places=len(frac) if frac else 0,
+    )
+
+
+def strict_real(x, *args, as_str=False, max_places=None, places=None, require_dot=False, allow_plus=False,
+        allow_neg_zero=False, allow_dot_lead=False, allow_dot_trail=False): ### @@ if False {
+    '''Check if the string x is a valid real token, and that it satisfies certain constraints.
 
     It receives the same arguments as strict_int, and also receives the following in addition:
 
     places: If it is an integer, then x must have exactly 'places' after the decimal point.
-    negzero: If True, then "negative zero", like, -0.0000, is allowed. (default False)
-    dotlead: If True, then a leading dot, like, ".420", is allowed. (default False)
-    dottrail: If True, then a trailing dot, like, "420.", is allowed. (default False)
+    as_str: if True, return the string as is, rather than parsing. (default False)
+    require_dot: If True, then the '.' character has to appear. (default False)
+    allow_plus: If True, then the '+' sign is allowed. (default False)
+    allow_neg_zero: If True, then "negative zero", like, -0.0000, is allowed. (default False)
+    allow_dot_lead: If True, then a leading dot, like, ".420", is allowed. (default False)
+    allow_dot_trail: If True, then a trailing dot, like, "420.", is allowed. (default False)
     '''
     ### @@ }
-    if not (_real_re.match(x) and x != '.'):
-        raise ValidationError(f"Expected real literal, got: {x!r}")
-    if not negzero and _real_neg_zero_re.match(x):
-        raise ValidationError(f"Real negative zero not allowed: {x!r}")
-    if not dotlead and x.startswith('.'):
-        raise ValidationError(f"Real with leading dot not allowed.")
-    if not dottrail and x.endswith('.'):
-        raise ValidationError(f"Real with trailing dot not allowed.")
 
-    pl = len(x) - 1 - x.find('.')
-    if max_places is not None:
-        if pl > max_places: raise ValidationError(f"Decimal place count of {x} exceeds {max_places}")
-
+    # validate
+    data = _strict_real_data(x)
+    if not data:
+        raise ValidationError(f"Expected real literal, got {x!r}")
+    if require_dot and not data.dot:
+        raise ValidationError(f"Dot required, got {x!r}")
+    if not allow_plus and data.sign == '+':
+        raise ValidationError(f"Plus sign not allowed, got {x!r}")
+    if not allow_neg_zero and data.neg_zero:
+        raise ValidationError(f"Real negative zero not allowed, got {x!r}")
+    if not allow_dot_lead and data.dot_lead:
+        raise ValidationError(f"Real with leading dot not allowed, got {x!r}")
+    if not allow_dot_trail and data.dot_trail:
+        raise ValidationError(f"Real with trailing dot not allowed, got {x!r}")
+    if max_places is not None and data.places > max_places:
+        raise ValidationError(f"Decimal place count of {x!r} (={data.places}) exceeds {max_places}")
     if places is not None:
-        pl = len(x) - 1 - x.index('.')
         if isinstance(places, Var):
-            if pl not in Var: raise ValidationError(f"Decimal place count of {x} not in {places}")
+            if data.places not in Var:
+                raise ValidationError(f"Decimal place count of {x!r} (={data.places}) not in {places}")
         else:
-            if pl != places: raise ValidationError(f"Decimal place count of {x} not equal to {places}")
+            if data.places != places:
+                raise ValidationError(f"Decimal place count of {x!r} (={data.places}) not equal to {places}")
 
-    if args == ['str']: return x
+    # allow to return as string
+    if [*args] == ['str']:
+        print("Warning: passing 'str' is deprecated. Use as_str=True instead.", file=stderr)
+        as_str = True
+        args = []
+    if as_str:
+        if args:
+            raise ValidationError("Additional arguments not allowed if as_str is True")
+        return x
+
+    # parse and validate
     x = Decimal(x)
     _check_range(x, *args, type="Real")
     return x
@@ -428,17 +482,33 @@ class StrictStream:
     def read_reals(self, *a, **kw): return self.do_multiple(self.read_real, *a, **kw)
 
     @save_on_label
-    def read_int(self, *a, **kw):
-        return strict_int(self.read_token(charset=intchars, _called="int", **kw), *map(self._get, a))
+    def read_int(self, *args, **kwargs):
+        int_kwargs = {
+            kw: kwargs.pop(kw)
+            for kw in ('as_str',)
+            if kw in kwargs
+        }
+        return strict_int(
+            self.read_token(charset=intchars, _called="int", **kwargs),
+            *map(self._get, args),
+            **int_kwargs,
+        )
 
     @save_on_label
-    def read_real(self, *a, **kw):
-        real_kw = {
-            k: kw.pop(k)
-            for k in ('max_places', 'places', 'negzero', 'dotlead', 'dottrail')
-            if k in kw
+    def read_real(self, *args, **kwargs):
+        real_kwargs = {
+            kw: kwargs.pop(kw)
+            for kw in (
+                'as_str', 'max_places', 'places', 'require_dot', 'allow_plus',
+                'allow_neg_zero', 'allow_dot_lead', 'allow_dot_trail',
+            )
+            if kw in kwargs
         }
-        return strict_real(self.read_token(charset=realchars, _called="real", **kw), *map(self._get, a), **real_kw)
+        return strict_real(
+            self.read_token(charset=realchars, _called="real", **kwargs),
+            *map(self._get, args),
+            **real_kwargs,
+        )
 
     def read_space(self): return self.read_char(' ')
     def read_eoln(self): return self.read_char(EOLN) # ubuntu only (I think).
@@ -606,3 +676,4 @@ def validate_or_detect_subtasks(validate, subtasks, file=stdin, outfile=stdout, 
         print(*detect_subtasks(validate, file, subtasks), file=outfile)
     else:
         validate(file, *args, subtask=subtask, **kwargs)
+

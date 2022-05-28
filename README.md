@@ -289,6 +289,8 @@ Feel free to include/exclude other files depending on your needs.
 
 - Feel free to request features/changes/improvements you'd like to see.
 
+- To run tests, run `python3 -m unittest`.
+
 - [See this list.](TODOS.md) Looking forward to your merge request!
 
 
