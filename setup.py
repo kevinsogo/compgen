@@ -24,7 +24,7 @@ setup(name='KompGen',
               'kg-polygon = kg:main_pg',
               'kg-hr = kg:main_hr',
               'kg-hackerrank = kg:main_hr',
-              'kg-aux = kg.script.auxillary:main',
+              'kg-aux = kg.script.auxilliary:main',
           ],
       },
       packages=[
