@@ -99,11 +99,14 @@ Now, we can begin writing those files!
 This just takes a test case (in a Python representation of your choosing) and prints it to a file in the correct input format. Save it on a file on its own, say `formatter.py`, so you can import it later.
 
 ```python
-def print_to_file(file, cases):
-    print(len(cases), file=file)
+from kg.formatters import * ### @import
+
+@formatter
+def print_to_file(file, cases, *, print):
+    print(len(cases))
     for arr in cases:
-        print(len(arr), file=file)
-        print(*arr, file=file)
+        print(len(arr))
+        print(*arr)
 ```
 
 This is not strictly required&mdash;indeed, you may remove it altogether from `details.json`&mdash;but is recommended anyway since it is good practice. For example, it makes it easier if you want to change the input/output format; you don't have to update all generators.

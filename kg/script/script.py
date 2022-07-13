@@ -1213,12 +1213,15 @@ init_p = subparsers.add_parser('init',
                 
                 Include a checker in the prepopulated files.
                 $ [*[kg init my-problem --checker]*]
+                
+                Include an interactor in the prepopulated files.
+                $ [*[kg init my-problem --interactor]*]
 
                 Set the time limit to 7sec. Can be changed later (in details.json)
                 $ [*[kg init my-problem --time-limit 7]*]
 
                 You can also combine options, e.g.,
-                $ [*[kg init my-problem --subtasks 5 --minimal --checker -tl 7 -t "My Cool Problem"]*]
+                $ [*[kg init my-problem --subtasks 5 --minimal --checker --interactor -tl 7 -t "My Cool Problem"]*]
         ''')))
 
 init_p.add_argument('problemcode', help='Problem code. Must not contain special characters.')
@@ -1226,7 +1229,8 @@ init_p.add_argument('-l', '--loc', default='.', help='where to make the problem'
 init_p.add_argument('-t', '--title', help='Problem title. (Default is generated from problemcode)')
 init_p.add_argument('-s', '--subtasks', type=int, default=0, help='Number of subtasks. (0 if binary)')
 init_p.add_argument('-m', '--minimal', action='store_true', help="Only put the essentials.")
-init_p.add_argument('-c', '--checker', action='store_true', help="Include a checker")
+init_p.add_argument('-c', '--checker', action='store_true', help="Include a checker.")
+init_p.add_argument('-i', '--interactor', action='store_true', help="Include an interactor.")
 init_p.add_argument('-tl', '--time-limit', type=int, default=2, help='Time limit.')
 
 # We disallow single-character names because some contest systems do so.
@@ -1261,6 +1265,7 @@ def kg_init(format_, args):
         'problem_title': args.title or ' '.join(re.split(r'[-_. ]+', prob)).title().strip(),
         'minimal': args.minimal,
         'checker': args.checker,
+        'interactor': args.interactor,
         'subtasks': args.subtasks,
         # Jinja's tojson doesn't seem to honor dict order, so let's just use json.dumps
         "subtask_list": [OrderedDict(id=index, score=10) for index in range(1, args.subtasks + 1)],

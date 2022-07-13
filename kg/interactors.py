@@ -82,9 +82,10 @@ class TextIOPair(io.TextIOBase):
     def newlines(self):
         return self.writer.newlines
 
-    def print(self, *args):
+    def print(self, *args, **kwargs):
         kwargs.setdefault('file', self.writer)
-        return print(*args)
+        kwargs.setdefault('flush', True)
+        return print(*args, **kwargs)
 
     def input(self):
         return self.readline().removesuffix('\n')

@@ -13,6 +13,7 @@
     "valid_subtasks": {{ subtask_list_json | indent }},
     "subtasks_files": "subtasks.json",
     {% endif %}{% if checker %}"checker": "checker.py",
+    {% endif %}{% if interactor %}"interactor": "interactor.py",
     {% endif %}{% if not minimal %}"statement": "statement.md",
     {% endif %}
     {% if not minimal %}"comments": [

@@ -1,0 +1,26 @@
+{% if interactor %}from kg.interactors import * ### @import
+
+@interactor
+def interact(input_file, user, {% if not minimal %}output_file=None, {% endif %}**kwargs):
+    ... # write your interactor here
+{% if not minimal %}
+    # 'input_file' is a readable file-like object
+    # 'output_file' is a writable file-like object
+    # 'user' is a readable and writable file-like object
+    # read from 'user' to get data sent by the user (e.g., via user.readline())
+    # write to 'user' to send data to the user (e.g., via user.print(...))
+
+    # Raise this if the answer is incorrect
+    # raise Wrong("The contestant's output is incorrect!")
+    
+    # Raise this if the judge data is incorrect, or if the interaction fails for some reason other than 'Wrong'
+    # Any other exception type raised will be considered equivalent to Fail.
+    # Any 'Fail' verdict must be investigated since it indicates a problem with the checker/interactor/test data/etc.
+    # raise Fail("The judge data is incorrect. Fix it!")
+
+    # the return value is the score, and must be a value between 0.0 and 1.0
+{% endif %}
+    return 1.0 
+
+if __name__ == '__main__': interact()
+{% endif %}
