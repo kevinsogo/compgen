@@ -1,4 +1,5 @@
 from collections import defaultdict
+from glob import glob
 from io import StringIO
 from subprocess import PIPE
 from sys import stdin, stderr
@@ -6,6 +7,7 @@ from textwrap import dedent
 import argparse
 import json
 import os
+import tempfile
 
 from .programs import get_python3_command, Program
 from .utils import *
@@ -93,6 +95,22 @@ def kgutil_noop(args):
     ...
 
 
+
+
+
+cleartemps_p = subparsers.add_parser('clear-temp-files',
+               help='Clear all kg temp files (files in the tempfile directory prefixed with "kg_tmp_")',
+        description='Clear all kg temp files (files in the tempfile directory prefixed with "kg_tmp_").')
+
+@set_handler(cleartemps_p)
+def kgutil_cleartemps(args):
+    temp_file_pat = os.path.join(tempfile.gettempdir(), 'kg_tmp_*')
+    print(f"Removing files in: {temp_file_pat!r}", file=stderr)
+    ct = 0
+    for filename in glob(temp_file_pat):
+        os.remove(filename)
+        ct += 1
+    print(f"Removed {ct} files", file=stderr)
 
 
 
