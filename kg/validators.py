@@ -622,7 +622,7 @@ def _add_label(kw, label):
     return kw
 
 
-def validator(*, suppress_eof_warning=False, bounds=None, subtasks=None):
+def validator(f=None, *, suppress_eof_warning=False, bounds=None, subtasks=None):
     def _validator(f):
         @wraps(f)
         def new_f(file, *args, **kwargs):
@@ -646,7 +646,7 @@ def validator(*, suppress_eof_warning=False, bounds=None, subtasks=None):
             ### @@ }
             return res
         return new_f
-    return _validator
+    return _validator(f) if f is not None else _validator
 
 def detect_subtasks(validate, file, subtasks):
     s = file.read()
@@ -658,8 +658,9 @@ def detect_subtasks(validate, file, subtasks):
         else:
             yield subtask
 
-def validate_or_detect_subtasks(validate, subtasks, file=stdin, outfile=stdout, *args, **kwargs):
-    parser = argparse.ArgumentParser(description="A validator for the problem")
+def validate_or_detect_subtasks(validate, subtasks, file=stdin, outfile=stdout, *args, title='', **kwargs):
+    desc = CURR_PLATFORM + ' validator for the problem' + (f' "{title}"' if title else '')
+    parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('subtask', nargs='?', help='which subtask to check the file against')
     parser.add_argument('--detect-subtasks', '-d', action='store_true', help='detect subtasks instead')
     pargs, unknown = parser.parse_known_args()
@@ -669,6 +670,7 @@ def validate_or_detect_subtasks(validate, subtasks, file=stdin, outfile=stdout, 
     # suppress error messages when uploaded to Polygon
     if subtask is not None and subtask not in subtasks:
         # we need to allow invalid subtasks because Polygon passes some arguments to the validator
+        # TODO actually learn the arguments that Polygon actually passes
         raise ValidationError("Invalid subtask name.")
     ### @@ }
 

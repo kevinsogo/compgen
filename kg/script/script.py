@@ -530,13 +530,13 @@ def generate_outputs(format_, data_maker, *, model_solution=None, judge=None, in
         print(info_text('WRITING', input_, '-->'), key_text(output_))
         try:
             if data_maker.attributes.get('interacts') and interactor:
-                results = data_maker.do_interact(interactor, time=True, check=True,
+                results = data_maker.do_interact(interactor, time=True, label='DATA_MAKER', check=True,
                         interactor_args=[input_, output_],
-                        interactor_kwargs=dict(time=True, check=True),
+                        interactor_kwargs=dict(time=True, label='INTERACTOR', check=True),
                     )
             else:
                 with open(input_) as inp, open(output_, 'w') as outp:
-                    data_maker.do_run(stdin=inp, stdout=outp, time=True, check=True)
+                    data_maker.do_run(stdin=inp, stdout=outp, time=True, label='DATA_MAKER', check=True)
         except InteractorException as ie:
             err_print(f"The interactor raised an error with the {data_maker_name} for {input_}", file=stderr)
             raise CommandError(f"The interactor raised an error with the {data_maker_name} for {input_}") from ie
@@ -554,13 +554,14 @@ def generate_outputs(format_, data_maker, *, model_solution=None, judge=None, in
                         info_print(f"Running model solution on {input_}")
                         try:
                             if interactor:
-                                results = model_solution.do_interact(interactor, time=True, check=True,
+                                results = model_solution.do_interact(interactor,
+                                        time=True, label='MODEL_SOLUTION', check=True,
                                         interactor_args=[input_, tmp.name],
-                                        interactor_kwargs=dict(time=True, check=True),
+                                        interactor_kwargs=dict(time=True, label='INTERACTOR', check=True),
                                     )
                             else:
                                 with open(input_) as inp:
-                                    model_solution.do_run(stdin=inp, stdout=tmp, time=True, check=True)
+                                    model_solution.do_run(stdin=inp, stdout=tmp, time=True, label='MODEL_SOLUTION', check=True)
                         except InteractorException as ie:
                             err_print(f"The interactor raised an error with the model_solution for {input_}", file=stderr)
                             raise CommandError(f"The interactor raised an error with the model_solution for {input_}") from ie
@@ -570,7 +571,7 @@ def generate_outputs(format_, data_maker, *, model_solution=None, judge=None, in
                         yield tmp.name
             with model_output() as model_out:
                 try:
-                    judge.do_run(*map(os.path.abspath, (input_, model_out, output_)), check=True)
+                    judge.do_run(*map(os.path.abspath, (input_, model_out, output_)), check=True, time=True, label='CHECKER')
                 except CalledProcessError as cpe:
                     err_print(f"The judge did not accept {output_}", file=stderr)
                     raise CommandError(f"The judge did not accept {output_}") from cpe
@@ -702,7 +703,7 @@ def kg_test(format_, args):
                     try:
                         if interactor:
                             solution_res, interactor_res = solution.do_interact(interactor,
-                                    time=True, check=True,
+                                    time=True, label='SOLUTION', check=True,
                                     interactor_args=(input_, tmp.name),
                                     interactor_kwargs=dict(check=False),
                                     time_limit=time_limit,
@@ -713,6 +714,7 @@ def kg_test(format_, args):
                                         stdin=inp,
                                         stdout=tmp,
                                         time=True,
+                                        label='SOLUTION',
                                         check=True,
                                         time_limit=time_limit,
                                     )
@@ -734,7 +736,7 @@ def kg_test(format_, args):
                     def run_judge():
                         jargs = list(map(os.path.abspath, (input_, tmp.name, output_)))
                         if not judge_strict_args:
-                            jargs += [result_tmp.name, '-c', solution.filename, '-t', str(index), '-v']
+                            jargs += [result_tmp.name, '-C', solution.filename, '-t', str(index), '-v']
                         return judge.do_run(*jargs, check=False).returncode
 
                     info_print("Checking the output...")
@@ -991,7 +993,7 @@ def kg_run(format_, args):
         with open(input_) as inp:
             info_print('RUNNING FOR', input_, file=stderr)
             try:
-                solution.do_run(stdin=inp, time=True, check=True)
+                solution.do_run(stdin=inp, time=True, label='PROGRAM', check=True)
             except CalledProcessError:
                 err_print('The program issued a runtime error...', file=stderr)
 

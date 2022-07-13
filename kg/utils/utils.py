@@ -1,5 +1,5 @@
-from functools import wraps, reduce
-import os.path
+import functools
+import os
 import re
 
 def noop(*args, **kwargs): ...
@@ -25,7 +25,7 @@ def ensure(condition, message="ensure condition failed. (see Traceback to determ
 def apply_after(g, name=None):
     ''' Make a decorator that applies "g" to the return value of a function. '''
     def dec(f):
-        @wraps(f)
+        @functools.wraps(f)
         def new_f(*args, **kwargs):
             return g(f(*args, **kwargs))
         return new_f
@@ -37,7 +37,7 @@ listify = apply_after(list, 'listify')
 
 def memoize(function):
     memo = {}
-    @wraps(function)
+    @functools.wraps(function)
     def f(*args, **kwargs):
         key = args, tuple(sorted(kwargs.items()))
         if key not in memo: memo[key] = function(*args, **kwargs)
@@ -134,7 +134,7 @@ def compress_t_sequence(s, *, inf=t_inf):
             step_str = '' if step == 1 else f'({step_sgn}{abs(step)})'
             range_ = '..' if end == '' else '-'
             return f'{start}{range_}{end}{step_str}'
-    return ','.join(encode(*t) for t in reduce(merge_ranges, ([decode(r)] for r in s.split(','))))
+    return ','.join(encode(*t) for t in functools.reduce(merge_ranges, ([decode(r)] for r in s.split(','))))
 
 
 def file_sequence(s):
@@ -148,6 +148,21 @@ def overflow_ell(s, ct):
     assert ct >= 3
     s = str(s)
     return s if len(s) <= ct else s[:ct-3] + '...'
+
+
+
+def default_return(ret):
+    def _default_return(f):
+        @functools.wraps(f)
+        def new_f(*args, **kwargs):
+            res = f(*args, **kwargs)
+            return res if res is not None else ret
+        return new_f
+    return _default_return
+
+default_score = default_return(1.0)
+
+
 
 ### @@ if False {
 if __name__ == '__main__':

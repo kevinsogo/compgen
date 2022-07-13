@@ -1,6 +1,7 @@
-from io import StringIO
-from random import Random
-from sys import stderr
+import functools
+import io
+import random
+import sys
 
 from .utils import * ### @import
 
@@ -19,7 +20,7 @@ def group_into(v, seq):
     if buf: yield buf
 
 
-class KGRandom(Random):
+class KGRandom(random.Random):
     def shuffled(self, x):
         x = list(x)
         self.shuffle(x)
@@ -140,9 +141,9 @@ def _chash_seq(seq, *, _pmod=_pmod, _pbase=_pbase, _xmod=_xmod, _xor=_xor):
 
 def _write_with_validate(print_to_file, file, case, *, validate=None):
     if validate is not None:
-        tfile = StringIO()
+        tfile = io.StringIO()
         print_to_file(tfile, case)
-        validate(StringIO(tfile.getvalue())) # TODO can one read AND write on the same StringIO file?
+        validate(io.StringIO(tfile.getvalue())) # TODO can one read AND write on the same StringIO file?
         file.write(tfile.getvalue())
     else:
         print_to_file(file, case)
@@ -164,7 +165,7 @@ class DistribCase:
         def mnew_case(*fwd_args, **info):
             def _mnew_case(f):
                 nrand_seed = rand.getrandbits(64) ^ 0xC0BFEFE
-                @wraps(f)
+                @functools.wraps(f)
                 def new_f(): # now new_f is deterministic
                     return f(KGRandom(nrand_seed), *fwd_args)
                 casemakers.append(new_f)
@@ -179,7 +180,7 @@ class DistribCase:
         def dnew_case(*fwd_args, **info):
             def _dnew_case(f):
                 nrand_seed = rand.getrandbits(64) ^ 0xC0BFEFE
-                @wraps(f)
+                @functools.wraps(f)
                 def new_f(): # now new_f is deterministic
                     return f(KGRandom(nrand_seed), *fwd_args)
                 for name, value in info.items(): # forward any info
@@ -197,7 +198,7 @@ class DistribCase:
     def __getitem__(self, index):
         def get(rand, *args):
             groups = self.lazy(rand, *args)
-            print(f"GENERATING index {index} OUT OF {len(groups)}", file=stderr) ### @if False
+            print(f"GENERATING index {index} OUT OF {len(groups)}", file=sys.stderr) ### @if False
             if not (0 <= index < len(groups)): raise GeneratorError(f"Invalid index: {index} out of {len(groups)} groups")
             return self.realize(groups[index])
         return get
@@ -252,8 +253,8 @@ def write_to_files(print_to_file, make, filenames, *args, validate=None):
             filename = next(filenames)
         except StopIteration as st:
             raise GeneratorError(f"Not enough files! Need more than {index}") from st
-        print("GENERATOR Writing to", filename, file=stderr) ### @if False
+        print("GENERATOR Writing to", filename, file=sys.stderr) ### @if False
         with open(filename, 'w') as file:
             _write_with_validate(print_to_file, file, case, validate=validate) # TODO ensure this does not exit(42)
         filecount += 1
-    print("GENERATED", filecount, "FILES", file=stderr) ### @if False
+    print("GENERATED", filecount, "FILES", file=sys.stderr) ### @if False

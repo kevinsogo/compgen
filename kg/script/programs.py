@@ -151,13 +151,13 @@ class Program:
         self.compiled = True
         return self
 
-    def get_runner_process(self, *args, time=False, time_name=None, **kwargs):
+    def get_runner_process(self, *args, **kwargs):
         if not self.compiled: raise ExtProgramError("Compile the program first")
         command = self.run + list(args)
         kwargs.setdefault('cwd', self.relpath)
         return subprocess.Popen(command, **kwargs)
 
-    def do_run(self, *args, time=False, time_name=None, **kwargs):
+    def do_run(self, *args, time=False, label=None, **kwargs):
         if not self.compiled: raise ExtProgramError("Compile the program first")
         command = self.run + list(args)
         kwargs.setdefault('cwd', self.relpath)
@@ -170,9 +170,9 @@ class Program:
         finally:
             if time:
                 self.last_running_time = elapsed = timel.time() - start_time
-                info_print(f'{time_name or ""}. ELAPSED TIME: {elapsed:.2f}sec', file=stderr)
+                info_print(f'{label or "":>18} elapsed time: {elapsed:.2f}sec', file=stderr)
 
-    def _do_run_process(self, process, *, time=False, check=False, timeout=None):
+    def _do_run_process(self, process, *, time=False, label=None, check=False, timeout=None):
         if time:
             start_time = timel.time()
         with process as proc:  # just to be safe; maybe in the future, Popen.__enter__ might return something else
@@ -184,7 +184,7 @@ class Program:
             finally:
                 if time:
                     self.last_running_time = elapsed = timel.time() - start_time
-                    info_print(f'. ELAPSED TIME: {elapsed:.2f}sec', file=stderr)
+                    info_print(f'{label or "":>18} elapsed time: {elapsed:.2f}sec', file=stderr)
             retcode = proc.poll()
 
             if check and retcode:
@@ -193,7 +193,7 @@ class Program:
         return subprocess.CompletedProcess(proc.args, None, None, retcode)
 
 
-    def do_interact(self, interactor, *args, time=False, check=False,
+    def do_interact(self, interactor, *args, time=False, label=None, check=False,
                     interactor_args=(), interactor_kwargs=None,  **kwargs):
         if not interactor:
             raise ExtProgramError("No interactor passed")
@@ -207,12 +207,11 @@ class Program:
         # pass it to when we run it.
         timeout = kwargs.pop('timeout', None)
 
-        process = self.get_runner_process(*args,
-                time=time, stdin=subprocess.PIPE, stdout=subprocess.PIPE, **kwargs)
+        process = self.get_runner_process(*args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, **kwargs)
 
         # connect them
         if not interactor_kwargs: interactor_kwargs = {}
-        interactor_kwargs.setdefault('time_name', 'INTERACTOR')
+        interactor_kwargs.setdefault('label', 'INTERACTOR')
         interactor_kwargs['stdin'] = process.stdout
         interactor_kwargs['stdout'] = process.stdin
 
@@ -220,7 +219,7 @@ class Program:
         interactor_run = attach_results()(interactor.do_run)
         interactor_thread = Thread(target=interactor_run, args=interactor_args, kwargs=interactor_kwargs)
         interactor_thread.start()
-        result = self._do_run_process(process, time=time, check=check, timeout=timeout)
+        result = self._do_run_process(process, time=time, label=label, check=check, timeout=timeout)
         interactor_thread.join()
 
         # too much monkeying around!! help. also, think about thread safety...

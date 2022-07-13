@@ -1,13 +1,17 @@
-from contextlib import ExitStack
-from enum import Enum
-from sys import stdin, stdout, stderr
-import os.path
-import itertools, functools, argparse, traceback
+import argparse
+import contextlib
+import enum
+import functools
+import itertools
+import os
+import sys
+import traceback
 
 from .utils import * ### @import
 
 CURR_PLATFORM = 'local' ### @replace 'local', format
 
+# TODO should be in utils (though '_' makes things unimportable, so rename)
 def _merge_dicts(d, *others):
     d = d.copy()
     for o in others:
@@ -19,9 +23,10 @@ def _merge_dicts(d, *others):
 
 class CheckerError(Exception): ...
 class ParseError(CheckerError): ...
-class WA(CheckerError): ...
+class Wrong(CheckerError): ...
 class Fail(CheckerError): ...
 
+WA = Wrong # TODO add deprecation notice when WA() is called
 
 class Verdict:
     AC = "Success"
@@ -86,7 +91,14 @@ class ChkStream:
 
 
 # an enum of accepted _Set names
-_SetName = Enum('_SetName', ['get_one_input', 'get_output_for_input', 'get_judge_data_for_input', 'problem_title', 'aggregate', 'iterator'])
+_SetName = enum.Enum('_SetName', [
+    'get_one_input',
+    'get_output_for_input',
+    'get_judge_data_for_input',
+    'problem_title',
+    'aggregate',
+    'iterator',
+])
 
 class Checker:
     def __init__(self):
@@ -98,7 +110,7 @@ class Checker:
             ''' print a warning when the alias is used instead of the correct one. '''
             @functools.wraps(f)
             def warn_f(*args, **kwargs):
-                print(f'Deprecation warning: Please use {correct} instead of {wrong}', file=stderr) ### @if False
+                print(f'Deprecation warning: Please use {correct} instead of {wrong}', file=sys.stderr) ### @if False
                 return f(*args, **kwargs)
             # just return 'f' if we're not printing the warning anyway ### @if False
             return warn_f ### @replace 'warn_f', 'f'
@@ -114,13 +126,9 @@ class Checker:
         self._vals[sn] = value
         return value
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, platform=CURR_PLATFORM, **kwargs):
         ...
-        return self.run(CURR_PLATFORM, *args, **kwargs) ### @if format != 'hr'
-
-    def run(self, platform, *args, **kwargs):
-        _actual = _platforms.get(platform)
-        if _actual: return _actual(self.checker, *args, **kwargs)
+        return _platform_checkers[platform](self.checker, *args, **kwargs) ### @if format != 'hr'
 
     def set_checker(self, *args, **kwargs):
         sdata = args
@@ -137,12 +145,12 @@ class Checker:
         def _set_checker(checker):
             def _checker(inp, outp, judgep, *args, **kwargs):
                 inp = ChkStream(inp, intype)
-                outp = ChkStream(outp, outtype, exc=WA)
+                outp = ChkStream(outp, outtype, exc=Wrong)
                 judgep = ChkStream(judgep, judgetype)
                 result = checker(inp, outp, judgep, *args, **kwargs)
                 if no_extra:
                     if 'input' in no_extra and inp.has_next(): raise Fail(extra_msg("input file!"))
-                    if 'output' in no_extra and outp.has_next(): raise WA(extra_msg("output file."))
+                    if 'output' in no_extra and outp.has_next(): raise Wrong(extra_msg("output file."))
                     if 'judge' in no_extra and judgep.has_next(): raise Fail(extra_msg("judge file!"))
                 return result
             self.checker = _checker
@@ -211,7 +219,7 @@ class Checker:
         return aggregate(iterator(It))
 
 
-def _check_generic(checker, input=None, output=None, judge=None, **kwargs):
+def _check_generic(check, input=None, output=None, judge=None, **kwargs):
     ### @@if format == 'pc2' {
     if CURR_PLATFORM == 'pc2' and os.path.isfile('EXITCODE.TXT'): # WTH undocumented shit PC^2 !?!?
         return Verdict.RTE, 0.0, "The solution didn't return a 0 exit code (maybe... because EXITCODE.TXT exists)."
@@ -222,26 +230,27 @@ def _check_generic(checker, input=None, output=None, judge=None, **kwargs):
             return verdict, getattr(exc, 'score', 0.0), ""
     else:
         def handle_exc_verdict(exc, verdict):
-            if kwargs.get('verbose'): traceback.print_exc()
+            if kwargs.get('verbose'): traceback.print_exc(limit=None) ### @replace None, -1
             return verdict, getattr(exc, 'score', 0.0), str(exc)
 
     files = []
     for name, file in [('input', input), ('output', output), ('judge', judge)]:
         to_open = isinstance(file, str)
-        kwargs[f'{name}_path'], file = (file, open(file)) if to_open else file
+        kwargs[f'{name}_path'], file = (file, open(file)) if to_open else (file or (None, None))
         files.append((file, to_open))
 
-    with ExitStack() as stack:
+    with contextlib.ExitStack() as stack:
         input_file, output_file, judge_file = [
                 stack.enter_context(file) if to_open else file
                 for file, to_open in files]
         try:
-            score = checker(input_file, output_file, judge_file, **kwargs)
-            if not (0.0 <= score <= 1.0): return Verdict.FAIL, 0.0, f"The checker returned an invalid score: {score!r}"
+            score = check(input_file, output_file, judge_file, **kwargs)
+            if not (0.0 <= score <= 1.0):
+                raise CheckerError(f"The checker returned an invalid score: {score!r}")
             return Verdict.AC, score, ""
         except ParseError as exc:
             return handle_exc_verdict(exc, Verdict.PAE)
-        except WA as exc:
+        except Wrong as exc:
             return handle_exc_verdict(exc, Verdict.WA)
         except Fail as exc:
             return handle_exc_verdict(exc, Verdict.FAIL)
@@ -249,11 +258,12 @@ def _check_generic(checker, input=None, output=None, judge=None, **kwargs):
             return handle_exc_verdict(exc, Verdict.EXC)
 
 
-_platforms = {}
-def _register_platform(name):
+
+_platform_checkers = {}
+def _register_platform_checker(name):
     def reg(f):
-        assert name not in _platforms, f"{name} registered twice!"
-        _platforms[name] = f
+        assert name not in _platform_checkers, f"{name} registered twice!"
+        _platform_checkers[name] = f
         return f
     return reg
 
@@ -270,15 +280,15 @@ _hr_verdict_name = {
 }
 
 ### @@if format == 'hr' {
-@_register_platform('hr')
-def _check_hr(checker, t_obj, r_obj, *, print_message=False):
+@_register_platform_checker('hr')
+def _check_hr(check, t_obj, r_obj, *, print_message=False):
     if t_obj.testcase_signal:
         message = ""
         r_obj.result = False
         r_obj.score = 0.0
         r_obj.message = "Runtime Error"
     else:
-        verdict, r_obj.score, message = _check_generic(checker,
+        verdict, r_obj.score, message = _check_generic(check,
                 input=t_obj.testcase_input_path,
                 output=t_obj.testcase_output_path,
                 judge=t_obj.testcase_expected_output_path,
@@ -289,7 +299,8 @@ def _check_hr(checker, t_obj, r_obj, *, print_message=False):
         r_obj.result = verdict == Verdict.AC
         r_obj.message = _hr_verdict_name[verdict]
 
-    if print_message and message: print(message, file=stderr)
+    if print_message and message:
+        print(message, file=sys.stderr)
 ### @@ }
 
 _polygon_rcode = {
@@ -302,6 +313,19 @@ _polygon_rcode = {
     Verdict.FAIL: 3,
     Verdict.EXC: 3,
 }
+_polygon_partial = 16
+
+_kg_rcode = {
+    Verdict.AC: 0,
+    Verdict.CE: 10,
+    Verdict.WA: 20,
+    Verdict.RTE: 21,
+    Verdict.TLE: 22,
+    Verdict.PAE: 23,
+    Verdict.FAIL: 30,
+    Verdict.EXC: 31,
+}
+
 
 ### @@ if format == 'dom' {
 _domjudge_rcode = {
@@ -316,7 +340,6 @@ _domjudge_rcode = {
 }
 ### @@ }
 
-### @@if format in ('local', 'kg') {
 def write_json_verdict(verdict, message, score, result_file):
     with open(result_file, 'w') as f:
         json.dump({
@@ -324,9 +347,7 @@ def write_json_verdict(verdict, message, score, result_file):
             'message': message,
             'score': score,
         }, f)
-### @@}
 
-### @@if format in ('pg', 'pc2') {
 _xml_outcome = {
     Verdict.AC: "Accepted",
     Verdict.CE: "No - Compilation Error",
@@ -344,26 +365,29 @@ def write_xml_verdict(verdict, message, score, result_file):
     result.set('outcome', _xml_outcome[verdict])
     result.text = str(verdict) + ": " + message
     ElementTree(result).write(result_file, xml_declaration=True, encoding="utf-8")
-### @@}
 
 ### @@if format in ('cms', 'cms-it') {
 # CMS has a specific format in stdout and stderr, so we make it stricter
-@_register_platform('cms')
-@_register_platform('cms-it')
-def _check_cms(checker, *, score_file=stdout, message_file=stderr, title='', help=None, **kwargs):
-    desc = help or CURR_PLATFORM + (' judge for the problem' + (f' "{title}"' if title else ''))
+@_register_platform_checker('cms')
+@_register_platform_checker('cms-it')
+def _check_cms(check, *, score_file=sys.stdout, message_file=sys.stderr, title='', help=None, **kwargs):
+    desc = help or CURR_PLATFORM + (' checker for the problem' + (f' "{title}"' if title else ''))
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('input_path', help='input file path')
     parser.add_argument('judge_path', help='judge auxiliary data file path')
     parser.add_argument('output_path', help="contestant's file path")
     parser.add_argument('extra_args', nargs='*', help='extra arguments that will be ignored')
+    # TODO check if this can receive force_verbose just like below
     args = parser.parse_args()
 
-    verdict, score, message = _check_generic(checker,
+    verdict, score, message = _check_generic(check,
             input=args.input_path,
             output=args.output_path,
             judge=args.judge_path,
+            verbose=False,
         )
+
+    # TODO deliberate failure here if verdict is EXC, FAIL, or something
 
     if not message:
         if score >= 1.0:
@@ -375,12 +399,13 @@ def _check_cms(checker, *, score_file=stdout, message_file=stderr, title='', hel
 
     print(score, file=score_file)
     print(message, file=message_file)
+
 ### @@}
 
 ### @@if format == 'dom' {
-@_register_platform('dom')
-def _check_dom(checker, title='', file=stdout, help=None, **kwargs):
-    desc = help or (CURR_PLATFORM + (' judge for the problem' + (f' "{title}"' if title else '')) +
+@_register_platform_checker('dom')
+def _check_dom(check, *, title='', file=sys.stdout, help=None, exit_after=True, **kwargs):
+    desc = help or (CURR_PLATFORM + (' checker for the problem' + (f' "{title}"' if title else '')) +
             " (it takes the contestant's output file from stdin)")
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('input_path', help='input file path')
@@ -392,9 +417,9 @@ def _check_dom(checker, title='', file=stdout, help=None, **kwargs):
     if args.extra_args: print(f"Received extra args {args.extra_args}... ignoring them.", file=file)
     print(f"Checking the output...", file=file)
 
-    verdict, score, message = _check_generic(checker,
+    verdict, score, message = _check_generic(check,
             input=args.input_path,
-            output=['<stdin>', stdin],
+            output=(sys.stdin.name, sys.stdin),
             judge=args.judge_path,
             verbose=True,
         )
@@ -403,23 +428,28 @@ def _check_dom(checker, title='', file=stdout, help=None, **kwargs):
     print(f"Score:   {score}", file=file)
     if message: print(f"Message: {overflow_ell(message, 1000)}", file=file)
 
-    exit(_domjudge_rcode[verdict])
+    exit_code = _domjudge_rcode[verdict]
+    if exit_after:
+        exit(exit_code)
+
+    return exit_code
+
 ### @@ }
 
 ### @@if format in ('local', 'kg', 'pg', 'pc2') {
-@_register_platform('local')
-@_register_platform('kg')
-@_register_platform('pg')
-@_register_platform('pc2')
-def _check_local(checker, title='', file=stdout, help=None, force_verbose=False):
-    desc = help or CURR_PLATFORM + (' judge for the problem' + (f' "{title}"' if title else ''))
+@_register_platform_checker('local')
+@_register_platform_checker('kg')
+@_register_platform_checker('pg')
+@_register_platform_checker('pc2')
+def _check_local(check, *, title='', file=sys.stdout, help=None, force_verbose=False, exit_after=True):
+    desc = help or CURR_PLATFORM + (' checker for the problem' + (f' "{title}"' if title else ''))
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('input_path', help='input file path')
     parser.add_argument('output_path', help="contestant's file path")
     parser.add_argument('judge_path', help='judge auxiliary data file path')
     parser.add_argument('result_file', nargs='?', help='target file to contain the verdict in XML format')
     parser.add_argument('extra_args', nargs='*', help='extra arguments that will be ignored')
-    parser.add_argument('-c', '--code', default='n/a', help='path to the solution used')
+    parser.add_argument('-C', '--code', default='n/a', help='path to the solution used')
     parser.add_argument('-t', '--tc-id', default=None, type=int, help='test case ID, zero indexed')
     if CURR_PLATFORM == 'pc2':
         parser.add_argument('-q', '--quiet', action='store_true', help='print less details')
@@ -432,10 +462,10 @@ def _check_local(checker, title='', file=stdout, help=None, force_verbose=False)
     tc_id = args.tc_id or ''
 
     if verbose:
-        if args.extra_args: print(f"{tc_id:>2} Received extra args {args.extra_args}... ignoring them.", file=file)
-        print(f"{tc_id:>2} Checking the output...", file=file)
+        if args.extra_args: print(f"{tc_id:>3} [C] Received extra args {args.extra_args}... ignoring them.", file=file)
+        print(f"{tc_id:>3} [C] Checking the output...", file=file)
 
-    verdict, score, message = _check_generic(checker,
+    verdict, score, message = _check_generic(check,
             input=args.input_path,
             output=args.output_path,
             judge=args.judge_path,
@@ -446,19 +476,31 @@ def _check_local(checker, title='', file=stdout, help=None, force_verbose=False)
         )
 
     if verbose:
-        print(f"{tc_id:>2} Result:  {verdict}", file=file)
-        print(f"{tc_id:>2} Score:   {score}", file=file)
-        if message: print(f"{tc_id:>2} Message: {overflow_ell(message, 100)}", file=file)
+        print(f"{tc_id:>3} [C] Result:  {verdict}", file=file)
+        print(f"{tc_id:>3} [C] Score:   {score}", file=file)
+        if message: print(f"{tc_id:>3} [C] Message: {overflow_ell(message, 100)}", file=file)
     else:
-        print(f"{tc_id:>2} Score={score} {verdict}", file=file)
+        print(f"{tc_id:>3} [C] Score={score} {verdict}", file=file)
 
     if args.result_file:
-        if verbose: print(f"{tc_id:>2} Writing result to {args.result_file}...", file=file)
+        if verbose: print(f"{tc_id:>3} [C] Writing result to '{args.result_file}'...", file=file)
         ### @@replace '_json_', '_json_' if format in ('local', 'kg') else '_xml_' {
         write_json_verdict(verdict, message, score, args.result_file)
         ### @@}
 
-    exit(_polygon_rcode[verdict])
+    if CURR_PLATFORM == 'pc2':
+        exit_code = _polygon_rcode[verdict]
+    elif CURR_PLATFORM == 'pg':
+        # assumes max score is 100. TODO learn what polygon really does
+        exit_code = _polygon_partial + int(score * 100) if 0 < score < 1 else _polygon_rcode[verdict]
+    else:
+        exit_code = _kg_rcode[verdict]
+
+    if exit_after:
+        exit(exit_code)
+
+    return exit_code
+
 ### @@ }
 
 def minimum_score(scores, mn=0.0, mx=1.0, exc=Fail):
@@ -493,23 +535,32 @@ def iterate_single(it, *, cas=0):
     inp = it.next_input(caseno=cas)
     yield it.get_score(inp, it.next_output(inp, caseno=cas), it.next_judge_data(inp, caseno=cas), caseno=cas)
 
-def default_return(ret):
-    def _default_return(f):
-        @functools.wraps(f)
-        def new_f(*args, **kwargs):
-            res = f(*args, **kwargs)
-            if res is None: res = ret
-            return res
-        return new_f
-    return _default_return
-
-default_score = default_return(1.0)
-
 chk = Checker() # create singleton
 
 set_checker = chk.set_checker
 set_single_checker = chk.set_single_checker
 set_multi_checker = chk.set_multi_checker
+
+
+### @@if False {
+
+# # TODO implement this
+# def checker(f=None, *, cases=None, chk=chk):
+#     def _checker(f):
+#         if cases is None:
+#         elif cases == 'single':
+#             @functools.wraps()
+#             def new_f()
+#         elif cases == 'multi'
+#     return _checker(f) if f is not None else _checker
+
+### @@}
+
+
+
+
+
+
 
 ### @@if format == 'hr' {
 
