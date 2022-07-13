@@ -37,12 +37,29 @@ def _strip_prefixes(command, *prefixes):
 
 def _get_python3_command(*, verbose=True):
     """
-    Get the first python3 command that has 'kg' installed, among "pypy3", "python3", "python", and "py".
+    Get the first python3 command that has 'kg' installed, among the following choices in order:
+
+    - pypy3.*
+    - python3.*
+    - pypy3
+    - python3
+    - py3
+    - python
+    - py.
     "kg" is detected as being installed if 'from kg import main' succeeds.
     """
     if verbose: info_print("getting python3 command...", end='', file=stderr, flush=True)
     previous = []
-    for command in ['pypy3', 'python3', 'python', 'py']:
+    def commands():
+        for v in range(10, 4, -1):
+            for py in 'pypy3', 'python3':
+                yield f'{py}.{v}'
+        for py in 'pypy3', 'python3':
+            yield f'{py}'
+        yield 'py3'
+        yield 'python'
+        yield 'py'
+    for command in commands():
         try:
             subprocess.run([command, '-c', 'from kg import main'],
                     stdout=subprocess.PIPE,
