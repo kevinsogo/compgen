@@ -5,9 +5,9 @@ def check_solution(input_file, output_file, judge_file, **kwargs):
     # write your grader here
     
     # Raise this if the answer is incorrect
-    raise WA("The contestant's output is incorrect!")
+    raise Wrong("The contestant's output is incorrect!")
     
-    # Raise this if the judge data is incorrect, or if the checking fails for some reason other than WA
+    # Raise this if the judge data is incorrect, or if the checking fails for some reason other than Wrong
     # Any other exception type raised will be considered equivalent to Fail.
     # Any 'Fail' verdict must be investigated since it indicates a problem with the checker/data/etc.
     raise Fail("The judge data is incorrect. Fix it!")

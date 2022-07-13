@@ -18,17 +18,22 @@ Intended for Ubuntu (and probably some other Unix-based systems) for now, althou
 
     - If it issues errors for you, please read `setup.sh` and try to find a way to run each line somehow.
 
-    - If you want to install this in your `python3.9` or `pypy3`, for example, run `bash setup.sh python3.9`.
-
-- Whenever this library gets updated (e.g. you pull from the repo), run the above again to update your installation.
-
 <!-- - (Optional) If you want to autocomplete commands in bash with tab, make sure that `AUTOCOMPLETE READY` was printed by `setup.sh`, and then add the following line in your `.bashrc`:
 
 ```bash
 eval "$(register-python-argcomplete kg)"
 ``` -->
 
-*Note:* This is still very early on in development&mdash;we haven't even decided on the release cycle/method yet&mdash;so expect regular updates (pull from the repo regularly), and a few of them might be backwards-incompatible. We'll fix this soon, promise!
+- Whenever this library gets updated (e.g. you pull from the repo), run the above again to update your installation.
+
+    - *Note:* This is still very early on in development&mdash;we haven't even decided on the release cycle/method yet&mdash;so expect regular updates (pull from the repo regularly), and a few of them might be backwards-incompatible. We'll fix this soon, promise!
+
+
+- If you want to install this in your `python3.9` or `pypy3`, for example, run `bash setup.sh python3.9`.
+
+    - *Note:* For `pypy3`, I couldn't properly install things via `pip` if I installed it via `snap` or via `ppa:pypy/ppa`. I suggest installing it via [the instructions here](https://doc.pypy.org/en/latest/install.html#installing-pypy).
+
+
 
 
 # Useful scripts

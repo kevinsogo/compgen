@@ -22,6 +22,6 @@ def check_exactly_equal(input_file, output_file, judge_file, **kwargs):
             print('Incorrect. Diff:')
             print(diff)
         ### @@ }
-        raise WA('Incorrect.')
+        raise Wrong('Incorrect.')
 
 if __name__ == '__main__': chk(help="Exact diff checker")

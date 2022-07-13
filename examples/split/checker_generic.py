@@ -26,14 +26,14 @@ def check_solution(input_file, output_file, judge_file, **kwargs):
         n = int(next(input_file))
         a = list(map(int, next(input_file).strip().split()))
         if len(a) != n: raise Fail("Judge input invalid")
-        cont_b = get_sequence(output_file, exc=WA)
+        cont_b = get_sequence(output_file, exc=Wrong)
         judge_b = get_sequence(judge_file, exc=Fail)
-        check_valid(a, cont_b, exc=WA)
+        check_valid(a, cont_b, exc=Wrong)
         check_valid(a, judge_b, exc=Fail)
-        if len(cont_b) < len(judge_b): raise WA("Suboptimal solution")
+        if len(cont_b) < len(judge_b): raise Wrong("Suboptimal solution")
         if len(cont_b) > len(judge_b): raise Fail("Judge data incorrect!")
 
-    if output_file.has_next(): raise WA("Extra characters at the end of the output file")
+    if output_file.has_next(): raise Wrong("Extra characters at the end of the output file")
     if judge_file.has_next(): raise Fail("Extra characters at the end of the judge file!")
     return 1.0
 

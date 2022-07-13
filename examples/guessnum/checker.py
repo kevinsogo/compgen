@@ -11,7 +11,7 @@ def check_solution(input_file, output_file, judge_file, **kwargs):
         value = int(value)
         ensure(abs(value) <= V, lambda: Fail(f"Out of bounds value not detected by interactor: {action} {value}"))
         if action == 'answer':
-            if n != value: raise WA(f"Wrong answer! {n} != {value}")
+            if n != value: raise Wrong(f"Wrong answer! {n} != {value}")
             break
         elif action == 'ask':
             ...

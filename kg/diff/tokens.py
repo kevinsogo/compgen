@@ -8,6 +8,6 @@ def is_exactly_equal(seq1, seq2):
 @default_score
 def checker(input_file, output_file, judge_file, **kwargs):
     if not is_exactly_equal(output_file, judge_file):
-        raise WA("Incorrect.")
+        raise Wrong("Incorrect.")
 
 if __name__ == '__main__': chk(help="Compare if the sequence of tokens are the same.")

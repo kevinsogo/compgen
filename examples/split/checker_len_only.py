@@ -14,8 +14,8 @@ def get_output_for_input(file, a, **kwargs):
         b = list(map(int, next(file).rstrip().split(' ')))
     except Exception as e:
         raise ParseError("Failed to get a sequence") from e
-    ensure(m >= 0, "Invalid length", exc=WA)
-    ensure(len(b) == m, lambda: WA(f"Expected {m} numbers but got {len(b)}"))
+    ensure(m >= 0, "Invalid length", exc=Wrong)
+    ensure(len(b) == m, lambda: Wrong(f"Expected {m} numbers but got {len(b)}"))
     return b
 
 @chk.get_judge_data_for_input
@@ -29,10 +29,10 @@ def check_solution(a, b, ans, **kwargs):
     j = 0
     for i in range(len(a)):
         if j < len(b) and a[i] == b[j]: j += 1
-    ensure(j == len(b), "Not a subsequence!", exc=WA)
+    ensure(j == len(b), "Not a subsequence!", exc=Wrong)
     # check distinct
-    ensure(len(b) == len(set(b)), "Values not unique!", exc=WA)
-    if len(b) < ans: raise WA("Suboptimal solution")
+    ensure(len(b) == len(set(b)), "Values not unique!", exc=Wrong)
+    if len(b) < ans: raise Wrong("Suboptimal solution")
     if len(b) > ans: raise Fail("Judge data incorrect!")
 
 if __name__ == '__main__': chk(title="Split")

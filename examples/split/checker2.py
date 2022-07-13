@@ -32,9 +32,9 @@ def check_valid(a, b, exc=Exception):
 @set_multi_checker(no_extra_chars=True)
 @default_return(1.0)
 def check_solution(a, cont_b, judge_b, **kwargs):
-    check_valid(a, cont_b, exc=WA)
+    check_valid(a, cont_b, exc=Wrong)
     check_valid(a, judge_b, exc=Fail) # remove for speed
-    if len(cont_b) < len(judge_b): raise WA("Suboptimal solution")
+    if len(cont_b) < len(judge_b): raise Wrong("Suboptimal solution")
     if len(cont_b) > len(judge_b): raise Fail("Judge data incorrect!")
 
 if __name__ == '__main__': chk(title="Split")

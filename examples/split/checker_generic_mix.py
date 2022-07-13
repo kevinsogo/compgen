@@ -27,11 +27,11 @@ def check_solution(input_file, output_file, judge_file, **kwargs):
         n = int(next(input_file))
         ensure(n >= 1, "Judge data invalid!", exc=Fail)
         a = [int(next(input_file)) for i in range(n)]
-        cont_b = get_sequence(output_file, exc=WA)
+        cont_b = get_sequence(output_file, exc=Wrong)
         judge_b = get_sequence(judge_file, exc=Fail)
-        check_valid(a, cont_b, exc=WA)
+        check_valid(a, cont_b, exc=Wrong)
         check_valid(a, judge_b, exc=Fail)
-        if len(cont_b) < len(judge_b): raise WA("Suboptimal solution")
+        if len(cont_b) < len(judge_b): raise Wrong("Suboptimal solution")
         if len(cont_b) > len(judge_b): raise Fail("Judge data incorrect!")
 
 if __name__ == '__main__': chk("Split")

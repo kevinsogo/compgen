@@ -1825,13 +1825,13 @@ First, let's write the `check_solution` function. It will begin by reading in `t
 def check_solution(input_file, output_file, judge_file, **kwargs):
     t = int(next(input_file))
     for cas in range(t):
-        n = get_n(output_file, WA)
+        n = get_n(output_file, Wrong)
         # get_n(file, exc)
-        labels = get_sequence(output_file, n, 1, 500, WA)
+        labels = get_sequence(output_file, n, 1, 500, Wrong)
         # get_sequence(file, length, lower_bound, upper_bound, exc)
         g = []
         for i in range(n):
-            g.append(get_string(output_file, n, WA))
+            g.append(get_string(output_file, n, Wrong))
             # get_string(file, length, exc)
         ...
 ```
@@ -1845,9 +1845,9 @@ def check_solution(input_file, output_file, judge_file, **kwargs):
     for cas in range(t):
         ...
         for i in range(n):
-            ensure(g[i][i] == "0", "Graph has self-loop", WA)
+            ensure(g[i][i] == "0", "Graph has self-loop", Wrong)
             for j in range(i):
-                ensure(g[i][j] == g[j][i], "Matrix not symmetric", WA)
+                ensure(g[i][j] == g[j][i], "Matrix not symmetric", Wrong)
         ...
 ```
 
@@ -1863,12 +1863,12 @@ def check_solution(input_file, output_file, judge_file, **kwargs):
         for i in range(p):
             walk = list(map(int, next(input_file).strip().split()))
             # walk reads in the required walk
-            a = get_sequence(output_file, len(walk) - 1, 1, n, WA)
+            a = get_sequence(output_file, len(walk) - 1, 1, n, Wrong)
             for j in range(1, len(walk)):
-                ensure(walk[j] == labels[a[j]], "Wrong label", WA)
+                ensure(walk[j] == labels[a[j]], "Wrong label", Wrong)
                 # checks if the labels are right
             for j in range(1, len(walk) - 1):
-                ensure(g[a[j-1]][a[j]] == "1", "Edge not in graph", WA)
+                ensure(g[a[j-1]][a[j]] == "1", "Edge not in graph", Wrong)
                 # checks if it is really a walk
     ...
 ```
@@ -1881,7 +1881,7 @@ def check_solution(input_file, output_file, judge_file, **kwargs):
     t = int(next(input_file))
     for cas in range(t):
         ...
-    if output_file.has_next(): raise WA("Output has extra characters")
+    if output_file.has_next(): raise Wrong("Output has extra characters")
     return 1.0
 ```
 
@@ -1964,27 +1964,27 @@ def get_string(file, length, exc):
 def check_solution(input_file, output_file, judge_file, **kwargs):
     t = int(next(input_file))
     for cas in range(t):
-        n = get_n(output_file, WA)
-        labels = get_sequence(output_file, n, 1, 500, WA)
+        n = get_n(output_file, Wrong)
+        labels = get_sequence(output_file, n, 1, 500, Wrong)
         g = []
         for i in range(n):
-            g.append(get_string(output_file, n, WA))
+            g.append(get_string(output_file, n, Wrong))
 
         for i in range(n):
-            ensure(g[i][i] == "0", "Graph has self-loop", WA)
+            ensure(g[i][i] == "0", "Graph has self-loop", Wrong)
             for j in range(i):
-                ensure(g[i][j] == g[j][i], "Matrix not symmetric", WA)
+                ensure(g[i][j] == g[j][i], "Matrix not symmetric", Wrong)
 
         p = int(next(input_file))
         for i in range(p):
             walk = list(map(int, next(input_file).strip().split()))
-            a = get_sequence(output_file, len(walk) - 1, 1, n, WA)
+            a = get_sequence(output_file, len(walk) - 1, 1, n, Wrong)
             for j in range(1, len(walk)):
-                ensure(walk[j] == labels[a[j] - 1], "Wrong label", WA)
+                ensure(walk[j] == labels[a[j] - 1], "Wrong label", Wrong)
             for j in range(1, len(walk) - 1):
-                ensure(g[a[j-1]][a[j]] == "1", "Edge not in graph", WA)
+                ensure(g[a[j-1]][a[j]] == "1", "Edge not in graph", Wrong)
 
-    if output_file.has_next(): raise WA("Output has extra characters")
+    if output_file.has_next(): raise Wrong("Output has extra characters")
     return 1.0
 
 if __name__ == '__main__': chk()
@@ -2121,7 +2121,7 @@ The `@set_checker` decorator accepts an argument `no_extra_chars` that can be se
 def check_solution(input_file, output_file, judge_file, **kwargs):
     # ...
     if input_file.has_next(): raise Fail("...")
-    if output_file.has_next(): raise WA("...")
+    if output_file.has_next(): raise Wrong("...")
     if judge_file.has_next(): raise Fail("...")
     return 1.0
 
@@ -2212,7 +2212,7 @@ def get_one_input(file, **kwargs):
 @chk.get_output_for_input
 def get_output_for_input(file, input_data, **kwargs):
     n = int(next(file))
-    ensure(1 <= n <= 1000, WA("Invalid number of vertices"))
+    ensure(1 <= n <= 1000, Wrong("Invalid number of vertices"))
     labels = list(map(int, next(file).rstrip().split(" ")))
     ensure(all(1 <= i <= 500 for i in labels), "Invalid label", ParseError)
 
@@ -2243,12 +2243,12 @@ def check_solution(input_data, output_data, judge_data, **kwargs):
     l, g, walks = output_data
 
     n = len(g)
-    ensure(all(g[i][i] == "0" for i in range(n)), "Graph has self-loop", WA)
-    ensure(all(g[i][j] == g[j][i] for i in range(n) for j in range(i)), "Graph not symmetric", WA)
+    ensure(all(g[i][i] == "0" for i in range(n)), "Graph has self-loop", Wrong)
+    ensure(all(g[i][j] == g[j][i] for i in range(n) for j in range(i)), "Graph not symmetric", Wrong)
 
     for n_w, w in zip(needed_walks, walks):
-        ensure(all(i == l[j-1] for i, j in zip(n_w, w)), "Wrong label", WA)
-        ensure(all(g[i][j] == "1" for i, j in zip(w, w[1:])), "Edge not in graph", WA)
+        ensure(all(i == l[j-1] for i, j in zip(n_w, w)), "Wrong label", Wrong)
+        ensure(all(g[i][j] == "1" for i, j in zip(w, w[1:])), "Edge not in graph", Wrong)
 
 if __name__ == '__main__': chk()
 ```
