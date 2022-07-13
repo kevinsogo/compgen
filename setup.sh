@@ -23,7 +23,7 @@ if [ -x "$(command -v pypy3)" ]; then
     sudo pypy3 -m pip install --user setuptools
     sudo pypy3 -m pip install --user setupext-janitor
     sudo pypy3 setup.py clean --all
-    sudo pypy3 setup.py install
+    sudo pypy3 setup.py install --user
     sudo pypy3 setup.py clean --all
     echo "INSTALLED ON pypy3"
 else
