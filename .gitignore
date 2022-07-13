@@ -14,5 +14,7 @@ build/
 *.exe
 temp/
 *.class
-toremove.txt
+toremove*.txt
 .eggs
+garbage*
+get-pip.py*

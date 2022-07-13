@@ -14,9 +14,11 @@ Intended for Ubuntu (and probably some other Unix-based systems) for now, althou
 
 - Run `bash setup.sh`, or `setup.bat` if you're using Windows. If it prints `DONE`, then it was successful. Make sure you have `python3` and `pip3`.  
 
-    *Note:* Among other things, it installs a bunch of python packages (via `setuptools`). Feel free to modify `setup.sh` if you don't want to install globally, e.g., if you want to use virtualenv or something. 
+    - *Note:* It installs KompGen (and `setuptools`) via `pip`. Feel free to modify `setup.sh` if you don't want to install globally, e.g., if you want to use virtualenv or something. 
 
-    If it issues errors for you, please read `setup.sh` and try to find a way to run each line somehow.
+    - If it issues errors for you, please read `setup.sh` and try to find a way to run each line somehow.
+
+    - If you want to install this in your `python3.9` or `pypy3`, run `bash setup.sh python3.9` for example.
 
 - Whenever this library gets updated (e.g. you pull from the repo), run `bash setup.sh` again to update your installation.
 
@@ -265,7 +267,6 @@ temp/
 __pycache__
 *.pyc
 *.class
-*.executable
 *.exe
 build/
 *.egg-info/

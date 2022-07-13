@@ -1,35 +1,32 @@
 #!/bin/bash
+
 set -e
 
-# make scripts executable
-chmod +x setup.sh docs/src/makedocs
+pycommand=$1
 
-# ensure pip is present
-python3 -m ensurepip || echo "Can't run ensurepip. It is now your responsibility to ensure that pip is present!!!"
-
-# install setuptools
-python3 -m pip install --user setuptools
-python3 -m pip install --user setupext-janitor
-
-# install the 'kg' (and related) packages and dependencies.
-python3 setup.py clean --all
-python3 setup.py install --user
-python3 setup.py clean --all
-
-# also try installing for pypy3. (It should just skip if you don't have pypy3)
-if [ -x "$(command -v pypy3)" ]; then
-    echo "ATTEMPTING TO INSTALL ON pypy3 (sudo)"
-    sudo pypy3 -m ensurepip
-    sudo pypy3 -m pip install --user setuptools
-    sudo pypy3 -m pip install --user setupext-janitor
-    sudo pypy3 setup.py clean --all
-    sudo pypy3 setup.py install --user
-    sudo pypy3 setup.py clean --all
-    echo "INSTALLED ON pypy3"
-else
-    echo "NOT INSTALLING ON pypy3, pypy3 NOT FOUND."
+if [ -z "$pycommand" ]; then
+    pycommand=python3
 fi
 
+echo "Installing using python command '$pycommand'"
+echo
+
+if [ ! -x "$(command -v $pycommand)" ]; then
+    echo "Command '$pycommand' not found!"
+    exit 1
+fi
+
+
+# ensure pip is present
+if ! $pycommand -m ensurepip; then
+    echo "Can't run ensurepip. It is now your responsibility to ensure that $pycommand -m pip is present!!!"
+    echo "Try: 'wget https://bootstrap.pypa.io/get-pip.py && $pycommand get-pip.py'"
+fi
+
+# install and/or upgrade setuptools, pip, and kg
+$pycommand -m pip install --user --upgrade setuptools
+$pycommand -m pip install --user --upgrade pip
+$pycommand -m pip install --user .
 
 echo
 activate-global-python-argcomplete --user && echo "AUTOCOMPLETE READY" || echo "Skipping autocomplete"

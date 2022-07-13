@@ -13,6 +13,8 @@
 
 This includes some disorganized ideas, TODOs, notes...
 
+- Use Wrong instead of WA in docs, tutorials, and templates
+
 - Allow running several solutions at once.  
 
 - For Polygon checkers, maybe print specific message for verdict

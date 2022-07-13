@@ -2,14 +2,6 @@
 
 from setuptools import setup
 
-cmd_classes = {}
-try:
-    from setupext_janitor import janitor
-    cmd_classes['clean'] = janitor.CleanCommand
-except ImportError:
-    import traceback
-    traceback.print_exc()
-
 setup(name='KompGen',
       version='0.2',
       description='Utilities for programming contests',
@@ -60,10 +52,6 @@ setup(name='KompGen',
           'Jinja2',
           'argcomplete',
           'pytz',
-          'PyYAML'
+          'PyYAML',
       ],
-      setup_requires=[
-          'setupext-janitor',
-      ],
-      cmdclass=cmd_classes,
 )
