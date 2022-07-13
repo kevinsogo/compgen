@@ -23,7 +23,7 @@ if ! $pycommand -m ensurepip; then
     echo "Try: 'wget https://bootstrap.pypa.io/get-pip.py && $pycommand get-pip.py'"
 fi
 
-# install and/or upgrade setuptools, pip, and kg
+# install setuptools, pip, and kg
 $pycommand -m pip install --user --upgrade setuptools
 $pycommand -m pip install --user --upgrade pip
 $pycommand -m pip install --user .

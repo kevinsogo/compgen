@@ -525,7 +525,7 @@ def generate_outputs(format_, data_maker, *, model_solution=None, judge=None, in
     if model_solution and model_solution != data_maker: model_solution.do_compile()
     if interactor: interactor.do_compile()
     data_maker_name = 'model_solution' if model_solution == data_maker else 'data_maker'
-    for input_, output_ in format_.thru_io():
+    for index, (input_, output_) in enumerate(format_.thru_io()):
         touch_container(output_)
         print(info_text('WRITING', input_, '-->'), key_text(output_))
         try:
@@ -550,7 +550,7 @@ def generate_outputs(format_, data_maker, *, model_solution=None, judge=None, in
                 if model_solution == data_maker:
                     yield output_
                 else:
-                    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                    with tempfile.NamedTemporaryFile(delete=False, prefix=f'kg_tmp_out_{index:>03}_') as tmp:
                         info_print(f"Running model solution on {input_}")
                         try:
                             if interactor:
@@ -695,8 +695,8 @@ def kg_test(format_, args):
         def get_score():
             nonlocal judge_strict_args
             get_score.running_time = None
-            with tempfile.NamedTemporaryFile(delete=False) as tmp:
-                with tempfile.NamedTemporaryFile(delete=False) as result_tmp:
+            with tempfile.NamedTemporaryFile(delete=False, prefix=f'kg_tmp_out_{index:>03}_') as tmp:
+                with tempfile.NamedTemporaryFile(delete=False, prefix=f'kg_tmp_res_{index:>03}_') as result_tmp:
                     info_print("\nFile", str(index).rjust(3), 'CHECKING AGAINST', input_)
                     interactor_res = None
                     try:
@@ -1164,6 +1164,7 @@ q_p = subparsers.add_parser('joke',
                 + cformat_text('[^[Any]^] [*[help]*] [#[would]#] [.[be].] [%[very]%] [@[much]@] [+[appreciated]+]...'))
 qs = [
     '10kg > 1kg > 100g > 10g > log > log log > sqrt log log > 1',
+    '5kg < 5kig',
     'Spacewaker',
     # add your jokes here plz
 ]
