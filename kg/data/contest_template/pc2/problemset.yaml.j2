@@ -1,7 +1,9 @@
 # Contest Configuration, Problem Set, generated from KompGen
 # Created: {{ datetime_created}}
 problems:
-{% for problem in problems %}  - letter: {{ problem.letter }}
+
+{% for problem in problems %}
+  - letter: {{ problem.letter }}
     short-name: {{ problem.problem_code | tojson }}
     name: {{ problem.details.title | with_letter(problem.letter) | tojson }}
     color: 

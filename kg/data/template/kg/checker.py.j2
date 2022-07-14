@@ -1,9 +1,12 @@
-{% if checker %}from kg.checkers import * ### @import
+{% if checker %}
+from sys import *
+from kg.checkers import * ### @import
 
 @set_checker(no_extra_chars=True)
 def check_solution(input_file, output_file, judge_file, **kwargs):
     ... # write your checker here
-{% if not minimal %}
+    {% if not minimal %}
+
     # Raise this if the answer is incorrect
     # raise Wrong("The contestant's output is incorrect!")
     
@@ -13,7 +16,8 @@ def check_solution(input_file, output_file, judge_file, **kwargs):
     # raise Fail("The judge data is incorrect. Fix it!")
 
     # the return value is the score, and must be a value between 0.0 and 1.0
-{% endif %}
+    {% endif %}
+
     return 1.0 
 
 if __name__ == '__main__': chk()

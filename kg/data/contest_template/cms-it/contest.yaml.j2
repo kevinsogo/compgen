@@ -1,16 +1,20 @@
 name: {{ contest.code | tojson }}
 description: "An IOI-style contest"
 tasks:
+
 {% for problem in contest.problems %}
-  - {{ problem | tojson }}{% endfor %}
+  - {{ problem | tojson }}
+{% endfor %}
 
 users:
+
 {% for user in contest.users %}
   - username: {{ user.username | tojson }}
     first_name: {{ (user.first_name or "") | tojson }}
     last_name: {{ (user.last_name or "") | tojson }}
     password: {{ passwords["users", user.username] | tojson }}
     ip: null
+
 {% endfor %}
 start: {{ contest.start_time | timestamp | tojson }}
 stop: {{ contest.end_time | timestamp | tojson }}

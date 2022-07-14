@@ -7,5 +7,6 @@ rem install setuptools, pip, and kg
 python3 -m pip install --user --upgrade setuptools
 python3 -m pip install --user --upgrade pip
 python3 -m pip install --user . || exit /b
+python3 setup.py clean --all
 
 echo DONE

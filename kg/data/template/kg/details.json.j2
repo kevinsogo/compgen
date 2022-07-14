@@ -1,5 +1,5 @@
 {
-    "title": "{{problem_title}}",
+    "title": "{{ problem_title }}",
     "model_solution": "solution.py",
     "validator": "validator.py",
     "testscript": "testscript",
@@ -9,14 +9,23 @@
     "other_programs": [
         "formatter.py"
     ],
-    {% if subtasks >= 1 %}"subtask_detector": "!detector_through_validator",
+    {% if subtasks >= 1 %}
+    "subtask_detector": "!detector_through_validator",
     "valid_subtasks": {{ subtask_list_json | indent }},
     "subtasks_files": "subtasks.json",
-    {% endif %}{% if checker %}"checker": "checker.py",
-    {% endif %}{% if interactor %}"interactor": "interactor.py",
-    {% endif %}{% if not minimal %}"statement": "statement.md",
     {% endif %}
-    {% if not minimal %}"comments": [
+    {% if checker %}
+    "checker": "checker.py",
+    {% endif %}
+    {% if interactor %}
+    "interactor": "interactor.py",
+    {% endif %}
+    {% if not minimal %}
+    "statement": "statement.md",
+    {% endif %}
+
+    {% if not minimal %}
+    "comments": [
         "You can place comments here. They will not be processed.",
         "Leave valid_subtasks blank to make a binary problem.",
         "If you need a custom checker, add the field: checker.",
@@ -24,6 +33,7 @@
         "For a custom checker template, see:",
         "examples/templates/checker_generic_template.py"
     ],
-    {% endif %}"time_limit": {{ time_limit }},
+    {% endif %}
+    "time_limit": {{ time_limit }},
     "version": "{{ version }}"
 }

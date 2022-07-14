@@ -19,6 +19,7 @@ fi
 
 # install kg only
 $pycommand -m pip install --user .
+$pycommand setup.py clean --all
 
 echo
 activate-global-python-argcomplete --user && echo "AUTOCOMPLETE READY" || echo "Skipping autocomplete"

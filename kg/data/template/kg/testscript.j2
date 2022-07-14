@@ -1,5 +1,7 @@
-{% if minimal %}# TODO
-{% else %}# comments start with hash (#)
+# write your testscript here
+
+{% if not minimal %}
+# comments start with hash (#)
 
 # you can run an arbitrary command via "!"
 ! cat sample.in > $
@@ -9,4 +11,7 @@ gen_random 10 10 > $
 gen_random 10 100 > $
 gen_random 10 1000 > $
 gen_random 10 10000 > $
+# gen_random 10 100000 > $
+
+# set the language/syntax to "bash" to give this file good highlighting
 {% endif %}

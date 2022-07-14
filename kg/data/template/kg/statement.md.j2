@@ -1,6 +1,8 @@
-{% if not minimal %}**Statement**  
+{% if not minimal %}
+**Statement**  
 
 Given an array $A$ of length $n$, find the sum of its elements.  
+
 
 **Input Format**  
 
@@ -11,21 +13,29 @@ The first line of each test case contains a single integer $n$ denoting the leng
 array. The second line contains $n$ space-separated integers $A_1, A_2, \ldots, A_n$
 denoting the elements of the array.
 
+
 **Constraints**  
 
 $1 \le T \le 10^5$  
 $1 \le n \le 10^5$  
 The sum of the $n$s in a single file is $\le 5\cdot 10^5$  
 $-10^9 \le A_i \le 10^9$  
+
 {% if subtasks >= 1 %}
-{% for subtask in subtask_list %}**Subtask {{ subtask.id }}** ({{ subtask.score }} points): {% if subtask.id == 1 %}$n \le 10$  
-{% elif subtask.id == 2 %}$n \le 1000$  
-{% else %}No additional constraints  
-{% endif %}{% endfor %}{% endif %}
+{% for subtask in subtask_list %}
+**Subtask {{ subtask.id }}** ({{ subtask.score }} points): {{
+    "$n \\le 10$  "  if subtask.id == 1 else
+    "$n \\le 100$  " if subtask.id == 2 else
+    "No additional constraints  "
+}}
+{% endfor %}
+{% endif %}
+
 **Output Format**  
 
 For each test case, output a single line containing a single integer denoting the answer
 for that test case.  
+
 
 **Sample Input**  
 
@@ -33,7 +43,9 @@ for that test case.
     3
     1 -2 3
 
+
 **Sample Output**  
 
     2
+
 {% endif %}

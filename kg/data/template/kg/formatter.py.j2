@@ -1,10 +1,14 @@
-{% if not minimal %}# print the data into the correct input format
+"""Print the data into the correct input format """
 
-{% endif %}from kg.formatters import * ### @import
+from kg.formatters import * ### @import
 
 @formatter
 def print_to_file(file, cases, *, print):
+    ... # write your formatter here
+    {% if not minimal %}
+
     print(len(cases))
     for arr in cases:
         print(len(arr))
         print(*arr)
+    {% endif %}

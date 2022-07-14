@@ -4,22 +4,38 @@ from kg.validators import * ### @import
 bounds = {
     't': 1 <= +Var <= 10**5,
     'n': 1 <= +Var <= 10**5,
+    'a': abs(+Var) <= 10**9,
 }
 
-{% if subtasks >= 1 %}subtasks = {
-{% for sub in subtask_list %}    '{{ sub.id }}': {},
-{% endfor %}}
+{% if subtasks >= 1 %}
+subtasks = {
+    {% for sub in subtask_list %}
+    '{{ sub.id }}': {},
+    {% endfor %}
+}
 {% endif %}
+
 @validator(bounds=bounds{{", subtasks=subtasks" if subtasks >= 1 else ""}})
 def validate_file(file{{", subtask=None" if subtasks >= 1 else ""}}, *, lim):
+    ... # write your validator here
 
-    ... {% if not minimal %}# write your validator here
+    {% if not minimal %}
+    [t] = file.read.int(lim.t).eoln
+    for cas in range(t):
+        [n] = file.read.int(lim.n).eoln
+        [a] = file.read.ints(n, lim.a).eoln
+    [] = file.read.eof
 
-    # file .read_int(), .read_ints(), .read_space(), .read_eoln(), etc.
-    # file.read_eof()
+    # other possibilities
+    # [x, y, z] = file.read.real(lim.x).space.real(lim.y).space.int(lim.z).eoln
+    # [line] = file.read.line(lim.s).eoln
+    # [name] = file.read.token(lim.name).eoln
     {% endif %}
 
+
 if __name__ == '__main__':
-{% if subtasks >= 1 %}    validate_or_detect_subtasks(validate_file, subtasks, stdin)
-{% else %}    validate_file(stdin)
-{% endif %}
+    {% if subtasks >= 1 %}
+    validate_or_detect_subtasks(validate_file, subtasks, stdin)
+    {% else %}
+    validate_file(stdin)
+    {% endif %}
