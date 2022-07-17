@@ -1799,8 +1799,8 @@ In the KompGen model, a checker is a program that takes in the input, output, an
 ```python
 from kg.checkers import * ### @import
 
-@set_checker()
-def check_solution(input_file, output_file, judge_file, **kwargs):
+@checker
+def check(input_stream, output_stream, judge_stream, **kwargs):
     # write your grader here
     
     # Raise this if the answer is incorrect
@@ -1814,7 +1814,7 @@ def check_solution(input_file, output_file, judge_file, **kwargs):
     # the return value is the score, and must be a value between 0.0 and 1.0
     return 1.0 
 
-if __name__ == '__main__': chk()
+if __name__ == '__main__': check_files(check)
 ```
 
 The inputs to the function `check_solution` are `input_file`, which is the input to the test case, `output_file`, the contestant's output to the test case, and then `judge_file`, the judge's output to the test case. The checker can use everything in the input file, the contestant's output, and the judge's output, to determine if the contestant's output is correct.
@@ -1835,12 +1835,9 @@ from kg.checkers import * ### @import
 def is_subsequence(a, b):
     ... # code omitted
 
-def get_sequence(file, exc=Exception):
-    try:
-        m = int(next(file).rstrip())
-        b = list(map(int, next(file).rstrip().split(' ')))
-    except Exception as e:
-        raise ParseError("Failed to get a sequence") from e
+def get_sequence(stream, exc=Exception):
+    [m] = stream.read.int().eoln
+    [b] = stream.read.ints(m).eoln
     ensure(m >= 0, exc("Invalid length"))
     ensure(len(b) == m, exc(f"Expected {m} numbers but got {len(b)}"))
     return b
@@ -1849,25 +1846,22 @@ def check_valid(a, b, exc=Exception):
     ensure(is_subsequence(a, b), exc("Not a subsequence!"))
     ensure(len(b) == len(set(b)), exc("Values not unique!"))
 
-@set_checker()
-def check_solution(input_file, output_file, judge_file, **kwargs):
-    z = int(next(input_file))
+@checker
+def check(input_stream, output_stream, judge_stream, **kwargs):
+    [z] = input_stream.read.int().eoln
     for cas in range(z):
-        n = int(next(input_file))
-        a = list(map(int, next(input_file).strip().split()))
-        if len(a) != n: raise Fail("Judge input invalid")
-        cont_b = get_sequence(output_file, exc=Wrong)
-        judge_b = get_sequence(judge_file, exc=Fail)
+        [n] = input_stream.read.int().eoln
+        [a] = input_stream.read.ints(n).eoln
+        cont_b = get_sequence(output_stream, exc=Wrong)
+        judge_b = get_sequence(judge_stream, exc=Fail)
         check_valid(a, cont_b, exc=Wrong)
         check_valid(a, judge_b, exc=Fail)
         if len(cont_b) < len(judge_b): raise Wrong("Suboptimal solution")
         if len(cont_b) > len(judge_b): raise Fail("Judge data incorrect!")
 
-    if output_file.has_next(): raise Wrong("Extra characters at the end of the output file")
-    if judge_file.has_next(): raise Fail("Extra characters at the end of the judge file!")
     return 1.0
 
-if __name__ == '__main__': chk()
+if __name__ == '__main__': check_files(check)
 ```
 
 Observe how very exception-safe it is. To raise an exception from `ensure`, the syntax is `ensure(condition, exc("message"))` or `ensure(condition, "message", exc)`. Also note how extra output is also disallowed, by checking if `output_file.has_next()`.

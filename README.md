@@ -29,9 +29,9 @@ eval "$(register-python-argcomplete kg)"
     - *Note:* This is still very early on in development&mdash;we haven't even decided on the release cycle/method yet&mdash;so expect regular updates (pull from the repo regularly), and a few of them might be backwards-incompatible. We'll fix this soon, promise!
 
 
-- If you want to install this in your `python3.9` or `pypy3`, for example, run `bash setup.sh python3.9`.
+- If you want to install this on, say, `python3.9` or `pypy3`, run `bash setup.sh python3.9` (or `pypy3`). I recommend installing it on the latest pypy3 version.
 
-    - *Note:* For `pypy3`, I couldn't properly install things via `pip` if I installed it via `snap` or via `ppa:pypy/ppa`. I suggest installing it via [the instructions here](https://doc.pypy.org/en/latest/install.html#installing-pypy).
+    - *Note:* For pypy3 installed via `snap` or via `ppa:pypy/ppa`, I couldn't install things easily due to permission issues. I suggest installing pypy3 via [the instructions here](https://doc.pypy.org/en/latest/install.html#installing-pypy).
 
 
 

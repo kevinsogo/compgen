@@ -48,7 +48,7 @@ for location, target, rel_loc in get_templates():
 
     # replace
     for old, new in replacements:
-        s = old.sub(new, s)
+        s = old.sub((lambda _: new), s)
 
     def next_ref(s, pos):
         i = s.find('{{', pos)

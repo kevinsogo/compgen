@@ -102,7 +102,7 @@ This just takes a test case (in a Python representation of your choosing) and pr
 from kg.formatters import * ### @import
 
 @formatter
-def print_to_file(file, cases, *, print):
+def format_case(stream, cases, *, print, **kwargs):
     print(len(cases))
     for arr in cases:
         print(len(arr))
@@ -129,20 +129,20 @@ bounds = {
 }
 
 @validator(bounds=bounds)
-def validate_file(file, *, lim):
+def validate(stream, *, lim):
 
-    [t] = file.read.int(lim.t).eoln
+    [t] = stream.read.int(lim.t).eoln
     totaln = 0
     for cas in range(t):
-        [n] = file.read.int(lim.n).eoln
+        [n] = stream.read.int(lim.n).eoln
         totaln += n
-        [a] = file.read.ints(n, lim.a).eoln
+        [a] = stream.read.ints(n, lim.a).eoln
 
-    [] = file.read.eof
+    [] = stream.read.eof
     ensure(totaln in lim.totaln)
 
 if __name__ == '__main__':
-    validate_file(stdin)
+    validate(stdin)
 ```
 
 Again, note that `### @import` is important. 
@@ -167,20 +167,18 @@ subtasks = {
 }
 
 @validator(bounds=bounds, subtasks=subtasks)
-def validate_file(file, subtask=None, *, lim):
-
-    [t] = file.read.int(lim.t).eoln
+def validate(stream, subtask=None, *, lim):
+    [t] = stream.read.int(lim.t).eoln
     totaln = 0
     for cas in range(t):
-        [n] = file.read.int(lim.n).eoln
-        [a] = file.read.ints(n, lim.a).eoln
+        [n] = stream.read.int(lim.n).eoln
+        [a] = stream.read.ints(n, lim.a).eoln
         totaln += n
 
-    [] = file.read.eof
     ensure(totaln in lim.totaln)
 
 if __name__ == '__main__':
-    validate_or_detect_subtasks(validate_file, subtasks, stdin)
+    validate_or_detect_subtasks(validate, subtasks, stdin)
 ```
 
 **Notes:** 
@@ -255,6 +253,7 @@ from formatter import * ### @import
 A = 10**9
 
 def random_cases(rand, *args):
+    ''' generates test data for a file '''
     T, N = map(int, args[:2])
     cases = []
     for cas in range(T):
@@ -263,7 +262,7 @@ def random_cases(rand, *args):
     return cases
 
 if __name__ == '__main__':
-    write_to_file(print_to_file, random_cases, argv[1:], stdout)
+    write_to_file(format_case, random_cases, argv[1:], stdout)
 ```
 
 **Notes:**
@@ -285,6 +284,8 @@ More detailed tutorials, including the usage of specialized generators (graphs, 
 The testscript file contains instructions on how to generate all the tests. It looks like this:
 
 ```bash
+start=0
+
 # comments are prefixed with hash (#)
 
 ! cat sample.in > $
@@ -342,8 +343,8 @@ The general template for custom checkers is the following:
 ```python
 from kg.checkers import * ### @import
 
-@set_checker()
-def check_solution(input_file, output_file, judge_file, **kwargs):
+@checker
+def check(input_stream, output_stream, judge_stream, **kwargs):
     # write your grader here
     
     # Raise this if the answer is incorrect
@@ -357,7 +358,7 @@ def check_solution(input_file, output_file, judge_file, **kwargs):
     # the return value is the score, and must be a value between 0.0 and 1.0
     return 1.0 
 
-if __name__ == '__main__': chk()
+if __name__ == '__main__': check_files(check)
 ```
 
 Here, `input_file`, `output_file` and `judge_file` are iterators that enumerate the distinct *lines* of each file. (If you want to enumerate *tokens* instead, pass `"tokens"` to `@set_checker()`. It will be whitespace-insensitive.) `kwargs` will contain other auxiliary data (e.g., test index, source code path, etc.), though it may vary between platforms. Anyway, you probably won't need it most of the time.
@@ -370,12 +371,9 @@ from kg.checkers import * ### @import
 def is_subsequence(a, b):
     ... # code omitted
 
-def get_sequence(file, exc=Exception):
-    try:
-        m = int(next(file).rstrip())
-        b = list(map(int, next(file).rstrip().split(' ')))
-    except Exception as e:
-        raise ParseError("Failed to get a sequence") from e
+def get_sequence(stream, exc=Exception):
+    [m] = stream.read.int().eoln
+    [b] = stream.read.ints(m).eoln
     ensure(m >= 0, exc("Invalid length"))
     ensure(len(b) == m, exc(f"Expected {m} numbers but got {len(b)}"))
     return b
@@ -384,25 +382,22 @@ def check_valid(a, b, exc=Exception):
     ensure(is_subsequence(a, b), exc("Not a subsequence!"))
     ensure(len(b) == len(set(b)), exc("Values not unique!"))
 
-@set_checker()
-def check_solution(input_file, output_file, judge_file, **kwargs):
-    z = int(next(input_file))
+@checker
+def check(input_stream, output_stream, judge_stream, **kwargs):
+    [z] = input_stream.read.int().eoln
     for cas in range(z):
-        n = int(next(input_file))
-        a = list(map(int, next(input_file).strip().split()))
-        if len(a) != n: raise Fail("Judge input invalid")
-        cont_b = get_sequence(output_file, exc=Wrong)
-        judge_b = get_sequence(judge_file, exc=Fail)
+        [n] = input_stream.read.int().eoln
+        [a] = input_stream.read.ints(n).eoln
+        cont_b = get_sequence(output_stream, exc=Wrong)
+        judge_b = get_sequence(judge_stream, exc=Fail)
         check_valid(a, cont_b, exc=Wrong)
         check_valid(a, judge_b, exc=Fail)
         if len(cont_b) < len(judge_b): raise Wrong("Suboptimal solution")
         if len(cont_b) > len(judge_b): raise Fail("Judge data incorrect!")
 
-    if output_file.has_next(): raise Wrong("Extra characters at the end of the output file")
-    if judge_file.has_next(): raise Fail("Extra characters at the end of the judge file!")
     return 1.0
 
-if __name__ == '__main__': chk()
+if __name__ == '__main__': check_files(check)
 ```
 
 *Note:* KompGen uses `model_solution` to generate `*.ans` files. But sometimes, you want them to not necessarily contain the answer, but rather just some auxiliary data to help with judging. In this case, you should fill `judge_data_maker` in `details.json`, so it will be used to generate `*.ans` files. 
