@@ -1,201 +1,233 @@
-import argparse
-import contextlib
-import functools
-import io
-import json
-import subprocess
-import sys
-import traceback
+import argparse, contextlib, functools, io, json, sys, traceback
 
 from .utils import * ### @import
+from .utils.streams import * ### @import
+from .utils.judging import * ### @import
 
-CURR_PLATFORM = 'local' ### @replace 'local', format or 'local'
 
-# Like BufferedRWPair, but:
-# - takes in two text I/Os rather than raw I/Os
-# - makes seekable() false
-#
-# I tried to use TextIOWrapper(BufferedRWPair(...)), but I couldn't get it to work in some instances,
-# particularly when both arguments are stdin and stdout, and stdin is piped from a file. (It seems the
-# decoder.reset() call drops some data.) If you can get this working, feel free to replace this with that.
-#
-# After some more investigation, this looks like an unfixed Python bug:
-# https://github.com/python/cpython/issues/56424
-# unfixed because "nobody complained about it for the last 9 years" :(
-#
-# Relevant "decoder.reset()" call:
-# https://github.com/python/cpython/blob/ca308c13daa722f3669a14f1613da768086beb6a/Modules/_io/textio.c#L1695
-# https://github.com/python/cpython/blob/cceac5dd06fdbaba3f45b8be159dfa79b74ff237/Lib/_pyio.py#L2214
-class TextIOPair(io.TextIOBase):
-    def __init__(self, reader, writer):
-        if not reader.readable():
-            raise OSError('"reader" argument must be readable')
-        if not writer.writable():
-            raise OSError('"writer" argument must be writable')
-        self.reader = reader
-        self.writer = writer
+class InteractorError(Exception): ...
+
+
+class Interactor:
+    def __call__(self, input_file, *users, output_file, judge_file=None, **kwargs):
+        with contextlib.ExitStack() as stack:
+            input_s = stack.enter_context(InteractiveStream(
+                input_file,
+                mode=ISMode(self.input_mode),
+                exc=lambda message: Fail(f'[input] {message}'),
+                **self.stream_settings['input'],
+            ))
+            # enable line buffering for all writers
+            for user in users:
+                user.writer.reconfigure(line_buffering=True)
+            user_ss = [
+                stack.enter_context(InteractiveStream(
+                    user.reader,
+                    user.writer,
+                    mode=ISMode(self.from_user_mode),
+                    exc=lambda message: ParseError(f'[user {userid}] {message}'),
+                    **self.stream_settings['user'],
+                )) for userid, user in enumerate(users)
+            ]
+            output_s = stack.enter_context(InteractiveStream(
+                None,
+                output_file,
+                exc=lambda message: Fail(f'[output] {message}'),
+            ))
+            judge_s = stack.enter_context(InteractiveStream(
+                judge_file,
+                mode=ISMode(self.judge_mode),
+                exc=lambda message: Fail(f'[judge] {message}'),
+                **self.stream_settings['judge'],
+            )) if judge_file else None
+
+            return self.interact(input_s, *user_ss, output_stream=output_s, judge_stream=judge_s, **kwargs)
+
+    def init(self, *args, **kwargs):
+        # parse options
+
+        # TODO use kwargs for these...?
+        if not args: args = ['lines']
+        if len(args) == 1: args = args*3
+        if len(args) != 3: raise ValueError(f"Invalid args: {args}")
+        self.input_mode, self.from_user_mode, self.judge_mode = args
+
+        valid_fields = {'input', 'user', 'judge'}
+        def to_fields(arg):
+            value = kwargs.pop(arg, False)
+            value = {*value} if not isinstance(value, bool) else valid_fields if value else set()
+            if not value <= valid_fields:
+                raise ValueError(f"Invalid {arg} argument(s): {value - valid_fields}")
+            return value
+
+        kwargs.setdefault('extra_chars_allowed', {'input', 'judge'})
+
+        ### @@ if False {
+        # TODO parse InteractiveStream arguments from kwargs more properly?
+        # This assumes all settings are bools, and they all default to False.
+        # We want to support different options for all three streams, nicely
+        # and also proper handling of defaults (ISTREAM_DEFAULTS)
+        ### @@ }
+        fields = [(key, to_fields(key)) for key in [*kwargs]]
+        self.stream_settings = {type_: {key: True for key, types in fields if type_ in types} for type_ in valid_fields}
+
+    @classmethod
+    def from_func(cls, *args, **kwargs):
+        f, args = pop_callable(args)
+        def _interactor(f):
+            interact = cls()
+            interact.interact = f
+            interact.init(*args, **kwargs)
+            return interact
+        return _interactor(f) if f is not None else _interactor
+
+
+# hmm, this is almost like just a dataclass
+class BuiltInteractor(Interactor):
+    _names = {'get_one_input', 'get_judge_data_for_input', 'aggregate', 'iterate', 'interact_one', 'wrap_up'}
+    _aliases = {}
+    def __init__(self):
+        for name in self._names: setattr(self, name, None)
         super().__init__()
 
-    def read(self, *args):
-        return self.reader.read(*args)
+    def init(self, *args, cases=None, **kwargs):
+        if cases is None:
+            pass
+        elif cases == 'multi':
+            self._set('iterate', interactor_iterate_with_casecount)
+        elif cases == 'single':
+            self._set('iterate', interactor_iterate_single)
+        else:
+            raise ValueError(f"Unknown 'cases' argument: {cases}")
+        super().init(*args, **kwargs)
 
-    def readline(self, *args):
-        return self.reader.readline(*args)
+    def _set(self, name, arg):
+        if name in self._aliases:
+            name, wrong_name = self._aliases[name], name
+            warn_deprec_name(wrong_name, name) ### @if False
+        if name not in self._names:
+            raise ValueError(f"Unknown name to set: {name}")
+        if getattr(self, name):
+            raise ValueError(f"{name} already set!")
+        setattr(self, name, arg)
+        return arg
 
-    def write(self, *args):
-        return self.writer.write(*args)
+    def interact(self, *args, **kwargs):
+        return InteractionContext(self, *args, **kwargs)()
 
-    def peek(self, *args):
-        return self.reader.peek(*args)
 
-    def readable(self, *args):
-        return self.reader.readable(*args)
+class InteractionContext:
+    def __init__(self, interactor, input_stream, *users, output_stream, **kwargs):
+        self.interactor = interactor
+        self.input_stream = input_stream
+        self.users = users
+        self.output_stream = output_stream
+        self.kwargs = kwargs
+        super().__init__()
 
-    def writable(self, *args):
-        return self.writer.writable(*args)
+    @on_exhaust(Fail("Input stream fully read but expected more"))
+    def get_one_input(self, **kwargs):
+        return self.interactor.get_one_input(self.input_stream, output_stream=self.output_stream, exc=Fail, **kwargs, **self.kwargs)
 
-    def flush(self, *args):
-        return self.writer.flush(*args)
+    @on_exhaust(Fail("Judge data stream fully read but expected more"))
+    def get_judge_data_for_input(self, input, **kwargs):
+        if not self.interactor.get_judge_data_for_input: return
+        return self.interactor.get_judge_data_for_input(self.kwargs.get('judge_stream'), input, output_stream=self.output_stream, exc=Fail, **kwargs, **self.kwargs)
 
-    def close(self):
+    @on_exhaust(Fail("aggregate function failed"))
+    def aggregate(self, scores):
+        return (self.interactor.aggregate or minimum_score)(scores)
+
+    @on_exhaust(Fail("iterate function failed"))
+    def iterate(self):
+        return (self.interactor.iterate or interactor_iterate_with_casecount)(self)
+
+    @on_exhaust(Fail("interact_one function failed"))
+    def interact_one(self, input, **kwargs):
+        return self.interactor.interact_one(input, *self.users, output_stream=self.output_stream, **kwargs, **self.kwargs)
+
+    @on_exhaust(Fail("wrap_up function failed"))
+    def wrap_up(self, success, score, raised_exc, **kwargs):
+        if not self.interactor.wrap_up: return
+        return self.interactor.wrap_up(success, *self.users, output_stream=self.output_stream, score=score, raised_exc=raised_exc, **kwargs, **self.kwargs)
+
+    def __call__(self):
+        # will only wrap up on success or on Wrong/ParseError.
         try:
-            self.writer.close()
-        finally:
-            self.reader.close()
+            score = self.aggragate(self.iterate())
+        except (Wrong, ParseError) as exc:
+            self.wrap_up(success=False, score=None, raised_exc=exc)
+            raise
+        else:
+            new_score = self.wrap_up(success=True, score=score, raised_exc=None)
+            return new_score if new_score is not None else score
 
-    def isatty(self):
-        return self.reader.isatty() or self.writer.isatty()
 
-    @property
-    def closed(self):
-        return self.writer.closed
+def make_interactor_builder():
+    return Builder(name='interactor', build_standalone=Interactor.from_func, build_from_parts=BuiltInteractor)
 
-    @property
-    def encoding(self):
-        return self.writer.encoding
 
-    @property
-    def errors(self):
-        return self.writer.errors
-
-    @property
-    def newlines(self):
-        return self.writer.newlines
-
-    def print(self, *args, **kwargs):
-        kwargs.setdefault('file', self.writer)
-        kwargs.setdefault('flush', True)
-        return print(*args, **kwargs)
-
-    def input(self):
-        return self.readline().removesuffix('\n')
-    
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        line = self.readline()
-        if not line:
-            raise StopIteration
-        return line
+interactor = make_interactor_builder()
 
 
 
-# TODO some kind of unification with checkers
-class InteractorError(Exception): ...
-class ParseError(InteractorError): ...
-class Wrong(InteractorError): ...
-class Fail(InteractorError): ...
+def interactor_iterate_with_casecount(it):
+    t = int(next(it.input_stream))
+    for cas in range(t):
+        inp = it.next_input(caseno=cas)
+        yield it.interact_one(inp,
+            judge_data=it.get_judge_data_for_input(inp, caseno=cas),
+            caseno=cas,
+        )
 
-WA = Wrong # TODO add deprecation notice when WA() is called
 
-class Verdict:
-    AC = "Success"
-    PAE = "Wrong answer (Parse error)" # wrong answer due to invalid/unreadable format.
-    CE = "Compile Error" # the solution didn't compile
-    WA = "Wrong answer" # correct output format, incorrect answer.
-    RTE = "Runtime Error" # solution crashed.
-    TLE = "Time Limit Exceeded" # solution didn't finish under the specified time limit.
-    EXC = "Interactor raised an error" # unintended errors of the interactor.
-    FAIL = "Interactor failed" # deliberate failures, e.g. if the test data is detected as incorrect.
+def interactor_iterate_single(it, *, cas=0):
+    inp = it.next_input(caseno=cas)
+    yield it.interact_one(inp,
+        judge_data=it.get_judge_data_for_input(inp, caseno=cas),
+        caseno=cas,
+    )
 
 
 
 
-
-
-_polygon_rcode = {
-    Verdict.AC: 0,
-    Verdict.CE: 1,
-    Verdict.PAE: 2,
-    Verdict.WA: 1,
-    Verdict.RTE: 1,
-    Verdict.TLE: 1,
-    Verdict.FAIL: 3,
-    Verdict.EXC: 3,
-}
-_polygon_partial = 16
-
-_kg_rcode = {
-    Verdict.AC: 0,
-    Verdict.CE: 10,
-    Verdict.WA: 20,
-    Verdict.RTE: 21,
-    Verdict.TLE: 22,
-    Verdict.PAE: 23,
-    Verdict.FAIL: 30,
-    Verdict.EXC: 31,
-}
-
-
-def write_json_verdict(verdict, message, score, result_file):
-    with open(result_file, 'w') as f:
-        json.dump({
-            'verdict': verdict,
-            'message': message,
-            'score': score,
-        }, f)
-
-_xml_outcome = {
-    Verdict.AC: "Accepted",
-    Verdict.CE: "No - Compilation Error",
-    Verdict.PAE: "No - Wrong Answer",
-    Verdict.WA: "No - Wrong Answer",
-    Verdict.RTE: "No - Run-time Error",
-    Verdict.TLE: "No - Time Limit Exceeded",
-    Verdict.FAIL: "No - Other - Contact Staff",
-    Verdict.EXC: "No - Other - Contact Staff",
-}
-def write_xml_verdict(verdict, message, score, result_file):
-    from xml.etree.ElementTree import Element, ElementTree
-    result = Element('result')
-    result.set('security', result_file)
-    result.set('outcome', _xml_outcome[verdict])
-    result.text = str(verdict) + ": " + message
-    ElementTree(result).write(result_file, xml_declaration=True, encoding="utf-8")
 
 
 
 def _interact_generic(interactor, input, *users, output=None, judge=None, **kwargs):
-    # assumes files are opened, unlike its checker counterpart
-    # TODO make consistent with checker counterpart
-
     def handle_exc_verdict(exc, verdict):
         if kwargs.get('verbose'): traceback.print_exc(limit=None) ### @replace None, -1
         return verdict, getattr(exc, 'score', 0.0), str(exc)
 
-    files = []
-    for name, file, modes in [('input', input, 'r'), ('output', output, 'w'), ('judge', judge, 'r')]:
-        to_open = isinstance(file, str)
-        kwargs[f'{name}_path'], file = (file, open(file, modes)) if to_open else (file or (None, None))
-        files.append((file, to_open))
-
     with contextlib.ExitStack() as stack:
-        input_file, output_file, judge_file = [
-                stack.enter_context(file) if to_open else file
-                for file, to_open in files]
+
+        def maybe_open(arg, *args, **kwargs):
+            if arg is None:
+                return None, None
+            elif isinstance(arg, str):
+                return arg, stack.enter_context(open(arg, *args, **kwargs))
+            elif hasattr(arg, 'name'):
+                return arg.name, arg
+            else:
+                return arg
+
+        kwargs['input_path'],  input_f  = maybe_open(input)
+        kwargs['output_path'], output_f = maybe_open(output, 'w')
+        kwargs['judge_path'],  judge_f  = maybe_open(judge)
+
+        user_info = [(maybe_open(fr_user), maybe_open(to_user, 'w', buffering=1)) for fr_user, to_user in users]
+        (
+            kwargs['from_user_paths'],
+            kwargs['to_user_paths'],
+            user_ios,
+        ) = zip(*((
+            fr_user_path,
+            to_user_path,
+            TextIOPair(fr_user, to_user),
+        ) for userid, ((fr_user_path, fr_user), (to_user_path, to_user)) in enumerate(user_info)))
+
         try:
-            score = interactor(input_file, *users, output_file=output_file, judge_file=judge_file, **kwargs)
+            score = interactor(input_f, *user_ios, output_file=output_f, judge_file=judge_f, **kwargs)
             if not (0.0 <= score <= 1.0):
                 raise InteractorError(f"The interactor returned an invalid score: {score!r}")
             return Verdict.AC, score, ""
@@ -212,140 +244,9 @@ def _interact_generic(interactor, input, *users, output=None, judge=None, **kwar
 
 
 
-_platform_interactors = {}
-def _register_platform_interactor(name):
-    def reg(f):
-        assert name not in _platform_interactors, f"{name} registered twice!"
-        _platform_interactors[name] = f
-        return f
-    return reg
 
 
-### @@if format in ('cms', 'cms-it') {
-# TODO check if this works
-@_register_platform_interactor('cms')
-@_register_platform_interactor('cms-it')
-def _interact_cms(interact, *, score_file=sys.stdout, message_file=sys.stderr, title='', help=None, **kwargs):
-    desc = help or CURR_PLATFORM + (' interactor for the problem' + (f' "{title}"' if title else ''))
-    parser = argparse.ArgumentParser(description=desc)
-    parser.add_argument('user_paths', nargs='*', help='paths to the pairs of files/FIFOs from and to each user')
-    args = parser.parse_args()
-
-    from_users, to_users = args.user_paths[::2], args.user_paths[1::2]
-    if len(from_users) != len(to_users):
-        raise InteractorError("Invalid number of arguments: must be even")
-
-    with contextlib.ExitStack() as stack:
-        users = [
-                stack.enter_context(TextIOPair(open(from_user), open(to_user, 'w')))
-                for from_user, to_user in zip(from_users, to_users)
-            ]
-        verdict, score, message = _interact_generic(check,
-                interact,
-                (sys.stdin.name, sys.stdin),
-                *users,
-                verbose=False,
-            )
-
-    # TODO deliberate failure here if verdict is EXC, FAIL, or something
-
-    if not message:
-        if score >= 1.0:
-            message = 'translate:success'
-        elif score > 0:
-            message = 'translate:partial'
-        else:
-            message = 'translate:wrong'
-
-    print(score, file=score_file)
-    print(message, file=message_file)
-
-### @@}
-
-### @@}
-
-
-### @@ if format in ('local', 'kg', 'pg') {
-@_register_platform_interactor('local')
-@_register_platform_interactor('pg')
-def _interact_local(interact, *, log_file=sys.stderr, force_verbose=False, exit_after=True, **kwargs):
-    desc = help or (CURR_PLATFORM + (' interactor for the problem' + (f' "{title}"' if title else '')))
-    parser = argparse.ArgumentParser(description=desc)
-    parser.add_argument('input_path', help='input file path')
-    parser.add_argument('output_path', help='output file path to write to')
-    parser.add_argument('judge_path', nargs='?', help='judge file path')
-    parser.add_argument('result_file', nargs='?', help='target file to contain the verdict in XML format')
-    parser.add_argument('extra_args', nargs='*', help='extra arguments that will be ignored')
-    parser.add_argument('-C', '--code', default='n/a', help='path to the solution used')
-    parser.add_argument('-t', '--tc-id', default=None, type=int, help='test case ID, zero indexed')
-    parser.add_argument('-v', '--verbose', action='store_true', help='print more details')
-    parser.add_argument('--from-user', nargs='+', help='the input files/FIFOs. If absent, stdin is used.')
-    parser.add_argument('--to-user', nargs='+', help='the output files/FIFOs. If absent, stdout is used.')
-    args = parser.parse_args()
-
-    verbose = force_verbose or args.verbose
-    tc_id = args.tc_id or ''
-
-    if verbose:
-        if args.extra_args: print(f"{tc_id:>3} [I] Received extra args {args.extra_args}... ignoring them.", file=log_file)
-        print(f"{tc_id:>3} [I] Interacting with the solution...", file=log_file)
-
-    with contextlib.ExitStack() as stack:
-        if args.from_user or args.to_user:
-            if not (args.from_user and args.to_user and len(args.from_user) == len(args.to_user)):
-                raise InteractorError("There must be the same number of input and output files/FIFOs.")
-            users = [
-                    stack.enter_context(TextIOPair(open(from_user), open(to_user, 'w')))
-                    for from_user, to_user in zip(from_users, to_users)
-                ]
-        else:
-            users = [TextIOPair(sys.stdin, sys.stdout)]
-
-        verdict, score, message = _interact_generic(
-                interact,
-                args.input_path,
-                *users,
-                code_path=args.code,
-                output=args.output_path,
-                judge=args.judge_path,
-                tc_id=args.tc_id,
-                verbose=verbose,
-            )
-
-    if verbose:
-        print(f"{tc_id:>3} [I] Result:  {verdict}", file=log_file)
-        print(f"{tc_id:>3} [I] Score:   {score}", file=log_file)
-        if message: print(f"{tc_id:>3} [I] Message: {overflow_ell(message, 100)}", file=log_file)
-    else:
-        print(f"{tc_id:>3} [I] Score={score} {verdict}", file=log_file)
-
-    if args.result_file:
-        if verbose: print(f"{tc_id:>3} [I] Writing result to '{args.result_file}'...", file=log_file)
-        ### @@replace '_json_', '_json_' if format in ('local', 'kg') else '_xml_' {
-        write_json_verdict(verdict, message, score, args.result_file)
-        ### @@}
-
-    if CURR_PLATFORM == 'pg':
-        # assumes max score is 100. TODO learn what polygon really does
-        exit_code = _polygon_partial + int(score * 100) if 0 < score < 1 else _polygon_rcode[verdict]
-    else:
-        exit_code = _kg_rcode[verdict]
-
-    if exit_after:
-        exit(exit_code)
-
-    return exit_code
-### @@ }
-
-# TODO this should be a class, like checkers?
-def interactor(f=None):
-    def _interactor(interact):
-        @functools.wraps(interact)
-        def _interact(*args, platform=CURR_PLATFORM, **kwargs):
-            return _platform_interactors[platform](interact, *args, **kwargs)
-        return _interact
-    return _interactor(f) if f is not None else _interact
-
+### @@ if False {
 
 
 # kg
@@ -369,3 +270,133 @@ def interactor(f=None):
 # - stdout = result
 # - ERROR = output_file
 # - Pair(argv[1], argv[2]) = user
+
+
+### @@ }
+
+
+_platform_interactors = {}
+def _register_platform_interactor(name):
+    def reg(f):
+        assert name not in _platform_interactors, f"{name} registered twice!"
+        _platform_interactors[name] = f
+        return f
+    return reg
+
+
+### @@if format in ('cms', 'cms-it') {
+# TODO check if this works
+@_register_platform_interactor('cms')
+@_register_platform_interactor('cms-it')
+def _interact_cms(interact, *, input_file=sys.stdin, score_file=sys.stdout, message_file=sys.stderr, title='', help=None, **kwargs):
+    desc = help or CURR_PLATFORM + (' interactor for the problem' + (f' "{title}"' if title else ''))
+    parser = argparse.ArgumentParser(description=desc)
+    parser.add_argument('user_paths', nargs='*', help='paths to the pairs of files/FIFOs from and to each user')
+    args = parser.parse_args()
+
+    fr_users, to_users = args.user_paths[::2], args.user_paths[1::2]
+    if len(fr_users) != len(to_users): raise InteractorError("Invalid number of arguments: must be even")
+
+    if fr_users:
+        users = [*zip(fr_users, to_users)]
+    else:
+        users = [(sys.stdin, sys.stdout)]
+
+    verdict, score, message = _interact_generic(interact, input_file, *users, verbose=False)
+
+    # TODO deliberate failure here if verdict is EXC, FAIL, or something
+
+    if not message:
+        if score >= 1.0:
+            message = 'translate:success'
+        elif score > 0:
+            message = 'translate:partial'
+        else:
+            message = 'translate:wrong'
+
+    print(score, file=score_file)
+    print(message, file=message_file)
+
+### @@}
+
+
+# TODO the 'pg' version should maybe be stricter than this?
+
+### @@ if format in ('local', 'kg', 'pg') {
+@_register_platform_interactor('local')
+@_register_platform_interactor('pg')
+def _interact_local(interact, *, log_file=sys.stderr, force_verbose=False, exit_after=True, **kwargs):
+    desc = help or (CURR_PLATFORM + (' interactor for the problem' + (f' "{title}"' if title else '')))
+    parser = argparse.ArgumentParser(description=desc)
+    parser.add_argument('input_path', help='input file path')
+    parser.add_argument('output_path', help='output file path to write to')
+    parser.add_argument('judge_path', nargs='?', help='judge file path')
+    parser.add_argument('result_file', nargs='?', help='target file to contain the verdict in XML format')
+    parser.add_argument('extra_args', nargs='*', help='extra arguments that will be ignored')
+    parser.add_argument('-C', '--code', default='n/a', help='path to the solution used')
+    parser.add_argument('-t', '--tc-id', default=None, type=int, help='test case ID, zero indexed')
+    parser.add_argument('-v', '--verbose', action='store_true', help='print more details')
+    parser.add_argument('--from-user', nargs='+', help='the input files/FIFOs. If absent, stdin is used.')
+    parser.add_argument('--to-user', nargs='+', help='the output files/FIFOs. If absent, stdout is used.')
+    args = parser.parse_args()
+
+    verbose = force_verbose or args.verbose
+    tc_id = args.tc_id or ''
+
+    if verbose:
+        if args.extra_args: 
+            warn_print(f"{tc_id:>3} [I] Received extra args {args.extra_args}... ignoring them.", file=log_file)
+        print(f"{tc_id:>3} [I] Interacting with the solution...", file=log_file)
+
+    if args.from_user or args.to_user:
+        if not (args.from_user and args.to_user and len(args.from_user) == len(args.to_user)):
+            raise InteractorError("There must be the same number of input and output files/FIFOs.")
+        users = [*zip(args.from_user, args.to_user)]
+    else:
+        users = [(sys.stdin, sys.stdout)]
+
+    verdict, score, message = _interact_generic(
+        interact,
+        args.input_path,
+        *users,
+        code_path=args.code,
+        output=args.output_path,
+        judge=args.judge_path,
+        tc_id=args.tc_id,
+        verbose=verbose,
+    )
+
+    if verbose:
+        print(f"{tc_id:>3} [I] Result:  {verdict}", file=log_file)
+        print(f"{tc_id:>3} [I] Score:   {score}", file=log_file)
+        if message: print(f"{tc_id:>3} [I] Message: {overflow_ell(message, 100)}", file=log_file)
+    else:
+        print(f"{tc_id:>3} [I] Score={score} {verdict}", file=log_file)
+
+    if args.result_file:
+        if verbose: print(f"{tc_id:>3} [I] Writing result to '{args.result_file}'...", file=log_file)
+        ### @@replace '_json_', '_json_' if format in ('local', 'kg') else '_xml_' {
+        write_json_verdict(verdict, message, score, args.result_file)
+        ### @@}
+
+    if CURR_PLATFORM == 'pg':
+        # assumes max score is 100. TODO learn what polygon really does
+        exit_code = polygon_partial + int(score * 100) if 0 < score < 1 else polygon_rcode[verdict]
+    else:
+        exit_code = kg_rcode[verdict]
+
+    if exit_after:
+        exit(exit_code)
+
+    return exit_code
+### @@ }
+
+
+
+
+
+# TODO argv thing
+def interact_with(interact, *args, platform=CURR_PLATFORM, **kwargs):
+    return _platform_interactors[platform](interact, *args, **kwargs)
+
+
