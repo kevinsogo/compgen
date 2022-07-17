@@ -1,4 +1,4 @@
-from itertools import product
+import itertools
 
 from kg.utils import * ### @import
 from .utils import * ### @import 'kg.grids.utils'
@@ -57,7 +57,7 @@ def gen_random_grid(rand, r, c, *tiles):
         for i, j in tile.locs:
             set_cell(i, j, tile.get(rand))
 
-    cells = rand.shuff((i, j) for i, j in product(range(r), range(c)) if grid[i][j] is empty)
+    cells = rand.shuff((i, j) for i, j in itertools.product(range(r), range(c)) if grid[i][j] is empty)
 
     # fill minc
     for tile in tiles:
@@ -83,8 +83,8 @@ def gen_random_grid(rand, r, c, *tiles):
 
 # TODO do gen_connected_grid # multiple components and stuff...
 
-# dirs4 = tuple((i, j) for i, j in product([-1, 0, 1], repeat=2) if abs(i) + abs(j) == 1)
-# dirs8 = tuple((i, j) for i, j in product([-1, 0, 1], repeat=2) if max(abs(i), abs(j)) == 1)
+# dirs4 = tuple((i, j) for i, j in itertools.product([-1, 0, 1], repeat=2) if abs(i) + abs(j) == 1)
+# dirs8 = tuple((i, j) for i, j in itertools.product([-1, 0, 1], repeat=2) if max(abs(i), abs(j)) == 1)
 
 # class Choicer:
 #     def __init__(self, values):

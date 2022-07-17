@@ -1,11 +1,10 @@
-"""
+"""Stuff related to primes.
+
 This includes the Miller-rabin primality test, with a version valid for all 64-bit unsigned integers (hopefully no bugs!).
-Sometimes wrong for numbers greater
+Can be wrong in principle for larger numbers, though the probability is very low.
 """
 
-from itertools import chain
-from random import randrange
-from sys import stderr, argv
+import itertools, math, random
 
 class MathError(Exception): ...
 
@@ -21,15 +20,15 @@ def get_primes(n, sieve_is_prime=None):
     if sieve_is_prime is None: sieve_is_prime = prime_sieve(n)
     return [p for p in range(n+1) if sieve_is_prime[p]]
 
-_sieve_is_prime = []
-_sieve_primes = []
+_siv_isp = []
+_siv_ps = []
 def _set_sieve(n):
-    _sieve_is_prime[:] = prime_sieve(n)
-    _sieve_primes[:] = get_primes(n, _sieve_is_prime)
+    _siv_isp[:] = prime_sieve(n)
+    _siv_ps[:] = get_primes(n, _siv_isp)
 
-_small_primes = []
+_small_ps = []
 def _set_small(s):
-    _small_primes[:] = get_primes(s, _sieve_is_prime)
+    _small_ps[:] = get_primes(s, _siv_isp)
 
 _set_sieve(10**5)
 _set_small(80)
@@ -65,10 +64,10 @@ def is_prime_miller_rabin(n, *, more_witnesses=()): ### @@if False {
     """
     ### @@}
     if n < 2: return False
-    # if too small, check _sieve_is_prime   ### @if False
-    if n < len(_sieve_is_prime): return _sieve_is_prime[n]
-    # check divisibility with _small primes   ### @if False
-    if any(n % p == 0 for p in _small_primes): return False
+    # if too small, check _siv_isp   ### @if False
+    if n < len(_siv_isp): return _siv_isp[n]
+    # check divisibility with small primes   ### @if False
+    if any(n % p == 0 for p in _small_ps): return False
     # find (d,s) such that d*2^s = n-1 with d odd   ### @if False
     d, s = n - 1, 0
     while not d & 1: d >>= 1; s += 1
@@ -80,43 +79,75 @@ def is_prime_miller_rabin(n, *, more_witnesses=()): ### @@if False {
     else:
         best_witnesses = _i64_witnesses
     # check compositeness with the witnesses   ### @if False
-    for a in chain(best_witnesses, more_witnesses):
+    for a in itertools.chain(best_witnesses, more_witnesses):
         if _check_composite(n, s, d, a): return False
     return True
 
 def is_prime_naive(n):
     if n < 2: return False
-    if n < len(_sieve_is_prime): return _sieve_is_prime[n]
-    for p in _sieve_primes:
+    if n < len(_siv_isp): return _siv_isp[n]
+    for p in _siv_ps:
         if p * p > n: break
         if n % p == 0: return False
     while p * p <= n:
         if n % p == 0: return False
         p += 1
     return True
-# TODO implement some O(n^(1/3)) primality test/factorization (perhaps Fermat+Lehman?) or something, ### @if False
-# O(n^(1/4)) also possible [SQUFOF algorithm] but may be too hard to implement and verify ### @if False
 
+### @@ if False {
+# TODO implement some O(n^(1/3)) primality test/factorization (perhaps Fermat+Lehman?) or something,
+# O(n^(1/4)) also possible [SQUFOF algorithm] but may be too hard to implement and verify
+### @@ }
+
+# 'guarantee' is deprecated ### @if False
 def is_prime(n, *, guarantee=True):
-    if not is_prime_miller_rabin(n, more_witnesses=(randrange(2, 10**18) for i in range(11 if n >= 2**64 else 0))):
-        return False
-    if guarantee and n >= 2**64:
-        print(f'WARNING: falling back to slow algorithm for primality testing {n}', file=stderr)
-        return is_prime_naive(n)
-    return True
+    return is_prime_miller_rabin(n, more_witnesses=(random.randint(2, n-2) for i in range(min(16, int(log(n)/4)) if n >= 2**64 else 0)))
 
 def next_prime(n, *, guarantee=True):
-    while not is_prime(n, guarantee=guarantee): n += 1
+    while not is_prime(n): n += 1
     return n
 
 def prev_prime(n, *, guarantee=True):
     if n < 2: raise MathError(f"There is no prime <= {n}")
-    while not is_prime(n, guarantee=guarantee): n -= 1
+    while not is_prime(n): n -= 1
     assert n >= 2
     return n
 
-### @@if False {
+### @@ if False {
+def test_some_stuff():
+    import random
+    rand = random.Random(11)
+    def test_on(N, *, NN=10**5*3):
+        gps = get_primes(N)
+        print("sieve 1 up to", N, "done", len(gps))
+        isps = prime_sieve(N)
+        print("sieve 2 up to", N, "done", sum(isps))
+        sgps = {*gps}
+        assert sorted(sgps) == gps
+        assert len(isps) == N + 1
+        print("set + sort done", len(sgps))
+        for n in range(-100, N+1):
+            isp = is_prime(n)
+            assert isp == (n >= 0 and isps[n])
+            assert isp == (n in sgps)
+            assert isp == (next_prime(n) == n)
+            assert isp == (n >= 2 and prev_prime(n) == n)
+            if N <= NN or rand.random() < 0.1 * math.log(NN) / math.log(N):
+                assert isp == is_prime_naive(n)
+            if (n & -n) == n:
+                print("now at", n)
+
+    test_on(10**5)
+    for N in range(2, 20):
+        test_on(N)
+    test_on(10**7)
+
 if __name__ == '__main__':
-    n = int(argv[1])
-    print(f"{n} is", "prime" if is_prime(n) else "not prime")
-### @@}
+    import sys
+    assert len(sys.argv) > 1
+    if sys.argv[1] == 'test':
+        test_some_stuff()
+    else:
+        n = int(sys.argv[1])
+        print(f"{n} is", "prime" if is_prime(n) else "not prime")
+### @@ }

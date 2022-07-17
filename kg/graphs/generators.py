@@ -1,27 +1,34 @@
-from itertools import chain
-from functools import wraps
+import functools, itertools
 
 from kg.utils import * ### @import
 from .utils import * ### @import 'kg.graphs.utils'
 
 class TreeGenError(GraphError): ...
 
-def tree_pgen(pgen):
-    @wraps(pgen)
-    def make_tree(rand, nodes, *args, shuff=True, randswap=True, relabel=True, weeds=0.0, **kwargs):
+def tree_pgen(f):
+    @functools.wraps(f)
+    def gen_tree(rand, nodes, *args, shuff=True, randswap=True, relabel=True, weeds=0.0, **kwargs):
         nodes = make_nodes(nodes)
         if relabel: rand.shuffle(nodes)
         cweeds = int(len(nodes) * weeds)
         mains = len(nodes) - cweeds
         if not (cweeds >= 0 and mains >= 1): raise TreeGenError(f"Invalid weeds: n={n} weeds={weeds}")
         edges = []
-        for i, j in chain(pgen(rand, mains, *args, **kwargs), pgen_random_tree(rand, len(nodes), start=mains)):
+        for i, j in itertools.chain(f(rand, mains, *args, **kwargs), pgen_random_tree(rand, len(nodes), start=mains)):
             if not (0 <= j < i < len(nodes)): raise TreeGenError(f"Invalid edge {i} {j} (n={len(nodes)})")
             if randswap and rand.randrange(2): i, j = j, i
             edges.append((nodes[i], nodes[j]))
         if shuff: rand.shuffle(edges)
         return edges
-    return make_tree
+    if f.__name__.startswith('pgen_'): gen_tree.__name__ = gen_tree.__name__[1:]
+    return gen_tree
+
+def pgen_star_tree(rand, n):
+    for i in range(1, n): yield i, 0
+
+def pgen_line_tree(rand, n, *, cactus=0):
+    for i in range(1, n):
+        yield i, i - 1 - (i - 1) % (cactus + 1)
 
 def pgen_random_tree(rand, n, *, start=1):
     for i in range(start, n): yield i, rand.randrange(i)
@@ -40,19 +47,13 @@ def pgen_broomy_tree(rand, n, *, branches=1, leaves=0.5, randleaves=False):
             if randleaves: j = rand.randrange(j, i, branches)
             yield i, j
 
+gen_star_tree = tree_pgen(pgen_star_tree)
+gen_line_tree = tree_pgen(pgen_line_tree)
 gen_random_tree = tree_pgen(pgen_random_tree)
 gen_broomy_tree = tree_pgen(pgen_broomy_tree)
 
-@tree_pgen
-def gen_star_tree(rand, n):
-    for i in range(1, n): yield i, 0
-
-@tree_pgen
-def gen_line_tree(rand, n, *, cactus=0):
-    for i in range(1, n):
-        yield i, i - 1 - (i - 1) % (cactus + 1)
-
-def shuff_labels(rand, nodes, edges): # TODO merge with 'graph_relabel'...
+def shuff_labels(rand, nodes, edges):
+    # TODO merge with 'graph_relabel'... ### @if False
     nodes = make_nodes(nodes)
     assert len(set(nodes)) == len(nodes)
     newlabel = dict(zip(nodes, rand.shuff(nodes)))
@@ -68,7 +69,7 @@ def rand_swaps(rand, nodes, edges):
 def rand_traverse(*args, **kwargs):
     return [i for i, p, d in rand_traverse_data(*args, **kwargs)]
 
-# TODO add start_all, etc.
+# TODO add start_all, etc. ### @if False
 def rand_traverse_data(rand, nodes, edges, *, start=None):
     nodes = make_nodes(nodes)
     if start is None: start = nodes[0]

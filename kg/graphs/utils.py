@@ -1,4 +1,4 @@
-from collections import deque
+import collections
 
 from kg.utils import * ### @import
 
@@ -78,7 +78,7 @@ def bfs_data(nodes, edges, *, start=None, start_all=False, directed=False):
     parent = {}
     for start in starts:
         if start in parent: continue
-        queue = deque([(start, 0)])
+        queue = collections.deque([(start, 0)])
         parent[start] = start
         while queue:
             i, d = queue.popleft()

@@ -1,5 +1,4 @@
-import itertools
-import math
+import itertools, math
 
 class GeomError(Exception): ...
 
