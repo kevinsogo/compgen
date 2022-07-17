@@ -3,7 +3,7 @@ This is a tutorial on how to prepare problems from scratch using KompGen. We'll 
 I'll assume you have `kg` installed in your system. You can check this by typing `kg` in the terminal, which should pop up a message like this:
 ```bash
 $ kg
-usage: kg [-h] [-krazy]
+usage: kg [-h] [--krazy]
           {konvert,convert,konvert-sequence,convert-sequence,subtasks,gen,test,
           run,make,joke,init,kompile,compile,kontest,contest,seating,passwords}
           ...
@@ -17,6 +17,8 @@ I'll also assume some proficiency with [Python](https://docs.python.org/3/tutori
 To avoid any issues later on, if you're using Windows, I'll strongly recommend you [install Gow](https://github.com/bmatzelle/gow/wiki) if you haven't yet. It will give you some useful programs like `cat` or `diff`. (If you don't know what these are, don't worry about it.)
 
 It should take about 60 to 90 minutes to read and follow the whole tutorial. Reading the overview should take around 5 minutes. Then there's one section for each of the problems Mystery Function, Sharing Chocolates 7, Totally Not Robots, and City Map, each of which should take around 15–20 minutes to read and follow on your computer. The final section of this file will simply discuss more advanced features of KompGen, and should take around 5 minutes to read.
+
+<!-- Try to incorporate somehow the idea that 'streams' are files in 'streaming mode', i.e., where file.read.int() and stuff are possible. -->
 
 
 # Overview
@@ -75,7 +77,7 @@ In the KompGen model, the validator is also used to detect subtasks, which is us
 
 Finally, you should also remember to write the **statement**. This consists of the problem statement, the input and output format, the constraints and scoring, and some sample test cases.
 
-By now, you should be familiar with what separates good statements from bad ones. Good statements are clear and unambiguous, carefully defining everything stated. Here are some examples of sentences that shouldn't appear in a good statement, lifted from the NOI.PH's document *Preparing Programming Contests Essentials*:
+By now, you should be familiar with what separates good statements from bad ones. Good statements are clear and unambiguous, carefully defining everything stated. Here are some examples of sentences that shouldn't appear in a good statement, lifted from the NOI.PH's document [*Preparing Programming Contests Essentials*](https://docs.google.com/document/d/1iywEE_cXe2SjtLJxuYM9Ak5KtAbSAkUooz8hbu-7OH8/edit?usp=sharing):
 
 - *The piece can move one step in the two-dimensional grid.* Which directions are allowed for one step? Can the piece move one step diagonally? What happens at the edges of the grid: can the piece move out of the grid?
 
@@ -159,15 +161,15 @@ For each test case, output one line containing the answer to that test case.
 
 $1 \le t \le 10^5$
 
-\textbf{Subtask 1} (20 points):
+\textbf{Subtask 1} (20 points):  
 
 $n \in \{1, 2, 3, 69, 420\}$  
 
-\textbf{Subtask 2} (20 points):
+\textbf{Subtask 2} (20 points):  
 
 $|n| < 10^3$
 
-\textbf{Subtask 3} (60 points):
+\textbf{Subtask 3} (60 points):  
 
 $|n| < 10^5$
 
@@ -219,12 +221,15 @@ The default `details.json` here is fine. Usually I'd change the `title` field, b
 Open the file `validator.py`. You should see a file that looks like:
 
 ```python
+"""Checks whether the input file is valid."""
+
 from sys import *
 from kg.validators import * ### @import
 
 bounds = {
     't': 1 <= +Var <= 10**5,
     'n': 1 <= +Var <= 10**5,
+    'a': abs(+Var) <= 10**9,
 }
 
 subtasks = {
@@ -234,16 +239,23 @@ subtasks = {
 }
 
 @validator(bounds=bounds, subtasks=subtasks)
-def validate_file(file, subtask=None, *, lim):
-
+def validate(stream, subtask=None, *, lim):
     ... # write your validator here
 
-    # file .read_int(), .read_ints(), .read_space(), .read_eoln(), etc.
-    # file.read_eof()
-    
+    # example:
+    [t] = stream.read.int(lim.t).eoln
+    for cas in range(t):
+        [n] = stream.read.int(lim.n).eoln
+        [a] = stream.read.ints(n, lim.a).eoln
+
+    # other possibilities
+    # [x, y, z] = stream.read.real(lim.x).space.real(lim.y).space.int(lim.z).eoln
+    # [line] = stream.read.line(lim.s).eoln
+    # [name] = stream.read.token(lim.name).eoln
+
 
 if __name__ == '__main__':
-    validate_or_detect_subtasks(validate_file, subtasks, stdin)
+    validate_or_detect_subtasks(validate, subtasks, stdin)
 ```
 
 We won't touch the header, which inputs the required stuff from KompGen. We also won't touch anything after `if __name__ == '__main__':`, so don't worry about it.
@@ -263,53 +275,54 @@ subtasks = {
 }
 ```
 
-Here, `bounds` should have the constraints for the variables across all subtasks, and `subtasks` should have any additional constraints. Currently, KompGen doesn't support `or` here. We can't write something like
+Here, `bounds` should have the constraints for the variables across all subtasks, and `subtasks` should have any additional constraints. KompGen also supports "or" via the `|` operator, so for subtask 1, we can write something like
 
 ```python
-# doesn't work:
-'n': +Var == 1 or +Var == 2  or +Var == 3 or +Var == 69 or +Var == 420
+'n': (+Var == 1) | (+Var == 2) | (+Var == 3) | (+Var == 69) | (+Var == 420)
 ```
 
-So we'll just have to check the bounds for subtask 1 later.
+(Note that we need to parenthesize because `|` has a higher precedence than `==`.) However, we won't do this for this tutorial to illustrate that we can also check this manually.
 
-Second, let's write the function `validate_file`, which reads the input format very strictly. To write it, we simply convert each line of the input format. For example, if a line has "three space-separated integers x, y, z", then we write
+Second, let's write the function `validate`, which reads the input format very strictly. To write it, we simply convert each line of the input format. For example, if a line has "three space-separated integers x, y, z", then we write
 
 ```python
-[x, y, z] = file.read.int(lim.x).space.int(lim.y).space.int(lim.z).eoln
+[x, y, z] = stream.read.int(lim.x).space.int(lim.y).space.int(lim.z).eoln
 ```
 
 The read integers are then placed in `x`, `y`, and `z` if we need to use them later on in the function. Note how everything here is specified, including the whitespace.
 
 More specifically, `int(lim.x)` reads an integer and checks if it follows the limits for `x`, specified in both `bounds` and `subtasks`. Then `space` reads a space, `int(lim.y)` reads another integer, and so on. The `eoln` reads the end of line.
 
-For this problem, our `validate_file` function will look like
+For this problem, our `validate` function will look like
 
 ```python
 @validator(bounds=bounds, subtasks=subtasks)
-def validate_file(file, subtask=None, *, lim):
+def validate(stream, subtask=None, *, lim):
 
-    [t] = file.read.int(lim.t).eoln
+    [t] = stream.read.int(lim.t).eoln
     for cas in range(t):
-        [n] = file.read.int(lim.n).eoln
+        [n] = stream.read.int(lim.n).eoln
 
-    [] = file.read.eof
+    [] = stream.read.eof
 ```
 
-The `eof` here is the end of file: remember to read it as well! Observe how the left side is always enclosed in a list, even if it's a single variable or if it's empty. Don't worry about the first three lines of the function: what's important is how the input is read.
+<!-- Possibly update tutorial: no longer required to read eof manually; it's checked after validation by default. If you want to allow extra characters at the end, use extra_chars_allowed=True . If this breaks the flow of the tutorial, feel free to skip this. -->
+
+The `eof` here is the end of file. Observe how the left side is always enclosed in a list, even if it's a single variable or if it's empty. Don't worry about the first three lines of the function: what's important is how the input is read.
 
 Note how the limits on `t` and `n` are magically checked when we do `int(lim.t)` and `int(lim.n)`. However, as we noted earlier, we still have to check that `n` is one of 1, 2, 3, 69, 420 for the first subtask. To do this, we can use the function `ensure`, which is like `assert` in C++:
 
 ```python
 @validator(bounds=bounds, subtasks=subtasks)
-def validate_file(file, subtask=None, *, lim):
+def validate(stream, subtask=None, *, lim):
 
-    [t] = file.read.int(lim.t).eoln
+    [t] = stream.read.int(lim.t).eoln
     for cas in range(t):
-        [n] = file.read.int(lim.n).eoln
+        [n] = stream.read.int(lim.n).eoln
         if subtask == '1':
             ensure(n == 1 or n == 2 or n == 3 or n == 69 or n == 420)
 
-    [] = file.read.eof
+    [] = stream.read.eof
 ```
 
 Put it all together and we've got our validator!
@@ -330,18 +343,18 @@ subtasks = {
 }
 
 @validator(bounds=bounds, subtasks=subtasks)
-def validate_file(file, subtask=None, *, lim):
+def validate(stream, subtask=None, *, lim):
 
-    [t] = file.read.int(lim.t).eoln
+    [t] = stream.read.int(lim.t).eoln
     for cas in range(t):
-        [n] = file.read.int(lim.n).eoln
+        [n] = stream.read.int(lim.n).eoln
         if subtask == '1':
             ensure(n == 1 or n == 2 or n == 3 or n == 69 or n == 420)
 
-    [] = file.read.eof
+    [] = stream.read.eof
 
 if __name__ == '__main__':
-    validate_or_detect_subtasks(validate_file, subtasks, stdin)
+    validate_or_detect_subtasks(validate, subtasks, stdin)
 ```
 
 ## The KompGen generator model
@@ -363,7 +376,7 @@ def gen_random(rand, *args):
     return res
 
 if __name__ == '__main__':
-    write_to_file(print_to_file, gen_random, argv[1:], stdout)
+    write_to_file(format_case, gen_random, argv[1:], stdout)
 ```
 
 <!-- TODO change to new write_to_file format, same with all the other files -->
@@ -373,14 +386,14 @@ Note that `gen_random` doesn't actually write to the file, it just outputs the i
 ```python
 from kg.formatters import * ### @import
 
-@formatter()
-def print_to_file(file, cases, *, print):
-    print(len(cases), file=file)
+@formatter
+def format_case(stream, cases, *, print):
+    print(len(cases))
     for n in cases:
-        print(n, file=file)
+        print(n)
 ```
 
-Here, the output of the function `gen_random` is passed as the variable `cases`. So if `gen_random` outputs `[5, 10, 2]`, the function `print_to_file` would print
+Here, the output of the function `gen_random` is passed as the variable `cases`. So if `gen_random` outputs `[5, 10, 2]`, the function `format_case` would print
 ```
 3
 5
@@ -393,19 +406,21 @@ That way, if we want to change the output format, we only have to edit the forma
 Now let's talk about testscripts. Recall that our generator is saved in a file called `gen_random.py`. If we want to use it to generate 3 integers between 1 and 10, we'd call it with:
 
 ```bash
-$ gen_random.py 3 10 > tests/000.in
+$ python3 gen_random.py 3 10 > tests/000.in
 ```
 
 Here, the `3` and `10` are given as input, and become `T` and `N` in the function `gen_random`. But often you want to call `gen_random.py` multiple times, with different values of `T` and `N`. So you'd want to do something like
 
 ```bash
-$ gen_random.py 3 10 > tests/000.in
-$ gen_random.py 10 1000 > tests/001.in
-$ gen_random.py 10 5000 > tests/002.in
-$ gen_random.py 5 10000 > tests/003.in
+$ python3 gen_random.py 3 10 > tests/000.in
+$ python3 gen_random.py 10 1000 > tests/001.in
+$ python3 gen_random.py 10 5000 > tests/002.in
+$ python3 gen_random.py 5 10000 > tests/003.in
 ```
 
 This is a bit of a hassle, so there is a file that does this automatically. This file is called the **testscript**, which is saved in a file called `testscript`. The equivalent of the above would be:
+
+<!-- TODO add start=0 to indicate that counting starts at 0 -->
 
 ```bash
 gen_random 3 10 > $
@@ -433,13 +448,13 @@ Let's go back to the problem Mystery Function. For the sake of demonstration, we
 Let's decide that our generators will return a list of integers, one integer for each test case. Now that we've decided what our generators will return, we can write the formatter, which is the first thing we write when making test cases. Open `formatter.py` and change it to this:
 
 ```python
-def print_to_file(file, cases):
-    print(len(cases), file=file)
+def format_case(stream, cases, *, print):
+    print(len(cases))
     for n in cases:
-        print(n, file=file)
+        print(n)
 ```
 
-You may want to keep this file open in your text editor so you can refer to it when writing the generator. You can change the name of the function `print_to_file` if you want, but I recommend not doing so.
+You may want to keep this file open in your text editor so you can refer to it when writing the generator. You can change the name of the function `format_case` if you want, but I recommend not doing so.
 
 Rename `gen_random.py` to `gen_subtask1.py`. This file will generate the input for subtask 1. By KompGen convention, all generators must begin with the prefix `gen_`.
 
@@ -458,7 +473,7 @@ def gen_subtask1(rand, *args):
     return res
 
 if __name__ == '__main__':
-    write_to_file(print_to_file, gen_subtask1, argv[1:], stdout)
+    write_to_file(format_case, gen_subtask1, argv[1:], stdout)
 ```
 
 The line `T = int(args[0])`, takes in the integer `T` from the input. If you want to take multiple inputs, you can write something like `a, b, c = map(int, args[:3])`, making sure to change `3` with the number of inputs.
@@ -494,7 +509,7 @@ The issue here is that we haven't updated `details.json`. Remember that KompGen 
 ],
 ```
 
-Now, run the command `kg make inputs` again. It should make a single file `tests\000.in`. If you open it, you should see 
+Now, run the command `kg make inputs` again. It should make a single file `tests/000.in`. If you open it, you should see 
 
 ```
 100000
@@ -562,7 +577,7 @@ def gen_random(rand, *args):
     return res[:T]
 
 if __name__ == '__main__':
-    write_to_file(print_to_file, gen_random, argv[1:], stdout)
+    write_to_file(format_case, gen_random, argv[1:], stdout)
 ```
 
 Again, since we changed the name of the function to `gen_random`, we also changed the last line to have `gen_random` as well. Then we open `testscript`, and change it to:
@@ -793,20 +808,19 @@ subtasks = {
 }
 
 @validator(bounds=bounds, subtasks=subtasks)
-def validate_file(file, subtask=None, *, lim):
+def validate(stream, subtask=None, *, lim):
 
-    [t] = file.read.int(lim.t).eoln
+    [t] = stream.read.int(lim.t).eoln
     for cas in range(t):
-        [F, m] = file.read.int(lim.F).space.int(lim.m).eoln
-
-    [] = file.read.eof
+        [F, m] = stream.read.int(lim.F).space.int(lim.m).eoln
 ```
+Here, we've removed the `[] = stream.read.eof` line, which is actually not required. If you forget to read `eof` at the end, KompGen automatically checks it for you once you exit `validate`. 
 
 Now let's check if the answer is an integer. This is just checking if `F % m == 0`, so we can use an `ensure` statement for this. You can do something like
 
 ```python
 for cas in range(t):
-    [F, m] = file.read.int(lim.F).space.int(lim.m).eoln
+    [F, m] = stream.read.int(lim.F).space.int(lim.m).eoln
     if subtask == '1' or subtask == '2' or subtask == '3':
         ensure(F % m == 0)
 ```
@@ -834,7 +848,7 @@ Here, we added an attribute `ans_is_int`, with a default value of `False`, and s
 
 ```python
 for cas in range(t):
-    [F, m] = file.read.int(lim.F).space.int(lim.m).eoln
+    [F, m] = stream.read.int(lim.F).space.int(lim.m).eoln
     if lim.ans_is_int:
         ensure(F % m == 0)
 ```
@@ -861,18 +875,16 @@ subtasks = {
 }
 
 @validator(bounds=bounds, subtasks=subtasks)
-def validate_file(file, subtask=None, *, lim):
+def validate(stream, subtask=None, *, lim):
 
-    [t] = file.read.int(lim.t).eoln
+    [t] = stream.read.int(lim.t).eoln
     for cas in range(t):
-        [F, m] = file.read.int(lim.F).space.int(lim.m).eoln
+        [F, m] = stream.read.int(lim.F).space.int(lim.m).eoln
         if lim.ans_is_int:
             ensure(F % m == 0)
 
-    [] = file.read.eof
-
 if __name__ == '__main__':
-    validate_or_detect_subtasks(validate_file, subtasks, stdin)
+    validate_or_detect_subtasks(validate, subtasks, stdin)
 ```
 
 And now let's move on to the next step: generators!
@@ -884,10 +896,10 @@ It's a good idea to get the sample input and formatter out of the way before doi
 Now let's write the formatter. Recall that this is the file that will take the output of the generator and print it to the file. Let's decide that the generator will output a list of pairs `[F, m]`. The formatter here is pretty simple:
 
 ```python
-def print_to_file(file, cases):
-    print(len(cases), file=file)
+def format_case(stream, cases, *, print):
+    print(len(cases))
     for F, m in cases:
-        print(F, m, file=file)
+        print(F, m)
 ```
 
 You may be wondering about the last line here. Well, when the `print` function takes several arguments, it prints them with a space in between them. We'll talk more about this later on:
@@ -927,7 +939,7 @@ def gen_random(rand, *args):
     return cases
 
 if __name__ == '__main__':
-    write_to_file(print_to_file, gen_random, argv[1:], stdout)
+    write_to_file(format_case, gen_random, argv[1:], stdout)
 ```
 
 The corresponding lines in the testscript will be `gen_random 11111 1000000000 1` and `gen_random 11111 1000000000 0`.
@@ -956,7 +968,7 @@ def gen_all(rand, *args):
     return cases
 
 if __name__ == '__main__':
-    write_to_file(print_to_file, gen_all, argv[1:], stdout)
+    write_to_file(format_case, gen_all, argv[1:], stdout)
 ```
 
 Remember to change the last line to have `gen_all` rather than `gen_random`! For this one, the corresponding lines in the testscript will be `gen_all 11111 5 1`, `gen_all 11111 100 1`, and `gen_all 11111 100 0`.
@@ -979,7 +991,7 @@ def gen_limits(rand, *args):
     return cases
 
 if __name__ == '__main__':
-    write_to_file(print_to_file, gen_limits, argv[1:], stdout)
+    write_to_file(format_case, gen_limits, argv[1:], stdout)
 ```
 
 Again, remember to change the last line! We'll call this one with `gen_limits 1000000000 1` and `gen_limits 1000000000 0`. The final testscript looks something like this:
@@ -1147,17 +1159,17 @@ The integer in the sequence has at most $19$ digits.
 
 The tricky part to write here is ensuring the statements are well-formatted enough. This you can model off an old NOI.PH problem like [Studying Diplomacy](https://www.hackerrank.com/contests/noi-ph-practice-page/challenges/studying-diplomacy).
 
-Now this is on you: initialize the folder with the appropriate number of subtasks, then replace the statement file with the statement we just wrote. If you need a reminder, feel free to look up the documentation at `compgen\docs\PREPARATION.md`, or to look at the previous sections.
+Now this is on you: initialize the folder with the appropriate number of subtasks, then replace the statement file with the statement we just wrote. If you need a reminder, feel free to look up the documentation at `compgen/docs/PREPARATION.md`, or to look at the previous sections.
 
 ## Writing the validator
 
 Then let's write the validator. To read in the whole line, you can do something like
 
 ```python
-[ln] = file.read.line(charset=valid_chars, maxn=lim.linelen).eoln
+[ln] = stream.read.line(charset=valid_chars, l=lim.linelen).eoln
 ```
 
-where `valid_chars` is a string of all allowed characters, and `maxn` is the maximum number of characters to read. Then `ln` will have the whole line, like `"It is April 2018"` or something. Also, recall that for a string `s`, `s.isdigit()` is `True` if `s` consists of only digits, and `False` otherwise.
+where `valid_chars` is a string of all allowed characters, and `l` is the constraint for the number of characters to read. Then `ln` will have the whole line, like `"It is April 2018"` or something. Also, recall that for a string `s`, `s.isdigit()` is `True` if `s` consists of only digits, and `False` otherwise.
 
 That's the only additional information you need, so try to write the validator yourself! Here's mine, without the header or footer:
 
@@ -1165,7 +1177,7 @@ That's the only additional information you need, so try to write the validator y
 bounds = {
     't': 1 <= +Var <= 10**5,
     'n': 0 <= +Var < 10**19,
-    'linelen': 80,
+    'linelen': +Var <= 80,
 }
 
 subtasks = {
@@ -1178,11 +1190,11 @@ valid_chars = string.ascii_letters + string.digits + ' '
 # the same as "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 "
 
 @validator(bounds=bounds, subtasks=subtasks)
-def validate_file(file, subtask=None, *, lim):
+def validate(stream, subtask=None, *, lim):
 
-    [t] = file.read.int(lim.t).eoln
+    [t] = stream.read.int(lim.t).eoln
     for cas in range(t):
-        [ln] = file.read.line(charset=valid_chars, maxn=lim.linelen).eoln
+        [ln] = stream.read.line(charset=valid_chars, maxn=lim.linelen).eoln
         ensure(len(ln) >= 1)
         ensure(ln.strip() == ln) # no leading or trailing whitespace
         ensure('\t' not in ln and '  ' not in ln) # no tabs or two spaces
@@ -1196,15 +1208,14 @@ def validate_file(file, subtask=None, *, lim):
 
         ensure(num_ints == 1)
         ensure(n in lim.n)
-
-    [] = file.read.eof
 ```
 
 Make sure your validator carefully checks all the restrictions in the constraints!
 
 ### "Self-documenting code" but not really
 
-Now, how did I know that `read.line` accepted `charset` and `maxn` as arguments? Well, I read the KompGen source code. In `compgen\kg\validators.py`, you can find a function `read_line` that looks like:
+<!-- TODO this section needs to be rewritten: there's now a _read_cond that handles both read_until and read_while, and `l` is now recommended instead of `maxn` -->
+Now, how did I know that `read.line` accepted `charset` and `l` as arguments? Well, I read the KompGen source code. In `compgen/kg/validators.py`, you can find a function `read_line` that looks like:
 
 ```python
 def read_line(self, *, eof=False, _called="line", **kwargs):
@@ -1233,10 +1244,10 @@ But if you want to use the more advanced features of KompGen that aren't discuss
 Again, it's always a good idea to get the sample test case and the formatter out of the way first. Edit `sample.in` with the sample test case. Write the formatter for this one, which is pretty simple:
 
 ```python
-def print_to_file(file, cases):
-    print(len(cases), file=file)
+def format_case(stream, cases, *, print):
+    print(len(cases))
     for sentence in cases:
-        print(sentence, file=file)
+        print(sentence)
 ```
 
 Now for the test planning. We'll just have one file that will contain all the different kinds of cases. Our single generator, `gen_all.py`, will take the number of test cases `T` and the number of digits `L`. Think for a moment about how you would make test cases for this problem, and what type of mistakes you need to anticipate.
@@ -1269,7 +1280,7 @@ def random_word(rand, length):
 
 (We introduced `rand.shuffled` in Mystery Function.) Generating tricky words can be done with a function too. We choose an appropriate prefix like `0` or `00` or `0x`, and append some random digits. The part that's hard is generating a random partition, which involves some thinking.
 
-Thankfully, **KompGen has a powerful library**. If you have to use something standard like this, then it's possible KompGen already has it. By examining the file `compgen\kg\generators.py`, we see there's a function called `randpartition` which does exactly what we need! And it's documented too!
+Thankfully, **KompGen has a powerful library**. If you have to use something standard like this, then it's possible KompGen already has it. By examining the file `compgen/kg/generators.py`, we see there's a function called `randpartition` which does exactly what we need! And it's documented too!
 
 ```python
 def randpartition(self, total, min_=1, skew=2): ### @@ rem {
@@ -1375,7 +1386,7 @@ def make_file(rand, *args):
     return cases
 
 if __name__ == '__main__':
-    write_to_file(print_to_file, make_file, argv[1:], stdout)
+    write_to_file(format_case, make_file, argv[1:], stdout)
 ```
 
 Observe two things. First, the last line calls `make_file`, which is the main function that calls everything else. And second, we're always passing `rand` as a parameter to our helper functions, because there's no way to generate randomness otherwise. Even if you forget to do either of these, Python will throw an error and give you a nice error message, which is one of the advantages of doing everything in Python rather than C++.
@@ -1584,7 +1595,7 @@ To write the validator, you need to know one more method: `read.ints`, which is 
 ```python
 bounds = { 'a': 1 <= +Var <= 10**9 }
 # ... other stuff ...
-[arr] = file.read.ints(n, lim.a) # arr is a list of n integers, each in lim.a
+[arr] = stream.read.ints(n, lim.a) # arr is a list of n integers, each in lim.a
 ```
 
 That means the validator will look like
@@ -1603,20 +1614,20 @@ subtasks = {
 }
 
 @validator(bounds=bounds, subtasks=subtasks)
-def validate_file(file, subtask=None, *, lim):
+def validate(stream, subtask=None, *, lim):
 
-    [t] = file.read.int(lim.t).eoln
+    [t] = stream.read.int(lim.t).eoln
     for cas in range(t):
-        [p] = file.read.int(lim.p).eoln
+        [p] = stream.read.int(lim.p).eoln
         sum_s_i = 0
         for i in range(p):
-            [len_s_i] = file.read.int(lim.p).space
-            [s_i] = file.read.ints(len_s_i, lim.a).eoln
+            [len_s_i] = stream.read.int(lim.p).space
+            [s_i] = stream.read.ints(len_s_i, lim.a).eoln
             # note that s_i is a list of len_s_i integers
             sum_s_i += len_s_i
         ensure(sum_s_i in lim.sum_s_i)
 
-    [] = file.read.eof
+    [] = stream.read.eof
 ```
 
 And now let's move on to test planning and writing the generators.
@@ -1626,12 +1637,12 @@ And now let's move on to test planning and writing the generators.
 As always, let's get the sample test case and formatter out of the way first. Edit `sample.in` and open `formatter.py`. Our output will be a list of cases, and each case will be a list of walks, giving us this formatter:
 
 ```python
-def print_to_file(file, cases):
-    print(len(cases), file=file)
+def format_case(stream, cases, *, print):
+    print(len(cases))
     for cas in cases:
-        print(len(cas), file=file)
+        print(len(cas))
         for walk in cas:
-            print(len(walk), *walk, file=file)
+            print(len(walk), *walk)
 ```
 
 You may be wondering about the last line here. Recall (from Sharing Chocolates 7's formatter) that when the print function takes multiple arguments, it prints them with a space in between them. But what about the asterisk? Basically, what it does is *unpack* the list `walk`. Kind of like taking out the surrounding brackets of the list. See these examples:
@@ -1680,7 +1691,7 @@ def gen_random(rand, new_case, *args):
     return cases
 
 if __name__ == '__main__':
-    write_to_file(print_to_file, gen_random, argv[1:], stdout)
+    write_to_file(format_case, gen_random, argv[1:], stdout)
 ```
 
 Note that instead of using the same `SSI`, `A`, and `bias` all throughout, we specify minimum and maximum values instead, and generate a random value in between those. This is a typical trick used in random generators to make the test cases a bit more random. It also means that the bulk of the work will be in the testscript instead of the generator, which is easier to work with in the edit–generate cycle.
@@ -1754,7 +1765,7 @@ def gen_limits(rand, *args):
     return rand.shuffled(cases)
 
 if __name__ == '__main__':
-    write_to_file(print_to_file, gen_limits, argv[1:], stdout)
+    write_to_file(format_case, gen_limits, argv[1:], stdout)
 ```
 
 There's a lot going on here, but since this isn't the main focus of this part, don't worry too much about it. Note the convention of using zero-indexed vertices for the code, and only converting to one-indexed vertices when printing; this standard is adopted by KompGen in its library, so it might be a good idea to write your code like this as well.
@@ -1796,7 +1807,7 @@ In the KompGen model, a checker is a program that takes in the input, output, an
 {{ templates/checker_generic_template.py }}
 ```
 
-The inputs to the function `check_solution` are `input_file`, which is the input to the test case, `output_file`, the contestant's output to the test case, and then `judge_file`, the judge's output to the test case. The checker can use everything in the input file, the contestant's output, and the judge's output, to determine if the contestant's output is correct.
+The inputs to the function `check_solution` are `input_stream`, which is the input to the test case, `output_stream`, the contestant's output to the test case, and then `judge_stream`, the judge's output to the test case. The checker can use everything in the input file, the contestant's output, and the judge's output, to determine if the contestant's output is correct.
 
 Also note that the score is scaled from `0.0` to `1.0`. So if the checker outputs, say, `0.5`, and the test case is worth `15` points, then the contestant will score `7.5` points for this test case.
 
@@ -1804,7 +1815,13 @@ Here's another illustration!
 
 ![](checker-model.jpg)
 
-How exactly are the files read? The files `input_file`, `output_file`, and `judge_file` act as iterators over the lines of the file, like how you'd typically open a file with `open`. So doing `next(input_file)` returns the next line of `input_file`, and so on.
+How exactly are the files read? The files `input_stream`, `output_stream`, and `judge_stream` can act as iterators over the lines of the file, like how you'd typically open a file with `open`. So doing `next(input_stream)` returns the next line of `input_stream`, and so on. You can also use them like in validators:
+
+```python
+[line] = input_stream.read_line(l=lim.linelen).eoln
+```
+
+<!-- How exactly are the files read? The files `input_stream`, `output_stream`, and `judge_stream` act as iterators over the lines of the file, like how you'd typically open a file with `open`. So doing `next(input_stream)` returns the next line of `input_stream`, and so on. -->
 
 The typical way the checker is written is using a lot of helper functions to parse the files. For example, here's a generic checker that KompGen uses:
 
@@ -1812,36 +1829,44 @@ The typical way the checker is written is using a lot of helper functions to par
 {{ templates/checker_generic.py }}
 ```
 
-Observe how very exception-safe it is. To raise an exception from `ensure`, the syntax is `ensure(condition, exc("message"))` or `ensure(condition, "message", exc)`. Also note how extra output is also disallowed, by checking if `output_file.has_next()`.
+Observe how very exception-safe it is. To raise an exception from `ensure`, the syntax is `ensure(condition, exc("message"))` or `ensure(condition, "message", exc)`.
+
+Also, KompGen automatically checks whether you've reached `eof` after exiting the `check` function, just like the validator.
+
+<!-- Also note how extra output is also disallowed, by checking if `output_stream.has_next()`. -->
+
+<!-- TODO update the tutorial: the has_next() check is no longer needed; it's done at the end by default. If you want to disable, use extra_chars_allowed -->
 
 ## Writing the checker
 
 This gives us an idea of how to write the checker for this problem. We don't actually need to read in the judge file at all: we only need to read in the input and the contestant's output.
 
-First, let's write the `check_solution` function. It will begin by reading in `t` from the input file. For each test case, we then we need to read in the contents of the output file, using several helper functions that we'll write later:
+First, let's write the `check` function. It will begin by reading in `t` from the input file. For each test case, we then we need to read in the contents of the output file, using several helper functions that we'll write later:
 
 ```python
-@set_checker()
-def check_solution(input_file, output_file, judge_file, **kwargs):
-    t = int(next(input_file))
+@checker
+def check(input_stream, output_stream, judge_stream, **kwargs):
+    [t] = input_stream.read.int().eoln
     for cas in range(t):
-        n = get_n(output_file, Wrong)
-        # get_n(file, exc)
-        labels = get_sequence(output_file, n, 1, 500, Wrong)
-        # get_sequence(file, length, lower_bound, upper_bound, exc)
+        [n] = output_stream.read.int(1, 1000).eoln
+        [labels] = output_stream.read.ints(n, 1, 500).eoln
+        [g] = output_stream.read.tokens(n, n=n, charset='01', sep=EOLN).eoln
+        ...
+```
+Here, `tokens` is very similar to `ints`, and the above line for `g` is roughly equivalent to:
+```python
         g = []
         for i in range(n):
-            g.append(get_string(output_file, n, Wrong))
-            # get_string(file, length, exc)
-        ...
+            [s] = output_stream.read.token(n=n, charset='01').eoln
+            g.append(s)
 ```
 
 We need to check that `g` does indeed describe the adjacency matrix of a simple graph. So let's check that it has no self loops and is symmetric:
 
 ```python
-@set_checker()
-def check_solution(input_file, output_file, judge_file, **kwargs):
-    t = int(next(input_file))
+@checker
+def check(input_stream, output_stream, judge_stream, **kwargs):
+    [t] = input_stream.read.int().eoln
     for cas in range(t):
         ...
         for i in range(n):
@@ -1854,37 +1879,40 @@ def check_solution(input_file, output_file, judge_file, **kwargs):
 Then let's read from the input file. We'll check if each walk is really present in the contestant's graph. To check this, we'll read in the number of walks `p` from the input file. Then we'll read in the required walk `walk` from the input file, and read in the contestant's walk `a`. To check the contestant's walk, we check that all the labels of the vertices match, and then check that the walk is indeed present in the contestant's graph:
 
 ```python
-@set_checker()
-def check_solution(input_file, output_file, judge_file, **kwargs):
-    t = int(next(input_file))
+@checker
+def check(input_stream, output_stream, judge_stream, **kwargs):
+    [t] = input_stream.read.int().eoln
     for cas in range(t):
         ...
-        p = int(next(input_file))
+        p = input_stream.read.int().eoln
         for i in range(p):
-            walk = list(map(int, next(input_file).strip().split()))
+            [len_walk] = input_stream.read.int().space
+            [walk] = input_stream.read.ints(len_walk).eoln
             # walk reads in the required walk
-            a = get_sequence(output_file, len(walk) - 1, 1, n, Wrong)
-            for j in range(1, len(walk)):
+            [a] = output_stream.read.ints(len_walk - 1, 1, n).eoln
+            for j in range(1, len_walk):
                 ensure(walk[j] == labels[a[j]], "Wrong label", Wrong)
                 # checks if the labels are right
-            for j in range(1, len(walk) - 1):
+            for j in range(1, len_walk - 1):
                 ensure(g[a[j-1]][a[j]] == "1", "Edge not in graph", Wrong)
                 # checks if it is really a walk
     ...
-```
-
-Finally, we check if the output has extra characters, and then return the contestant's score:
-
-```python
-@set_checker()
-def check_solution(input_file, output_file, judge_file, **kwargs):
-    t = int(next(input_file))
-    for cas in range(t):
-        ...
-    if output_file.has_next(): raise Wrong("Output has extra characters")
     return 1.0
 ```
 
+Finally, we return the contestant's score:
+
+```python
+@checker
+def check(input_stream, output_stream, judge_stream, **kwargs):
+    [t] = input_stream.read.int().eoln
+    for cas in range(t):
+        ...
+    return 1.0
+```
+
+
+<!-- 
 Now we have to write the helper functions. Recall that we have three helper functions here: `get_n(file, exc)`, `get_sequence(file, length, lower_bound, upper_bound, exc)`, and `get_string(file, length, exc)`. Try to write the first one. Remember to check that the contestant's `n` is between `1` and `1000`. This gives us:
 
 ```python
@@ -1927,67 +1955,40 @@ def get_string(file, length, exc):
     ensure(set(s) <= set("01"), "Invalid character in matrix", exc)
     return s
 ```
+ -->
+
 
 And that's it! Put it all together, with the header and the footer, and we have our checker:
 
 ```python
 from kg.checkers import * ### @import
 
-def get_n(file, exc):
-    try:
-        n = int(next(file).rstrip())
-    except Exception as e:
-        raise ParseError("Failed to get an integer") from e
-    ensure(1 <= n <= 1000, "Invalid number of vertices", exc)
-    return n
-
-def get_sequence(file, length, lower_bound, upper_bound, exc):
-    try:
-        l = list(map(int, next(file).rstrip().split(' ')))
-    except Exception as e:
-        raise ParseError("Failed to get a sequence") from e
-    ensure(len(l) == length, lambda: exc(f"Expected {n} numbers but got {len(l)}"))
-    for i in l:
-        ensure(lower_bound <= i <= upper_bound, lambda: exc(f"Item {i} is out of bounds"))
-    return l
-
-def get_string(file, length, exc):
-    try:
-        s = next(file).rstrip()
-    except Exception as e:
-        raise ParseError("Failed to get a string") from e
-    ensure(len(s) == length, lambda: exc(f"Expected string of length {n} but got {len(l)}"))
-    ensure(set(s) <= "01", "Invalid character in matrix", exc)
-    return s
-
-@set_checker()
-def check_solution(input_file, output_file, judge_file, **kwargs):
-    t = int(next(input_file))
+@checker
+def check(input_stream, output_stream, judge_stream, **kwargs):
+    [t] = input_stream.read.int().eoln
     for cas in range(t):
-        n = get_n(output_file, Wrong)
-        labels = get_sequence(output_file, n, 1, 500, Wrong)
-        g = []
-        for i in range(n):
-            g.append(get_string(output_file, n, Wrong))
+        [n] = output_stream.read.int(1, 1000).eoln
+        [labels] = output_stream.read.ints(length, 1, 500).eoln
+        [g] = output_stream.read.tokens(n, n=n, charset='01').eoln
 
         for i in range(n):
             ensure(g[i][i] == "0", "Graph has self-loop", Wrong)
             for j in range(i):
                 ensure(g[i][j] == g[j][i], "Matrix not symmetric", Wrong)
 
-        p = int(next(input_file))
+        [p] = input_stream.read.int().eoln
         for i in range(p):
-            walk = list(map(int, next(input_file).strip().split()))
-            a = get_sequence(output_file, len(walk) - 1, 1, n, Wrong)
-            for j in range(1, len(walk)):
+            [len_walk] = input_stream.read.int().space
+            [walk] = input_stream.read.ints(len_walk).eoln
+            [a] = output_stream.read.ints(len_walk - 1, 1, n).eoln
+            for j in range(1, len_walk):
                 ensure(walk[j] == labels[a[j] - 1], "Wrong label", Wrong)
-            for j in range(1, len(walk) - 1):
+            for j in range(1, len_walk - 1):
                 ensure(g[a[j-1]][a[j]] == "1", "Edge not in graph", Wrong)
 
-    if output_file.has_next(): raise Wrong("Output has extra characters")
     return 1.0
 
-if __name__ == '__main__': chk()
+if __name__ == '__main__': check_files(check)
 ```
 
 ## Writing the model solution, the data maker, and making all
@@ -2037,12 +2038,13 @@ There are two ways to do this, but the recommended way is using `write_to_files`
 Here's a simple example of a multi-file generator using the single-file model. Here, the formatter looks like
 
 ```python
-def print_to_file(file, cases):
-    print(len(cases), file=file)
+@formatter
+def format_case(stream, cases, *, print):
+    print(len(cases))
     for case in cases:
         s, n, d = case
-        print(s, file=file)
-        print(n, d, file=file)
+        print(s)
+        print(n, d)
 ```
 
 and the generator looks like
@@ -2059,10 +2061,10 @@ def gen_random(rand, *args):
         yield [[0, x, y], [1, x, y]]
 
 if __name__ == '__main__':
-    write_to_files(print_to_file, gen_random, *argv[1:])
+    write_to_files(format_case, gen_random, *argv[1:])
 ```
 
-The main thing to pay attention to is the last line. Note that instead of the `write_to_file` function, we have a `write_to_files` function instead. The called parameters are also slightly different, but the main things to pay attention are the first argument, `print_to_file` from the formatter, and the second argument `gen_random`, the generating function.
+The main thing to pay attention to is the last line. Note that instead of the `write_to_file` function, we have a `write_to_files` function instead. The called parameters are also slightly different, but the main things to pay attention are the first argument, `format_case` from the formatter, and the second argument `gen_random`, the generating function.
 
 When this file is called with `F = 3` and `A = 100`, then it generates three files. Each file will have two test cases, one which has `0` followed by two random integers, and one which has `1` followed by the same two random integers.
 
@@ -2085,7 +2087,7 @@ def distribute(rand, *args):
     yield from group_into(T, gen_random(rand, *args))
 
 if __name__ == '__main__':
-    write_to_files(print_to_file, distribute, *argv[1:])
+    write_to_files(format_case, distribute, *argv[1:])
 ```
 
 Now when this file is called with `T = 2`, `F = 3`, and `A = 100`, this gives the same format of output: three files, each with two test cases each. If we set `T = 3` instead, there will be two files, each with three test cases each. This would be useful for, say, Mystery Function, if we want to test all possible `N` and `D` distributed over files.
@@ -2114,131 +2116,132 @@ You could also make the target `$$`, but then the testscript would have to run y
 
 ## Checker decorators
 
-The `@set_checker` decorator accepts an argument `no_extra_chars` that can be set to `True`, if you want to check that there are no extra characters at the end of all files. You can also add the decorator `@default_score`, such that it returns `1.0` if it doesn't return anything:
+The `@checker` decorator accepts an argument `extra_chars_allowed` that can be set to `True`, if you don't want to check that there are no extra characters at the end of the output file. You can also add the decorator `@default_score`, such that it returns `1.0` if it doesn't return anything. For example,
 
 ```python
-@set_checker()
-def check_solution(input_file, output_file, judge_file, **kwargs):
+@checker
+@default_score
+def check_solution(input_stream, output_stream, judge_stream, **kwargs):
     # ...
-    if input_file.has_next(): raise Fail("...")
-    if output_file.has_next(): raise Wrong("...")
-    if judge_file.has_next(): raise Fail("...")
+```
+is the same as
+```python
+@checker(extra_chars_allowed=True)
+def check_solution(input_stream, output_stream, judge_stream, **kwargs):
+    # ...
+    if input_stream.has_next(): raise Fail("...")
+    if output_stream.has_next(): raise Wrong("...")
+    if judge_stream.has_next(): raise Fail("...")
     return 1.0
-
-# is the same as
-
-@set_checker(no_extra_chars=True)
-@default_score
-def check_solution(input_file, output_file, judge_file, **kwargs):
-    # ...
 ```
 
-This file can also be given a subset of `['input', 'output', 'judge']` to signal that only these files will be checked for extra lines:
+
+
+This file can also be given a subset of `['input', 'output', 'judge']` to signal that only these files will not be checked for extra lines:
 
 
 ```python
-@set_checker(no_extra_chars=['output', 'judge'])
+@checker(no_extra_chars=['output', 'judge'])
 @default_score
-def check_solution(input_file, output_file, judge_file, **kwargs):
+def check_solution(input_stream, output_stream, judge_stream, **kwargs):
     # ...
 ```
 
-The `@set_checker` decorator also accepts arguments that change the way the files are read. Typically, the files are read line-by-line. But if you want to read the files token-by-token instead, like `cin` does from C++, then you can pass the argument `tokens`. This will make it ignore whitespace, however, which is fine for some problems but not for others. Anyway, it looks like:
+The `@checker` decorator also accepts arguments that change the way the files are read. Typically, the files are read line-by-line. But if you want to read the files token-by-token instead, like `cin` does from C++, then you can pass the argument `tokens`. This will make it ignore whitespace, however, which is fine for some problems but not for others. Anyway, it looks like:
 
 ```python
-@set_checker('tokens', no_extra_chars=['output', 'judge'])
+@checker('tokens', extra_chars_allowed=['output', 'judge'])
 @default_score
-def check_solution(input_file, output_file, judge_file, **kwargs):
-    # next(input_file) returns the next token in the input file
+def check_solution(input_stream, output_stream, judge_stream, **kwargs):
+    # next(input_stream) returns the next token in the input file
 ```
 
 If you want to set some files to be read by tokens, and some files to be read by lines, you can do something like:
 
 ```python
-@set_checker('tokens', 'lines', 'lines', no_extra_chars=['output', 'judge'])
+@checker('tokens', 'lines', 'lines', extra_chars_allowed=['output', 'judge'])
 @default_score
-def check_solution(input_file, output_file, judge_file, **kwargs):
+def check_solution(input_stream, output_stream, judge_stream, **kwargs):
     # ...
 ```
 
-This means that `input_file` is read by tokens, while `output_file` and `judge_file` are read by lines.
+This means that `input_stream` is read by tokens, while `output_stream` and `judge_stream` are read by lines.
 
 ## Checker suite
 
-An alternative to using the `@set_checker` decorator is to use the **checker suite**, which gives a bit more structure for writing checkers. The general skeleton of a checker using the checker suite looks like
+An alternative to using the `@checker` decorator is to use the **checker suite**, which gives a bit more structure for writing checkers. The general skeleton of a checker using the checker suite looks like
 
 ```python
 from kg.checkers import * ### @import
 
-@chk.get_one_input
-def get_one_input(file, **kwargs):
+@checker.add
+def get_one_input(stream, **kwargs):
     return ...
 
-@chk.get_output_for_input
-def get_output_for_input(file, input_data, **kwargs):
+@checker.add
+def get_output_for_input(stream, input_data, **kwargs):
     return ...
 
-@chk.get_judge_data_for_input
-def get_judge_data_for_input(file, input_data, **kwargs):
+@checker.add
+def get_judge_data_for_input(stream, input_data, **kwargs):
     return ...
 
-@set_single_checker()
-# or @set_multi_checker()
-def check_solution(input_data, output_data, judge_data, **kwargs):
+@checker.add
+def check_one(input_data, output_data, judge_data, **kwargs):
     ...
     return 1.0
 
-if __name__ == '__main__': chk()
+check = checker.make(cases='single')
+# or check = checker.make(cases='multi')
+
+if __name__ == '__main__': check_files(check)
 ```
 
-Here, `check_solution` is passed different things that if we used the regular `@set_checker` decorator. Here, `input_data` is not the actual input file, but what the function `get_one_input` returns. Similarly, `output_data` and `judge_data` are the return values of their respective functions.
+Here, `check_one` is passed different things than if we used the regular `@checker` decorator. Here, `input_data` is not the actual input file, but what the function `get_one_input` returns. Similarly, `output_data` and `judge_data` are the return values of their respective functions.
 
-Each of the `get` functions are passed the actual file as the argument `file`. The functions that process the output file and the judge file are passed `input_data` as an argument as well, which is what the `get_one_input` file returns.
+Each of the `get` functions are passed the actual file as the argument `stream`. The functions that process the output file and the judge file are passed `input_data` as an argument as well, which is what the `get_one_input` file returns.
 
-We use `@set_single_checker` if there is one test case per file, and `@set_multi_checker` if each file has multiple test cases. The `@set_multi_checker` decorator is smart. It assumes that the first number in the input file is the number of test cases. Then you can write the `get` functions, assuming they're only reading in the input for a single test case.
+We use `checker.make(cases='single')` if there is one test case per file, and `checker.make(cases='multi')` if each file has multiple test cases. If `cases` is omitted, it defaults to `multi`. The checker created by `checker.make(cases='multi')` is smart. It assumes that the first number in the input file is the number of test cases. Then you can write the `get` functions, assuming they're only reading in the input for a single test case.
 
-In particular, **if you use `@set_multi_checker`, don't read in the number of test cases!** The name `get_one_input` should remind you that you only read in the input for a single test case, and not multiple test cases.
+In particular, **if you use `cases='multi'`, don't read in the number of test cases!** The name `get_one_input` should remind you that you only read in the input for a single test case, and not multiple test cases.
 
 The advantage of using the checker suite is that it makes checkers more organized, because the parts that parse the output are separated from the parts that check the output. Here's the checker for City Map written with the checker suite instead:
 
 ```python
 from kg.checkers import * ### @import
 
-@chk.get_one_input
-def get_one_input(file, **kwargs):
-    p = int(next(file))
-    return [list(map(int, next(file).rstrip().split(" "))) for i in range(p)]
+@checker.add
+def get_one_input(stream, **kwargs):
+    [p] = stream.read.int().eoln
+    walks = []
+    for i in range(p):
+        [len_walk] = stream.read.int().space
+        [walk] = stream.read.ints(len_walk).eoln
+        walks.append(walk)
+    return walks
 
-@chk.get_output_for_input
-def get_output_for_input(file, input_data, **kwargs):
-    n = int(next(file))
-    ensure(1 <= n <= 1000, Wrong("Invalid number of vertices"))
-    labels = list(map(int, next(file).rstrip().split(" ")))
-    ensure(all(1 <= i <= 500 for i in labels), "Invalid label", ParseError)
+@checker.add
+def get_output_for_input(stream, input_data, **kwargs):
+    # get adjacency matrix
+    [n] = stream.read.int(1, 1000).eoln
+    [labels] = stream.read.ints(length, 1, 500).eoln
+    [g] = stream.read.tokens(n, n=n, charset='01').eoln
 
-    try:
-        g = [list(map(int, next(file).rstrip().split(" "))) for i in range(n)]
-        ensure(all(len(l) == n for l in g), "Invalid adjmat row length", ParseError)
-        ensure(all(set(l) <= "01" for l in g), "Invalid adjmat character", ParseError)
-    except Exception as exc:
-        raise ParseError("Could not read output grid") from exc
+    # get walks
+    walks = []
+    for needed_walk in input_data:
+        [a] = output_stream.read.ints(len(needed_walk) - 1, 1, n).eoln
+        walks.append(a)
 
-    p = len(input_data)
-    try:
-        w = [list(map(int, next(file).rstrip().split(" "))) for i in range(p)]
-        ensure(all(all(1 <= i <= n for i in l) for l in w), "Invalid walk vertex", ParseError)
-    except Exception as exc:
-        raise ParseError("Could not read walks") from exc
+    return labels, g, walks
 
-    return labels, g, w
+@checker.add
+def get_judge_data_for_input(stream, input_data, **kwargs):
+    ...  # do nothing
 
-@chk.get_judge_data_for_input
-def get_judge_data_for_input(file, input_data, **kwargs):
-    ...
-
-@set_multi_checker(no_extra_chars=['output', 'judge'])
+@checker.add
 @default_score
-def check_solution(input_data, output_data, judge_data, **kwargs):
+def check_one(input_data, output_data, judge_data, **kwargs):
     needed_walks = input_data
     l, g, walks = output_data
 
@@ -2250,8 +2253,16 @@ def check_solution(input_data, output_data, judge_data, **kwargs):
         ensure(all(i == l[j-1] for i, j in zip(n_w, w)), "Wrong label", Wrong)
         ensure(all(g[i][j] == "1" for i, j in zip(w, w[1:])), "Edge not in graph", Wrong)
 
-if __name__ == '__main__': chk()
+
+check = checker.make(cases='multi')
+
+if __name__ == '__main__': check_files(check)
 ```
+
+<!-- TODO the streams for checkers can now use the same syntax as for the validators, e.g., [x] = stream.read.int(lim.n).eoln . But depending on the "mode", this is sometimes lenient on whitespace.
+-->
+
+<!-- TODO interactors -->
 
 <!-- ## Grid generators -->
 

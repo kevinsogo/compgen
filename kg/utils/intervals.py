@@ -200,7 +200,7 @@ class Intervals(collections.Hashable): ### @@ rem {
         ) if self else "<empty set>"
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({tuple(self._bds)!r})"
+        return f"Intervals: {self}"
 
     @classmethod
     def from_tokens(cls, *tokens):
