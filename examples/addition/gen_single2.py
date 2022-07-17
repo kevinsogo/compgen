@@ -13,4 +13,4 @@ def random_cases(rand, *args):
         yield [rand.randint(-A, A) for i in range(n)]
 
 if __name__ == '__main__':
-    write_to_file(print_to_file, random_cases, argv[1:], stdout)
+    write_to_file(format_case, random_cases, argv[1:], stdout)

@@ -1,30 +1,25 @@
 from kg.checkers import * ### @import
 
-@chk.get_one_input
-def get_one_input(file, **kwargs):
-    n = int(next(file))
-    a = list(map(int, next(file).strip().split()))
-    ensure(len(a) == n, "Invalid length in input", exc=Fail)
+@checker.set
+def get_one_input(stream, **kwargs):
+    [n] = stream.read.int().eoln
+    [a] = stream.read.ints(n).eoln
     return a
 
-@chk.get_output_for_input
-def get_output_for_input(file, a, **kwargs):
-    try:
-        m = int(next(file).rstrip())
-        b = list(map(int, next(file).rstrip().split(' ')))
-    except Exception as e:
-        raise ParseError("Failed to get a sequence") from e
-    ensure(m >= 0, "Invalid length", exc=Wrong)
-    ensure(len(b) == m, lambda: Wrong(f"Expected {m} numbers but got {len(b)}"))
+@checker.set
+def get_output_for_input(stream, a, **kwargs):
+    [m] = stream.read.int().eoln
+    [b] = stream.read.ints(m).eoln
     return b
 
-@chk.get_judge_data_for_input
-def get_judge_data_for_input(file, a, **kwargs):
-    return int(next(file))
+@checker.set
+def get_judge_data_for_input(stream, a, **kwargs):
+    [n] = stream.read.int().eoln
+    return n
 
-@set_multi_checker(no_extra_chars=True)
+@checker.set
 @default_return(1.0)
-def check_solution(a, b, ans, **kwargs):
+def check_one(a, b, ans, **kwargs):
     # check subsequence
     j = 0
     for i in range(len(a)):
@@ -35,4 +30,7 @@ def check_solution(a, b, ans, **kwargs):
     if len(b) < ans: raise Wrong("Suboptimal solution")
     if len(b) > ans: raise Fail("Judge data incorrect!")
 
-if __name__ == '__main__': chk(title="Split")
+
+check = checker.make('lines')
+
+if __name__ == '__main__': check_files(check, title="Split")

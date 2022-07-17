@@ -9,17 +9,17 @@ bounds = {
 }
 
 @validator(bounds=bounds)
-def validate_file(file, *, lim):
+def validate(stream, *, lim):
 
-    [t] = file.read.int(lim.t).eoln
+    [t] = stream.read.int(lim.t).eoln
     totaln = 0
     for cas in range(t):
-        [n] = file.read.int(lim.n).eoln
+        [n] = stream.read.int(lim.n).eoln
         totaln += n
-        [a] = file.read.ints(n, lim.a).eoln
+        [a] = stream.read.ints(n, lim.a).eoln
 
-    [] = file.read.eof
+    [] = stream.read.eof
     ensure(totaln in lim.totaln)
 
 if __name__ == '__main__':
-    validate_file(stdin)
+    validate(stdin)

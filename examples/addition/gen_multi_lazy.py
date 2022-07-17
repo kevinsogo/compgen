@@ -23,4 +23,4 @@ def distribute(rand, new_case, casemakers, *args):
 
 if __name__ == '__main__':
     index, *args = argv[1:]
-    write_to_file(print_to_file, (many_cases, distribute, int(index)), args, stdout)
+    write_to_file(format_case, (many_cases, distribute, int(index)), args, stdout)

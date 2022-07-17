@@ -1,3 +1,5 @@
+start=0
+
 ! cat sample.in > $
 gen_single 10 10 > $
 gen_single 10 100 > $

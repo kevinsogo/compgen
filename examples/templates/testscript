@@ -1,3 +1,5 @@
+start=0
+
 # comments are prefixed with hash (#)
 
 ! cat sample.in > $

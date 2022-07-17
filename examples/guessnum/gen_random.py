@@ -8,4 +8,4 @@ def gen_random(rand, *args):
 
 
 if __name__ == '__main__':
-    write_to_file(print_to_file, gen_random, argv[1:], stdout)
+    write_to_file(format_case, gen_random, argv[1:], stdout)

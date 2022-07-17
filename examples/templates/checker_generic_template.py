@@ -1,7 +1,7 @@
 from kg.checkers import * ### @import
 
-@set_checker()
-def check_solution(input_file, output_file, judge_file, **kwargs):
+@checker
+def check(input_stream, output_stream, judge_stream, **kwargs):
     # write your grader here
     
     # Raise this if the answer is incorrect
@@ -15,4 +15,4 @@ def check_solution(input_file, output_file, judge_file, **kwargs):
     # the return value is the score, and must be a value between 0.0 and 1.0
     return 1.0 
 
-if __name__ == '__main__': chk()
+if __name__ == '__main__': check_files(check)

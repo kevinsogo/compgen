@@ -1,3 +1,5 @@
+start=0
+
 ! cat sample.in > 1
 
 gen_random -1000000000 1000000000 100 100 > $

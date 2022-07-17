@@ -15,17 +15,16 @@ subtasks = {
 }
 
 @validator(bounds=bounds, subtasks=subtasks)
-def validate_file(file, subtask=None, *, lim):
+def validate(stream, subtask=None, *, lim):
 
-    [t] = file.read.int(lim.t).eoln
+    [t] = stream.read.int(lim.t).eoln
     totaln = 0
     for cas in range(t):
-        [n] = file.read.int(lim.n).eoln
-        [a] = file.read.ints(n, lim.a).eoln
+        [n] = stream.read.int(lim.n).eoln
+        [a] = stream.read.ints(n, lim.a).eoln
         totaln += n
 
-    [] = file.read.eof
     ensure(totaln in lim.totaln)
 
 if __name__ == '__main__':
-    validate_or_detect_subtasks(validate_file, subtasks, stdin)
+    validate_or_detect_subtasks(validate, subtasks, stdin)

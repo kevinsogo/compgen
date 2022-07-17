@@ -1,13 +1,11 @@
+from validator import * ### @import
 from kg.checkers import * ### @import
 
-def get_sequence(file, exc=Exception):
-    try:
-        m = int(next(file).rstrip())
-        b = list(map(int, next(file).rstrip().split(' ')))
-    except Exception as e:
-        raise ParseError("Failed to get a sequence") from e
-    ensure(m >= 0, "Invalid length", exc=exc)
-    ensure(len(b) == m, lambda: exc(f"Expected {m} numbers but got {len(b)}"))
+lim = Bounds(bounds) & Bounds({'m': +Var >= 0})
+
+def get_sequence(stream, exc=Exception):
+    [m] = stream.read.int(lim.m).eoln
+    [b] = stream.read.ints(m, lim.a).eoln
     return b
 
 def check_valid(a, b, exc=Exception):
@@ -19,19 +17,18 @@ def check_valid(a, b, exc=Exception):
     # check distinct
     ensure(len(b) == len(set(b)), "Values not unique!", exc=exc)
 
-@set_checker('tokens', 'lines', 'lines', no_extra_chars=True)
+@checker('tokens', 'lines', 'lines')
 @default_score
-def check_solution(input_file, output_file, judge_file, **kwargs):
-    z = int(next(input_file))
-    for cas in range(z):
-        n = int(next(input_file))
-        ensure(n >= 1, "Judge data invalid!", exc=Fail)
-        a = [int(next(input_file)) for i in range(n)]
-        cont_b = get_sequence(output_file, exc=Wrong)
-        judge_b = get_sequence(judge_file, exc=Fail)
+def check(input_stream, output_stream, judge_stream, **kwargs):
+    [t] = input_stream.read.int(lim.t)
+    for cas in range(t):
+        [n] = input_stream.read.int(lim.n)
+        [a] = input_stream.read.ints(n, lim.a)
+        cont_b = get_sequence(output_stream, exc=Wrong)
+        judge_b = get_sequence(judge_stream, exc=Fail)
         check_valid(a, cont_b, exc=Wrong)
         check_valid(a, judge_b, exc=Fail)
         if len(cont_b) < len(judge_b): raise Wrong("Suboptimal solution")
         if len(cont_b) > len(judge_b): raise Fail("Judge data incorrect!")
 
-if __name__ == '__main__': chk("Split")
+if __name__ == '__main__': check_files(check, title="Split")

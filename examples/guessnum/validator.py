@@ -7,9 +7,8 @@ bounds = {
 }
 
 @validator(bounds=bounds)
-def validate_file(file, *, lim):
-
-    [n, m] = file.read.int(lim.n).space.int(lim.m).eoln.eof
+def validate(stream, *, lim):
+    [n, m] = stream.read.int(lim.n).space.int(lim.m).eoln.eof
 
 if __name__ == '__main__':
-    validate_file(stdin)
+    validate(stdin)

@@ -2,12 +2,12 @@ from kg.checkers import * ### @import
 
 V = 10**9
 
-@set_checker(no_extra_chars=['input', 'output'])
+@checker('tokens', 'raw_lines', 'raw_lines', extra_chars_allowed=['judge'])
 @default_score
-def check_solution(input_file, output_file, judge_file, **kwargs):
-    n, m = map(int, next(input_file).split())
+def check(input_stream, output_stream, judge_stream, **kwargs):
+    [n, m] = input_stream.read.int().int()
     while True:
-        action, value = next(output_file).split()
+        [action, value] = output_stream.read.token().space.token().eoln
         value = int(value)
         ensure(abs(value) <= V, lambda: Fail(f"Out of bounds value not detected by interactor: {action} {value}"))
         if action == 'answer':
@@ -18,4 +18,5 @@ def check_solution(input_file, output_file, judge_file, **kwargs):
         else:
             raise Fail(f"Unknown action not detected by interactor: {action} {value}")
 
-if __name__ == '__main__': chk(title="Guess Num")
+if __name__ == '__main__':
+    check_files(check, title="Guess Num")

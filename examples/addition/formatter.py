@@ -1,7 +1,7 @@
 from kg.formatters import * ### @import
 
 @formatter
-def print_to_file(file, cases, *, print):
+def format_case(stream, cases, *, print, **kwargs):
     print(len(cases))
     for arr in cases:
         print(len(arr))

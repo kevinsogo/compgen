@@ -1,12 +1,9 @@
 from kg.checkers import * ### @import
 
-def get_sequence(file, exc=Exception):
-    try:
-        m = int(next(file))
-        b = [int(next(file)) for i in range(m)]
-    except Exception as e:
-        raise ParseError("Failed to get a sequence") from e
+def get_sequence(stream, exc=Exception):
+    [m] = stream.read.int()
     ensure(m >= 0, "Invalid length", exc=exc)
+    [b] = stream.read.ints(m)
     return b
 
 def check_valid(a, b, exc=Exception):
@@ -18,22 +15,19 @@ def check_valid(a, b, exc=Exception):
     # check distinct
     ensure(len(b) == len(set(b)), "Values not unique!", exc=exc)
 
-@set_checker('tokens')
-def check_solution(input_file, output_file, judge_file, **kwargs):
-    z = int(next(input_file))
-    for cas in range(z):
-        n = int(next(input_file))
+@checker('tokens')
+def check(input_stream, output_stream, judge_stream, **kwargs):
+    [t] = input_stream.read.int()
+    for cas in range(t):
+        [n] = input_stream.read.int()
         ensure(n >= 1, "Judge data invalid!", exc=Fail)
-        a = [int(next(input_file)) for i in range(n)]
-        cont_b = get_sequence(output_file, exc=Wrong)
-        judge_b = get_sequence(judge_file, exc=Fail)
+        [a] = input_stream.read.ints(n)
+        cont_b = get_sequence(output_stream, exc=Wrong)
+        judge_b = get_sequence(judge_stream, exc=Fail)
         check_valid(a, cont_b, exc=Wrong)
         check_valid(a, judge_b, exc=Fail)
         if len(cont_b) < len(judge_b): raise Wrong("Suboptimal solution")
         if len(cont_b) > len(judge_b): raise Fail("Judge data incorrect!")
-
-    if output_file.has_next(): raise Wrong("Extra characters at the end of the output file")
-    if judge_file.has_next(): raise Fail("Extra characters at the end of the judge file!")
     return 1.0
 
-if __name__ == '__main__': chk()
+if __name__ == '__main__': check_files(check)

@@ -1,23 +1,15 @@
 from kg.checkers import * ### @import
 
-@chk.get_one_input
-def get_one_input(file, **kwargs):
-    n = int(next(file))
-    a = list(map(int, next(file).strip().split()))
-    ensure(len(a) == n, "Invalid length in input", exc=Fail)
+@checker.set
+def get_one_input(stream, **kwargs):
+    [n] = stream.read.int().eoln
+    [a] = stream.read.ints(n).eoln
     return a
 
-@chk.get_output_for_input
-@chk.get_judge_data_for_input
-def get_output_for_input(file, a, **kwargs):
-    exc = kwargs['exc']
-    try:
-        m = int(next(file).rstrip())
-        b = list(map(int, next(file).rstrip().split(' ')))
-    except Exception as e:
-        raise exc("Failed to get a sequence: " + str(e)) from e
-    ensure(m >= 0, "Invalid length", exc=exc)
-    ensure(len(b) == m, lambda: exc(f"Expected {m} numbers but got {len(b)}"))
+@checker.set
+def get_output_for_input(stream, a, *, exc, **kwargs):
+    [m] = stream.read.int().eoln
+    [b] = stream.read.ints(m).eoln
     return b
 
 def check_valid(a, b, exc=Exception):
@@ -29,12 +21,14 @@ def check_valid(a, b, exc=Exception):
     # check distinct
     ensure(len(b) == len(set(b)), "Values not unique!", exc=exc)
 
-@set_multi_checker(no_extra_chars=True)
-def check_solution(a, cont_b, judge_b, **kwargs):
+@checker.set
+def check_one(a, cont_b, judge_b, **kwargs):
     check_valid(a, cont_b, exc=Wrong)
     check_valid(a, judge_b, exc=Fail) # remove for speed
     if len(cont_b) < len(judge_b): raise Wrong("Suboptimal solution")
     if len(cont_b) > len(judge_b): raise Fail("Judge data incorrect!")
     return 1.0
 
-if __name__ == '__main__': chk(title="Split")
+check = checker.make()
+
+if __name__ == '__main__': check_files(check, title="Split")

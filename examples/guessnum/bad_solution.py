@@ -9,7 +9,7 @@ if random() < 0.2:
     if randrange(2):
         print('ansah', v)
     else:
-        v = choice([-2**33, 2**33])
+        v = randint(-2**33, 2**33)
         print('answer', v)
 else:
     print('answer', v)

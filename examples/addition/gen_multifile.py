@@ -42,4 +42,4 @@ def distribute(rand, new_case, casemakers, *args):
 
 if __name__ == '__main__':
     index = int(argv[1])
-    write_nth_group_to_file(index, print_to_file, many_cases, distribute, argv[2:], stdout)
+    write_nth_group_to_file(index, format_case, many_cases, distribute, argv[2:], stdout)
