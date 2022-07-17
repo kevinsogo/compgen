@@ -1,664 +1,217 @@
-import argparse
-from collections import deque, namedtuple
-from decimal import Decimal
-from functools import wraps
-from io import StringIO
-from itertools import islice
-from string import digits
-from sys import stdin, stdout, stderr, argv
-import re
+import argparse, functools, io, itertools, re, sys
 
 from .utils import * ### @import
+from .utils.intervals import * ### @import
+from .utils.parsers import * ### @import
 
-CURR_PLATFORM = 'local' ### @replace 'local', format
+_patterns = functools.lru_cache(maxsize=None)(re.compile)
+
 
 class ValidationError(Exception): ...
 
-class StreamError(ValidationError): ...
 
-class VarMeta(type):
-    def __pos__(self): return self()
-
-class Var(metaclass=VarMeta):
-    def __init__(self, *, pref='', lims=None):
-        self.pref = pref
-        self.lims = lims if isinstance(lims, tuple) else list(lims) if lims is not None else []
-        if any(isinstance(v, Var) for t, v in self.lims): raise TypeError("Operand cannot be Var")
-        super().__init__()
-
-    def add(self, t, v):
-        if isinstance(v, Var): return NotImplemented
-        try:
-            append = self.lims.append
-        except AttributeError:
-            return NotImplemented
-        append((self.pref + t, v))
-        return self
-    def __le__(self, v):
-        if isinstance(v, str): return False
-        return self.add('le', v)
-    def __lt__(self, v):
-        if isinstance(v, str): return False
-        return self.add('lt', v)
-    def __ge__(self, v):
-        if isinstance(v, str): return False
-        return self.add('ge', v)
-    def __gt__(self, v):
-        if isinstance(v, str): return False
-        return self.add('gt', v)
-    def __eq__(self, v):
-        if isinstance(v, str): return False
-        return self.add('eq', v)
-    def __ne__(self, v):
-        if isinstance(v, str): return False
-        return self.add('ne', v)
-    def __abs__(self): return Var(pref=self.pref+'abs ', lims=self.lims)
-
-    def __and__(self, other):
-        if not isinstance(other, Var): raise TypeError(f"Cannot merge {self.__class__.__name__} with {other.__class__.__name__}")
-        return self.__class__(pref=self.pref, lims=self.lims+other.lims)
-    # TODO implement __or__
-
-    def __contains__(self, x):
-        return all(self._satisfies(x, *c) for c in self.lims)
-
-    @classmethod
-    def _satisfies(cls, a, type, b):
-        while type.startswith('abs '): type, a = type[4:], abs(a)
-        if type == 'le': return a <= b
-        if type == 'lt': return a < b
-        if type == 'ge': return a >= b
-        if type == 'gt': return a > b
-        if type == 'eq': return a == b
-        if type == 'ne': return a != b
-        raise ValueError(f"Unknown type: {type}")
-
-    def __repr__(self):
-        return f'{self.__class__.__name__}(pref={self.pref!r}, lims={self.lims!r})'
-
-    def __str__(self):
-        try:
-            res = self.compact_str()
-        except Exception as exc:
-            ...
-        else:
-            if res is not None: return res
-        return self.raw_str()
-
-    def compact_str(self):
-        low = float('-inf'), +1
-        hgh = float('+inf'), -1
-        def add_cond(type, v):
-            nonlocal low, hgh
-            if type in ['le', 'lt']:
-                hgh = min(hgh, (v, (0 if type == 'le' else -1)))
-            elif type in ['ge', 'gt']:
-                low = max(low, (v, (0 if type == 'ge' else +1)))
-            else:
-                raise ValueError(f"Unknown type: {type}")
-
-        for type_, b in self.lims:
-            absed = False
-            while type_.startswith('abs '): type_, absed = type_[4:], True
-            if type_ == 'eq' and not absed:
-                add_cond('ge', b)
-                add_cond('le', b)
-            else:
-                add_cond(type_, b)
-                if absed:
-                    if type_ == 'le':
-                        add_cond('ge', -b)
-                    elif type_ == 'lt':
-                        add_cond('gt', -b)
-                    else:
-                        return
-
-        lowv, lowt = low
-        hghv, hght = hgh
-        if lowv < hghv or lowv == hghv and lowt == hght == 0: return f"{'[('[lowt]}{lowv}, {hghv}{'])'[hght]}"
-        return '(empty set)'
-
-    def raw_str(self):
-        def str_once(type, b):
-            x = 'x'
-            while type.startswith('abs '): type, x = type[4:], f'|{x}|'
-            if type == 'le': return f"{x} <= {b}"
-            if type == 'lt': return f"{x} < {b}"
-            if type == 'ge': return f"{b} <= {x}"
-            if type == 'gt': return f"{b} < {x}"
-            if type == 'eq': return f"{x} == {b}"
-            if type == 'ne': return f"{x} != {b}"
-            raise ValueError(f"Unknown type: {type}")
-        return "[Interval bounded by: {}]".format(', '.join(sorted(set(str_once(*x) for x in self.lims))) or 'none')
-
-# TODO remove 'Interval' (backwards incompatible) ### @if False
-def interval(l, r): return l <= +Var <= r
-Interval = interval
-
-EOF = ''
-
-class Bounds:
-    def __init__(self, bounds):
-        self._attrs = []
-        if bounds:
-            for name, value in bounds.items():
-                self._attrs.append(name)
-                if isinstance(value, Var): value = Var(lims=tuple(value.lims)) # copy and freeze the Var
-                setattr(self, name, value)
-        super().__init__()
-
-    def __and__(self, other):
-        ''' Combine two Bounds objects together. Merges intervals for conflicting attributes.
-        If not both are intervals, an error is raised. '''
-        m = {}
-        for attr in sorted(set(self._attrs) | set(other._attrs)):
-            def combine(a, b):
-                if a is None: return b
-                if b is None: return a
-                if isinstance(a, Var) and isinstance(b, Var): return a & b
-                if not isinstance(a, Var) and not isinstance(b, Var): return b
-                raise ValidationError(f"Conflict for attribute {attr} in merging!")
-            m[attr] = combine(getattr(self, attr, None), getattr(other, attr, None))
-        return Bounds(m)
-
-    def __repr__(self):
-        bounds = {attr: getattr(self, attr) for attr in self._attrs}
-        return f'{self.__class__.__name__}({bounds!r})'
-
-    def __str__(self):
-        return '{{Bounds:\n{}}}'.format(''.join(f'\t{a}: {getattr(self, a)}\n' for a in self._attrs))
-
-
-_int_re = re.compile(r'^(?:0|-?[1-9]\d*)\Z')
-intchars = {'-', *digits}
-EOLN = '\n'
-
-def strict_int(x, *args, as_str=False): ### @@ if False {
-    ''' Check if the string x is a valid integer token, and that it satisfies certain constraints.
-
-    as_str: if True, return the string as is, rather than parsing. (default False)
-
-    Sample usage:
-    strict_int(x) # just checks if the token is a valid integer.
-    strict_int(x, 5) # checks if x is in the half-open interval [0, 5)
-    strict_int(x, 5, 8) # checks if x is in the closed interval [5, 8]
-    strict_int(x, interval) # check if  is in the Interval 'interval'
-    '''
-    ### @@ }
-    
-    # validate
-    if not _int_re.match(x):
-        raise ValidationError(f"Expected integer literal, got {x!r}")
-    
-    # allow to return as string
-    if [*args] == ['str']:
-        print("Warning: passing 'str' is deprecated. Use as_str=True instead.", file=stderr)
-        as_str = True
-        args = []
-    if as_str:
-        if args:
-            raise ValidationError("Additional arguments not allowed if as_str is True")
-        return x
-    
-    # parse and check range
-    x = int(x)
-    _check_range(x, *args, type="Integer")
-    return x
-
-
-def _check_range(x, *args, type="Number"):
-    if len(args) == 2:
-        l, r = args
-        if not (l <= x <= r): raise ValidationError(f"{type} {x} not in [{l}, {r}]")
-    elif len(args) == 1:
-        r, = args
-        if isinstance(r, Var):
-            if x not in r: raise ValidationError(f"{type} {x} not in {r}")
-        else:
-            if not (0 <= x < r): raise ValidationError(f"{type} {x} not in [0, {r})")
-    elif len(args) == 0:
-        pass
-    else:
-        raise ValidationError(f"Invalid arguments for range check: {args}")
-    return x
-
-
-_real_re = re.compile(r'^(?P<sign>[+-]?)(?P<int>0?|(?:[1-9]\d*))(?:(?P<dot>\.)(?P<frac>\d*))?\Z')
-realchars = intchars | {'+', '-', '.'}
-
-_StrictRealData = namedtuple('_StrictRealData', ['sign', 'dot', 'neg_zero', 'dot_lead', 'dot_trail', 'places'])
-def _strict_real_data(x):
-    match = _real_re.match(x)
-    if match is None: return None
-
-    sign, int_, dot, frac = map(match.group, ('sign', 'int', 'dot', 'frac'))
-
-    # must have at least one digit
-    if not (int_ or frac): return None
-
-    return _StrictRealData(
-        sign=sign,
-        dot=dot,
-        neg_zero=sign == '-' and not int_.strip('0') and not frac.strip('0'),
-        dot_lead=dot and not int_,
-        dot_trail=dot and not frac,
-        places=len(frac) if frac else 0,
-    )
-
-
-def strict_real(x, *args, as_str=False, max_places=None, places=None, require_dot=False, allow_plus=False,
-        allow_neg_zero=False, allow_dot_lead=False, allow_dot_trail=False): ### @@ if False {
-    '''Check if the string x is a valid real token, and that it satisfies certain constraints.
-
-    It receives the same arguments as strict_int, and also receives the following in addition:
-
-    places: If it is an integer, then x must have exactly 'places' after the decimal point.
-    as_str: if True, return the string as is, rather than parsing. (default False)
-    require_dot: If True, then the '.' character has to appear. (default False)
-    allow_plus: If True, then the '+' sign is allowed. (default False)
-    allow_neg_zero: If True, then "negative zero", like, -0.0000, is allowed. (default False)
-    allow_dot_lead: If True, then a leading dot, like, ".420", is allowed. (default False)
-    allow_dot_trail: If True, then a trailing dot, like, "420.", is allowed. (default False)
-    '''
-    ### @@ }
-
-    # validate
-    data = _strict_real_data(x)
-    if not data:
-        raise ValidationError(f"Expected real literal, got {x!r}")
-    if require_dot and not data.dot:
-        raise ValidationError(f"Dot required, got {x!r}")
-    if not allow_plus and data.sign == '+':
-        raise ValidationError(f"Plus sign not allowed, got {x!r}")
-    if not allow_neg_zero and data.neg_zero:
-        raise ValidationError(f"Real negative zero not allowed, got {x!r}")
-    if not allow_dot_lead and data.dot_lead:
-        raise ValidationError(f"Real with leading dot not allowed, got {x!r}")
-    if not allow_dot_trail and data.dot_trail:
-        raise ValidationError(f"Real with trailing dot not allowed, got {x!r}")
-    if max_places is not None and data.places > max_places:
-        raise ValidationError(f"Decimal place count of {x!r} (={data.places}) exceeds {max_places}")
-    if places is not None:
-        if isinstance(places, Var):
-            if data.places not in Var:
-                raise ValidationError(f"Decimal place count of {x!r} (={data.places}) not in {places}")
-        else:
-            if data.places != places:
-                raise ValidationError(f"Decimal place count of {x!r} (={data.places}) not equal to {places}")
-
-    # allow to return as string
-    if [*args] == ['str']:
-        print("Warning: passing 'str' is deprecated. Use as_str=True instead.", file=stderr)
-        as_str = True
-        args = []
-    if as_str:
-        if args:
-            raise ValidationError("Additional arguments not allowed if as_str is True")
-        return x
-
-    # parse and validate
-    x = Decimal(x)
-    _check_range(x, *args, type="Real")
-    return x
-
-
-
-
-
-_GET = None
-### @@ if locals().get('WITH_GET', True) {
-class _GET:
-    def __add__(a, b): return _ADD(a, b)
-    def __radd__(a, b): return _RADD(a, b)
-    def __sub__(a, b): return _SUB(a, b)
-    def __rsub__(a, b): return _RSUB(a, b)
-    def __mul__(a, b): return _MUL(a, b)
-    def __rmul__(a, b): return _RMUL(a, b)
-    def __truediv__(a, b): return _TRUEDIV(a, b)
-    def __rtruediv__(a, b): return _RTRUEDIV(a, b)
-    def __floordiv__(a, b): return _FLOORDIV(a, b)
-    def __rfloordiv__(a, b): return _RFLOORDIV(a, b)
-    def __mod__(a, b): return _MOD(a, b)
-    def __rmod__(a, b): return _RMOD(a, b)
-
-class GET(_GET):
-    def __init__(self, label):
-        self.label = label
-        super().__init__()
-
-    def __call__(self, ss):
-        return ss[self.label]
-
-class _OP(_GET):
-    def __init__(self, a, b):
-        self.a = a
-        self.b = b
-        super().__init__()
-
-class _ADD(_OP):
-    def __call__(g, ss): return ss._get(g.a)+ss._get(g.b)
-class _SUB(_OP):
-    def __call__(g, ss): return ss._get(g.a)-ss._get(g.b)
-class _MUL(_OP):
-    def __call__(g, ss): return ss._get(g.a)*ss._get(g.b)
-class _TRUEDIV(_OP):
-    def __call__(g, ss): return ss._get(g.a)/ss._get(g.b)
-class _FLOORDIV(_OP):
-    def __call__(g, ss): return ss._get(g.a)//ss._get(g.b)
-class _MOD(_OP):
-    def __call__(g, ss): return ss._get(g.a)%ss._get(g.b)
-
-class _RADD(_OP):
-    def __call__(g, ss): return ss._get(g.b)+ss._get(g.a)
-class _RSUB(_OP):
-    def __call__(g, ss): return ss._get(g.b)-ss._get(g.a)
-class _RMUL(_OP):
-    def __call__(g, ss): return ss._get(g.b)*ss._get(g.a)
-class _RTRUEDIV(_OP):
-    def __call__(g, ss): return ss._get(g.b)/ss._get(g.a)
-class _RFLOORDIV(_OP):
-    def __call__(g, ss): return ss._get(g.b)//ss._get(g.a)
-class _RMOD(_OP):
-    def __call__(g, ss): return ss._get(g.b)%ss._get(g.a)
-### @@ }
-
-SSBAD = object()
-
-def charname(ch):
-    if ch == SSBAD: return 'past-end-of-file'
-    if ch == EOF: return 'end-of-file'
-    assert len(ch) == 1
-    return repr(ch)
-
-def save_on_label(func):
-    @wraps(func)
-    def with_label(ss, *a, **kw):
-        label = kw.pop('label', '')
-        res = func(ss, *a, **kw)
-        if label: ss._found[label] = res
-        return res
-    return with_label
-
-class StrictStream:
-    def __init__(self, file):
+# TODO needs unification with the other streams   ### @ if False
+class StrictInputStream:
+    def __init__(self, file, *, interactive=False):
         self.last = None
+        self.next = None
+        # NOTE: in the future, if we want to handle OS-based newlines, this step needs to be reconsidered
+        if not interactive and not isinstance(file, io.StringIO):
+            file = io.StringIO(file.read())
         self.file = file
-        self._buff = deque()
-        self._found = {}
+        # self._found = {}  # TODO add labels
+        self._read = ChainRead(self)
         super().__init__()
 
     @classmethod
     def from_string(self, s):
-        return StrictStream(StringIO(s))
+        return StrictInputStream(io.StringIO(s))
 
-    def __getitem__(self, key):
-        return self._found[key]
-
-    def _get(self, key):
-        return key(self) if isinstance(key, _GET) else key ### @ if locals().get('WITH_GET', True)
-        return key ### @ if not locals().get('WITH_GET', True)
-
-    # TODO learn how to buffer idiomatically...
-    buffer_size = 10**5
-    def _buffer(self):
-        if not self._buff: self._buff += self.file.read(self.buffer_size) or [EOF, SSBAD]
+    # def __getitem__(self, key):
+    #     return self._found[key]
 
     def _next_char(self):
-        self._buffer()
-        self.last = self._buff.popleft()
-        if self.last is SSBAD: raise ValidationError("Read past EOF")
+        if self.last == EOF: raise StreamError("Read past EOF")
+        if self.next is None: self.next = self.file.read(1)
+        self.last = self.next
+        self.next = None
         return self.last
 
     def peek_char(self):
-        self._buffer()
-        if self._buff[0] is SSBAD: raise ValidationError("Peeked past EOF")
-        return self._buff[0]
+        if self.last == EOF: raise StreamError("Peeked past EOF")
+        if self.next is None: self.next = self.file.read(1)
+        return self.next
 
-    @save_on_label
-    def read_until(self, ends, *, charset=(), l=None, n=None, maxn=None, include_end=False, _called="token"):
-        ends = set(ends)
-        charset = set(charset)
-        n = self._get(n)
-        maxn = self._get(maxn)
-        if maxn is None: maxn = float('inf')
-        if maxn < 0: raise ValueError(f"maxn must be nonnegative: {maxn}")
-        res = []
-        while self.peek_char() not in ends:
-            if charset and self.peek_char() not in charset:
-                raise StreamError(f"Invalid character for {_called} detected: {charname(self.peek_char())}")
-            res.append(self._next_char())
-            if n is not None and len(res) > n: raise StreamError(f"Expected exactly {n} characters, got more.")
-            if len(res) > maxn: raise StreamError(f"Took too many characters! Expected at most {maxn}")
-        if n is not None and len(res) != n: raise StreamError(f"Expected exactly {n} characters, got {len(res)}")
-        if l is not None: ensure(len(res) in l, f"Expected length in {l}, got {len(res)}")
-        if include_end: res.append(self._next_char())
-        return ''.join(res)
+    def _read_cond(self, good, bad, *, l=None, n=None, maxn=None, include_end=False, _called="_read_cond"):
+        if maxn is None: maxn = (1 << 200) # 'infinite' enough for our purposes
+        if l is not None:
+            if not isinstance(l, Intervals):
+                raise TypeError("Invalid type for l; must be intervals")
+            maxn = int(min(maxn, l.upper_bound + 1))
+        if maxn < 0:
+            raise ValueError(f"maxn must be nonnegative; got {maxn}")
+        res = io.StringIO()
+        lres = 0
+        while good(self.peek_char()):
+            if bad(self.peek_char()):
+                raise StreamError(f"Invalid character for {_called} detected: {stream_char_label(self.peek_char())}")
+            res.write(self._next_char())
+            lres += 1
+            if n is not None and lres > n: 
+                raise StreamError(f"Expected exactly {n} characters, got more.")
+            if lres > maxn:
+                raise StreamError(f"Took too many characters! Expected at most {maxn}")
+        if n is not None and lres != n:
+            raise StreamError(f"Expected exactly {n} characters, got {lres}")
+        if l is not None and lres not in l:
+            raise StreamError(f"Expected length in {l}, got {lres}")
+        if include_end:
+            res.write(self._next_char())
+        return res.getvalue()
 
-    @save_on_label
-    def read_while(self, charset, *, ends=(), n=None, maxn=None, include_end=False, _called="token"):
-        ends = set(ends)
-        charset = set(charset)
-        n = self._get(n)
-        maxn = self._get(maxn)
-        if maxn is None: maxn = float('inf')
-        if maxn < 0: raise ValueError(f"maxn must be nonnegative: {maxn}")
-        res = []
-        while self.peek_char() in charset:
-            if self.peek_char() in ends:
-                raise StreamError(f"Invalid character for {_called} detected: {charname(self.peek_char())}")
-            res.append(self._next_char())
-            if n is not None and len(res) > n: raise StreamError(f"Expected exactly {n} characters, got more.")
-            if len(res) > maxn: raise StreamError(f"Took too many characters! Expected at most {maxn}")
-        if n is not None and len(res) != n: raise StreamError(f"Expected exactly {n} characters, got {len(res)}")
-        if include_end: res.append(self._next_char())
-        return ''.join(res)
+    def read_until(self, ends, *, other_ends=set(), charset=set(), _called="read_until", **kwargs):
+        ends = force_to_set(ends)
+        other_ends = force_to_set(other_ends)
+        charset = force_to_set(charset)
+        return self._read_cond(
+            lambda ch: ch not in ends and ch not in other_ends,
+            lambda ch: charset and ch not in charset,
+            _called=_called,
+            **kwargs,
+        )
 
-    @save_on_label
+    def read_while(self, charset, *, ends=set(), _called="read_while", **kwargs):
+        ends = force_to_set(ends)
+        charset = force_to_set(charset)
+        return self._read_cond(
+            lambda ch: ch in charset,
+            lambda ch: ch in ends,
+            _called=_called,
+            **kwargs,
+        )
+
     def read_line(self, *, eof=False, _called="line", **kwargs):
-        return self.read_until([EOLN] + ([EOF] if eof else []), _called=_called, **kwargs)
+        return self.read_until({EOLN, EOF} if eof else {EOLN}, _called=_called, **kwargs)
 
-    @save_on_label
-    def read_token(self, regex=None, *, ends=[EOF, ' ', '\t', EOLN], other_ends=[], _called="token", **kwargs): # optimize this. 
-        tok = self.read_until([*ends, *other_ends], _called=_called, **kwargs)
-        if regex is not None and not re.match('^' + regex + '$', tok):
+    def read_token(self, regex=None, *, ends={SPACE, EOLN, EOF}, other_ends=set(), _called="token", **kwargs): # optimize this. 
+        tok = self.read_until(ends, other_ends=other_ends, _called=_called, **kwargs)
+        if regex is not None and not _patterns('^' + regex + r'\Z').fullmatch(tok):
             raise StreamError(f"Expected token with regex {regex!r}, got {tok!r}")
         return tok
 
-    @save_on_label
     @listify
-    def do_multiple(self, f, count, *a, **kw):
-        count = self._get(count)
-        if count < 0: raise ValueError(f"n must be nonnegative: {count}")
-        sep = ''.join(kw.pop('sep', ' '))
-        end = kw.pop('end', '')
+    def _do_multiple(self, f, count, *a, **kw):
+        if count < 0: raise ValueError(f"n must be nonnegative; got {count}")
+        sep = kw.pop('sep', [SPACE])
+        end = kw.pop('end', [])
         for i in range(count):
             yield f(*a, **kw)
             if i < count - 1:
                 for ch in sep: self.read_char(ch)
         for ch in end: self.read_char(ch)
 
-    def read_ints(self, *a, **kw): return self.do_multiple(self.read_int, *a, **kw)
-    def read_tokens(self, *a, **kw): return self.do_multiple(self.read_token, *a, **kw)
-    def read_reals(self, *a, **kw): return self.do_multiple(self.read_real, *a, **kw)
+    def read_ints(self, *a, **kw): return self._do_multiple(self.read_int, *a, **kw)
+    def read_tokens(self, *a, **kw): return self._do_multiple(self.read_token, *a, **kw)
+    def read_reals(self, *a, **kw): return self._do_multiple(self.read_real, *a, **kw)
 
-    @save_on_label
+
     def read_int(self, *args, **kwargs):
-        int_kwargs = {
-            kw: kwargs.pop(kw)
-            for kw in ('as_str',)
-            if kw in kwargs
-        }
-        return strict_int(
-            self.read_token(charset=intchars, _called="int", **kwargs),
-            *map(self._get, args),
-            **int_kwargs,
-        )
+        # TODO use inspect.signature or something
+        int_kwargs = {kw: kwargs.pop(kw) for kw in ('as_str',) if kw in kwargs}
+        return strict_int(self.read_token(charset=intchars, _called="int", **kwargs), *args, **int_kwargs)
 
-    @save_on_label
     def read_real(self, *args, **kwargs):
-        real_kwargs = {
-            kw: kwargs.pop(kw)
-            for kw in (
-                'as_str', 'max_places', 'places', 'require_dot', 'allow_plus',
-                'allow_neg_zero', 'allow_dot_lead', 'allow_dot_trail',
-            )
-            if kw in kwargs
-        }
-        return strict_real(
-            self.read_token(charset=realchars, _called="real", **kwargs),
-            *map(self._get, args),
-            **real_kwargs,
-        )
+        # TODO use inspect.signature or something
+        real_kwargs = {kw: kwargs.pop(kw) for kw in (
+            'as_str', 'max_places', 'places', 'require_dot', 'allow_plus',
+            'allow_neg_zero', 'allow_dot_lead', 'allow_dot_trail',
+        ) if kw in kwargs}
+        return strict_real(self.read_token(charset=realchars, _called="real", **kwargs), *args, **real_kwargs)
 
-    def read_space(self): return self.read_char(' ')
-    def read_eoln(self): return self.read_char(EOLN) # ubuntu only (I think).
+    def read_space(self): return self.read_char(SPACE)
+    def read_eoln(self): return self.read_char(EOLN)
     def read_eof(self): return self.read_char(EOF)
 
-    # TODO call this 'expect_char' (or something. check testlib. don't necessarily follow), and make _next_char public
-    @save_on_label
-    def read_char(self, ch):
-        if self._next_char() != ch: raise StreamError(f"Expected {charname(ch)}, got {charname(self.last)}")
+    def read_char(self, target):
+        if isinstance(target, str):
+            if len(target) > 1:
+                raise ValueError(f"Invalid argument for read_char: {target!r}")
+            if self._next_char() != target:
+                raise StreamError(f"Expected {stream_char_label(target)}, got {stream_char_label(self.last)}")
+        else:
+            target = force_to_set(target)
+            if self._next_char() not in target:
+                raise StreamError(f"Expected [{', '.join(map(stream_char_label, target))}], got {stream_char_label(self.last)}")
+            return self.last
 
     # convenience
+    # To implement read_int_eoln, read_real_space, read_int_space_space, etc.
     def __getattr__(self, name):
-        if not name.startswith('read_'): return
+        if not name.startswith('read_'):
+            raise AttributeError
         for tail in ['_eoln', '_eof', '_space']:
             if name.endswith(tail):
-                head = name[:-len(tail)]
+                head = name[:-len(tail)] # TODO removesuffix
                 break
         else:
             raise AttributeError
-        def convenience(self, *a, **kw):
+        def _meth(self, *a, **kw):
             res = getattr(self, head)(*a, **kw)
             getattr(self, 'read' + tail)()
             return res
-        convenience.__name__ = name
-        setattr(self.__class__, name, convenience)
-        return getattr(self, name)
-
-    _read = None
+        _meth.__name__ = name # TODO setting __name__ doesn't seem to be enough
+        setattr(self.__class__, name, _meth)
+        return _meth
 
     @property
     def read(self):
-        if self._read is None: self._read = _Read(self, _name='.read')
         return self._read
 
+StrictStream = StrictInputStream
+# TODO add deprecation warnings? ### @if False
+
+
+def validator(f=None, *, bounds=None, subtasks=None, extra_chars_allowed=False, suppress_eof_warning=None):
     ### @@ if False {
-    def uncalled_reads(self):
-        if self._read: yield from self.read.uncalled_reads()
+    if suppress_eof_warning is not None:
+        warn("'suppress_eof_warning' is deprecated (and currently ignored); use 'extra_chars_allowed' instead")
     ### @@ }
 
-# Chain validation:
-class _Read:
-    ''' This is immutable '''
-
-    def __init__(self, ss, parent=None, op=None, *, _name=None):
-        self.ss = ss
-        self.parent = parent
-        self.op = op
-        self.children = []
-        if parent: self.parent.children.append(self)
-        self._name = _name
-        self.called = False ### @if False
-        super().__init__()
-
-    def __iter__(self):
-        if self.parent: yield from self.parent
-        if self.op: yield from self.op()
-        self.called = True ### @if False
-
-    ### @@ if False {
-    def uncalled_reads(self):
-        if not self.called: yield self._name if isinstance(self._name, str) else self._name()
-        for child in self.children: yield from child.uncalled_reads()
-    ### @@ }
-
-    def consume(self):
-        return list(self)
-
-    __call__ = consume
-
-    def _make_chain(name):
-        def chain(self, *a, **kw):
-            def op(label=''): yield getattr(self.ss, 'read_' + name)(*a, **_add_label(kw, label))
-            def _name():
-                arglist = *map(repr, a), *(f'{name}={value!r}' for name, value in kw.items())
-                return f'.{name}({", ".join(arglist)})'
-            return _Read(self.ss, self, op, _name=_name)
-        chain.__name__ = name
-        name = name.rstrip('_')
-        return chain
-
-    for _chain in ['line', 'int', 'ints', 'real', 'reals', 'token', 'tokens', 'until', 'while_']:
-        exec(f'{_chain} = _make_chain({_chain!r})') # evil hack for now
-
-    del _make_chain, _chain
-
-    # TODO allow '.char' to accept a sequence of chars. Alternatively, 'chars'
-    # it might be better to allow .char/.read_char to accept a sequence because the "EOLN"
-    # object might be two letters
-    def char(self, *a, _name='.char', **kw):
-        def op():
-            return self.ss.read_char(*a, **kw); yield
-        return _Read(self.ss, self, op, _name=_name)
-
-    def label(self, label):
-        def nop(): return self.op(label=label)
-        return _Read(self.ss, self.parent, nop, _name='.label')
-
-    __getitem__ = label
-
-    @property
-    def space(self): return self.char(' ', _name='.space')
-    @property
-    def eoln(self): return self.char(EOLN, _name='.eoln') # ubuntu only (I think).
-    @property
-    def eof(self): return self.char(EOF, _name='.eof')
-    
-def _add_label(kw, label):
-    if label:
-        if 'label' in kw: raise StreamError(f"Duplicate label: {label} {kw['label']}")
-        kw['label'] = label
-    return kw
-
-
-def validator(f=None, *, suppress_eof_warning=False, bounds=None, subtasks=None):
-    def _validator(f):
-        @wraps(f)
-        def new_f(file, *args, **kwargs):
-            sf = StrictStream(file)
+    def _d(f):
+        @functools.wraps(f)
+        def _f(file, *args, force_subtask=False, interactive=False, **kwargs):
+            if force_subtask and not (subtasks and 'subtask' in kwargs and kwargs['subtask'] in subtasks):
+                raise RuntimeError(f"invalid subtask given: {kwargs.get('subtask')!r}")
+            stream = StrictInputStream(file, interactive=interactive)
             if bounds is not None or subtasks is not None:
                 lim = Bounds(kwargs.get('lim'))
                 if bounds: lim &= Bounds(bounds)
                 if subtasks: lim &= Bounds(subtasks.get(kwargs['subtask']))
                 kwargs['lim'] = lim
-            res = f(sf, *args, **kwargs)
-            if sf.last != EOF and not suppress_eof_warning:
-                print("Warning: The validator didn't check for EOF at the end.", file=stderr)
-            ### @@ if False {
-            # Don't include in uploaded files since it may be slow.
-            for uncalled_read in islice(sf.uncalled_reads(), 24):
-                print(f"Warning: .read chain {uncalled_read} constructed but not called", file=stderr)
-            ### @@ }
+            res = f(stream, *args, **kwargs)
+            if stream.last != EOF and not extra_chars_allowed:
+                stream.read_eof()
             ### @@ if format == 'pc2' {
             if CURR_PLATFORM == 'pc2':
                 exit(42) # magic number to indicate successful validation (PC^2)
             ### @@ }
             return res
-        return new_f
-    return _validator(f) if f is not None else _validator
+        return _f
 
-def detect_subtasks(validate, file, subtasks):
-    s = file.read()
+    return _d(f) if f is not None else _d
+
+def detect_subtasks(validate, file, subtasks, *args, **kwargs):
+    file = io.StringIO(file.read())
     for subtask in subtasks:
         try:
-            validate(StringIO(s), subtask=subtask)
+            file.seek(0)
+            validate(file, *args, subtask=subtask, force_subtask=True, **kwargs)
         except Exception:
             ... 
         else:
             yield subtask
 
-def validate_or_detect_subtasks(validate, subtasks, file=stdin, outfile=stdout, *args, title='', **kwargs):
+def validate_or_detect_subtasks(validate, subtasks, file=sys.stdin, outfile=sys.stdout, *args, title='', **kwargs):
     desc = CURR_PLATFORM + ' validator for the problem' + (f' "{title}"' if title else '')
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('subtask', nargs='?', help='which subtask to check the file against')
@@ -675,7 +228,7 @@ def validate_or_detect_subtasks(validate, subtasks, file=stdin, outfile=stdout, 
     ### @@ }
 
     if pargs.detect_subtasks:
-        print(*detect_subtasks(validate, file, subtasks), file=outfile)
+        print(*detect_subtasks(validate, file, subtasks, *args, **kwargs), file=outfile)
     else:
         validate(file, *args, subtask=subtask, **kwargs)
 

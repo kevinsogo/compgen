@@ -1,7 +1,4 @@
-import functools
-import io
-import random
-import sys
+import functools, io, random, sys
 
 from .utils import * ### @import
 
@@ -26,16 +23,19 @@ class KGRandom(random.Random):
         self.shuffle(x)
         return x
     shuff = shuffled
+
     def randinterval(self, a, b):
         while True:
             x = self.randint(a, b)
             y = self.randint(a, b)
             if x <= y: return x, y
+
     def randmerge(self, *x):
         # divide and conquer for speed
         if not x: return []
         if len(x) == 1: return list(x[0])
         return self.randmerge2(self.randmerge(*x[::2]), self.randmerge(*x[1::2]))
+
     def randmerge2(self, a, b):
         a = list(a)[::-1]
         b = list(b)[::-1]
@@ -43,6 +43,7 @@ class KGRandom(random.Random):
         while a or b:
             res.append((a if self.randrange(len(a) + len(b)) < len(a) else b).pop())
         return res
+
     def randdistrib(self, total, count, *, min_=0, max_=None, skew=1): ### @@ if False {
         '''
         Generates a random partition of a number into given number of parts.
@@ -56,12 +57,10 @@ class KGRandom(random.Random):
         Reasonable values for skew are from 1 to 3*count.
         '''
         ### @@ }
-        if min_*count > total: raise ValueError(
-                f"The total must be at least {min_}*{count}={min_*count} "
-                f"when count={count} and min_={min_}")
-        if max_ is not None and max_*count < total: raise ValueError(
-                f"The total must be at most {max_}*{count}={max_*count} "
-                f"when count={count} and max_={max_}")
+        if min_*count > total:
+            raise ValueError(f"The total must be at least {min_}*{count}={min_*count} when count={count} and min_={min_}")
+        if max_ is not None and max_*count < total:
+            raise ValueError(f"The total must be at most {max_}*{count}={max_*count} when count={count} and max_={max_}")
         if skew <= 0:
             raise ValueError("The skew has to be at least 1.")
         if max_ is None:
@@ -87,6 +86,7 @@ class KGRandom(random.Random):
         assert min_ <= min(dist) <= max(dist) <= max_
 
         return dist
+
     @listify
     def randpartition(self, total, min_=1, skew=2): ### @@ if False {
         '''
@@ -104,12 +104,9 @@ class KGRandom(random.Random):
         r = 1 and p = (skew - 1)/skew, using the parametrization on Wikipedia.
         '''
         ### @@ }
-        if total < 0:
-            raise ValueError("The total should be at least 0.")
-        if min_ <= 0:
-            raise ValueError("The value of min_ should be at least 1.")
-        if skew <= 0:
-            raise ValueError("The skew should be at least 1.")
+        if total < 0: raise ValueError("The total should be at least 0.")
+        if min_ <= 0: raise ValueError("The value of min_ should be at least 1.")
+        if skew <= 0: raise ValueError("The skew should be at least 1.")
         if total == 0:
             return []
 
@@ -138,19 +135,19 @@ def _chash_seq(seq, *, _pmod=_pmod, _pbase=_pbase, _xmod=_xmod, _xor=_xor):
     return (pol << 32) ^ xol
 
 
-
-def _write_with_validate(print_to_file, file, case, *, validate=None):
-    if validate is not None:
-        tfile = io.StringIO()
-        print_to_file(tfile, case)
-        validate(io.StringIO(tfile.getvalue())) # TODO can one read AND write on the same StringIO file?
-        file.write(tfile.getvalue())
-    else:
-        print_to_file(file, case)
-
-
 def _make_seed(args):
     return _chash_seq(_chash_seq(map(ord, arg)) for arg in args) ^ 0xBEABDEEF
+
+
+def _write_with_validate(format_case, file, case, *, validate=None):
+    if validate is not None:
+        tfile = io.StringIO()
+        format_case(tfile, case)
+        tfile.seek(0) # reset the StringIO
+        validate(tfile)
+        file.write(tfile.getvalue())
+    else:
+        format_case(file, case)
 
 
 class DistribCase:
@@ -198,17 +195,17 @@ class DistribCase:
     def __getitem__(self, index):
         def get(rand, *args):
             groups = self.lazy(rand, *args)
-            print(f"GENERATING index {index} OUT OF {len(groups)}", file=sys.stderr) ### @if False
-            if not (0 <= index < len(groups)): raise GeneratorError(f"Invalid index: {index} out of {len(groups)} groups")
+            print(f"[G] Generating file index {index} of {len(groups)}", file=sys.stderr) ### @if False
+            if not (0 <= index < len(groups)): raise GeneratorError(f"Invalid index: {index} of {len(groups)} groups")
             return self.realize(groups[index])
         return get
 
-# TODO replace with write_to_file(print_to_file, make, *args, file=stdout, validate=None)
-def write_to_file(print_to_file, make, args, file, *, validate=None): ### @@ if False {
+# TODO replace with write_to_file(format_case, make, *args, file=stdout, validate=None) (maybe? maybe not?) ### @if False
+def write_to_file(format_case, make, args, file, *, validate=None): ### @@ if False {
     '''
     Creates test case/s meant for a single file.
 
-    print_to_file: function that prints to a file
+    format_case: function that prints to a file
     make: function that generates the data
     args: arguments that will be passed to 'make', along with a random number generator.
     file: file-like object to write to.
@@ -227,10 +224,10 @@ def write_to_file(print_to_file, make, args, file, *, validate=None): ### @@ if 
 
     rand = KGRandom(_make_seed(args))
     case = make(rand, *args)
-    _write_with_validate(print_to_file, file, case, validate=validate) # TODO ensure this does not exit(42)
+    _write_with_validate(format_case, file, case, validate=validate) # TODO ensure this does not exit(42)
 
 
-def write_to_files(print_to_file, make, filenames, *args, validate=None):
+def write_to_files(format_case, make, filenames, *args, validate=None):
     try:
         make, distribute = make
     except (ValueError, TypeError):
@@ -245,7 +242,7 @@ def write_to_files(print_to_file, make, filenames, *args, validate=None):
         return
 
     if isinstance(filenames, str):
-        filenames = file_sequence(filenames)
+        filenames = file_sequence(filenames, mktemp=True)
     filenames = iter(filenames)
     filecount = 0
     for index, case in enumerate(make(rand, *args)):
@@ -253,8 +250,8 @@ def write_to_files(print_to_file, make, filenames, *args, validate=None):
             filename = next(filenames)
         except StopIteration as st:
             raise GeneratorError(f"Not enough files! Need more than {index}") from st
-        print("GENERATOR Writing to", filename, file=sys.stderr) ### @if False
+        print("[G] Generator writing to", filename, file=sys.stderr) ### @if False
         with open(filename, 'w') as file:
-            _write_with_validate(print_to_file, file, case, validate=validate) # TODO ensure this does not exit(42)
+            _write_with_validate(format_case, file, case, validate=validate) # TODO ensure this does not exit(42)
         filecount += 1
-    print("GENERATED", filecount, "FILES", file=sys.stderr) ### @if False
+    print("[G] Generated", filecount, "files", file=sys.stderr) ### @if False

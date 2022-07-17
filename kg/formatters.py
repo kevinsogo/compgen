@@ -1,11 +1,15 @@
 import functools
+
+from .utils import * ### @import
+from .utils.streams import * ### @import
+
 def formatter(f=None, *, print=print):
-    def _formatter(f):
+    def _d(f):
         @functools.wraps(f)
-        def new_f(file, case, *args, **kwargs):
-            # add a custom print function
-            if 'print' not in kwargs:
-                kwargs['print'] = functools.partial(print, file=file)
-            return f(file, case, *args, **kwargs)
-        return new_f
-    return _formatter(f) if f is not None else _formatter
+        def _f(file, case, *args, **kwargs):
+            with InteractiveStream(None, file) as stream:
+                # add a print function reploaded with this file
+                kwargs.setdefault('print', stream.print)
+                return f(stream, case, *args, **kwargs)
+        return _f
+    return _d(f) if f is not None else _d
