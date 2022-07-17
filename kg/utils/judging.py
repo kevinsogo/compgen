@@ -7,7 +7,7 @@ class Wrong(Exception): ...
 class Fail(Exception): ...
 
 WA = Wrong
-# TODO add deprecation notice when WA is raised. can't use "deprec_alias" because WA needs to be raisable ### @if False
+# TODO add deprecation notice when WA is raised. can't use "deprec_alias" because WA needs to be raisable ### @rem
 
 class Verdict:
     AC = "Success"

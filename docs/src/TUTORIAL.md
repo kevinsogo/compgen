@@ -1272,7 +1272,7 @@ def random_word(rand, length):
 Thankfully, **KompGen has a powerful library**. If you have to use something standard like this, then it's possible KompGen already has it. By examining the file `compgen\kg\generators.py`, we see there's a function called `randpartition` which does exactly what we need! And it's documented too!
 
 ```python
-def randpartition(self, total, min_=1, skew=2): ### @@ if False {
+def randpartition(self, total, min_=1, skew=2): ### @@ rem {
     '''
     Generates a random partition of a number into a random number of parts.
     Default options make the result uniformly distributed over all such

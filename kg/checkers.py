@@ -48,13 +48,13 @@ class Checker:
             return value
 
         if 'no_extra_chars' in kwargs:
-            warn("'no_extra_chars' deprecated, use 'extra_chars_allowed' (Note: it's the opposite!)") ### @if False
+            warn("'no_extra_chars' deprecated, use 'extra_chars_allowed' (Note: it's the opposite!)") ### @rem
             if 'extra_chars_allowed' in kwargs:
                 raise ValueError("'no_extra_chars' and 'extra_chars_allowed' not allowed together")
             kwargs['extra_chars_allowed'] = valid_fields - to_fields('no_extra_chars')
         kwargs.setdefault('extra_chars_allowed', {'input', 'judge'})
 
-        ### @@ if False {
+        ### @@ rem {
         # TODO parse InteractiveStream arguments from kwargs more properly?
         # This assumes all settings are bools, and they all default to False.
         # We want to support different options for all three streams, nicely
@@ -100,7 +100,7 @@ class BuiltChecker(Checker):
     def _set(self, name, arg):
         if name in self._aliases:
             name, wrong_name = self._aliases[name], name
-            warn_deprec_name(wrong_name, name) ### @if False
+            warn_deprec_name(wrong_name, name) ### @rem
         if name not in self._names:
             raise ValueError(f"Unknown name to set: {name}")
         if getattr(self, name):
@@ -244,7 +244,7 @@ class OldChecker:
 # warn when any of these are used
 chk = OldChecker() # create singleton
 _warner = lambda name: lambda f: f
-_warner = lambda name: warn_on_call(f"'{name}' deprecated. Please use new-style format via 'checker'. See the updated docs.") ### @if False
+_warner = lambda name: warn_on_call(f"'{name}' deprecated. Please use new-style format via 'checker'. See the updated docs.") ### @rem
 set_single_checker = _warner('set_single_checker')(chk.set_single_checker)
 set_multi_checker = _warner('set_multi_checker')(chk.set_multi_checker)
 @_warner('set_checker')

@@ -79,7 +79,7 @@ def gen_random_grid(rand, r, c, *tiles):
 
     return grid
 
-### @@ if False {
+### @@ rem {
 
 # TODO do gen_connected_grid # multiple components and stuff...
 

@@ -263,7 +263,7 @@ class InteractiveStream:
             if not self._buf.remaining() and not self._buffer_line(): raise (exc or self.exc)("no line found")
 
             line = self._buf.consume_line()
-            assert line ### @ if False
+            assert line ### @ rem
 
             if line == EOLN and self._settings['ignore_blank_lines']: continue
 
@@ -420,7 +420,7 @@ class InteractiveStream:
     def write(self, *args): return self.writer.write(*args)
 
     def readable(self, *args):
-        ### @@ if False {
+        ### @@ rem {
         # this refers to the IOBase argument.
         # we don't want them to read from the stream the usual way since we have
         # our own layer of buffering
@@ -450,7 +450,7 @@ class InteractiveStream:
 
 
 
-class TextIOPair(io.TextIOBase): ### @@ if False {
+class TextIOPair(io.TextIOBase): ### @@ rem {
     """
     Like BufferedRWPair, but:
     - takes in two text I/Os rather than raw I/Os
@@ -519,7 +519,7 @@ class TextIOPair(io.TextIOBase): ### @@ if False {
 
 
 
-### @@if False {
+### @@rem {
 def test_some_stuff():
     import io, itertools
 

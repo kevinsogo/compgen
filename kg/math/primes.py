@@ -57,28 +57,28 @@ _witnesses_bounds = [
 # set of witnesses for < 2^64 (taken from http://miller-rabin.appspot.com/ )
 _i64_witnesses = [2, 325, 9375, 28178, 450775, 9780504, 1795265022]
 
-def is_prime_miller_rabin(n, *, more_witnesses=()): ### @@if False {
+def is_prime_miller_rabin(n, *, more_witnesses=()): ### @@rem {
     """
     returns True if n is probably prime, and False if n is definitely not prime.
     if n < 2^64, then is_prime(n) never returns a wrong answer. (hopefully!)
     """
     ### @@}
     if n < 2: return False
-    # if too small, check _siv_isp   ### @if False
+    # if too small, check _siv_isp   ### @rem
     if n < len(_siv_isp): return _siv_isp[n]
-    # check divisibility with small primes   ### @if False
+    # check divisibility with small primes   ### @rem
     if any(n % p == 0 for p in _small_ps): return False
-    # find (d,s) such that d*2^s = n-1 with d odd   ### @if False
+    # find (d,s) such that d*2^s = n-1 with d odd   ### @rem
     d, s = n - 1, 0
     while not d & 1: d >>= 1; s += 1
-    # find the best set of witnesses   ### @if False
+    # find the best set of witnesses   ### @rem
     for bound, bound_ws in _witnesses_bounds:
         if n < bound:
             best_witnesses = bound_ws
             break
     else:
         best_witnesses = _i64_witnesses
-    # check compositeness with the witnesses   ### @if False
+    # check compositeness with the witnesses   ### @rem
     for a in itertools.chain(best_witnesses, more_witnesses):
         if _check_composite(n, s, d, a): return False
     return True
@@ -94,12 +94,12 @@ def is_prime_naive(n):
         p += 1
     return True
 
-### @@ if False {
+### @@ rem {
 # TODO implement some O(n^(1/3)) primality test/factorization (perhaps Fermat+Lehman?) or something,
 # O(n^(1/4)) also possible [SQUFOF algorithm] but may be too hard to implement and verify
 ### @@ }
 
-# 'guarantee' is deprecated ### @if False
+# 'guarantee' is deprecated ### @rem
 def is_prime(n, *, guarantee=True):
     return is_prime_miller_rabin(n, more_witnesses=(random.randint(2, n-2) for i in range(min(16, int(log(n)/4)) if n >= 2**64 else 0)))
 
@@ -113,7 +113,7 @@ def prev_prime(n, *, guarantee=True):
     assert n >= 2
     return n
 
-### @@ if False {
+### @@ rem {
 def test_some_stuff():
     import random
     rand = random.Random(11)

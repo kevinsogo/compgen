@@ -2,9 +2,9 @@
 # with an error of at most 1e-XXX ### @replace "XXX", prec
 
 # Don't edit this file. Edit real_abs_rel_template.py instead, and then run _real_check_gen.py
-# Oh, actually, you're editing the correct file. Go on.                                          ### @if False
+# Oh, actually, you're editing the correct file. Go on.                                          ### @rem
 
-raise Exception("You're not supposed to run this!!!")                                            ### @if False
+raise Exception("You're not supposed to run this!!!")                                            ### @rem
 from itertools import zip_longest
 from decimal import Decimal, InvalidOperation
 from kg.checkers import * ### @keep @import

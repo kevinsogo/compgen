@@ -62,7 +62,7 @@ class Interactor:
 
         kwargs.setdefault('extra_chars_allowed', {'input', 'judge'})
 
-        ### @@ if False {
+        ### @@ rem {
         # TODO parse InteractiveStream arguments from kwargs more properly?
         # This assumes all settings are bools, and they all default to False.
         # We want to support different options for all three streams, nicely
@@ -104,7 +104,7 @@ class BuiltInteractor(Interactor):
     def _set(self, name, arg):
         if name in self._aliases:
             name, wrong_name = self._aliases[name], name
-            warn_deprec_name(wrong_name, name) ### @if False
+            warn_deprec_name(wrong_name, name) ### @rem
         if name not in self._names:
             raise ValueError(f"Unknown name to set: {name}")
         if getattr(self, name):
@@ -246,7 +246,7 @@ def _interact_generic(interactor, input, *users, output=None, judge=None, **kwar
 
 
 
-### @@ if False {
+### @@ rem {
 
 
 # kg

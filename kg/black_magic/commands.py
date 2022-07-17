@@ -115,6 +115,13 @@ class If(Command):
             yield from parsed.compile_children(context)
 
 
+@set_command('rem')
+class Rem(Command):
+    def __call__(self, parsed, context):
+        # same as @if False
+        yield from ()
+
+
 @set_command('for')
 class For(Command):
     def __call__(self, parsed, context):

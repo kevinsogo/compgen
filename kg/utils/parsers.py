@@ -27,7 +27,7 @@ def strict_check_range(x, *args, type="Number"):
 
 _int_re = re.compile(r'^(?:0|-?[1-9]\d*)\Z')
 intchars = {'-', *string.digits}
-def strict_int(x, *args, as_str=False, validate=True): ### @@ if False {
+def strict_int(x, *args, as_str=False, validate=True): ### @@ rem {
     ''' Check if the string x is a valid integer token, and that it satisfies certain constraints.
 
     as_str: if True, return the string as is, rather than parsing. (default False)
@@ -47,7 +47,7 @@ def strict_int(x, *args, as_str=False, validate=True): ### @@ if False {
     
     # allow to return as string
     if [*args] == ['str']:
-        warn("passing 'str' is deprecated. Use as_str=True instead.") ### @if False
+        warn("passing 'str' is deprecated. Use as_str=True instead.") ### @rem
         as_str = True
         args = []
     if as_str:
@@ -85,7 +85,7 @@ def _strict_real_data(x):
 
 
 def strict_real(x, *args, as_str=False, max_places=None, places=None, require_dot=False, allow_plus=False,
-        allow_neg_zero=False, allow_dot_lead=False, allow_dot_trail=False, validate=True): ### @@ if False {
+        allow_neg_zero=False, allow_dot_lead=False, allow_dot_trail=False, validate=True): ### @@ rem {
     '''Check if the string x is a valid real token, and that it satisfies certain constraints.
 
     It receives the same arguments as strict_int, and also receives the following in addition:
@@ -127,7 +127,7 @@ def strict_real(x, *args, as_str=False, max_places=None, places=None, require_do
 
     # allow to return as string
     if [*args] == ['str']:
-        warn("passing 'str' is deprecated. Use as_str=True instead.") ### @if False
+        warn("passing 'str' is deprecated. Use as_str=True instead.") ### @rem
         as_str = True
         args = []
     if as_str:

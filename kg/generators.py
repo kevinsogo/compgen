@@ -44,7 +44,7 @@ class KGRandom(random.Random):
             res.append((a if self.randrange(len(a) + len(b)) < len(a) else b).pop())
         return res
 
-    def randdistrib(self, total, count, *, min_=0, max_=None, skew=1): ### @@ if False {
+    def randdistrib(self, total, count, *, min_=0, max_=None, skew=1): ### @@ rem {
         '''
         Generates a random partition of a number into given number of parts.
 
@@ -88,7 +88,7 @@ class KGRandom(random.Random):
         return dist
 
     @listify
-    def randpartition(self, total, min_=1, skew=2): ### @@ if False {
+    def randpartition(self, total, min_=1, skew=2): ### @@ rem {
         '''
         Generates a random partition of a number into a random number of parts.
         Default options make the result uniformly distributed over all such
@@ -195,13 +195,13 @@ class DistribCase:
     def __getitem__(self, index):
         def get(rand, *args):
             groups = self.lazy(rand, *args)
-            print(f"[G] Generating file index {index} of {len(groups)}", file=sys.stderr) ### @if False
+            print(f"[G] Generating file index {index} of {len(groups)}", file=sys.stderr) ### @rem
             if not (0 <= index < len(groups)): raise GeneratorError(f"Invalid index: {index} of {len(groups)} groups")
             return self.realize(groups[index])
         return get
 
-# TODO replace with write_to_file(format_case, make, *args, file=stdout, validate=None) (maybe? maybe not?) ### @if False
-def write_to_file(format_case, make, args, file, *, validate=None): ### @@ if False {
+# TODO replace with write_to_file(format_case, make, *args, file=stdout, validate=None) (maybe? maybe not?) ### @rem
+def write_to_file(format_case, make, args, file, *, validate=None): ### @@ rem {
     '''
     Creates test case/s meant for a single file.
 
@@ -250,8 +250,8 @@ def write_to_files(format_case, make, filenames, *args, validate=None):
             filename = next(filenames)
         except StopIteration as st:
             raise GeneratorError(f"Not enough files! Need more than {index}") from st
-        print("[G] Generator writing to", filename, file=sys.stderr) ### @if False
+        print("[G] Generator writing to", filename, file=sys.stderr) ### @rem
         with open(filename, 'w') as file:
             _write_with_validate(format_case, file, case, validate=validate) # TODO ensure this does not exit(42)
         filecount += 1
-    print("[G] Generated", filecount, "files", file=sys.stderr) ### @if False
+    print("[G] Generated", filecount, "files", file=sys.stderr) ### @rem

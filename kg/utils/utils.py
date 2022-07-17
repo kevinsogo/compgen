@@ -18,7 +18,7 @@ def warn_print(*a, **kw):
 warn_print.wp = None
 
 warn = noop
-### @@ if False {
+### @@ rem {
 def warn(warning):
     warn_print("WARNING:", warning, file=sys.stderr)
 ### @@ }
@@ -110,7 +110,7 @@ def t_infinite(r, *, inf=t_inf):
     start, end, step = _t_range_args(r, inf=inf)
     return abs(end) >= inf
 
-### @@ if False {
+### @@ rem {
 # TODO TSequence class
 # iterable, also supports indexing
 # TSequence.ranges
@@ -165,7 +165,7 @@ def compress_t_sequence(s, *, inf=t_inf):
 def file_sequence(s, *, mktemp=False):
     if s.startswith(':'):
         if mktemp:
-            print("Ensuring the 'temp' folder exists...", file=sys.stderr) ### @if False
+            print("Ensuring the 'temp' folder exists...", file=sys.stderr) ### @rem
             pathlib.Path('temp').mkdir(parents=True, exist_ok=True)
         for v in t_sequence(s[1:]):
             yield os.path.join('temp', str(v))
@@ -184,7 +184,7 @@ def default_return(ret):
 
 default_score = default_return(1.0)
 
-### @@ if False {
+### @@ rem {
 # def merge_dicts(d, *others, duplicates='error'):
 #     if duplicates not in {'error', 'first', 'last'}:
 #         raise ValueError(f"Invalid 'duplicates' argument: {duplicates!r}")
@@ -217,7 +217,7 @@ def stream_char_label(ch):
 def force_to_set(s):
     if not isinstance(s, collections.Set):
         s = frozenset(s)
-        ### @@if False {
+        ### @@rem {
         if not force_to_set.warned:
             force_to_set.warned = True
             warn_print(
@@ -228,7 +228,7 @@ def force_to_set(s):
         ### @@}
     return s
 
-force_to_set.warned = False ### @if False
+force_to_set.warned = False ### @rem
 
 
 
@@ -280,7 +280,7 @@ class Builder:
 
 def warn_on_call(warning):
     _d = lambda f: f
-    ### @@ if False {
+    ### @@ rem {
     def _d(f):
         @functools.wraps(f)
         def _f(*args, **kwargs):
@@ -298,7 +298,7 @@ def deprec_name_warning(*a, **kw): return '!'
 warn_deprec_name = noop
 def deprec_alias(oname, nobj, *a, **kw): return nobj
 
-### @@ if False {
+### @@ rem {
 def deprec_name_warning(old_name, new_name):
     return f"{new_name!r} deprec; use {old_name!r} instead"
 
@@ -330,7 +330,7 @@ class ChainRead:
 
     def __call__(self): return list(self)
 
-    ### @@if False {
+    ### @@rem {
     # TODO __getitem__ to label the last result.
     # must not exist among the named variables in Bounds
     # must not label the same value more than once
@@ -392,7 +392,7 @@ def pop_callable(s):
     return f, s
 
 
-### @@ if False {
+### @@ rem {
 if __name__ == '__main__':
     # TODO make proper unit tests
     from itertools import islice

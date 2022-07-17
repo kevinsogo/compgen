@@ -53,7 +53,7 @@ def _intersect_intervals(a, b):
     return Intervals(ibounds(a._bds, b._bds))
 
 
-class Intervals(collections.Hashable): ### @@ if False {
+class Intervals(collections.Hashable): ### @@ rem {
     """Immutable collection of disjoint nonempty intervals.
 
     Each interval can have inclusive/exclusive lower/upper bounds.
@@ -128,7 +128,7 @@ class Intervals(collections.Hashable): ### @@ if False {
                 # it falls in between intervals
                 return False
 
-        assert r - l == 2 ### @if False
+        assert r - l == 2 ### @rem
         return True
 
     def __and__(self, other):
@@ -302,7 +302,7 @@ class Var(metaclass=VarMeta):
 
 
 
-# TODO remove 'Interval' (backwards incompatible) ### @if False
+# TODO remove 'Interval' (backwards incompatible) ### @rem
 def interval(l, r): return l <= +Var <= r
 Interval = interval = warn_on_call("'interval' deprecated; use a <= +Var <= b instead")(interval)
 
@@ -321,7 +321,7 @@ class Bounds(collections.Mapping):
             self._attrs[name] = value
         super().__init__()
 
-    def __and__(self, other): ### @@ if False {
+    def __and__(self, other): ### @@ rem {
         ''' Combine two Bounds objects together. Merges intervals for conflicting attributes.
         If not both are intervals, an error is raised. '''
         ### @@ }
@@ -359,7 +359,7 @@ class Bounds(collections.Mapping):
 
 
 
-### @@if False {
+### @@rem {
 def test_some_stuff():
     
 

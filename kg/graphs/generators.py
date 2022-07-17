@@ -53,7 +53,7 @@ gen_random_tree = tree_pgen(pgen_random_tree)
 gen_broomy_tree = tree_pgen(pgen_broomy_tree)
 
 def shuff_labels(rand, nodes, edges):
-    # TODO merge with 'graph_relabel'... ### @if False
+    # TODO merge with 'graph_relabel'... ### @rem
     nodes = make_nodes(nodes)
     assert len(set(nodes)) == len(nodes)
     newlabel = dict(zip(nodes, rand.shuff(nodes)))
@@ -69,7 +69,7 @@ def rand_swaps(rand, nodes, edges):
 def rand_traverse(*args, **kwargs):
     return [i for i, p, d in rand_traverse_data(*args, **kwargs)]
 
-# TODO add start_all, etc. ### @if False
+# TODO add start_all, etc. ### @rem
 def rand_traverse_data(rand, nodes, edges, *, start=None):
     nodes = make_nodes(nodes)
     if start is None: start = nodes[0]

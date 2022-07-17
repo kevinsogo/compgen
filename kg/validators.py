@@ -10,7 +10,7 @@ _patterns = functools.lru_cache(maxsize=None)(re.compile)
 class ValidationError(Exception): ...
 
 
-# TODO needs unification with the other streams   ### @ if False
+# TODO needs unification with the other streams   ### @ rem
 class StrictInputStream:
     def __init__(self, file, *, interactive=False):
         self.last = None
@@ -168,11 +168,11 @@ class StrictInputStream:
         return self._read
 
 StrictStream = StrictInputStream
-# TODO add deprecation warnings? ### @if False
+# TODO add deprecation warnings? ### @rem
 
 
 def validator(f=None, *, bounds=None, subtasks=None, extra_chars_allowed=False, suppress_eof_warning=None):
-    ### @@ if False {
+    ### @@ rem {
     if suppress_eof_warning is not None:
         warn("'suppress_eof_warning' is deprecated (and currently ignored); use 'extra_chars_allowed' instead")
     ### @@ }
