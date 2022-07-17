@@ -1,12 +1,13 @@
-"""Print the data into the correct input format """
+"""Prints the test data in the correct input format."""
 
 from kg.formatters import * ### @import
 
 @formatter
-def print_to_file(file, cases, *, print):
+def format_case(stream, cases, *, print, **kwargs):
     ... # write your formatter here
     {% if not minimal %}
 
+    # example:
     print(len(cases))
     for arr in cases:
         print(len(arr))

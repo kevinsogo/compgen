@@ -1,7 +1,21 @@
+# contains commands to generate all test files
+{% if not minimal %}
+# lines starting with hash (#) are comments
+# set the language/syntax to "bash" to give this file good highlighting
+{% endif %}
+
+{% if not minimal %}
+# 'start' is where counting starts in this script,
+# but the files generated in tests/ still begin at 000.
+{% endif %}
+start=0
+
+
 # write your testscript here
 
 {% if not minimal %}
-# comments start with hash (#)
+
+# example:
 
 # you can run an arbitrary command via "!"
 ! cat sample.in > $
@@ -12,6 +26,4 @@ gen_random 10 100 > $
 gen_random 10 1000 > $
 gen_random 10 10000 > $
 # gen_random 10 100000 > $
-
-# set the language/syntax to "bash" to give this file good highlighting
 {% endif %}

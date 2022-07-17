@@ -1,3 +1,5 @@
+"""Generates random tests."""
+
 from sys import *
 from kg.generators import * ### @import
 from formatter import * ### @import
@@ -12,6 +14,7 @@ A = 10**9
 def gen_random(rand, *args):
     ... # write your generator here
 
+    # example:
     T, N = map(int, args[:2])
     for cas in range(T):
         n = rand.randint(1, N)
@@ -20,4 +23,4 @@ def gen_random(rand, *args):
 
 
 if __name__ == '__main__':
-    write_to_file(print_to_file, gen_random, argv[1:], stdout)
+    write_to_file(format_case, gen_random, argv[1:], stdout)

@@ -1,3 +1,5 @@
+"""Checks whether the input file is valid."""
+
 from sys import *
 from kg.validators import * ### @import
 
@@ -16,26 +18,26 @@ subtasks = {
 {% endif %}
 
 @validator(bounds=bounds{{", subtasks=subtasks" if subtasks >= 1 else ""}})
-def validate_file(file{{", subtask=None" if subtasks >= 1 else ""}}, *, lim):
+def validate(stream{{", subtask=None" if subtasks >= 1 else ""}}, *, lim):
     ... # write your validator here
 
     {% if not minimal %}
-    [t] = file.read.int(lim.t).eoln
+    # example:
+    [t] = stream.read.int(lim.t).eoln
     for cas in range(t):
-        [n] = file.read.int(lim.n).eoln
-        [a] = file.read.ints(n, lim.a).eoln
-    [] = file.read.eof
+        [n] = stream.read.int(lim.n).eoln
+        [a] = stream.read.ints(n, lim.a).eoln
 
     # other possibilities
-    # [x, y, z] = file.read.real(lim.x).space.real(lim.y).space.int(lim.z).eoln
-    # [line] = file.read.line(lim.s).eoln
-    # [name] = file.read.token(lim.name).eoln
+    # [x, y, z] = stream.read.real(lim.x).space.real(lim.y).space.int(lim.z).eoln
+    # [line] = stream.read.line(lim.s).eoln
+    # [name] = stream.read.token(lim.name).eoln
     {% endif %}
 
 
 if __name__ == '__main__':
     {% if subtasks >= 1 %}
-    validate_or_detect_subtasks(validate_file, subtasks, stdin)
+    validate_or_detect_subtasks(validate, subtasks, stdin)
     {% else %}
-    validate_file(stdin)
+    validate(stdin)
     {% endif %}

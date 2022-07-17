@@ -1,9 +1,11 @@
 {% if checker %}
+"""Checks whether the output is correct."""
+
 from sys import *
 from kg.checkers import * ### @import
 
-@set_checker(no_extra_chars=True)
-def check_solution(input_file, output_file, judge_file, **kwargs):
+@checker
+def check(input_stream, output_stream, judge_stream, **kwargs):
     ... # write your checker here
     {% if not minimal %}
 
@@ -20,5 +22,6 @@ def check_solution(input_file, output_file, judge_file, **kwargs):
 
     return 1.0 
 
-if __name__ == '__main__': chk()
+if __name__ == '__main__':
+    check_files(check)
 {% endif %}

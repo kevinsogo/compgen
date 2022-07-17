@@ -1,17 +1,20 @@
 {% if interactor %}
+"""Interacts with the solution. Useful for tasks with hidden information."""
+
 from sys import *
 from kg.interactors import * ### @import
 
 @interactor
-def interact(input_file, user, {% if not minimal %}output_file=None, {% endif %}**kwargs):
+def interact(input_stream, user_stream, {% if not minimal %}output_stream=None, {% endif %}**kwargs):
     ... # write your interactor here
     {% if not minimal %}
 
-    # 'input_file' is a readable file-like object
-    # 'output_file' is a writable file-like object
-    # 'user' is a readable and writable file-like object which representation communication with the contestant
-    # - to get data sent by the contestant, read from 'user', e.g., via user.readline()
-    # - to send data to the contestant, write to 'user', e.g., via user.print(...) (this flushes by default)
+    # input_stream is readable
+    # output_stream is writable
+    # user_stream is readable and writable. It represents communication with the contestant
+    # - to get data sent by the contestant, read from user_stream
+    # - to send data to the contestant, write to user_stream
+    #     - Note: user_stream.print(...) flushes per line
 
     # Raise this if the answer is incorrect
     # raise Wrong("The contestant's output is incorrect!")
@@ -26,5 +29,6 @@ def interact(input_file, user, {% if not minimal %}output_file=None, {% endif %}
 
     return 1.0 
 
-if __name__ == '__main__': interact()
+if __name__ == '__main__':
+    interact_with(interact)
 {% endif %}
