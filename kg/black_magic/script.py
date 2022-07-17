@@ -10,7 +10,7 @@ def main():
     args = parser.parse_args()
 
     def load_module(module):
-        return iter(['imported ' + module] * 3)
+        return iter(['imported ' + module] * 3), {}
 
     def get_module_id(x, c):
         return x.lstrip('.')

@@ -89,6 +89,7 @@ class Parsed:
                             "Consumed all lines before parsing everything. Bracket mismatch.")
 
                 pattern, match, directive, message = get_directive_type(line)
+                # TODO match?
                 if directive == Directive.KEEP:
                     left, right = match.groups()
                     yield left + right

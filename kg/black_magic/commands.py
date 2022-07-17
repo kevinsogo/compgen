@@ -202,6 +202,14 @@ def extract_import(line):
     match = import_line.match(line)
     if match: return match['indent'], match['module']
 
+def _prefix(context):
+    desc = f" [{context['label']}]" if 'label' in context else ''
+    _prefix._just = max(_prefix._just, len(desc))
+    desc = desc.rjust(_prefix._just)
+    return f'  *{desc}'
+
+_prefix._just = 0
+
 def _import(parent, indent, module, context, *, module_id=None):
     if module_id is None:
         module_id = context['get_module_id'](module, context)
@@ -212,16 +220,17 @@ def _import(parent, indent, module, context, *, module_id=None):
 
     # update 'imported'
     if imported[module_id] != [module]:
-        info_print('skipping duplicate import', module)
+        info_print(_prefix(context), 'skipping duplicate import', module)
         return
 
     # now, actually import
-    info_print(f'expanding import of {module} (interpreted as module {module_id})')
-    lines = context['load_module'](module_id)
+    info_print(_prefix(context), f'expanding import of {module} (interpreted as module {module_id})')
+    lines, add_context = context['load_module'](module_id)
 
     # give __name__ a unique name so the program knows in context that it is being pasted somewhere.
     name = context['unique_name']()
     ncontext = dict(context)
+    ncontext.update(add_context)
     ncontext.update({
         'indent': indent,
         'parent': parent,

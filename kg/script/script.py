@@ -1,4 +1,5 @@
 from collections import defaultdict, OrderedDict, Counter
+from contextlib import ExitStack
 from datetime import datetime
 from functools import wraps
 from html.parser import HTMLParser
@@ -35,8 +36,6 @@ from .utils import *
 class CommandError(Exception): ...
 
 VERSION = "0.2"
-
-
 
 
 ##########################################
@@ -420,7 +419,7 @@ def compute_subtasks(subtasks, detector, *, format=None, relpath=None, include_t
     for input_ in format.thru_inputs():
         with open(input_) as f:
             try:
-                result = detector.do_run(*subtasks, stdin=f, stdout=PIPE, check=True)
+                result = detector.do_run(*subtasks, stdin=f, stdout=PIPE, check=True, label='SUBTASK_DETECTOR')
             except CalledProcessError as cpe:
                 err_print(f"The detector raised an error for {input_}", file=stderr)
                 raise CommandError(f"The detector raised an error for {input_}") from cpe
@@ -527,9 +526,11 @@ def generate_outputs(format_, data_maker, *, model_solution=None, judge=None, in
     data_maker_name = 'model_solution' if model_solution == data_maker else 'data_maker'
     for index, (input_, output_) in enumerate(format_.thru_io()):
         touch_container(output_)
-        print(info_text('WRITING', input_, '-->'), key_text(output_))
+        print(info_text('GENERATING', input_, '-->'), key_text(output_))
         try:
-            if data_maker.attributes.get('interacts') and interactor:
+            if data_maker.attributes.get('interacts'):
+                if not interactor:
+                    raise CommandError('"interacts" is true but no interactor found')
                 results = data_maker.do_interact(interactor, time=True, label='DATA_MAKER', check=True,
                         interactor_args=[input_, output_],
                         interactor_kwargs=dict(time=True, label='INTERACTOR', check=True),
@@ -687,81 +688,93 @@ def kg_test(format_, args):
     if time_limit == -1: time_limit = float('inf')
     print(info_text('Using problem time limit:'), key_text(time_limit), info_text('sec.'))
 
+    interactor_strict_args = interactor and not interactor.filename.endswith('.py') # this is hacky for now...
     judge_strict_args = args.judge_strict_args
+    # *_strict_args should probably be subsumed by arg formatting in details.json?
+    # anyway, default behavior: use -C -t -v if ends in .py, else no extras
     solution.do_compile()
     judge.do_compile()
     if interactor: interactor.do_compile()
     scoresheet = {}
     for index, (input_, output_) in enumerate(format_.thru_io()):
         def get_score():
-            nonlocal judge_strict_args
+            nonlocal interactor_strict_args, judge_strict_args
             get_score.running_time = None
-            with tempfile.NamedTemporaryFile(delete=False, prefix=f'kg_tmp_out_{index:>03}_') as tmp:
-                with tempfile.NamedTemporaryFile(delete=False, prefix=f'kg_tmp_res_{index:>03}_') as result_tmp:
-                    info_print("\nFile", str(index).rjust(3), 'CHECKING AGAINST', input_)
-                    interactor_res = None
-                    try:
-                        if interactor:
-                            solution_res, interactor_res = solution.do_interact(interactor,
-                                    time=True, label='SOLUTION', check=True,
-                                    interactor_args=(input_, tmp.name),
-                                    interactor_kwargs=dict(check=False),
+            with ExitStack() as estack:
+                tmp = estack.enter_context(tempfile.NamedTemporaryFile(delete=False, prefix=f'kg_tmp_out_{index:>03}_'))
+                result_tmp = estack.enter_context(tempfile.NamedTemporaryFile(delete=False, prefix=f'kg_tmp_res_{index:>03}_'))
+                if interactor and not interactor_strict_args:
+                    dummy_tmp = estack.enter_context(tempfile.NamedTemporaryFile(delete=False, prefix=f'kg_tmp_dmy_{index:>03}_'))
+                info_print("\nFile", str(index).rjust(3), 'CHECKING AGAINST', input_)
+                interactor_res = None
+                try:
+                    if interactor:
+                        iargs = [input_, tmp.name]
+                        if not interactor_strict_args:
+                            iargs += [dummy_tmp.name, result_tmp.name, '-C', solution.filename, '-t', str(index), '-v']
+                        solution_res, interactor_res = solution.do_interact(interactor,
+                                time=True, label='SOLUTION', check=True,
+                                interactor_args=iargs,
+                                interactor_kwargs=dict(check=False),
+                                time_limit=time_limit,
+                            )
+                    else:
+                        with open(input_) as inp:
+                            solution_res = solution.do_run(
+                                    stdin=inp,
+                                    stdout=tmp,
+                                    time=True,
+                                    label='SOLUTION',
+                                    check=True,
                                     time_limit=time_limit,
                                 )
-                        else:
-                            with open(input_) as inp:
-                                solution_res = solution.do_run(
-                                        stdin=inp,
-                                        stdout=tmp,
-                                        time=True,
-                                        label='SOLUTION',
-                                        check=True,
-                                        time_limit=time_limit,
-                                    )
-                    except TimeoutExpired:
-                        pass
-                    except CalledProcessError:
-                        err_print('The solution issued a runtime error...')
-                        return False, 0
-                    finally:
-                        # save the running time now, since we're monkeying around...
-                        if hasattr(solution, 'last_running_time'):
-                            get_score.running_time = solution.last_running_time
+                except TimeoutExpired:
+                    pass
+                except CalledProcessError:
+                    err_print('The solution issued a runtime error...')
+                    return False, 0
+                finally:
+                    # save the running time now, since we're monkeying around...
+                    if hasattr(solution, 'last_running_time'):
+                        get_score.running_time = solution.last_running_time
 
-                    # Check if the interactor issues WA by itself. Don't invoke the judge
-                    if getattr(interactor_res, 'returncode', 0):
-                        err_print('The interactor did not accept the interaction...')
-                        return False, 0
+                # Check if the interactor issues WA by itself. Don't invoke the judge
+                if getattr(interactor_res, 'returncode', 0):
+                    err_print('The interactor did not accept the interaction...')
+                    return False, 0
 
-                    def run_judge():
-                        jargs = list(map(os.path.abspath, (input_, tmp.name, output_)))
-                        if not judge_strict_args:
-                            jargs += [result_tmp.name, '-C', solution.filename, '-t', str(index), '-v']
-                        return judge.do_run(*jargs, check=False).returncode
+                def run_judge():
+                    jargs = list(map(os.path.abspath, (input_, tmp.name, output_)))
+                    if not judge_strict_args:
+                        jargs += [result_tmp.name, '-C', solution.filename, '-t', str(index), '-v']
+                    return judge.do_run(*jargs, check=False).returncode
 
-                    info_print("Checking the output...")
+                info_print("Checking the output...")
+                returncode = run_judge()
+                if returncode == 3 and not judge_strict_args: # try again but assume the judge is strict
+                    info_print(
+                        "The error above might just be because of testlib... "
+                        "trying to judge again (but strict mode this time)"
+                    )
+                    judge_strict_args = True
                     returncode = run_judge()
-                    if returncode == 3 and not judge_strict_args: # try again but assume the judge is strict
-                        info_print("The error above might just be because of testlib... trying to judge again")
-                        judge_strict_args = True
-                        returncode = run_judge()
-                    correct = returncode == 0
+                correct = returncode == 0
 
-                    try:
-                        with open(result_tmp.name) as result_tmp_file:
-                            score = json.load(result_tmp_file)['score']
-                    except Exception as exc:
-                        score = 1 if correct else 0 # can't read score. use binary scoring
+                try:
+                    with open(result_tmp.name) as result_tmp_file:
+                        score = json.load(result_tmp_file)['score']
+                except Exception as exc:
+                    score = 1 if correct else 0 # can't read score. use binary scoring
 
-                    if get_score.running_time is None:
-                        warn_print("Warning: The running time cannot be extracted from this run.")
-                    elif get_score.running_time > time_limit:
-                        err_print(f"The solution exceeded the time limit of {time_limit:.3f}sec; "
-                                  f"it didn't finish after {get_score.running_time:.3f}sec...")
-                        if score > 0: info_print(f"It would have gotten a score of {score} otherwise...")
-                        return False, 0
+                if get_score.running_time is None:
+                    warn_print("Warning: The running time cannot be extracted from this run.")
+                elif get_score.running_time > time_limit:
+                    err_print(f"The solution exceeded the time limit of {time_limit:.3f}sec; "
+                              f"it didn't finish after {get_score.running_time:.3f}sec...")
+                    if score > 0: info_print(f"It would have gotten a score of {score} otherwise...")
+                    return False, 0
 
-                    return correct, score
+                return correct, score
 
         correct, score = get_score()
         scoresheet[index] = {
@@ -1062,7 +1075,7 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
     makes = set(omakes)
     valid_makes = {'all', 'inputs', 'outputs', 'subtasks'}
     if not (makes <= valid_makes):
-        raise CommandError(f"Unknown make param(s): {ctext(*sorted(makes - valid_makes))}")
+        raise CommandError(f"Unknown make param(s): {ctext(*sorted(makes - valid_makes))} (should be in {valid_makes})")
 
     if 'all' in makes:
         makes |= valid_makes
@@ -1086,9 +1099,9 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
 
         for filename in run_testscript(fmt.thru_expected_inputs(), script, details.generators, relpath=loc):
             if validation:
-                info_print('Validating', filename)
+                info_print('  Validating', filename)
                 with open(filename) as file:
-                    validator.do_run(stdin=file, check=True)
+                    validator.do_run(stdin=file, check=True, time=True, label='VALIDATOR')
 
         succ_print('DONE MAKING INPUTS.')
 
@@ -1408,22 +1421,33 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
             return module
 
     @memoize
-    @listify
     def load_module(module_id):
         if module_id not in locations:
             raise CommandError(f"Couldn't find module {module_id}! "
                     f"(Add it to {'other_programs' if problem_code else '--extra-files'}?)")
+
         with open(locations[module_id]) as f:
-            for line in f:
-                if not line.endswith('\n'):
-                    warn_print('Warning:', locations[module_id], "doesn't end with a new line.")
-                yield line.rstrip('\n')
+            @listify
+            def lines():
+                for line in f:
+                    if not line.endswith('\n'):
+                        warn_print('Warning:', locations[module_id], "doesn't end with a new line.")
+                    yield line.rstrip('\n')
+
+            return lines(), {
+                'location': locations[module_id],
+                'label': os.path.basename(locations[module_id]),
+            }
 
     def get_module_id(module, context):
         nmodule = module
-        if nmodule.startswith('.'):
-            if context['module_id'] in kg_libs:
-                nmodule = 'kg' + nmodule
+        if nmodule.startswith('.') and context['module_id'] in kg_libs:
+            smodule = context['module_id'].split('.')
+            while nmodule.startswith('.'):
+                nmodule = nmodule[1:]
+                smodule.pop()
+            nmodule = '.'.join([*smodule, nmodule])
+
 
         if nmodule.startswith('.'):
             warn_print(f"Warning: Ignoring relative import for {module}", file=stderr)
@@ -1454,14 +1478,31 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
     # locate all necessary files
 
     # kg libs
+    # TODO do some kind of os.walk here and automatically detect these
+    # importable_locations = [
+    #     'formatters',
+    #     'generators',
+    #     'validators',
+    #     'interactors',
+    #     'checkers',
+    #     'utils',
+    #     'graphs',
+    #     'grids',
+    #     'math',
+    # ]
     locations = {
         'kg.formatters': 'formatters.py',
         'kg.generators': 'generators.py',
         'kg.validators': 'validators.py',
+        'kg.interactors': 'interactors.py',
         'kg.checkers': 'checkers.py',
         'kg.utils': os.path.join('utils', '__init__.py'),
         'kg.utils.hr': os.path.join('utils', 'hr.py'),
         'kg.utils.utils': os.path.join('utils', 'utils.py'),
+        'kg.utils.judging': os.path.join('utils', 'judging.py'),
+        'kg.utils.parsers': os.path.join('utils', 'parsers.py'),
+        'kg.utils.streams': os.path.join('utils', 'streams.py'),
+        'kg.utils.intervals': os.path.join('utils', 'intervals.py'),
         'kg.graphs': os.path.join('graphs', '__init__.py'),
         'kg.graphs.utils': os.path.join('graphs', 'utils.py'),
         'kg.graphs.generators': os.path.join('graphs', 'generators.py'),
@@ -1618,7 +1659,8 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
             module = get_module(filename)
             info_print(f'[{module}] converting {filename} to {targets[module]} (kompiling)')
             touch_container(targets[module])
-            lines = list(compile_lines(load_module(module),
+            lines, add_context = load_module(module)
+            lines = list(compile_lines(lines,
                     module_id=module,
                     module_file=filename,
                     load_module=load_module,
@@ -1630,6 +1672,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                     subtasks_only=False,
                     shift_left=shift_left,
                     compress=compress,
+                    **add_context,
                 ))
             with open(targets[module], 'w') as f:
                 shebanged = False
@@ -1666,7 +1709,8 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                     target = os.path.join(dest_folder, 'hr.pastable.version.' + os.path.basename(filename))
                     info_print(f'[{module}] writing snippet version of {filename} to {target}')
                     touch_container(target)
-                    lines = list(compile_lines(load_module(module),
+                    lines, add_context = load_module(module)
+                    lines = list(compile_lines(lines,
                             module_id=module,
                             module_file=filename,
                             load_module=load_module,
@@ -1678,6 +1722,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                             subtasks_only=False,
                             shift_left=shift_left,
                             compress=compress,
+                            **add_context,
                         ))
                     with open(target, 'w') as f:
                         print("# NOTE: THIS SCRIPT IS MEANT TO BE PASTED TO HACKERRANK'S CUSTOM CHECKER, NOT RUN ON ITS OWN.",
@@ -1689,7 +1734,8 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                     target = os.path.join(dest_folder, 'hr.subtasks.only.' + os.path.basename(filename))
                     info_print(f'[{module}] writing the subtasks snippet of {filename} to {target}')
                     touch_container(target)
-                    lines = list(compile_lines(load_module(module),
+                    lines, add_context = load_module(module)
+                    lines = list(compile_lines(lines,
                             module_id=module,
                             module_file=filename,
                             load_module=load_module,
@@ -1700,6 +1746,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                             snippet=True,
                             subtasks_only=True,
                             write=False,
+                            **add_context,
                         ))
                     with open(target, 'w') as f:
                         print('# NOTE: THIS SCRIPT IS NOT MEANT TO BE RUN ON ITS OWN.', file=f)
