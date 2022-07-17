@@ -4,7 +4,7 @@ from kg.checkers import * ### @import
 def is_exactly_equal(seq1, seq2):
     return all(val1 == val2 for val1, val2 in zip_longest(seq1, seq2))
 
-@set_checker()
+@checker(extra_chars_allowed=['input'])
 @default_score
 def check_exactly_equal(input_file, output_file, judge_file, **kwargs):
     output_lines = list(output_file)
@@ -13,7 +13,12 @@ def check_exactly_equal(input_file, output_file, judge_file, **kwargs):
         ### @@if format not in ('pg', 'hr', 'cms') {
         if 'output_path' in kwargs and 'judge_path' in kwargs:
             import difflib
-            diff = '\n'.join(difflib.unified_diff(output_lines, judge_lines, fromfile='Output File', tofile='Judge File'))
+            diff = '\n'.join(difflib.unified_diff(
+                output_lines,
+                judge_lines,
+                fromfile='Output File',
+                tofile='Judge File',
+            ))
 
             N = 1111
             if len(diff) > N+3: diff = diff[:N] + '...'
@@ -24,4 +29,4 @@ def check_exactly_equal(input_file, output_file, judge_file, **kwargs):
         ### @@ }
         raise Wrong('Incorrect.')
 
-if __name__ == '__main__': chk(help="Exact diff checker")
+if __name__ == '__main__': check_files(check_exactly_equal, help="Exact diff checker")
