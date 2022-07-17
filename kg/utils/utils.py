@@ -1,14 +1,43 @@
-import functools
-import os
-import re
+import collections, functools, os, os.path, pathlib, re, sys
 
-def noop(*args, **kwargs): ...
+warn_print = print
+
+def noop(*a, **kw): ...
+
+
+def warn_print(*a, **kw):
+    if not warn_print.wp:
+        try:
+            from kg.script.utils import warn_print as _wp
+        except ImportError:
+            warn_print.wp = print
+        else:
+            warn_print.wp = _wp
+
+    return warn_print.wp(*a, **kw)
+warn_print.wp = None
+
+warn = noop
+### @@ if False {
+def warn(warning):
+    warn_print("WARNING:", warning, file=sys.stderr)
+### @@ }
+
+
+CURR_PLATFORM = 'local' ### @replace 'local', format or 'local'
+
+
 
 def abs_error(a, b):
     return abs(a - b)
 
 def abs_rel_error(a, b):
     return abs(a - b) / max(abs(a), abs(b), 1)
+
+def overflow_ell(s, ct=50, etc='...'):
+    assert len(etc) <= ct
+    s = str(s)
+    return s if len(s) <= ct else s[-len(etc):] + etc
 
 def ensure(condition, message="ensure condition failed. (see Traceback to determine which one)", exc=Exception):
     ''' assert that doesn't raise AssertionError. Useful/Convenient for judging. '''
@@ -24,26 +53,17 @@ def ensure(condition, message="ensure condition failed. (see Traceback to determ
 
 def apply_after(g, name=None):
     ''' Make a decorator that applies "g" to the return value of a function. '''
-    def dec(f):
+    def _d(f):
         @functools.wraps(f)
-        def new_f(*args, **kwargs):
+        def _f(*args, **kwargs):
             return g(f(*args, **kwargs))
-        return new_f
-    if name is not None: dec.__name__ = name
-    return dec
+        return _f
+    if name is not None: _d.__name__ = name
+    return _d
 
 listify = apply_after(list, 'listify')
 
-
-def memoize(function):
-    memo = {}
-    @functools.wraps(function)
-    def f(*args, **kwargs):
-        key = args, tuple(sorted(kwargs.items()))
-        if key not in memo: memo[key] = function(*args, **kwargs)
-        return memo[key]
-    f.memo = memo
-    return f
+memoize = functools.lru_cache(maxsize=None)
 
 t_inf = 10**18
 r_int = r'0|(?:-?[1-9]\d*)'
@@ -90,7 +110,12 @@ def t_infinite(r, *, inf=t_inf):
     start, end, step = _t_range_args(r, inf=inf)
     return abs(end) >= inf
 
-
+### @@ if False {
+# TODO TSequence class
+# iterable, also supports indexing
+# TSequence.ranges
+# TSequence.compress
+### @@ }
 def t_sequence_ranges(s):
     return [t_range(p) for p in s.split(',')]
 
@@ -137,31 +162,234 @@ def compress_t_sequence(s, *, inf=t_inf):
     return ','.join(encode(*t) for t in functools.reduce(merge_ranges, ([decode(r)] for r in s.split(','))))
 
 
-def file_sequence(s):
+def file_sequence(s, *, mktemp=False):
     if s.startswith(':'):
+        if mktemp:
+            print("Ensuring the 'temp' folder exists...", file=sys.stderr) ### @if False
+            pathlib.Path('temp').mkdir(parents=True, exist_ok=True)
         for v in t_sequence(s[1:]):
             yield os.path.join('temp', str(v))
     else:
         yield from map(str, t_sequence(s))
 
-def overflow_ell(s, ct):
-    assert ct >= 3
-    s = str(s)
-    return s if len(s) <= ct else s[:ct-3] + '...'
-
-
 
 def default_return(ret):
-    def _default_return(f):
+    def _d(f):
         @functools.wraps(f)
-        def new_f(*args, **kwargs):
+        def _f(*args, **kwargs):
             res = f(*args, **kwargs)
             return res if res is not None else ret
-        return new_f
-    return _default_return
+        return _f
+    return _d
 
 default_score = default_return(1.0)
 
+### @@ if False {
+# def merge_dicts(d, *others, duplicates='error'):
+#     if duplicates not in {'error', 'first', 'last'}:
+#         raise ValueError(f"Invalid 'duplicates' argument: {duplicates!r}")
+#     d = d.copy()
+#     for o in others:
+#         for k, v in o.items():
+#             if k not in d:
+#                 d[k] = v
+#             elif duplicates == 'error':
+#                 raise ValueError(f"duplicate key: {k!r}")
+#             elif duplicates == 'first':
+#                 pass
+#             elif duplicates == 'last':
+#                 d[k] = v
+#             else:
+#                 raise Exception
+#     return d
+### @@ }
+
+
+EOF = ''
+EOLN = '\n'
+SPACE = ' '
+
+def stream_char_label(ch):
+    if ch == EOF: return 'end-of-file'
+    assert len(ch) == 1
+    return repr(ch)
+
+def force_to_set(s):
+    if not isinstance(s, collections.Set):
+        s = frozenset(s)
+        ### @@if False {
+        if not force_to_set.warned:
+            force_to_set.warned = True
+            warn_print(
+                    "Note: I recommend passing a set as arguments "
+                    "(e.g., to charset, ends, other_ends, token_ends, read_char) "
+                    "to make things a bit faster",
+                    file=sys.stderr)
+        ### @@}
+    return s
+
+force_to_set.warned = False ### @if False
+
+
+
+class Builder:
+    def __init__(self, name, build_standalone, build_from_parts):
+        self.name = name
+        self.build_standalone = build_standalone
+        self.build_from_parts = build_from_parts
+        self.pending = None
+        super().__init__()
+
+    def start_building(self):
+        if self.pending is None: self.pending = self.build_from_parts()
+        return self.pending
+
+    def set(self, arg):
+        self.start_building()
+        if callable(arg):
+            try:
+                name = arg.__name__
+            except AttributeError:
+                ...
+            else:
+                return self._set(name, arg)
+
+        return functools.partial(self._set, arg)
+
+    def _set(self, name, arg):
+        self.start_building()
+        return self.pending._set(name, arg)
+
+    def make(self, *args, **kwargs):
+        if self.pending is None: raise RuntimeError("Cannot build: no .set done. Did you mean @checker?")
+
+        # get additional stuff from kwargs
+        for name in self.pending._names:
+            if name in kwargs: self._set(name, kwargs.pop(name))
+
+        interact = self.pending
+        self.pending = None
+        interact.init(*args, **kwargs)
+        return interact
+
+    def __call__(self, *args, **kwargs):
+        if self.pending is not None: raise RuntimeError(f"Cannot build standalone {self.name} if .set has been done. Did you mean to call .make?")
+        return self.build_standalone(*args, **kwargs)
+
+
+
+def warn_on_call(warning):
+    _d = lambda f: f
+    ### @@ if False {
+    def _d(f):
+        @functools.wraps(f)
+        def _f(*args, **kwargs):
+            if not _f.called:
+                _f.called = True
+                warn(warning)
+            return f(*args, **kwargs)
+        _f.__wrapped__ = f
+        _f.called = False
+        return _f
+    ### @@ }
+    return _d
+
+def deprec_name_warning(*a, **kw): return '!'
+warn_deprec_name = noop
+def deprec_alias(oname, nobj, *a, **kw): return nobj
+
+### @@ if False {
+def deprec_name_warning(old_name, new_name):
+    return f"{new_name!r} deprec; use {old_name!r} instead"
+
+def warn_deprec_name(old_name, new_name):
+    warn(deprec_name_warning(old_name, new_name))
+
+def deprec_alias(old_name, new_obj, new_name=None):
+    if new_name is None: new_name = new_obj.__name__
+    warner = warn_on_call(deprec_name_warning(old_name, new_name))
+    # guess what this object is
+    if callable(new_obj):
+        new_obj = warner(new_obj)
+    else:
+        new_obj.__getattr__ = warner(new_obj.__getattr__)
+    return new_obj
+### @@ }
+
+
+# Chain validation
+class ChainRead:
+    def __init__(self, stream):
+        self._s = stream
+        self._r = collections.deque()
+        super().__init__()
+
+    def __iter__(self):
+        while self._r:
+            yield self._r.popleft()
+
+    def __call__(self): return list(self)
+
+    ### @@if False {
+    # TODO __getitem__ to label the last result.
+    # must not exist among the named variables in Bounds
+    # must not label the same value more than once
+    # a label can change value.
+    ### @@}
+
+    def line(self, *a, **kw):
+        self._r.append(self._s.read_line(*a, **kw)); return self
+
+    def int(self, *a, **kw):
+        self._r.append(self._s.read_int(*a, **kw)); return self
+
+    def ints(self, *a, **kw):
+        self._r.append(self._s.read_ints(*a, **kw)); return self
+
+    def real(self, *a, **kw):
+        self._r.append(self._s.read_real(*a, **kw)); return self
+
+    def reals(self, *a, **kw):
+        self._r.append(self._s.read_reals(*a, **kw)); return self
+
+    def token(self, *a, **kw):
+        self._r.append(self._s.read_token(*a, **kw)); return self
+
+    def tokens(self, *a, **kw):
+        self._r.append(self._s.read_tokens(*a, **kw)); return self
+
+    def until(self, *a, **kw):
+        self._r.append(self._s.read_until(*a, **kw)); return self
+
+    def while_(self, *a, **kw):
+        self._r.append(self._s.read_while(*a, **kw)); return self
+
+    def char(self, *a, **kw):
+        res = self._s.read_char(*a, **kw)
+        if res is not None: self._r.append(res)
+        return self
+
+    @property
+    def space(self):
+        self._s.read_space(); return self
+
+    @property
+    def eoln(self):
+        self._s.read_eoln(); return self
+
+    @property
+    def eof(self):
+        self._s.read_eof(); return self
+
+    @property
+    def spaces(self):
+        self._s.read_spaces(); return self
+
+
+def pop_callable(s):
+    f = None
+    if len(s) >= 1 and callable(s[0]): f, *s = s
+    return f, s
 
 
 ### @@ if False {
