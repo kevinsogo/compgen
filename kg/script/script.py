@@ -561,7 +561,7 @@ def generate_outputs(format_, data_maker, *, model_solution=None, judge=None, in
             if interacts:
                 if not interactor:
                     raise CommandError('"interacts" is true but no interactor found')
-                data_maker.do_interact(interactor, time=True, label='DATA_MAKER', check=True,
+                data_maker.do_interact(interactor, time=True, label='DATA_MAKER_{id}', check=True,
                         node_count=node_count,
                         interaction_mode=interaction_mode,
                         pass_id=interaction_mode == IMode.FIFO,
@@ -589,7 +589,10 @@ def generate_outputs(format_, data_maker, *, model_solution=None, judge=None, in
                         try:
                             if interactor:
                                 model_solution.do_interact(interactor,
-                                        label='MODEL_SOLUTION', check=True,
+                                        label='MODEL_SOLUTION_{id}', check=True,
+                                        node_count=node_count,
+                                        interaction_mode=interaction_mode,
+                                        pass_id=interaction_mode == IMode.FIFO,
                                         interactor_args=[input_, tmp.name],
                                         interactor_kwargs=dict(label='INTERACTOR', check=True),
                                     )

@@ -332,7 +332,7 @@ def _interact_cms(interact, *, input_file=sys.stdin, score_file=sys.stdout, mess
 ### @@ if format in ('local', 'kg', 'pg') {
 @_reg_plat_interactor('local')
 @_reg_plat_interactor('pg')
-def _interact_local(interact, *, log_file=sys.stderr, force_verbose=False, exit_after=True, **kwargs):
+def _interact_local(interact, *, log_file=sys.stderr, force_verbose=False, exit_after=True, title='', help=None, **kwargs):
     desc = help or (CURR_PLATFORM + (' interactor for the problem' + (f' "{title}"' if title else '')))
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('input_path', help='input file path')

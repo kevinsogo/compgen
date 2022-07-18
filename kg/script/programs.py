@@ -278,8 +278,6 @@ class Program:
             # setup communication channels
             pargses = [[*args, *([str(idx)] if pass_id else [])] for idx in range(node_count)]
 
-            run_process = partial(self._do_run_process, time=time, label=label, check=check, log_exc=log_exc, timeout=timeout)
-
             # TODO match statement
             if interaction_mode == IMode.STDIO:
 
@@ -289,6 +287,7 @@ class Program:
                         raise ProgramsError(f"You cannot pass the {stream!r} argument to the interactor in 'stdio' mode")
                 assert node_count == 1
                 [pargs] = pargses
+                run_process = partial(self._do_run_process, time=time, label=label.format(id=0), check=check, log_exc=log_exc, timeout=timeout)
                 process = self.get_runner_process(*pargs, stdin=subprocess.PIPE, stdout=subprocess.PIPE, **kwargs)
                 interactor_kwargs['stdin'] = process.stdout
                 interactor_kwargs['stdout'] = process.stdin
@@ -296,7 +295,8 @@ class Program:
             else:
                 assert interaction_mode == IMode.FIFO
 
-                def run(pargs, from_interactor_fifo, to_interactor_fifo):
+                def run(idx, pargs, from_interactor_fifo, to_interactor_fifo):
+                    run_process = partial(self._do_run_process, time=time, label=label.format(id=idx), check=check, log_exc=log_exc, timeout=timeout)
                     with open(to_interactor_fifo, 'w') as to_interactor_file, open(from_interactor_fifo) as from_interactor_file:
                         return run_process(self.get_runner_process(*pargs, stdin=from_interactor_file, stdout=to_interactor_file, **kwargs))
 
@@ -315,7 +315,7 @@ class Program:
                     # connect these fifos to the stdio's of the nodes
                     interactor_args.extend(['--from-user', *(fifo for fifo in node_to_interactor_fifos)])
                     interactor_args.extend(['--to-user',   *(fifo for fifo in interactor_to_node_fifos)])
-                    yield run, pargses, interactor_to_node_fifos, node_to_interactor_fifos
+                    yield run, range(node_count), pargses, interactor_to_node_fifos, node_to_interactor_fifos
                     info_print("Deleting temporary directory", tmpdirname)
 
 
