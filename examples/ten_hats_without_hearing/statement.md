@@ -1,4 +1,4 @@
-**Statement**  
+## Statement
 
 This is a simulation of the "Ten-Hat Variant without Hearing" problem from Wikipedia:
 
@@ -13,7 +13,7 @@ They can formulate a strategy beforehand. Find a strategy that guarantees winnin
 *Note:* Your running time is computed as the *max* of the times consumed by all processes, though this may be different in CMS (sum of CPU times).
 
 
-**Interaction**  
+## Interaction
 
 The program is run on $10$ nodes, each given an ID from $0$ to $9$, given as a command line argument.
 
@@ -32,6 +32,6 @@ Remember to flush your output!
 *Note:* All $t$ experiments will be performed even if the group has already "failed" some of them.
 
 
-**Constraints**
+## Constraints
 
 $1 \le t \le 10^4$
