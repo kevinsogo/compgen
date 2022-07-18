@@ -233,6 +233,7 @@ class VarMeta(type):
     def __pos__(self): return self()
     def __abs__(self): return abs(self())
     def __neg__(self): return -self()
+    def __invert__(self): return ~self()
 
 class Var(metaclass=VarMeta):
 
@@ -291,6 +292,7 @@ class Var(metaclass=VarMeta):
     def __and__(self, other): return self._combin(operator.and_, other)
     def __or__ (self, other): return self._combin(operator.or_,  other)
     def __xor__(self, other): return self._combin(operator.xor,  other)
+    def __invert__(self): return Var(~self.intervals, _bd_ct=2)
 
     __rand__ = __and__
     __ror__  = __or__
