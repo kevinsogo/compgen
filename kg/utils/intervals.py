@@ -1,4 +1,4 @@
-import collections, enum, functools, itertools, operator
+import collections, collections.abc, enum, functools, itertools, operator
 
 from .utils import * ### @import
 
@@ -53,7 +53,7 @@ def _intersect_intervals(a, b):
     return Intervals(ibounds(a._bds, b._bds))
 
 
-class Intervals(collections.Hashable): ### @@ rem {
+class Intervals(collections.abc.Hashable): ### @@ rem {
     """Immutable collection of disjoint nonempty intervals.
 
     Each interval can have inclusive/exclusive lower/upper bounds.
@@ -308,7 +308,7 @@ class Var(metaclass=VarMeta):
 def interval(l, r): return l <= +Var <= r
 Interval = interval = warn_on_call("'interval' deprecated; use a <= +Var <= b instead")(interval)
 
-class Bounds(collections.Mapping):
+class Bounds(collections.abc.Mapping):
     def __init__(self, bounds=None, **kwbounds):
         if isinstance(bounds, Bounds):
             bounds = bounds._attrs

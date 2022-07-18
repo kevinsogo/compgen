@@ -1,4 +1,4 @@
-import collections, functools, os, os.path, pathlib, re, sys
+import collections, collections.abc, functools, os, os.path, pathlib, re, sys
 
 warn_print = print
 
@@ -214,7 +214,7 @@ def stream_char_label(ch):
     return repr(ch)
 
 def force_to_set(s):
-    if not isinstance(s, collections.Set):
+    if not isinstance(s, collections.abc.Set):
         s = frozenset(s)
         ### @@rem {
         if not force_to_set.warned:
