@@ -1,5 +1,6 @@
-from sys import stdout
+from sys import stdout, stderr
 import calendar
+import concurrent.futures
 import os
 import os.path
 import pathlib
@@ -176,6 +177,10 @@ DECOR = 'cyan'
 def decor_print(*a, **kw): cprint(*a, color=DECOR, **kw)
 def decor_text(*a, **kw): return ctext(*a, color=DECOR, **kw)
 
+SRC = 'cyan'
+def src_print(*a, **kw): cprint(*a, color=SRC, **kw)
+def src_text(*a, **kw): return ctext(*a, color=SRC, **kw)
+
 KEY = 'green'
 def key_print(*a, **kw): cprint(*a, color=KEY, **kw)
 def key_text(*a, **kw): return ctext(*a, color=KEY, **kw)
@@ -217,3 +222,37 @@ def cformat_text(s, begin='info'):
     if envs: raise ValueError("Invalid cformat_text: unclosed")
     return ''.join(globals()[part + '_text'](s) for part, s in parts)
 
+
+
+def wait_all(futures, info=None, executor=None, logf=stderr):
+    info = f"Task [{info}]" if info else "Task"
+    info_print(info, f"waiting", file=logf)
+    futures = [*futures]
+    dones, not_dones = concurrent.futures.wait(futures, return_when=concurrent.futures.FIRST_EXCEPTION)
+    for done in dones:
+        try:
+            done.result()
+        except Exception as exc:
+            info_print(info, f"failed with error", file=logf)
+            info_print(f"    {exc!r}", file=logf)
+            info_print(f"    {exc}", file=logf)
+            info_print(info, f"cancelling", file=logf)
+            if executor: executor.shutdown(cancel_futures=True)
+            for future in futures: future.cancel()
+            info_print(info, f"cancelled", file=logf)
+            raise
+
+    assert not not_dones
+    
+    info_print(info, f"finished", file=logf)
+    return [done.result() for done in dones]
+
+
+def thread_pool_executor(task, *, max_workers, thread_name_prefix, logf=stderr, **kwargs):
+    info_print(task, f"with {max_workers or 'several'} worker threads ({os.cpu_count()} CPUs)...", file=stderr)
+    info_print(f"Threads are prefixed with {thread_name_prefix}", file=stderr)
+    if kwargs: info_print("Other args are", kwargs, file=stderr)
+    return concurrent.futures.ThreadPoolExecutor(
+            max_workers=max_workers,
+            thread_name_prefix=thread_name_prefix,
+            **kwargs)

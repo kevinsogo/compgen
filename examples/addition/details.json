@@ -13,18 +13,9 @@
     ],
     "subtask_detector": "!detector_through_validator",
     "valid_subtasks": [
-        {
-            "id": 1,
-            "score": 50
-        },
-        {
-            "id": 2,
-            "score": 20
-        },
-        {
-            "id": 3,
-            "score": 30
-        }
+        {"id": 1, "score": 50},
+        {"id": 2, "score": 20},
+        {"id": 3, "score": 30}
     ],
     "subtasks_files": "subtasks.json",
     "statement": "statement.md",

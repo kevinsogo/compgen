@@ -270,6 +270,11 @@ subtasks_p.add_argument('-f', '--file', help='detector file')
 subtasks_p.add_argument('-s', '--subtasks', default=[], nargs='+', help='list of subtasks')
 subtasks_p.add_argument('-vc', '--validator-command', nargs='+', help='validator command')
 subtasks_p.add_argument('-vf', '--validator-file', help='validator file')
+subtasks_p.add_argument('-w', '--max-workers', type=int, help=
+        'number of workers to perform the task '
+        "(default is based on Python's default behavior according to "
+        "https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor "
+        "which is min(32, os.cpu_count() + 4) as of Python 3.8)")
 # TODO support "compiler through validator"
 
 @set_handler(subtasks_p)
@@ -281,26 +286,26 @@ def kg_subtasks(format_, args):
     subtasks = args.subtasks or list(map(str, details.valid_subtasks))
     detector = _get_subtask_detector_from_args(args, purpose='subtask computation', details=details)
 
-    compute_subtasks(subtasks, detector, format=format_, include_subtask_groups=True)
+    compute_subtasks(subtasks, detector, format=format_, include_subtask_groups=True, max_workers=args.max_workers)
 
 def _get_subtask_detector_from_args(args, *, purpose, details=None):
     if details is None:
         details = Details.from_format_loc(args.format, args.details, relpath=args.loc)
 
     # build detector
-    validator = None
     detector = Program.from_args(args.file, args.command)
     if not detector: # try validator
-        validator = Program.from_args(args.validator_file, args.validator_command)
-        detector = detector_from_validator(validator)
-        assert (not detector) == (not validator)
+        detector = detector_from_validator(Program.from_args(args.validator_file, args.validator_command))
+    
     # try detector from details
     if not detector: detector = details.subtask_detector
+    
     # can't build any detector!
     if not detector: raise CommandError(f"Missing detector/validator (for {purpose})")
-    # find subtask list
 
-    if validator and not args.subtasks: # subtask list required for detectors from validator
+    # find subtask list
+    from_validator = detector.filename in {'!detector_from_validator', '!detector_through_validator'}
+    if from_validator and not args.subtasks: # subtask list required for detectors from validator
         raise CommandError(f"Missing subtask list (for {purpose})")
 
     return detector
@@ -416,19 +421,26 @@ def extract_subtasks(subtasks, subtasks_files, *, format=None, inputs=None):
             yield get_expected_input(index), {*map(str, subs)}
 
 @_collect_subtasks
-def compute_subtasks(subtasks, detector, *, format=None, relpath=None):
+def compute_subtasks(subtasks, detector, *, format=None, relpath=None, max_workers=None):
     subtset = set(subtasks)
 
     # iterate through inputs, run our detector against them
     detector.do_compile()
-    for input_ in format.thru_inputs():
+
+    def produce(index, input_):
         with open(input_) as f:
             try:
                 result = detector.do_run(*subtasks, stdin=f, stdout=PIPE, check=True, label='SUBTASK_DETECTOR')
             except CalledProcessError as cpe:
                 err_print(f"The detector raised an error for {input_}", file=stderr)
                 raise CommandError(f"The detector raised an error for {input_}") from cpe
-        yield input_, set(result.stdout.decode('utf-8').split())
+        return input_, set(result.stdout.decode('utf-8').split())
+
+    return thread_pool_executor(
+            "Computing subtasks",
+            max_workers=max_workers,
+            thread_name_prefix="kg_compute_subtasks",
+        ).map(produce, *zip(*enumerate(format.thru_inputs())))
 
 
 
@@ -502,6 +514,11 @@ gen_p.add_argument('-c', '--command', nargs='+', help='solution/data_maker comma
 gen_p.add_argument('-f', '--file', help='solution/data_maker file')
 gen_p.add_argument('-jc', '--judge-command', nargs='+', help='judge command')
 gen_p.add_argument('-jf', '--judge-file', help='judge file')
+gen_p.add_argument('-w', '--max-workers', type=int, help=
+        'number of workers to perform the task '
+        "(default is based on Python's default behavior according to "
+        "https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor "
+        "which is min(32, os.cpu_count() + 4) as of Python 3.8)")
 # TODO Add "clear matched" option, but explicitly ask if delete them?
 
 @set_handler(gen_p)
@@ -520,18 +537,22 @@ def kg_gen(format_, args):
     if not judge: raise CommandError("Missing judge")
 
     generate_outputs(format_, judge_data_maker, model_solution=model_solution,
-            judge=judge, interactor=details.interactor)
+            judge=judge, interactor=details.interactor, max_workers=args.max_workers)
 
-def generate_outputs(format_, data_maker, *, model_solution=None, judge=None, interactor=None):
+def generate_outputs(format_, data_maker, *, model_solution=None, judge=None, interactor=None, max_workers=None):
     if not data_maker: raise CommandError("Missing solution")
     data_maker.do_compile()
     if judge: judge.do_compile()
     if model_solution and model_solution != data_maker: model_solution.do_compile()
     if interactor: interactor.do_compile()
     data_maker_name = 'model_solution' if model_solution == data_maker else 'data_maker'
-    for index, (input_, output_) in enumerate(format_.thru_io()):
+
+    def produce(index, input_, output_):
+        def pref(print, *args, **kwargs):
+            info_print(f"[{index}]", end=' ')
+            print(*args, **kwargs)
         touch_container(output_)
-        print(info_text('GENERATING', input_, '-->'), key_text(output_))
+        pref(print, info_text('GENERATING'), src_text(input_, '-->', output_))
         try:
             if data_maker.attributes.get('interacts'):
                 if not interactor:
@@ -544,10 +565,10 @@ def generate_outputs(format_, data_maker, *, model_solution=None, judge=None, in
                 with open(input_) as inp, open(output_, 'w') as outp:
                     data_maker.do_run(stdin=inp, stdout=outp, time=True, label='DATA_MAKER', check=True)
         except InteractorException as ie:
-            err_print(f"The interactor raised an error with the {data_maker_name} for {input_}", file=stderr)
+            pref(err_print, f"The interactor raised an error with the {data_maker_name} for {input_}", file=stderr)
             raise CommandError(f"The interactor raised an error with the {data_maker_name} for {input_}") from ie
         except SubprocessError as se:
-            err_print(f"The {data_maker_name} raised an error for {input_}", file=stderr)
+            pref(err_print, f"The {data_maker_name} raised an error for {input_}", file=stderr)
             raise CommandError(f"The {data_maker_name} raised an error for {input_}") from se
 
         if judge and model_solution:
@@ -557,30 +578,44 @@ def generate_outputs(format_, data_maker, *, model_solution=None, judge=None, in
                     yield output_
                 else:
                     with tempfile.NamedTemporaryFile(delete=False, prefix=f'kg_tmp_out_{index:>03}_') as tmp:
-                        info_print(f"  Running model solution on {input_}")
+                        pref(info_print, f"  Running model solution on {input_}")
                         try:
                             if interactor:
                                 results = model_solution.do_interact(interactor,
-                                        time=True, label='MODEL_SOLUTION', check=True,
+                                        label='MODEL_SOLUTION', check=True,
                                         interactor_args=[input_, tmp.name],
-                                        interactor_kwargs=dict(time=True, label='INTERACTOR', check=True),
+                                        interactor_kwargs=dict(label='INTERACTOR', check=True),
                                     )
                             else:
                                 with open(input_) as inp:
-                                    model_solution.do_run(stdin=inp, stdout=tmp, time=True, label='MODEL_SOLUTION', check=True)
+                                    model_solution.do_run(stdin=inp, stdout=tmp, label='MODEL_SOLUTION', check=True)
                         except InteractorException as ie:
-                            err_print(f"The interactor raised an error with the model_solution for {input_}", file=stderr)
+                            pref(err_print, f"The interactor raised an error with the model_solution for {input_}", file=stderr)
                             raise CommandError(f"The interactor raised an error with the model_solution for {input_}") from ie
                         except SubprocessError as se:
-                            err_print(f"The interaction raised an error for {input_}", file=stderr)
+                            pref(err_print, f"The interaction raised an error for {input_}", file=stderr)
                             raise CommandError(f"The interaction raised an error for {input_}") from se
                         yield tmp.name
             with model_output() as model_out:
                 try:
-                    judge.do_run(*map(os.path.abspath, (input_, model_out, output_)), check=True, time=True, label='CHECKER')
+                    judge.do_run(*map(os.path.abspath, (input_, model_out, output_)), check=True, label='CHECKER')
                 except CalledProcessError as cpe:
-                    err_print(f"The judge did not accept {output_}", file=stderr)
+                    pref(err_print, f"The judge did not accept {output_}", file=stderr)
                     raise CommandError(f"The judge did not accept {output_}") from cpe
+
+        pref(print, info_text('GENERATED', input_, '-->'), key_text(output_))
+        if max_workers == 1: print()
+
+    with thread_pool_executor(
+                "Generating output files",
+                max_workers=max_workers,
+                thread_name_prefix="kg_gen_output_files",
+            ) as executor:
+        wait_all(
+                (executor.submit(produce, index, input_, output_) for index, (input_, output_) in enumerate(format_.thru_io())),
+                "generate files",
+                executor=executor,
+                logf=stderr)
 
 
 
@@ -674,6 +709,7 @@ test_p.add_argument('-if', '--interactor-file', help='interactor file, if the pr
 test_p.add_argument('-tl', '--time-limit', type=float, help="the problem's time limit (or -1 for no limit); "
                                                             "the code will be terminated if it exceeds 4x this time")
 
+# I didn't put workers and Threads here for more accurate timing. TODO reconsider if 'num_cores - 1' threads is ok or something
 @set_handler(test_p)
 def kg_test(format_, args):
     if not args.format: args.format = format_
@@ -944,6 +980,9 @@ def kg_test(format_, args):
           sep='')
     info_print(f'using the scoring policy {details.logical_scoring}')
 
+    print()
+    info_print("You can clear temp files by running 'kg-aux clear-temp-files'")
+
 
 
 ##########################################
@@ -1077,6 +1116,11 @@ make_p.add_argument('-l', '--loc', default='.', help='location to run commands o
 make_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
 make_p.add_argument('-V', '--validation', action='store_true', help="Validate the input files against the validators")
 make_p.add_argument('-C', '--checks', action='store_true', help="Check the output file against the checker")
+make_p.add_argument('-w', '--max-workers', type=int, help=
+        'number of workers to perform the task '
+        "(default is based on Python's default behavior according to "
+        "https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor "
+        "which is min(32, os.cpu_count() + 4) as of Python 3.8)")
 
 @set_handler(make_p)
 def _kg_make(format_, args):
@@ -1084,9 +1128,9 @@ def _kg_make(format_, args):
         raise CommandError(f"You can't use '{format_}' format to 'make'.")
 
     details = Details.from_format_loc(format_, args.details, relpath=args.loc)
-    kg_make(args.makes, args.loc, format_, details, validation=args.validation, checks=args.checks)
+    kg_make(args.makes, args.loc, format_, details, validation=args.validation, checks=args.checks, max_workers=args.max_workers)
 
-def kg_make(omakes, loc, format_, details, validation=False, checks=False):
+def kg_make(omakes, loc, format_, details, *, validation=False, checks=False, max_workers=None):
     makes = set(omakes)
     valid_makes = {'all', 'inputs', 'outputs', 'subtasks'}
     if not (makes <= valid_makes):
@@ -1108,15 +1152,13 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
 
         fmt = get_format_from_type(format_, loc, write='i', clear='i')
 
-        if validation:
-            validator = details.validator
-            validator.do_compile()
-
-        for filename in run_testscript(fmt.thru_expected_inputs(), script, details.generators, relpath=loc):
-            if validation:
-                info_print('  Validating', filename)
-                with open(filename) as file:
-                    validator.do_run(stdin=file, check=True, time=True, label='VALIDATOR')
+        filenames = [*run_testscript(
+                fmt.thru_expected_inputs(),
+                script,
+                details.generators,
+                relpath=loc,
+                validator=details.validator if validation else None,
+                max_workers=max_workers)]
 
         succ_print('DONE MAKING INPUTS.')
 
@@ -1129,7 +1171,8 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
                 fmt, details.judge_data_maker,
                 model_solution=details.model_solution,
                 judge=details.checker if checks else None,
-                interactor=details.interactor)
+                interactor=details.interactor,
+                max_workers=max_workers)
 
         succ_print('DONE MAKING OUTPUTS.')
 
@@ -1147,7 +1190,8 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
                 raise CommandError(f"A 'subtasks_files' entry in {details.source} is required at this step.")
 
             detector = details.subtask_detector
-            if not detector: raise CommandError("Missing detector/validator")
+            if not detector:
+                raise CommandError("Missing detector/validator")
 
             # find subtask list
             subtasks = list(map(str, details.valid_subtasks))
@@ -1157,12 +1201,18 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
             # iterate through inputs, run our detector against them
             subtasks_of, all_subtasks = compute_subtasks(
                     subtasks, detector,
-                    format=get_format_from_type(format_, loc, read='i'), relpath=loc, include_subtask_groups=True)
+                    format=get_format_from_type(format_, loc, read='i'),
+                    relpath=loc,
+                    include_subtask_groups=True,
+                    max_workers=max_workers)
 
             info_print(f'WRITING TO {details.subtasks_files}')
             details.dump_subtasks_files(construct_subs_files(subtasks_of))
 
             succ_print('DONE MAKING SUBTASKS.')
+
+    print()
+    info_print("You can clear temp files by running 'kg-aux clear-temp-files'")
 
 
 def construct_subs_files(subtasks_of):
@@ -1296,6 +1346,7 @@ def kg_init(format_, args):
         'interactor': args.interactor,
         'subtasks': args.subtasks,
         # Jinja's tojson doesn't seem to honor dict order, so let's just use json.dumps
+        # TODO fix it using https://stackoverflow.com/questions/67214142/why-does-jinja2-filter-tojson-sort-keys (maybe...)
         "subtask_list": [OrderedDict(id=index, score=10) for index in range(1, args.subtasks + 1)],
         # TODO find a way to indent only up to a certain level
         'subtask_list_json': "[" + ','.join('\n    ' + json.dumps(sub) for sub in subtask_list) + "\n]",
@@ -1330,7 +1381,7 @@ def kg_init(format_, args):
 # compile source codes for upload
 
 compile_p = subparsers.add_parser('kompile',
-        aliases=['compile'],
+            aliases=['compile'],
     formatter_class=argparse.RawDescriptionHelpFormatter,
                help='Preprocess python source codes to be ready to upload',
         description=cformat_text(dedent('''\
@@ -1392,9 +1443,14 @@ compile_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
 compile_p.add_argument('-S', '--shift-left', action='store_true',
                                 help='compress the program by reducing the indentation size from 4 spaces to 1 tab. '
                                 'Use at your own risk. (4 is hardcoded because it is the indentation level of the '
-                                '"kg" module.)')
+                                'kg module.)')
 compile_p.add_argument('-C', '--compress', action='store_true',
                                 help='compress the program by actually compressing it. Use at your own risk.')
+compile_p.add_argument('-w', '--max-workers', type=int, help=
+        'number of workers to perform the task '
+        "(default is based on Python's default behavior according to "
+        "https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor "
+        "which is min(32, os.cpu_count() + 4) as of Python 3.8)")
 
 @set_handler(compile_p)
 def _kg_compile(format_, args):
@@ -1410,13 +1466,14 @@ def _kg_compile(format_, args):
         compress=args.compress,
         files=args.files,
         extra_files=args.extra_files,
+        max_workers=args.max_workers,
         )
 
 def _get_cms_code(details, code_raw):
     return details.cms_options.get('name', ''.join(re.split(r'[._-]', code_raw)))
 
 def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, compress=False, python3='python3',
-        dest_loc=None, files=[], extra_files=[], statement_file=None, global_statement_file=None):
+        dest_loc=None, files=[], extra_files=[], statement_file=None, global_statement_file=None, max_workers=None):
 
     valid_formats = {'hr', 'pg', 'pc2', 'dom', 'cms', 'cms-it'}
     if not set(target_formats) <= valid_formats:
@@ -1780,7 +1837,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
             with open(details.testscript) as scrf:
                 script = scrf.read()
 
-            lines = list(convert_testscript(script, details.generators, relpath=loc))
+            lines = list(transpile_testscript_pg(script, details.generators, relpath=loc, max_workers=max_workers))
 
             with open(target, 'w') as f:
                 for line in lines:

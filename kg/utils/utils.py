@@ -164,7 +164,7 @@ def compress_t_sequence(s, *, inf=t_inf):
 def file_sequence(s, *, mktemp=False):
     if s.startswith(':'):
         if mktemp:
-            print("Ensuring the 'temp' folder exists...", file=sys.stderr) ### @rem
+            print("    Ensuring the 'temp' folder exists...", file=sys.stderr) ### @rem
             pathlib.Path('temp').mkdir(parents=True, exist_ok=True)
         for v in t_sequence(s[1:]):
             yield os.path.join('temp', str(v))

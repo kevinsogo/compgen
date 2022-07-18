@@ -198,7 +198,7 @@ class DistribCase:
     def __getitem__(self, index):
         def get(rand, *args):
             groups = self.lazy(rand, *args)
-            print(f"[G] Generating file index {index} of {len(groups)}", file=sys.stderr) ### @rem
+            print(f"    [G] Generating file index {index} of {len(groups)}", file=sys.stderr) ### @rem
             if not (0 <= index < len(groups)): raise GeneratorError(f"Invalid index: {index} of {len(groups)} groups")
             return self.realize(groups[index])
         return get
@@ -254,9 +254,9 @@ def write_to_files(format_case, make, filenames, *args, validate=None):
             filename = next(filenames)
         except StopIteration as st:
             raise GeneratorError(f"Not enough files! Need more than {index}") from st
-        print("[G] Generator writing to", filename, file=sys.stderr) ### @rem
+        print("    [G] Generator writing to", filename, file=sys.stderr) ### @rem
         with open(filename, 'w') as file:
             # TODO ensure this does not exit(42) ### @rem
             _write_with_validate(format_case, file, case, validate=validate)
         filecount += 1
-    print("[G] Generated", filecount, "files", file=sys.stderr) ### @rem
+    print("    [G] Generated", filecount, "files", file=sys.stderr) ### @rem

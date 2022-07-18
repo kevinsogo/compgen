@@ -3,11 +3,11 @@ start=0
 ! cat sample.in > $
 gen_single 10 10 > $
 gen_single 10 100 > $
-gen_single 10 1000 > 4
+gen_single 10 1000 > 3
 gen_single 10 10000 > $
 gen_multi_lazy 0 10 20 > $
 gen_multi_lazy 1 10 20 > $
 gen_multi_lazy 2 10 20 > $
 gen_multi_lazy 3 10 20 > $
-gen_multi_eager 7,10-12 10 100 > {7,10-11,12}
+gen_multi_eager $$ 10 100 > {7,10-11,12}
 gen_single 10 100000 > $
