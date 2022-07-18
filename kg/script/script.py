@@ -767,6 +767,7 @@ def kg_test(format_, args):
                 if interactor and not interactor_strict_args:
                     dummy_tmp = estack.enter_context(tempfile.NamedTemporaryFile(delete=False, prefix=f'kg_tmp_dmy_{index:>03}_'))
                 info_print("\nFile", str(index).rjust(3), 'CHECKING AGAINST', input_)
+                solutions_res = None
                 interactor_res = None
                 try:
                     if interactor:
@@ -807,9 +808,10 @@ def kg_test(format_, args):
                     err_print(exc)
                     return False, 0
                 finally:
-                    runtimes = [sres.running_time for sres in solutions_res if sres.running_time is not None]
                     get_score.running_time = None
-                    if runtimes: get_score.running_time = sum(runtimes), max(runtimes)
+                    if solutions_res:
+                        runtimes = [sres.running_time for sres in solutions_res if sres.running_time is not None]
+                        if runtimes: get_score.running_time = sum(runtimes), max(runtimes)
 
                 # Check if the interactor issues WA by itself. Don't invoke the judge
                 if interactor_res and getattr(interactor_res.result, 'returncode', 0):

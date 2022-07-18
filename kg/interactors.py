@@ -237,7 +237,7 @@ def _interact_generic(interactor, input, *users, output=None, judge=None, **kwar
             score = interactor(input_f, *user_ios, output_file=output_f, judge_file=judge_f, **kwargs)
             if not (0.0 <= score <= 1.0):
                 raise InteractorError(f"The interactor returned an invalid score: {score!r}")
-            return Verdict.AC, score, ""
+            return Verdict.AC if score > 0 else Verdict.WA, score, ""
         except ParseError as exc:
             return handle(exc, Verdict.PAE)
         except Wrong as exc:
@@ -392,8 +392,7 @@ def _interact_local(interact, *, log_file=sys.stderr, force_verbose=False, exit_
     else:
         exit_code = kg_rcode[verdict]
 
-    if exit_after:
-        exit(exit_code)
+    if exit_after: exit(exit_code)
 
     return exit_code
 ### @@ }

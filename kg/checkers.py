@@ -296,7 +296,7 @@ def _check_generic(check, input=None, output=None, judge=None, **kwargs):
             score = check(input_f, output_f, judge_f, **kwargs)
             if not (0.0 <= score <= 1.0):
                 raise CheckerError(f"The checker returned an invalid score: {score!r}")
-            return Verdict.AC, score, ""
+            return Verdict.AC if score > 0 else Verdict.WA, score, ""
         except ParseError as exc:
             return handle(exc, Verdict.PAE)
         except Wrong as exc:
