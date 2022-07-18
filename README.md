@@ -26,7 +26,7 @@ eval "$(register-python-argcomplete kg)"
 
 - Whenever this library gets updated (e.g. you pull from the repo), run the above again to update your installation.
 
-    - *Note:* This is still very early on in development&mdash;we haven't even decided on the release cycle/method yet&mdash;so expect regular updates (pull from the repo regularly), and a few of them might be backwards-incompatible. We'll fix this soon, promise!
+    - *Note:* This is still early on in development&mdash;we haven't even decided on the release cycle/method yet&mdash;so expect regular updates (pull from the repo regularly), and a few of them might be backwards-incompatible. We'll fix this soon, promise!
 
 
 - If you want to install this on, say, `python3.9` or `pypy3`, run `bash setup.sh python3.9` (or `pypy3`). I recommend installing it on the latest pypy3 version.
