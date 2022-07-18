@@ -281,7 +281,7 @@ def kg_subtasks(format_, args):
     subtasks = args.subtasks or list(map(str, details.valid_subtasks))
     detector = _get_subtask_detector_from_args(args, purpose='subtask computation', details=details)
 
-    compute_subtasks(subtasks, detector, format=format_, include_test_groups=True)
+    compute_subtasks(subtasks, detector, format=format_, include_subtask_groups=True)
 
 def _get_subtask_detector_from_args(args, *, purpose, details=None):
     if details is None:
@@ -309,12 +309,13 @@ def _collect_subtasks(input_subs):
     @wraps(input_subs)
     def _input_subs(subtasks, *args, **kwargs):
         subtset = set(subtasks)
+        include_subtask_groups = kwargs.pop('include_subtask_groups', True)
 
         # iterate through inputs, run our detector against them
         subtasks_of = OrderedDict()
         all_subtasks = set()
         files_of_subtask = {sub: set() for sub in subtset}
-        test_groups = {}
+        subtask_groups = {}
         for input_, subs in input_subs(subtasks, *args, **kwargs):
             subtasks_of[input_] = set(subs)
             if not subtasks_of[input_]:
@@ -326,7 +327,7 @@ def _collect_subtasks(input_subs):
             for sub in subtasks_of[input_]: files_of_subtask[sub].add(input_)
             info_print(f"Subtasks found for {input_}:", end=' ')
             key_print(*natsorted(subtasks_of[input_]))
-            test_groups[' '.join(natsorted(subtasks_of[input_]))] = set(subtasks_of[input_])
+            subtask_groups[' '.join(natsorted(subtasks_of[input_]))] = set(subtasks_of[input_])
 
         info_print("Distinct subtasks found:", end=' ')
         key_print(*natsorted(all_subtasks))
@@ -336,6 +337,7 @@ def _collect_subtasks(input_subs):
             if all_subtasks != subtset:
                 warn_print('Warning: Some subtasks not found:', *natsorted(subtset - all_subtasks), file=stderr)
 
+        info_print()
         info_print("Subtask dependencies:")
         depends_on = {sub: {sub} for sub in subtset}
         for sub in natsorted(subtset):
@@ -344,11 +346,11 @@ def _collect_subtasks(input_subs):
                 print(info_text("Subtask"), key_text(sub), info_text("contains the ff subtasks:"), key_text(*deps))
                 for dep in deps: depends_on[dep].add(sub)
         
-        if kwargs.get('include_test_groups'):
+        if include_subtask_groups:
             representing = {}
             represented_by = {}
             for sub in natsorted(all_subtasks):
-                candidates = {key: group for key, group in test_groups.items() if sub in group and group <= depends_on[sub]}
+                candidates = {key: group for key, group in subtask_groups.items() if sub in group and group <= depends_on[sub]}
                 if candidates:
                     try:
                         group_key = next(key
@@ -361,33 +363,36 @@ def _collect_subtasks(input_subs):
                     except StopIteration:
                         pass
 
-            info_print("Test groups:")
-            for group_key in natsorted(test_groups):
-                if group_key in represented_by:
-                    print(key_text(group_key), info_text("AKA subtask"), key_text(represented_by[group_key]))
+            raw_group_str = {group: f"{{{group}}}" for group in subtask_groups}
+            mxl = max(map(len, raw_group_str.values()))
+            def group_str(group):
+                group_s = raw_group_str[group].rjust(mxl)
+                if group in represented_by:
+                    return key_text(group_s), info_text("AKA subtask"), key_text(represented_by[group])
                 else:
-                    key_print(group_key)
+                    return key_text(group_s),
 
+            info_print()
+            info_print("Subtask groups:")
+            for group_key in natsorted(subtask_groups):
+                print(*group_str(group_key))
+
+            info_print()
+            info_print("Subtask group representations:")
             for sub in natsorted(all_subtasks):
                 if sub in representing:
-                    print(info_text("Subtask"), key_text(sub), info_text("is represented by test group:"),
-                          key_text(representing[sub]))
+                    print(info_text("Subtask"), key_text(sub), info_text("is represented by subtask group:"),
+                          *group_str(representing[sub]))
                 else:
-                    warn_print('Warning: No test group represents subtask', sub, file=stderr)
+                    warn_print('Warning: No subtask group represents subtask', sub, file=stderr)
 
-            info_print("Test group dependencies:")
-            for key, group in natsorted(test_groups.items()):
-                deps = [depkey for depkey, dep in natsorted(test_groups.items()) if dep != group and group < dep]
-                if key in represented_by:
-                    print(info_text("Test group"), key_text(key), info_text("AKA subtask"), key_text(represented_by[key]),
-                          info_text("contains the ff subtask groups:"))
-                else:
-                    print(info_text("Test group"), key_text(key), info_text("contains the ff test groups:"))
-                for depkey in deps:
-                    if depkey in represented_by:
-                        print(key_text(depkey), info_text("AKA subtask"), key_text(represented_by[depkey]))
-                    else:
-                        print(key_text(depkey))
+            info_print()
+            info_print("Subtask group dependencies:")
+            for key, group in natsorted(subtask_groups.items()):
+                deps = [depkey for depkey, dep in natsorted(subtask_groups.items()) if dep != group and group < dep]
+                print(*group_str(key), info_text("contains the ff subtask groups:"))
+                for depkey in deps: print(*group_str(depkey))
+                info_print()
         
         return subtasks_of, all_subtasks
 
@@ -411,7 +416,7 @@ def extract_subtasks(subtasks, subtasks_files, *, format=None, inputs=None):
             yield get_expected_input(index), {*map(str, subs)}
 
 @_collect_subtasks
-def compute_subtasks(subtasks, detector, *, format=None, relpath=None, include_test_groups):
+def compute_subtasks(subtasks, detector, *, format=None, relpath=None):
     subtset = set(subtasks)
 
     # iterate through inputs, run our detector against them
@@ -552,7 +557,7 @@ def generate_outputs(format_, data_maker, *, model_solution=None, judge=None, in
                     yield output_
                 else:
                     with tempfile.NamedTemporaryFile(delete=False, prefix=f'kg_tmp_out_{index:>03}_') as tmp:
-                        info_print(f"Running model solution on {input_}")
+                        info_print(f"  Running model solution on {input_}")
                         try:
                             if interactor:
                                 results = model_solution.do_interact(interactor,
@@ -827,10 +832,20 @@ def kg_test(format_, args):
         subtasks = args.subtasks or list(map(str, details.valid_subtasks))
         if os.path.isfile(details.subtasks_files):
             inputs = [score_row['input'] for index, score_row in sorted(scoresheet.items())]
-            subtasks_of, all_subtasks = extract_subtasks(subtasks, details.load_subtasks_files(), inputs=inputs)
+            subtasks_of, all_subtasks = extract_subtasks(
+                subtasks,
+                details.load_subtasks_files(),
+                inputs=inputs,
+                include_subtask_groups=False,
+            )
         else:
             detector = _get_subtask_detector_from_args(args, purpose='subtask scoring', details=details)
-            subtasks_of, all_subtasks = compute_subtasks(subtasks, detector, format=format_, include_test_groups=False)
+            subtasks_of, all_subtasks = compute_subtasks(
+                subtasks,
+                detector,
+                format=format_,
+                include_subtask_groups=False,
+            )
 
         def get_max_score(sub):
             max_score = details.valid_subtasks[int(sub)].score if isinstance(details.valid_subtasks, dict) else 1
@@ -1142,7 +1157,7 @@ def kg_make(omakes, loc, format_, details, validation=False, checks=False):
             # iterate through inputs, run our detector against them
             subtasks_of, all_subtasks = compute_subtasks(
                     subtasks, detector,
-                    format=get_format_from_type(format_, loc, read='i'), relpath=loc, include_test_groups=True)
+                    format=get_format_from_type(format_, loc, read='i'), relpath=loc, include_subtask_groups=True)
 
             info_print(f'WRITING TO {details.subtasks_files}')
             details.dump_subtasks_files(construct_subs_files(subtasks_of))
