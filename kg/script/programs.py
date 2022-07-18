@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from contextlib import contextmanager, ExitStack
 from enum import Enum
 from functools import wraps, partial
@@ -20,6 +20,8 @@ class IMode(Enum):
     FIFO = 'fifo'
 
 class ProgramsError(Exception): ...
+
+ProgramResult = namedtuple('ProgramResult', ['result', 'running_time'])
 
 class InteractorException(ProgramsError):
     def __init__(self, original_error, *args, **kwargs):
@@ -164,11 +166,15 @@ class Program:
         if time:
             start_time = timel.time()
         try:
-            return self._run(log_exc, subprocess.run, command, **kwargs)
+            res = self._run(log_exc, subprocess.run, command, **kwargs)
         finally:
             if time:
-                self.last_running_time = elapsed = timel.time() - start_time
+                elapsed = timel.time() - start_time
                 info_print(f'{label or "":>18} elapsed time: {elapsed:.2f} sec.', file=stderr)
+            else:
+                elapsed = None
+
+        return ProgramResult(result=res, running_time=elapsed)
 
     def _run(self, log_exc, func, *args, **kwargs):
         try:
@@ -195,14 +201,16 @@ class Program:
                 raise
             finally:
                 if time:
-                    self.last_running_time = elapsed = timel.time() - start_time
+                    elapsed = timel.time() - start_time
                     info_print(f'{label or "":>18} elapsed time: {elapsed:.2f} sec.', file=stderr)
+                else:
+                    elapsed = None
             retcode = proc.poll()
 
             if check and retcode:
                 raise subprocess.CalledProcessError(retcode, proc.args, output=None, stderr=None)
 
-        return subprocess.CompletedProcess(proc.args, None, None, retcode)
+        return ProgramResult(result=subprocess.CompletedProcess(proc.args, None, None, retcode), running_time=elapsed)
 
 
     def do_interact(self, interactor, *args, time=False, label=None, check=False, log_exc=True,
@@ -234,6 +242,7 @@ class Program:
             if stream in kwargs:
                 raise ProgramsError(f"You cannot pass the {stream!r} argument to the node if there's an interactor")
 
+        if node_count is None: node_count = 1
         if node_count < 1:
             raise ProgramsError(f"node_count must be at least 1; got {node_count}")
 
@@ -267,7 +276,7 @@ class Program:
         @contextmanager
         def prepare_communication():
             # setup communication channels
-            pargses = [[*args, *([idx] if pass_id else [])] for idx in range(node_count)]
+            pargses = [[*args, *([str(idx)] if pass_id else [])] for idx in range(node_count)]
 
             run_process = partial(self._do_run_process, time=time, label=label, check=check, log_exc=log_exc, timeout=timeout)
 

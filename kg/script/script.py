@@ -430,11 +430,11 @@ def compute_subtasks(subtasks, detector, *, format=None, relpath=None, max_worke
     def produce(index, input_):
         with open(input_) as f:
             try:
-                result = detector.do_run(*subtasks, stdin=f, stdout=PIPE, check=True, label='SUBTASK_DETECTOR')
+                res = detector.do_run(*subtasks, stdin=f, stdout=PIPE, check=True, label='SUBTASK_DETECTOR')
             except CalledProcessError as cpe:
                 err_print(f"The detector raised an error for {input_}", file=stderr)
                 raise CommandError(f"The detector raised an error for {input_}") from cpe
-        return input_, set(result.stdout.decode('utf-8').split())
+        return input_, set(res.result.stdout.decode('utf-8').split())
 
     return thread_pool_executor(
             "Computing subtasks",
@@ -519,6 +519,7 @@ gen_p.add_argument('-w', '--max-workers', type=int, help=
         "(default is based on Python's default behavior according to "
         "https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor "
         "which is min(32, os.cpu_count() + 4) as of Python 3.8)")
+
 # TODO Add "clear matched" option, but explicitly ask if delete them?
 
 @set_handler(gen_p)
@@ -532,20 +533,23 @@ def kg_gen(format_, args):
     if not judge_data_maker:
         model_solution = details.model_solution
         judge_data_maker = details.judge_data_maker
+
+    interacts = judge_data_maker.attributes.get('interacts') or details.interactor and model_solution == judge_data_maker
     judge = Program.from_args(args.judge_file, args.judge_command) or details.checker
 
     if not judge: raise CommandError("Missing judge")
 
-    generate_outputs(format_, judge_data_maker, model_solution=model_solution,
-            judge=judge, interactor=details.interactor, max_workers=args.max_workers)
+    generate_outputs(format_, judge_data_maker, model_solution=model_solution, interacts=interacts,
+            judge=judge, interactor=details.interactor, node_count=details.node_count, max_workers=args.max_workers)
 
-def generate_outputs(format_, data_maker, *, model_solution=None, judge=None, interactor=None, max_workers=None):
-    if not data_maker: raise CommandError("Missing solution")
+def generate_outputs(format_, data_maker, *, model_solution=None, judge=None, interacts=False, interactor=None, node_count=None, max_workers=None):
+    if not data_maker: raise CommandError("Missing solution/data maker")
     data_maker.do_compile()
     if judge: judge.do_compile()
     if model_solution and model_solution != data_maker: model_solution.do_compile()
     if interactor: interactor.do_compile()
     data_maker_name = 'model_solution' if model_solution == data_maker else 'data_maker'
+    interaction_mode = IMode.FIFO if node_count is not None and node_count > 1 else IMode.STDIO
 
     def produce(index, input_, output_):
         def pref(print, *args, **kwargs):
@@ -554,10 +558,13 @@ def generate_outputs(format_, data_maker, *, model_solution=None, judge=None, in
         touch_container(output_)
         pref(print, info_text('GENERATING'), src_text(input_, '-->', output_))
         try:
-            if data_maker.attributes.get('interacts'):
+            if interacts:
                 if not interactor:
                     raise CommandError('"interacts" is true but no interactor found')
                 data_maker.do_interact(interactor, time=True, label='DATA_MAKER', check=True,
+                        node_count=node_count,
+                        interaction_mode=interaction_mode,
+                        pass_id=interaction_mode == IMode.FIFO,
                         interactor_args=[input_, output_],
                         interactor_kwargs=dict(time=True, label='INTERACTOR', check=True),
                     )
@@ -708,6 +715,8 @@ test_p.add_argument('-ic', '--interactor-command', nargs='+', help='interactor c
 test_p.add_argument('-if', '--interactor-file', help='interactor file, if the problem is interactive')
 test_p.add_argument('-tl', '--time-limit', type=float, help="the problem's time limit (or -1 for no limit); "
                                                             "the code will be terminated if it exceeds 4x this time")
+test_p.add_argument('-n', '--node-count', type=int, help="The number of nodes that the solution will be run on. If this "
+                                                         "is given, there must also be an interactor.")
 
 # I didn't put workers and Threads here for more accurate timing. TODO reconsider if 'num_cores - 1' threads is ok or something
 @set_handler(test_p)
@@ -729,6 +738,15 @@ def kg_test(format_, args):
     if time_limit == -1: time_limit = float('inf')
     print(info_text('Using problem time limit:'), key_text(time_limit), info_text('sec.'))
 
+    node_count = args.node_count
+    if node_count is None: node_count = details.node_count
+    if node_count is None:
+        node_count = 1
+        interaction_mode = IMode.STDIO
+    else:
+        if not interactor: raise CommandError("There must be an interactor if node-count is given")
+        interaction_mode = IMode.FIFO
+
     interactor_strict_args = interactor and not interactor.filename.endswith('.py') # this is hacky for now...
     judge_strict_args = args.judge_strict_args
     # *_strict_args should probably be subsumed by arg formatting in details.json?
@@ -740,7 +758,6 @@ def kg_test(format_, args):
     for index, (input_, output_) in enumerate(format_.thru_io()):
         def get_score():
             nonlocal interactor_strict_args, judge_strict_args
-            get_score.running_time = None
             with ExitStack() as estack:
                 tmp = estack.enter_context(tempfile.NamedTemporaryFile(delete=False, prefix=f'kg_tmp_out_{index:>03}_'))
                 result_tmp = estack.enter_context(tempfile.NamedTemporaryFile(delete=False, prefix=f'kg_tmp_res_{index:>03}_'))
@@ -753,19 +770,23 @@ def kg_test(format_, args):
                         iargs = [input_, tmp.name]
                         if not interactor_strict_args:
                             iargs += [dummy_tmp.name, result_tmp.name, '-C', solution.filename, '-t', str(index), '-v']
-                        [solution_res], interactor_res = solution.do_interact(
+                        solutions_res, interactor_res = solution.do_interact(
                                 interactor,
                                 time=True,
                                 label='SOLUTION',
                                 check=True,
                                 log_exc=False,
+                                interaction_mode=interaction_mode,
+                                pass_id=interaction_mode == IMode.FIFO,
+                                node_count=node_count,
                                 interactor_args=iargs,
                                 interactor_kwargs=dict(check=False),
                                 time_limit=time_limit,
                             )
                     else:
+                        assert node_count == 1
                         with open(input_) as inp:
-                            solution_res = solution.do_run(
+                            solutions_res = [solution.do_run(
                                     stdin=inp,
                                     stdout=tmp,
                                     time=True,
@@ -773,7 +794,7 @@ def kg_test(format_, args):
                                     check=True,
                                     log_exc=False,
                                     time_limit=time_limit,
-                                )
+                                )]
                 except TimeoutExpired as exc:
                     err_print('The solution took too long, so it was force-terminated...')
                     err_print(exc)
@@ -783,12 +804,12 @@ def kg_test(format_, args):
                     err_print(exc)
                     return False, 0
                 finally:
-                    # save the running time now, since we're monkeying around...
-                    if hasattr(solution, 'last_running_time'):
-                        get_score.running_time = solution.last_running_time
+                    runtimes = [sres.running_time for sres in solutions_res if sres.running_time is not None]
+                    get_score.running_time = None
+                    if runtimes: get_score.running_time = sum(runtimes), max(runtimes)
 
                 # Check if the interactor issues WA by itself. Don't invoke the judge
-                if getattr(interactor_res, 'returncode', 0):
+                if interactor_res and getattr(interactor_res.result, 'returncode', 0):
                     err_print('The interactor did not accept the interaction...')
                     return False, 0
 
@@ -796,7 +817,7 @@ def kg_test(format_, args):
                     jargs = list(map(os.path.abspath, (input_, tmp.name, output_)))
                     if not judge_strict_args:
                         jargs += [result_tmp.name, '-C', solution.filename, '-t', str(index), '-v']
-                    return judge.do_run(*jargs, check=False).returncode
+                    return judge.do_run(*jargs, check=False).result.returncode
 
                 info_print("Checking the output...")
                 returncode = run_judge()
@@ -817,11 +838,19 @@ def kg_test(format_, args):
 
                 if get_score.running_time is None:
                     warn_print("Warning: The running time cannot be extracted from this run.")
-                elif get_score.running_time > time_limit:
-                    err_print(f"The solution exceeded the time limit of {time_limit:.3f} sec; "
-                              f"it didn't finish after {get_score.running_time:.3f} sec...")
-                    if score > 0: info_print(f"It would have gotten a score of {score} otherwise...")
-                    return False, 0
+                else:
+                    rt_sum, rt_max = get_score.running_time
+                    if node_count == 1: assert rt_sum == rt_max
+                    # TODO we're using rt_max since we're using wall-clock time (even naively via time.time)
+                    # but we probably want to use sum of CPU times.
+                    if rt_max > time_limit:
+                        err_print(f"The solution exceeded the time limit of {time_limit:.3f} sec;", end=' ')
+                        if node_count == 1:
+                            err_print(f"it didn't finish after {rt_max:.3f} sec...")
+                        else:
+                            err_print(f"the total running time is {rt_sum:.3f} sec (max {rt_max:.3f} sec)...")
+                        if score > 0: info_print(f"It would have gotten a score of {score} otherwise...")
+                        return False, 0
 
                 return correct, score
 
@@ -855,7 +884,7 @@ def kg_test(format_, args):
         corrects = [index for index, score_row in sorted(scoresheet.items()) if score_row['correct']]
         wrongs = [index for index, score_row in sorted(scoresheet.items()) if not score_row['correct']]
         running_times = filter(None, (score_row['running_time'] for score_row in scoresheet.values()))
-        max_time = max(running_times) if running_times else None
+        max_time = max(rt_max for rt_sum, rt_max in running_times) if running_times else None
         decor_print()
         decor_print('.'*42)
         beginfo_print('SUMMARY:')
@@ -866,7 +895,7 @@ def kg_test(format_, args):
         if max_time is None:
             warn_print('Warning: No running time was extracted from any run')
         else:
-            info_print(f'Max running time: {max_time:.2f}sec')
+            info_print(f'Max running time: {max_time:.2f}sec.')
         decor_print('.'*42)
 
     @memoize
@@ -919,7 +948,7 @@ def kg_test(format_, args):
                 raise ValueError(f"Unknown/Unsupported per-subtask scoring policy: {details.scoring_per_subtask}")
 
             sub_details['weighted_score'] = sub_details['weight'] * sub_details['score']
-            sub_details['max_running_time'] = max(sub_details['running_times']) if sub_details['running_times'] else None
+            sub_details['max_running_time'] = max(rt_max for rt_sum, rt_max in sub_details['running_times']) if sub_details['running_times'] else None
         return all_subtasks
 
     def get_score_for(group_scores):
@@ -971,7 +1000,7 @@ def kg_test(format_, args):
                 (
                     warn_text("  No running time was extracted")
                     if max_running_time is None else
-                    info_text(f"  w/ max running time: {max_running_time:.2f}sec")
+                    info_text(f"  w/ max running time: {max_running_time:.2f}sec.")
                 ), sep='')
 
             if not 0 <= score <= weight:
@@ -1175,10 +1204,13 @@ def kg_make(omakes, loc, format_, details, *, validation=False, checks=False, ma
         decor_print('~~ '*14)
         beginfo_print('MAKING OUTPUTS...' + ("WITH CHECKS..." if checks else 'WITHOUT CHECKS'))
         fmt = get_format_from_type(format_, loc, read='i', write='o', clear='o')
+        interacts = details.judge_data_maker.attributes.get('interacts') or details.interactor and details.model_solution == details.judge_data_maker
         generate_outputs(
                 fmt, details.judge_data_maker,
                 model_solution=details.model_solution,
                 judge=details.checker if checks else None,
+                interacts=interacts,
+                node_count=details.node_count,
                 interactor=details.interactor,
                 max_workers=max_workers)
 

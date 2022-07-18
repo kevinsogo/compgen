@@ -1,0 +1,18 @@
+{
+    "title": "Ten-Hat Puzzle without Hearing",
+    "model_solution": "solution.py",
+    "validator": "validator.py",
+    "testscript": "testscript",
+    "generators": [
+        "gen_random.py"
+    ],
+    "other_programs": [
+        "formatter.py"
+    ],
+    "interactor": "interactor.py",
+    "statement": "statement.md",
+    "node_count": 10,
+
+    "time_limit": 4,
+    "version": "0.2"
+}

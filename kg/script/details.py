@@ -52,7 +52,7 @@ class Details(object):
         for key in ['cms_options']:
             setattr(self, key, self.details.get(key, defaults.get(key) or {}))
 
-        for key in ['title', 'time_limit']:
+        for key in ['title', 'time_limit', 'node_count']:
             setattr(self, key, self.details.get(key, defaults.get(key)))
 
         for key in ['validator', 'checker', 'interactor', 'model_solution', 'subtask_detector', 'judge_data_maker']:

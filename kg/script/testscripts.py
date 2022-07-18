@@ -294,8 +294,8 @@ def _get_gens(settings, gen_lines, generators, *, relpath=None, max_workers=None
             dollar_loc, rem_args, rep_args = get_dollar_loc(*gend.args)
             count_args = rep_args('COUNT')
             info_print(f"Running the multifile generator {gend.gen.filename} on {' '.join(count_args)!r} once to get the file count...")
-            result = gend.gen.do_run(*count_args, label='GENERATOR', stdout=PIPE)
-            nfiles = int(result.stdout.decode('utf-8'))
+            res = gend.gen.do_run(*count_args, label='GENERATOR', stdout=PIPE)
+            nfiles = int(res.result.stdout.decode('utf-8'))
             info_print(f"Ran the multifile generator {gend.gen.filename} on {' '.join(count_args)!r} once to get the file count...got {nfiles} files.")
             if nfiles <= 0:
                 raise TestScriptError(f"Invalid file count {nfiles}; must be positive")

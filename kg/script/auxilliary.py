@@ -53,10 +53,10 @@ def kg_subtasks(args):
     coll_err = ''
     for sub in args.subs:
         res = prog.do_run(sub, input=inp.encode('utf-8'), stderr=PIPE, stdout=PIPE, check=False, time=True, label='VALIDATOR')
-        if res.returncode == 0:
+        if res.result.returncode == 0:
             print(sub)
-            if res.stdout: coll_out += f"[for subtask {sub}]\n{dec(res.stdout)}\n"
-            if res.stderr: coll_err += f"[for subtask {sub}]\n{dec(res.stderr)}\n"
+            if res.result.stdout: coll_out += f"[for subtask {sub}]\n{dec(res.result.stdout)}\n"
+            if res.result.stderr: coll_err += f"[for subtask {sub}]\n{dec(res.result.stderr)}\n"
 
     LEN = 1000
     if coll_out:

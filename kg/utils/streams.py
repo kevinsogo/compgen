@@ -280,7 +280,7 @@ class InteractiveStream:
 
             return line
 
-    def read_token(self, *, ends=None, skip_spaces=None, skip_eolns=None, exc=None):
+    def read_token(self, *, l=None, ends=None, skip_spaces=None, skip_eolns=None, exc=None):
         self._check_open()
         self._pending = None
 
@@ -305,7 +305,9 @@ class InteractiveStream:
         # everything skipped ### @rem
         if not self._buf.remaining(): raise (exc or self.exc)("no token found")
 
-        return self._buf.consume_until(ends)
+        res = self._buf.consume_until(ends)
+        if l is not None and len(res) not in l: raise self.exc(f"token too long! length must be in {l}")
+        return res
 
 
     def read_spaces(self):

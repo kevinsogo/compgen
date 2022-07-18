@@ -1,0 +1,25 @@
+start=0
+
+! cat sample.in > $
+
+gen_random 1 10 0.5 > $
+gen_random 11 10 0.5 > $
+gen_random 100 10 0.1 > $
+gen_random 100 10 0.5 > $
+gen_random 100 10 0.9 > $
+gen_random 100 10 -1 > $
+gen_random 1111 10 0.5 > $
+gen_random 10000 10 0.08 > $
+gen_random 10000 10 0.2 > $
+gen_random 10000 10 0.3 > $
+gen_random 10000 10 0.4 > $
+gen_random 10000 10 0.5 a > $
+gen_random 10000 10 0.5 b > $
+gen_random 10000 10 0.5 c > $
+gen_random 10000 10 0.6 > $
+gen_random 10000 10 0.7 > $
+gen_random 10000 10 0.8 > $
+gen_random 10000 10 0.92 > $
+gen_random 10000 10 -1 a > $
+gen_random 10000 10 -1 b > $
+gen_random 10000 10 -1 c > $
