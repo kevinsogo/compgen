@@ -160,12 +160,13 @@ def run_testscript(inputs, testscript_src, generators, *, relpath=None, validato
         assert set(got_files) == set(files), (got_files, files)
         return got_files
 
-SETTING_RE = re.compile(r'^(?P<var>[a-zA-Z][a-zA-Z0-9_]*)=(?P<val>.+)\Z')
+COMMENT_RE = re.compile(r'^(#.*)\Z')
+SETTING_RE = re.compile(r'^(?P<var>[a-zA-Z][a-zA-Z0-9_]*)=(?P<val>.+).*\Z')
 GEN_RE = re.compile(r'^(?P<prog>[a-zA-Z!][a-zA-Z0-9_.]*) (?P<args>.*)\>\s*(?P<target>\{?\$?\$?[,0-9-]*\}?)\Z')
 def _parse_testscript_lines(testscript, *, max_workers=None):
     for src_line in testscript.splitlines():
         line = src_line.strip()
-        if not line:
+        if not line or COMMENT_RE.fullmatch(line):
             continue
 
         # TODO walrus
