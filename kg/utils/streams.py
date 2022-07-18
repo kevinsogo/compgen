@@ -49,7 +49,7 @@ ISTREAM_MODE_DEFAULTS = {
 class IStreamState:
     def __init__(self, file):
         self._file = file
-        # this ought to be a deque, but collections.deque doesn't have random access
+        # this ought to be a deque, but collections.deque doesn't have random access ### @rem
         self._buf = ['']
         self._l = 0
         self._i = 0
@@ -127,9 +127,9 @@ class IStreamState:
         self._future2 = None
         self._drop_lines()
 
-# TODO I ought to make this a subclass of TextIOBase or something, but please read about its implications
+# TODO I ought to make this a subclass of TextIOBase or something, but please read about its implications ### @rem
 class InteractiveStream:
-    def __init__(self, reader, writer=None, *, mode=None, exc=StreamError, **settings):
+    def __init__(self, reader, writer=None, *, mode=None, exc=StreamError, **options):
         if reader and not reader.readable(): raise OSError('"reader" argument must be writable')
         if writer and not writer.writable(): raise OSError('"writer" argument must be writable')
         if mode is not None and not isinstance(mode, ISMode): raise ValueError(f"Invalid InteractiveStream mode: {mode}")
@@ -139,15 +139,15 @@ class InteractiveStream:
         self._mode = mode
         self.exc = exc
 
-        # global defaults
-        self._settings = {**ISTREAM_DEFAULTS}
+        # global defaults ### @rem
+        self._opts = {**ISTREAM_DEFAULTS}
 
-        # mode defaults
+        # mode defaults ### @rem
         if self._mode is not None:
-            self._settings.update(ISTREAM_MODE_DEFAULTS[self._mode])
+            self._opts.update(ISTREAM_MODE_DEFAULTS[self._mode])
 
-        # overwritten settings
-        self._settings.update(settings)
+        # overwritten options ### @rem
+        self._opts.update(options)
 
         self._token_ends = {SPACE, EOLN}
         self._closed = False
@@ -169,7 +169,7 @@ class InteractiveStream:
     def __next__(self):
         self._check_open()
 
-        # if there's a pending thing, just return that and commit the future
+        # if there's a pending thing, just return that and commit the future ### @rem
         if self._pending is not None:
             res = self._pending
             self._pending = None
@@ -224,8 +224,8 @@ class InteractiveStream:
         self._pending = None
 
         try:
-            if self.reader and exc_type is None and not self._settings['extra_chars_allowed']:
-                if self._settings['ignore_blank_lines'] or self._settings['ignore_trailing_blank_lines']:
+            if self.reader and exc_type is None and not self._opts['extra_chars_allowed']:
+                if self._opts['ignore_blank_lines'] or self._opts['ignore_trailing_blank_lines']:
                     while True:
                         if self._buf.remaining():
                             try:
@@ -244,7 +244,7 @@ class InteractiveStream:
 
     def _buffer_line(self):
         buf = self._buf.next_line()
-        if self._settings['require_trailing_eoln'] and buf and not buf.endswith(EOLN):
+        if self._opts['require_trailing_eoln'] and buf and not buf.endswith(EOLN):
             raise self.exc(f"trailing {stream_char_label(EOLN)} not found")
         return buf
 
@@ -253,9 +253,9 @@ class InteractiveStream:
         self._pending = None
 
         if include_ends is None:
-            include_ends = self._settings['line_include_ends']
+            include_ends = self._opts['line_include_ends']
         if ignore_trailing_spaces is None:
-            ignore_trailing_spaces = self._settings['line_ignore_trailing_spaces']
+            ignore_trailing_spaces = self._opts['line_ignore_trailing_spaces']
         if include_ends and ignore_trailing_spaces:
             raise ValueError("Cannot ignore trailing spaces if include_ends is true")
 
@@ -263,9 +263,9 @@ class InteractiveStream:
             if not self._buf.remaining() and not self._buffer_line(): raise (exc or self.exc)("no line found")
 
             line = self._buf.consume_line()
-            assert line ### @ rem
+            assert line
 
-            if line == EOLN and self._settings['ignore_blank_lines']: continue
+            if line == EOLN and self._opts['ignore_blank_lines']: continue
 
             # remove undesired trailing whitespace
             if not include_ends:
@@ -284,22 +284,22 @@ class InteractiveStream:
         if ends is None:
             ends = self._token_ends
         if skip_spaces is None:
-            skip_spaces = self._settings['token_skip_spaces']
+            skip_spaces = self._opts['token_skip_spaces']
         if skip_eolns is None:
-            skip_eolns = self._settings['token_skip_eolns']
+            skip_eolns = self._opts['token_skip_eolns']
 
         ends = force_to_set(ends)
 
         if not self._buf.remaining(): self._buffer_line()
 
-        # skip whitespace
+        # skip whitespace ### @rem
         while self._buf.remaining() and (
             skip_spaces and self._buf.peek() == SPACE or
             skip_eolns  and self._buf.peek() == EOLN):
             self._buf.advance()
             if not self._buf.remaining(): self._buffer_line()
 
-        # everything skipped
+        # everything skipped ### @rem
         if not self._buf.remaining(): raise (exc or self.exc)("no token found")
 
         return self._buf.consume_until(ends)
@@ -339,14 +339,14 @@ class InteractiveStream:
         if ret: return ch
 
     def _read_eoln_or_eof(self, exc=None):
-        return self.read_char({EOLN, EOF}, skip_spaces=self._settings['eoln_skip_spaces'], exc=exc)
+        return self.read_char({EOLN, EOF}, skip_spaces=self._opts['eoln_skip_spaces'], exc=exc)
 
     def read_eoln(self, *, skip_spaces=None, exc=None):
-        if skip_spaces is None: skip_spaces = self._settings['eoln_skip_spaces']
+        if skip_spaces is None: skip_spaces = self._opts['eoln_skip_spaces']
         return self.read_char(EOLN, skip_spaces=skip_spaces, exc=exc)
 
     def read_eof(self, *, skip_spaces=None, exc=None):
-        if skip_spaces is None: skip_spaces = self._settings['eoln_skip_spaces']
+        if skip_spaces is None: skip_spaces = self._opts['eoln_skip_spaces']
         return self.read_char(EOF, skip_spaces=skip_spaces, exc=exc)
 
     def read_space(self, exc=None):
@@ -370,9 +370,9 @@ class InteractiveStream:
 
 
     def read_int(self, *args, validate=None, **kwargs):
-        if validate is None: validate = self._settings['parse_validate']
+        if validate is None: validate = self._opts['parse_validate']
 
-        # TODO use inspect.signature or something
+        # TODO use inspect.signature or something ### @rem
         int_kwargs = {kw: kwargs.pop(kw) for kw in ('as_str',) if kw in kwargs}
         try:
             return strict_int(self.read_token(**kwargs), *args, validate=validate, **int_kwargs)
@@ -381,9 +381,9 @@ class InteractiveStream:
 
 
     def read_real(self, *args, validate=None, **kwargs):
-        if validate is None: validate = self._settings['parse_validate']
+        if validate is None: validate = self._opts['parse_validate']
 
-        # TODO use inspect.signature or something
+        # TODO use inspect.signature or something ### @rem
         real_kwargs = {kw: kwargs.pop(kw) for kw in (
             'as_str', 'max_places', 'places', 'require_dot', 'allow_plus', 'allow_neg_zero',
             'allow_dot_lead', 'allow_dot_trail',
@@ -394,8 +394,7 @@ class InteractiveStream:
             raise self.exc(f"Cannot parse token to real: {', '.join(ex.args)}") from ex
 
 
-    # convenience
-    # To implement read_int_eoln, read_real_space, read_int_space_space, etc.
+    # Convenience, to implement read_int_eoln, read_real_space, read_int_space_space, etc. ### @rem
     def __getattr__(self, name):
         if not name.startswith('read_'):
             raise AttributeError(name)
@@ -409,14 +408,17 @@ class InteractiveStream:
             res = getattr(self, head)(*a, **kw)
             getattr(self, 'read' + tail)()
             return res
-        _meth.__name__ = name # TODO setting __name__ doesn't seem to be enough
+        # TODO setting __name__ doesn't seem to be enough. __qualname__ too? ### @rem
+        _meth.__name__ = name
         setattr(self.__class__, name, _meth)
         return _meth
 
     @property
     def read(self): return self._read
 
-    # stuff for the writer part
+
+    # stuff for the writer part follows ### @rem
+
     def write(self, *args): return self.writer.write(*args)
 
     def readable(self, *args):
@@ -516,6 +518,8 @@ class TextIOPair(io.TextIOBase): ### @@ rem {
         if not line:
             raise StopIteration
         return line
+
+
 
 
 

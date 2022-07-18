@@ -11,13 +11,27 @@ WA = Wrong
 
 class Verdict:
     AC = "Success"
-    PAE = "Wrong answer (Parse error)" # wrong answer due to invalid/unreadable format.
-    CE = "Compile Error" # the solution didn't compile
-    WA = "Wrong answer" # correct output format, incorrect answer.
-    RTE = "Runtime Error" # solution crashed.
-    TLE = "Time Limit Exceeded" # solution didn't finish under the specified time limit.
-    EXC = "Checker/Interactor raised an error [BAD!]" # unintended errors of the checker/interactor.
-    FAIL = "Checker/Interactor failed [BAD!]" # deliberate failures, e.g. if the test data is detected as incorrect.
+    
+    # wrong answer due to invalid/unreadable format. ### @rem
+    PAE = "Wrong answer (Parse error)"
+    
+    # the solution didn't compile ### @rem
+    CE = "Compile Error"
+    
+    # correct output format, incorrect answer. ### @rem
+    WA = "Wrong answer"
+    
+    # solution crashed. ### @rem
+    RTE = "Runtime Error"
+    
+    # solution didn't finish under the specified time limit. ### @rem
+    TLE = "Time Limit Exceeded"
+    
+    # unintended errors of the checker/interactor. ### @rem
+    EXC = "Checker/Interactor raised an error [BAD!]"
+    
+    # deliberate failures, e.g., if the test data is detected as incorrect. ### @rem
+    FAIL = "Checker/Interactor failed [BAD!]"
 
 
 polygon_rcode = {
@@ -112,8 +126,7 @@ def minimum_score(scores, mn=0.0, mx=1.0, break_on_min=False, exc=Fail):
 def average_score(scores, exc=Fail):
     tl = ct = 0
     for score in scores:
-        if score is None:
-            raise exc("A score of 'None' was returned.")
+        if score is None: raise exc("A score of 'None' was returned.")
         tl += score
         ct += 1
     if ct == 0: raise exc("Cannot take average of empty score list")

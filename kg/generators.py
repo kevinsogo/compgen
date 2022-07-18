@@ -6,7 +6,7 @@ class GeneratorError(Exception): ...
 
 @listify
 def group_into(v, seq):
-    ''' Group 'seq' into lists of size "v". The last group could have size < v '''
+    ''' Group 'seq' into lists of size "v". The last group could have size < v ''' ### @rem
     buf = []
     for s in seq:
         buf.append(s)
@@ -72,13 +72,13 @@ class KGRandom(random.Random):
             while True:
                 assert inds
                 idx = min(self.randrange(len(inds)) for it in range(skew))
-                # TODO optimize this part. It will be backwards incompatible, so we can only do it in the next "version".
+                # TODO optimize this part. It will be backwards incompatible, so we can only do it in the next "version". ### @rem
                 if dist[inds[idx]] < max_:
                     dist[inds[idx]] += 1
                     break
                 else:
-                    # TODO this somehow destroys the distribution, so this whole function needs a better implementation.
-                    # for now, this will do.
+                    # TODO this somehow destroys the distribution, so this whole function needs a better implementation. ### @rem
+                    # for now, this will do. ### @rem
                     inds[idx], inds[-1] = inds[-1], inds[idx]
                     inds.pop()
 
@@ -120,7 +120,7 @@ class KGRandom(random.Random):
 
 
 
-# some hash on a sequence of integers. Don't change this! This is used by seed computation based on command line args.  
+# some hash on a sequence of integers. Don't change this! This is used by seed computation based on command line args. ### @rem
 _pmod = 2013265921
 _pbase = 1340157138
 _xmod = 10**9 + 7
@@ -163,22 +163,25 @@ class DistribCase:
             def _mnew_case(f):
                 nrand_seed = rand.getrandbits(64) ^ 0xC0BFEFE
                 @functools.wraps(f)
-                def new_f(): # now new_f is deterministic
+                # now new_f is deterministic ### @rem
+                def new_f():
                     return f(KGRandom(nrand_seed), *fwd_args)
                 casemakers.append(new_f)
                 mnew_case.total_cases += 1
-                for name, value in info.items(): # forward any info
+                # forward any info ### @rem
+                for name, value in info.items():
                     setattr(new_f, name, value)
             return _mnew_case
         mnew_case.total_cases = 0
         self.make(rand, mnew_case, *args)
 
-        # distribute
+        # distribute ### @rem
         def dnew_case(*fwd_args, **info):
             def _dnew_case(f):
                 nrand_seed = rand.getrandbits(64) ^ 0xC0BFEFE
                 @functools.wraps(f)
-                def new_f(): # now new_f is deterministic
+                # now new_f is deterministic ### @rem
+                def new_f():
                     return f(KGRandom(nrand_seed), *fwd_args)
                 for name, value in info.items(): # forward any info
                     setattr(new_f, name, value)
@@ -224,7 +227,8 @@ def write_to_file(format_case, make, args, file, *, validate=None): ### @@ rem {
 
     rand = KGRandom(_make_seed(args))
     case = make(rand, *args)
-    _write_with_validate(format_case, file, case, validate=validate) # TODO ensure this does not exit(42)
+    # TODO ensure this does not exit(42) ### @rem
+    _write_with_validate(format_case, file, case, validate=validate)
 
 
 def write_to_files(format_case, make, filenames, *args, validate=None):
@@ -252,6 +256,7 @@ def write_to_files(format_case, make, filenames, *args, validate=None):
             raise GeneratorError(f"Not enough files! Need more than {index}") from st
         print("[G] Generator writing to", filename, file=sys.stderr) ### @rem
         with open(filename, 'w') as file:
-            _write_with_validate(format_case, file, case, validate=validate) # TODO ensure this does not exit(42)
+            # TODO ensure this does not exit(42) ### @rem
+            _write_with_validate(format_case, file, case, validate=validate)
         filecount += 1
     print("[G] Generated", filecount, "files", file=sys.stderr) ### @rem

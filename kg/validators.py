@@ -15,11 +15,11 @@ class StrictInputStream:
     def __init__(self, file, *, interactive=False):
         self.last = None
         self.next = None
-        # NOTE: in the future, if we want to handle OS-based newlines, this step needs to be reconsidered
+        # NOTE: in the future, if we want to handle OS-based newlines, this step needs to be reconsidered ### @rem
         if not interactive and not isinstance(file, io.StringIO):
             file = io.StringIO(file.read())
         self.file = file
-        # self._found = {}  # TODO add labels
+        # self._found = {}  # TODO add labels ### @rem
         self._read = ChainRead(self)
         super().__init__()
 
@@ -27,8 +27,9 @@ class StrictInputStream:
     def from_string(self, s):
         return StrictInputStream(io.StringIO(s))
 
-    # def __getitem__(self, key):
-    #     return self._found[key]
+    ### @@ rem {
+    # def __getitem__(self, key): return self._found[key]
+    ### @@ }
 
     def _next_char(self):
         if self.last == EOF: raise StreamError("Read past EOF")
@@ -116,12 +117,12 @@ class StrictInputStream:
 
 
     def read_int(self, *args, **kwargs):
-        # TODO use inspect.signature or something
+        # TODO use inspect.signature or something ### @rem
         int_kwargs = {kw: kwargs.pop(kw) for kw in ('as_str',) if kw in kwargs}
         return strict_int(self.read_token(charset=intchars, _called="int", **kwargs), *args, **int_kwargs)
 
     def read_real(self, *args, **kwargs):
-        # TODO use inspect.signature or something
+        # TODO use inspect.signature or something ### @rem
         real_kwargs = {kw: kwargs.pop(kw) for kw in (
             'as_str', 'max_places', 'places', 'require_dot', 'allow_plus',
             'allow_neg_zero', 'allow_dot_lead', 'allow_dot_trail',
@@ -144,8 +145,7 @@ class StrictInputStream:
                 raise StreamError(f"Expected [{', '.join(map(stream_char_label, target))}], got {stream_char_label(self.last)}")
             return self.last
 
-    # convenience
-    # To implement read_int_eoln, read_real_space, read_int_space_space, etc.
+    # Convenience, to implement read_int_eoln, read_real_space, read_int_space_space, etc. ### @rem
     def __getattr__(self, name):
         if not name.startswith('read_'):
             raise AttributeError
@@ -159,7 +159,8 @@ class StrictInputStream:
             res = getattr(self, head)(*a, **kw)
             getattr(self, 'read' + tail)()
             return res
-        _meth.__name__ = name # TODO setting __name__ doesn't seem to be enough
+        # TODO setting __name__ doesn't seem to be enough ### @rem
+        _meth.__name__ = name
         setattr(self.__class__, name, _meth)
         return _meth
 

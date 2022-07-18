@@ -9,13 +9,13 @@ class BType(enum.IntEnum):
     UI = +1  # upper bound, inclusive
     LE = +3  # lower bound, exclusive
 
-B_BRACKETS = {
+B_BRACKS = {
     BType.UE: ')',
     BType.LI: '[',
     BType.UI: ']',
     BType.LE: '(',
 }
-BTYPE_FOR_BRACKET = {bracket: btype for btype, bracket in B_BRACKETS.items()}
+BRACK_BTYPE = {bracket: btype for btype, bracket in B_BRACKS.items()}
 
 B_FLIPS = {
     BType.UE: BType.LI,
@@ -36,7 +36,7 @@ UP_BTYPES = {BType.UE, BType.UI}
 LO_BOUND = (-float('inf'), BType.LI) # [-inf
 UP_BOUND = (+float('inf'), BType.UI) # +inf]
 
-# TODO check if __and__ or a classmethod or a classmethod can be cached
+# TODO check if __and__ or a classmethod or a classmethod can be cached ### @rem
 @functools.lru_cache(maxsize=500)
 def _intersect_intervals(a, b):
     def ibounds(a, b):
@@ -101,7 +101,7 @@ class Intervals(collections.Hashable): ### @@ rem {
         return self._hash
 
     def __eq__(self, other):
-        # the 'hash' here is to turn _bounds into a tuple
+        # the 'hash' here is to turn _bounds into a tuple ### @rem
         return hash(self) == hash(other) and self._bds == other._bds
 
     def __ne__(self, other):
@@ -116,7 +116,7 @@ class Intervals(collections.Hashable): ### @@ rem {
         if not Intervals.satisfies(value, *self._bds[-1]):
             return False
 
-        # binary search to find the interval containing it
+        # binary search to find the interval containing it ### @rem
         l, r = 0, len(self._bds)
         while r - l > 2:
             m = l + r >> 2 << 1 # must be even
@@ -125,28 +125,28 @@ class Intervals(collections.Hashable): ### @@ rem {
             elif Intervals.satisfies(value, *self._bds[m - 1]):
                 r = m
             else:
-                # it falls in between intervals
+                # it falls in between intervals ### @rem
                 return False
 
         assert r - l == 2 ### @rem
         return True
 
     def __and__(self, other):
-        """intersection of sets"""
-        # return ~(~self | ~other)  # if implementing __or__ manually is faster
+        """intersection of sets""" ### @rem
+        # return ~(~self | ~other)  # if implementing __or__ manually is faster ### @rem
         if hash(self) > hash(other): return other & self
         return _intersect_intervals(self, other)
 
     def __or__(self, other):
-        """union of sets"""
+        """union of sets""" ### @rem
         return ~(~self & ~other)
 
     def __xor__(self, other):
-        """symmetric difference of sets"""
+        """symmetric difference of sets""" ### @rem
         return (~self & other) | (self & ~other)
 
     def __invert__(self):
-        """complement of set relative to [-inf, +inf]"""
+        """complement of set relative to [-inf, +inf]""" ### @rem
         if self._complement is None:
             def cbounds(b):
                 loi = bool(b and b[0]  == LO_BOUND)
@@ -166,7 +166,7 @@ class Intervals(collections.Hashable): ### @@ rem {
 
     @staticmethod
     def satisfies(value, bound, btype):
-        # TODO use 'match'
+        # TODO use 'match' ### @rem
         if btype == BType.UE: return value < bound
         if btype == BType.LI: return bound <= value
         if btype == BType.UI: return value <= bound
@@ -185,9 +185,11 @@ class Intervals(collections.Hashable): ### @@ rem {
         return ((self._bds[i], self._bds[i + 1]) for i in range(0, len(self._bds), 2))
 
     def __abs__(self):
+        """The Intervals containing all x such that abs(x) is in these Intervals """ ### @rem
         return (self & B_NONNEG_INTERVAL) | (-self & B_NONPOS_INTERVAL)
 
     def __neg__(self):
+        """The Intervals containing all x such that -x is in these Intervals """ ### @rem
         return Intervals((-bound, B_NEGS[btype]) for bound, btype in reversed(self._bds))
 
     def __bool__(self):
@@ -195,7 +197,7 @@ class Intervals(collections.Hashable): ### @@ rem {
 
     def __str__(self):
         return " | ".join(
-            f"{B_BRACKETS[ltyp]}{lbound}, {rbound}{B_BRACKETS[rtyp]}"
+            f"{B_BRACKS[ltyp]}{lbound}, {rbound}{B_BRACKS[rtyp]}"
             for (lbound, ltyp), (rbound, rtyp) in self._pieces()
         ) if self else "<empty set>"
 
@@ -208,8 +210,8 @@ class Intervals(collections.Hashable): ### @@ rem {
         def bounds():
             for i in range(0, len(tokens), 4):
                 lch, lvl, uvl, uch = tokens[i:i+4]
-                yield lvl, BTYPE_FOR_BRACKET[lch]
-                yield uvl, BTYPE_FOR_BRACKET[uch]
+                yield lvl, BRACK_BTYPE[lch]
+                yield uvl, BRACK_BTYPE[uch]
         return cls(bounds())
 
     @property

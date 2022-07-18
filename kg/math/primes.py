@@ -34,7 +34,7 @@ _set_sieve(10**5)
 _set_small(80)
 
 def _check_composite(n, s, d, a):
-    """ check compositeness of n with witness a. (n,s,d) should satisfy d*2^s = n-1 and d is odd """
+    ''' check compositeness of n with witness a. (n,s,d) should satisfy d*2^s = n-1 and d is odd ''' ### @rem
     a %= n
     if a == 0: return False
     x = pow(a, d, n)

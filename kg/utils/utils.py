@@ -17,11 +17,9 @@ def warn_print(*a, **kw):
     return warn_print.wp(*a, **kw)
 warn_print.wp = None
 
-warn = noop
-### @@ rem {
 def warn(warning):
-    warn_print("WARNING:", warning, file=sys.stderr)
-### @@ }
+    ...
+    warn_print("WARNING:", warning, file=sys.stderr) ### @rem
 
 
 CURR_PLATFORM = 'local' ### @replace 'local', format or 'local'
@@ -115,6 +113,7 @@ def t_infinite(r, *, inf=t_inf):
 # iterable, also supports indexing
 # TSequence.ranges
 # TSequence.compress
+# maybe TSeq for brevity?
 ### @@ }
 def t_sequence_ranges(s):
     return [t_range(p) for p in s.split(',')]
@@ -263,7 +262,7 @@ class Builder:
     def make(self, *args, **kwargs):
         if self.pending is None: raise RuntimeError("Cannot build: no .set done. Did you mean @checker?")
 
-        # get additional stuff from kwargs
+        # get additional stuff from kwargs ### @rem
         for name in self.pending._names:
             if name in kwargs: self._set(name, kwargs.pop(name))
 
@@ -284,12 +283,12 @@ def warn_on_call(warning):
     def _d(f):
         @functools.wraps(f)
         def _f(*args, **kwargs):
-            if not _f.called:
-                _f.called = True
+            if not _f.warned:
+                _f.warned = True
                 warn(warning)
             return f(*args, **kwargs)
         _f.__wrapped__ = f
-        _f.called = False
+        _f.warned = False
         return _f
     ### @@ }
     return _d
@@ -308,7 +307,7 @@ def warn_deprec_name(old_name, new_name):
 def deprec_alias(old_name, new_obj, new_name=None):
     if new_name is None: new_name = new_obj.__name__
     warner = warn_on_call(deprec_name_warning(old_name, new_name))
-    # guess what this object is
+    # guess what this object is ### @rem
     if callable(new_obj):
         new_obj = warner(new_obj)
     else:
@@ -317,7 +316,7 @@ def deprec_alias(old_name, new_obj, new_name=None):
 ### @@ }
 
 
-# Chain validation
+# Chain validation ### @rem
 class ChainRead:
     def __init__(self, stream):
         self._s = stream

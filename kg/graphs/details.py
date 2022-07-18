@@ -1,7 +1,9 @@
 from .utils import * ### @import 'kg.graphs.utils'
 
+### @@ rem {
 # TODO
 # function that returns details about the graph
+### @@ }
 def tree_details(nodes, edges, *, root=None):
     nodes = make_nodes(nodes)
     if root is None: root = nodes[0]

@@ -31,9 +31,9 @@ class Checker:
             return self.check(input_s, output_s, judge_s, *args, **kwargs)
 
     def init(self, *args, **kwargs):
-        # parse options
+        # parse options ### @rem
 
-        # TODO use kwargs for these...?
+        # TODO use kwargs for these...? ### @rem
         if not args: args = ['lines']
         if len(args) == 1: args = args*3
         if len(args) != 3: raise ValueError(f"Invalid args: {args}")
@@ -74,7 +74,7 @@ class Checker:
         return _checker(f) if f is not None else _checker
 
 
-# hmm, this is almost like just a dataclass
+# hmm, this is almost like just a dataclass ### @rem
 class BuiltChecker(Checker):
     _names = {'get_one_input', 'get_output_for_input', 'get_judge_data_for_input', 'aggregate', 'iterate', 'check_one', 'wrap_up'}
     _aliases = {
@@ -164,7 +164,7 @@ class CheckingContext:
         return self.checker.wrap_up(success, score=score, raised_exc=raised_exc, **kwargs, **self.kwargs)
 
     def __call__(self):
-        # will only wrap up on success or on Wrong/ParseError.
+        # will only wrap up on success or on Wrong/ParseError. ### @rem
         try:
             score = self.aggregate(self.iterate())
         except (Wrong, ParseError) as exc:
@@ -204,7 +204,7 @@ def checker_iterate_single(it, *, cas=0):
 
 
 
-# support for old-style checkers
+# support for old-style checkers ### @rem
 class OldChecker:
     def __init__(self):
         self.pending = BuiltChecker()
@@ -241,7 +241,7 @@ class OldChecker:
             self.pending = None
         return check_files(self.checker, *args, **kwargs)
 
-# warn when any of these are used
+# warn when any of these are used ### @rem
 chk = OldChecker() # create singleton
 _warner = lambda name: lambda f: f
 _warner = lambda name: warn_on_call(f"'{name}' deprecated. Please use new-style format via 'checker'. See the updated docs.") ### @rem
@@ -272,10 +272,10 @@ def _check_generic(check, input=None, output=None, judge=None, **kwargs):
     ### @@}
 
     if CURR_PLATFORM in {'cms', 'cms-it'}:
-        def handle_exc_verdict(exc, verdict):
+        def handle(exc, verdict):
             return verdict, getattr(exc, 'score', 0.0), ""
     else:
-        def handle_exc_verdict(exc, verdict):
+        def handle(exc, verdict):
             if kwargs.get('verbose'): traceback.print_exc(limit=None) ### @replace None, -1
             return verdict, getattr(exc, 'score', 0.0), str(exc)
 
@@ -298,13 +298,13 @@ def _check_generic(check, input=None, output=None, judge=None, **kwargs):
                 raise CheckerError(f"The checker returned an invalid score: {score!r}")
             return Verdict.AC, score, ""
         except ParseError as exc:
-            return handle_exc_verdict(exc, Verdict.PAE)
+            return handle(exc, Verdict.PAE)
         except Wrong as exc:
-            return handle_exc_verdict(exc, Verdict.WA)
+            return handle(exc, Verdict.WA)
         except Fail as exc:
-            return handle_exc_verdict(exc, Verdict.FAIL)
+            return handle(exc, Verdict.FAIL)
         except Exception as exc:
-            return handle_exc_verdict(exc, Verdict.EXC)
+            return handle(exc, Verdict.EXC)
 
 
 
@@ -315,18 +315,18 @@ def _check_generic(check, input=None, output=None, judge=None, **kwargs):
 
 
 
-_platform_checkers = {}
-def _register_platform_checker(name):
+_plat_checkers = {}
+def _reg_plat_checker(name):
     def reg(f):
-        assert name not in _platform_checkers, f"{name} registered twice!"
-        _platform_checkers[name] = f
+        assert name not in _plat_checkers, f"{name} registered twice!"
+        _plat_checkers[name] = f
         return f
     return reg
 
 
 
 ### @@if format == 'hr' {
-@_register_platform_checker('hr')
+@_reg_plat_checker('hr')
 def _check_hr(check, t_obj, r_obj, *, print_message=False):
     if t_obj.testcase_signal:
         message = ""
@@ -351,8 +351,8 @@ def _check_hr(check, t_obj, r_obj, *, print_message=False):
 
 ### @@if format in ('cms', 'cms-it') {
 # CMS has a specific format in stdout and stderr, so we make it stricter
-@_register_platform_checker('cms')
-@_register_platform_checker('cms-it')
+@_reg_plat_checker('cms')
+@_reg_plat_checker('cms-it')
 def _check_cms(check, *, score_file=sys.stdout, message_file=sys.stderr, title='', help=None, **kwargs):
     desc = help or CURR_PLATFORM + (' checker for the problem' + (f' "{title}"' if title else ''))
     parser = argparse.ArgumentParser(description=desc)
@@ -360,7 +360,7 @@ def _check_cms(check, *, score_file=sys.stdout, message_file=sys.stderr, title='
     parser.add_argument('judge_path', help='judge auxiliary data file path')
     parser.add_argument('output_path', help="contestant's file path")
     parser.add_argument('extra_args', nargs='*', help='extra arguments that will be ignored')
-    # TODO check if this can receive force_verbose just like below
+    # TODO check if this can receive force_verbose just like below ### @rem
     args = parser.parse_args()
 
     verdict, score, message = _check_generic(check,
@@ -370,7 +370,7 @@ def _check_cms(check, *, score_file=sys.stdout, message_file=sys.stderr, title='
         verbose=False,
     )
 
-    # TODO deliberate failure here if verdict is EXC, FAIL, or something
+    # TODO deliberate failure here if verdict is EXC, FAIL, or something ### @rem
 
     if not message:
         if score >= 1.0:
@@ -386,7 +386,7 @@ def _check_cms(check, *, score_file=sys.stdout, message_file=sys.stderr, title='
 ### @@}
 
 ### @@if format == 'dom' {
-@_register_platform_checker('dom')
+@_reg_plat_checker('dom')
 def _check_dom(check, *, title='', log_file=sys.stdout, help=None, exit_after=True, **kwargs):
     desc = help or (CURR_PLATFORM + (' checker for the problem' + (f' "{title}"' if title else '')) +
             " (it takes the contestant's output file from stdin)")
@@ -420,10 +420,10 @@ def _check_dom(check, *, title='', log_file=sys.stdout, help=None, exit_after=Tr
 ### @@ }
 
 ### @@if format in ('local', 'kg', 'pg', 'pc2') {
-@_register_platform_checker('local')
-@_register_platform_checker('kg')
-@_register_platform_checker('pg')
-@_register_platform_checker('pc2')
+@_reg_plat_checker('local')
+@_reg_plat_checker('kg')
+@_reg_plat_checker('pg')
+@_reg_plat_checker('pc2')
 def _check_local(check, *, title='', log_file=sys.stdout, help=None, force_verbose=False, exit_after=True):
     desc = help or CURR_PLATFORM + (' checker for the problem' + (f' "{title}"' if title else ''))
     parser = argparse.ArgumentParser(description=desc)
@@ -475,7 +475,7 @@ def _check_local(check, *, title='', log_file=sys.stdout, help=None, force_verbo
     if CURR_PLATFORM == 'pc2':
         exit_code = polygon_rcode[verdict]
     elif CURR_PLATFORM == 'pg':
-        # assumes max score is 100. TODO learn what polygon really does
+        # assumes max score is 100. TODO learn what polygon really does ### @rem
         exit_code = polygon_partial + int(score * 100) if 0 < score < 1 else polygon_rcode[verdict]
     else:
         exit_code = kg_rcode[verdict]
@@ -574,7 +574,7 @@ else:
 
 # TODO argv thing
 def check_files(check, *args, platform=CURR_PLATFORM, **kwargs):
-    return _platform_checkers[platform](check, *args, **kwargs)
+    return _plat_checkers[platform](check, *args, **kwargs)
 
 
 

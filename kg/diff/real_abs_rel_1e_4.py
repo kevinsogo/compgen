@@ -21,7 +21,7 @@ def check_real(input_file, output_file, judge_file, **kwargs):
             p2 = line2.rstrip().split(" ")
             if len(p1) != len(p2): raise Wrong("Incorrect number of values in line")
             for v1, v2 in zip(p1, p2):
-                if v1 != v2: # they're different as tokens. try considering them as numbers
+                if v1 != v2:
                     try:
                         v1, v2 = Decimal(v1), Decimal(v2) 
                     except InvalidOperation as ex:

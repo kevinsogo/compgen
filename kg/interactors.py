@@ -44,9 +44,9 @@ class Interactor:
             return self.interact(input_s, *user_ss, output_stream=output_s, judge_stream=judge_s, **kwargs)
 
     def init(self, *args, **kwargs):
-        # parse options
+        # parse options ### @rem
 
-        # TODO use kwargs for these...?
+        # TODO use kwargs for these...? ### @rem
         if not args: args = ['lines']
         if len(args) == 1: args = args*3
         if len(args) != 3: raise ValueError(f"Invalid args: {args}")
@@ -82,7 +82,7 @@ class Interactor:
         return _interactor(f) if f is not None else _interactor
 
 
-# hmm, this is almost like just a dataclass
+# hmm, this is almost like just a dataclass ### @rem
 class BuiltInteractor(Interactor):
     _names = {'get_one_input', 'get_judge_data_for_input', 'aggregate', 'iterate', 'interact_one', 'wrap_up'}
     _aliases = {}
@@ -152,7 +152,7 @@ class InteractionContext:
         return self.interactor.wrap_up(success, *self.users, output_stream=self.output_stream, score=score, raised_exc=raised_exc, **kwargs, **self.kwargs)
 
     def __call__(self):
-        # will only wrap up on success or on Wrong/ParseError.
+        # will only wrap up on success or on Wrong/ParseError. ### @rem
         try:
             score = self.aggragate(self.iterate())
         except (Wrong, ParseError) as exc:
@@ -195,7 +195,7 @@ def interactor_iterate_single(it, *, cas=0):
 
 
 def _interact_generic(interactor, input, *users, output=None, judge=None, **kwargs):
-    def handle_exc_verdict(exc, verdict):
+    def handle(exc, verdict):
         if kwargs.get('verbose'): traceback.print_exc(limit=None) ### @replace None, -1
         return verdict, getattr(exc, 'score', 0.0), str(exc)
 
@@ -232,13 +232,13 @@ def _interact_generic(interactor, input, *users, output=None, judge=None, **kwar
                 raise InteractorError(f"The interactor returned an invalid score: {score!r}")
             return Verdict.AC, score, ""
         except ParseError as exc:
-            return handle_exc_verdict(exc, Verdict.PAE)
+            return handle(exc, Verdict.PAE)
         except Wrong as exc:
-            return handle_exc_verdict(exc, Verdict.WA)
+            return handle(exc, Verdict.WA)
         except Fail as exc:
-            return handle_exc_verdict(exc, Verdict.FAIL)
+            return handle(exc, Verdict.FAIL)
         except Exception as exc:
-            return handle_exc_verdict(exc, Verdict.EXC)
+            return handle(exc, Verdict.EXC)
 
 
 
@@ -275,19 +275,19 @@ def _interact_generic(interactor, input, *users, output=None, judge=None, **kwar
 ### @@ }
 
 
-_platform_interactors = {}
-def _register_platform_interactor(name):
+_plat_interactors = {}
+def _reg_plat_interactor(name):
     def reg(f):
-        assert name not in _platform_interactors, f"{name} registered twice!"
-        _platform_interactors[name] = f
+        assert name not in _plat_interactors, f"{name} registered twice!"
+        _plat_interactors[name] = f
         return f
     return reg
 
 
 ### @@if format in ('cms', 'cms-it') {
 # TODO check if this works
-@_register_platform_interactor('cms')
-@_register_platform_interactor('cms-it')
+@_reg_plat_interactor('cms')
+@_reg_plat_interactor('cms-it')
 def _interact_cms(interact, *, input_file=sys.stdin, score_file=sys.stdout, message_file=sys.stderr, title='', help=None, **kwargs):
     desc = help or CURR_PLATFORM + (' interactor for the problem' + (f' "{title}"' if title else ''))
     parser = argparse.ArgumentParser(description=desc)
@@ -304,7 +304,7 @@ def _interact_cms(interact, *, input_file=sys.stdin, score_file=sys.stdout, mess
 
     verdict, score, message = _interact_generic(interact, input_file, *users, verbose=False)
 
-    # TODO deliberate failure here if verdict is EXC, FAIL, or something
+    # TODO deliberate failure here if verdict is EXC, FAIL, or something ### @rem
 
     if not message:
         if score >= 1.0:
@@ -320,11 +320,11 @@ def _interact_cms(interact, *, input_file=sys.stdin, score_file=sys.stdout, mess
 ### @@}
 
 
-# TODO the 'pg' version should maybe be stricter than this?
+# TODO the 'pg' version should maybe be stricter than this? ### @rem
 
 ### @@ if format in ('local', 'kg', 'pg') {
-@_register_platform_interactor('local')
-@_register_platform_interactor('pg')
+@_reg_plat_interactor('local')
+@_reg_plat_interactor('pg')
 def _interact_local(interact, *, log_file=sys.stderr, force_verbose=False, exit_after=True, **kwargs):
     desc = help or (CURR_PLATFORM + (' interactor for the problem' + (f' "{title}"' if title else '')))
     parser = argparse.ArgumentParser(description=desc)
@@ -397,6 +397,6 @@ def _interact_local(interact, *, log_file=sys.stderr, force_verbose=False, exit_
 
 # TODO argv thing
 def interact_with(interact, *args, platform=CURR_PLATFORM, **kwargs):
-    return _platform_interactors[platform](interact, *args, **kwargs)
+    return _plat_interactors[platform](interact, *args, **kwargs)
 
 

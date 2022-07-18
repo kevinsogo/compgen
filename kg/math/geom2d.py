@@ -119,13 +119,14 @@ class Seg:
         return self.line_crosses(other) and other.line_crosses(self)
 
     def __and__(self, other):
-        # find the intersection point or segment, or None
+        # find the intersection point or segment, or None ### @rem
         if self.crosses(other):
             return self.line_intersect_line(other)
         endpoints = {p for p in self if p in other} | {p for p in other if p in self}
         assert len(endpoints) <= 2
         if len(endpoints) == 2:
-            a, b = endpoints # TODO the ordering of this might be dependent on the hashing function, so be careful!
+            # TODO the ordering of this might be dependent on the hashing function, so be careful! ### @rem
+            a, b = endpoints
             return Seg(a, b)
         if len(endpoints) == 1:
             a, = endpoints
@@ -135,14 +136,16 @@ class Seg:
         return self.line_contains(pt) and self.bounding_box_contains(pt)
 
     def line_crosses(self, other):
-        # a line operation
+        # a line operation ### @rem
         if not self.vec: raise GeomError("not a line!")
         return not self.parallel(other) and self.vec.cross(other.a - self.a) * self.vec.cross(other.b - self.b) <= 0
 
     def line_intersect_line(self, other):
-        # a line operation
+        # a line operation ### @rem
+        ### @@ rem {
         # assumes 'other' is also a line
         # this is an inherently non-integer operation
+        ### @@ }
         den = self.vec.cross(other.vec)
         if den == 0: raise GeomError("doesn't intersect in a line")
         return self.line_point_at((other.a - self.a).cross(other.vec) / den)
@@ -162,8 +165,8 @@ class Seg:
         if t >= 0: return self.line_point_at(t)
 
     def ray_crosses_line(self, other):
-        # a ray operation
-        # assumes 'other' is a line
+        # a ray operation ### @rem
+        # assumes 'other' is a line ### @rem
         return not self.parallel(other) and (other.a - self.a).cross(other.vec) * self.vec.cross(other.vec) >= 0
 
     def __bool__(self):
@@ -186,7 +189,7 @@ def collinear(a, b, c):
     return Seg(a, b).parallel(Seg(b, c))
 
 class Edged:
-    # also assumes '.vertices' exist... fix naming and ideas later.
+    # also assumes '.vertices' exist... fix naming and ideas later. ### @rem
     def edges(self):
         raise NotImplementedError
 
@@ -210,13 +213,13 @@ class Polygon(Edged):
     sides = edges
     
     def simple(self):
-        # quadratic implementation. TODO optimize to almost linear using sweep line
+        # quadratic implementation. TODO optimize to almost linear using sweep line ### @rem
         return not any(a.intersects(b)
                 for (ai, a), (bi, b) in itertools.combinations(enumerate(self.edges()), 2)
                 if abs(ai - bi) not in {1, len(self) - 1}) and self.signed_area2() != 0
 
     def overlaps(self, other):
-        # two polygons contain a common point (either on interior or boundary)
+        # two polygons contain a common point (either on interior or boundary) ### @rem
         raise NotImplementedError
 
     def in_boundary(self, pt):
@@ -226,8 +229,8 @@ class Polygon(Edged):
         return not self.in_boundary(pt) and self.winding_number(pt) != 0
 
     def __contains__(self, pt):
-        # contains in the boundary or interior
-        # equivalent to (in_boundary(pt) or inside(pt))
+        # contains in the boundary or interior ### @rem
+        # equivalent to (in_boundary(pt) or inside(pt)) ### @rem
         return self.in_boundary(pt) or self.winding_number(pt) != 0
 
     def winding_number(self, pt):
@@ -246,7 +249,7 @@ class Polygon(Edged):
         return self.signed_area2() < 0
 
     def signed_area2(self):
-        ''' the twice of the signed area. counterclockwise = positive '''
+        ''' the twice of the signed area. counterclockwise = positive ''' ### @rem
         return sum(edge.a.cross(edge.b) for edge in self.edges())
 
     def area2(self):
@@ -263,23 +266,25 @@ class Polygon(Edged):
             if i >= len(self): i -= len(self)
 
     def shortest_path(self, start, end):
+        ### @@ rem {
         # a bit slow
         # assumes that the polygon is simple, but won't check because it's also slow!
 
         # also, assumes that the start and end points are strictly in the interior.
         # needs adjustment otherwise, though I imagine it's a simple adjustment. I'm just lazy.
+        ### @@ }
 
         if not self.inside(start): raise GeomError("start point on boundary not supported... yet")
         if not self.inside(end): raise GeomError("end point on boundary not supported... yet")
 
         def get_edges():
-            # direct path
+            # direct path ### @rem
             seg = Seg(start, end)
             intersects = sum(map(seg.intersects, self.edges()))
             if intersects == 0:
                 yield seg
 
-            # start/end to vertex
+            # start/end to vertex ### @rem
             for point in [start, end]:
                 for vert in self.vertices:
                     seg = Seg(point, vert)
@@ -288,8 +293,8 @@ class Polygon(Edged):
                     if intersects == 2:
                         yield seg
             
-            # vertex to vertex
-            # this is the slowest part... it takes cubic time.
+            # vertex to vertex ### @rem
+            # this is the slowest part... it takes cubic time. ### @rem
             for (ai, a), (bi, b) in itertools.combinations(enumerate(self.vertices), 2):
                 seg = Seg(a, b)
                 intersects = sum(map(seg.intersects, self.edges()))
@@ -307,8 +312,8 @@ class Polygon(Edged):
             adj[seg.a].append((seg.b, c))
             adj[seg.b].append((seg.a, c))
 
-        # now, dijkstra from start
-        # TODO delegate to something in, say, kg.graphs (?)
+        # now, dijkstra from start ### @rem
+        # TODO delegate to something in, say, kg.graphs (?) ### @rem
         from heapq import heappush, heappop
         dist = {i: float('inf') for i in nodes}
         parent = {}
@@ -338,7 +343,9 @@ class Polygon(Edged):
             for j, c in adj[i]:
                 if dist[j] > d + c: heappush(pq, Dadj(j, i, d + c))
 
-        assert dist[end] < float('inf') # there should always be a path if it is simple
+        # there should always be a path if it is simple ### @rem
+        assert dist[end] < float('inf') 
+
         sequence = [end]
         while end != start:
             end = parent[end]
@@ -382,7 +389,7 @@ class Polyline(Edged):
         return iter(self.vertices)
 
     def __len__(self):
-        # the idea is that the length is the number of edges... hope that's not confusing
+        # the idea is that the length is the number of edges... hope that's not confusing ### @rem
         return len(self.vertices) - 1
 
     def __str__(self):
