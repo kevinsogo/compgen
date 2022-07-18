@@ -19,7 +19,7 @@ def make_unique_name(seed=None):
     rd = Random(seed)
     def unique_name():
         unique_name.index += 1
-        return 'BLACK_MAGIC_' + str(rd.randrange(10**9)) + '_' + str(unique_name.index)
+        return '__BLACK_MAGIC_UNIQUIFY_' + str(rd.randrange(10**30, 10**31)) + '_' + str(unique_name.index) + '__'
     unique_name.index = 0
     return unique_name
 
@@ -249,9 +249,9 @@ def _import(parent, indent, module, context, *, module_id=None):
 
     # recurse to import file
     import_extras = context['import_extras']
-    yield process_context(f"# BLACK_MAGIC start import {module_id} (as {module})", ncontext)
+    yield process_context(f"#BLACKMAGIC start import {module_id} (as {module})", ncontext)
     if import_extras: yield process_context(f'{name}, __name__ = __name__, "{name}"', ncontext)
     yield from context['parse_lines'](lines, module_id).compile(ncontext)
     if import_extras: yield process_context(f'__name__ = {name}', ncontext)
     if import_extras: yield process_context(f'del {name}', ncontext)
-    yield process_context(f"# BLACK_MAGIC end import {module_id} (as {module})", ncontext)
+    yield process_context(f"#BLACKMAGIC end import {module_id} (as {module})", ncontext)

@@ -8,6 +8,7 @@ except ImportError:
         return auto.val
     auto.val = 0
 
+from itertools import count
 from sys import stdout, stderr
 import base64, re, zlib
 
@@ -161,7 +162,8 @@ def compile_lines(lines, **context):
     for key, valuem in weak_context.items():
         if key not in context: context[key] = valuem(context)
 
-    def get_lines():
+
+    def get_raw_lines():
         for lcontext, line in parse_lines(lines, context.get('module_id')).compile(context):
             if lcontext['write']:
                 if context['shift_left']:
@@ -169,9 +171,56 @@ def compile_lines(lines, **context):
                     line = '\t'*tabs + line.lstrip(' ')
                 yield line
 
+
+    uniquify_re = re.compile(r'__BLACK_MAGIC_UNIQUIFY(?:_\d+)+__')
+    def get_lines():
+        """Replace __BLACK_MAGIC_UNIQUIFY*__ tokens with unique shorter tokens.
+
+        The new token must not be a substring of the code, to avoid conflicts.
+
+        This can be fooled by crazy stuff like eval('__B' + 'M' + '0__'), but
+        I think no one should code like that anyway.
+        """
+
+        lines = [*get_raw_lines()]
+        assert all(isinstance(line, str) for line in lines)
+
+        def all_substrings_shortlex(lines=[*lines]):
+            yield ''
+            for l in range(1, sum(map(len, lines))):
+                for line in lines:
+                    for i in range(len(line) - l + 1):
+                        yield line[i:i+l]
+
+        all_substrings_shortlex = all_substrings_shortlex()
+        subs = set()
+        def is_substring(s):
+            while True:
+                sub = next(all_substrings_shortlex)
+                subs.add(sub)
+                if len(sub) > len(s): break
+            return s in subs
+
+        tokens = (f"BM{i}" for i in count())
+
+        def new_token():
+            while True:
+                token = next(tokens)
+                if not is_substring(token): return token
+                info_print("Skipping", token)
+
+        all_reps = {to_rep for line in lines for to_rep in uniquify_re.findall(line)}
+        all_reps = {to_rep: new_token() for to_rep in all_reps}
+        info_print("Replacing", len(all_reps), "'uniquify tokens'")
+
+        for line in lines:
+            for to_rep in {*uniquify_re.findall(line)}:
+                line = line.replace(to_rep, all_reps[to_rep])
+            yield line
+
     if context['compress']:
         # don't try this at home!
         enc = base64.b64encode(zlib.compress('\n'.join(get_lines()).encode('utf-8'), level=9))
-        yield f"import base64,zlib;exec(zlib.decompress(base64.b64decode({enc!r})).decode('utf-8'))"
+        return [f"import base64,zlib;exec(zlib.decompress(base64.b64decode({enc!r})).decode('utf-8'))"]
     else:
-        yield from get_lines()
+        return [*get_lines()]
