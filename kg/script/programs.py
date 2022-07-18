@@ -1,14 +1,23 @@
 from collections import defaultdict
-from functools import wraps
+from contextlib import contextmanager, ExitStack
+from enum import Enum
+from functools import wraps, partial
+from itertools import chain
 from sys import stderr
 from threading import Thread
 import json
 import os
 import os.path
+import stat
 import subprocess
+import tempfile
 import time as timel
 
 from .utils import *
+
+class IMode(Enum):
+    STDIO = 'stdio'
+    FIFO = 'fifo'
 
 class ProgramsError(Exception): ...
 
@@ -103,8 +112,6 @@ def _fix_timeout(kwargs):
 
     if kwargs['timeout'] >= float('inf'):
         del kwargs['timeout']
-    else:
-        info_print(f"  force timeout after {kwargs['timeout']:.2f} sec.", file=stderr)
 
 class Program:
     def __init__(self, filename, compile_, run, *, relpath=None, strip_prefixes=['___'], check_exists=True, **attributes):
@@ -136,49 +143,54 @@ class Program:
             info_print(f"Compiling {self.filename}", file=stderr)
             kwargs.setdefault('cwd', self.relpath)
             kwargs.setdefault('check', True)
-            self._run(self.compile, **kwargs)
+            self._run(True, subprocess.run, self.compile, **kwargs)
         self.compiled = True
         return self
 
     def get_runner_process(self, *args, **kwargs):
         if not self.compiled: raise ProgramsError("Compile the program first")
-        command = self.run + list(args)
+        command = [*self.run, *args]
         kwargs.setdefault('cwd', self.relpath)
         return subprocess.Popen(command, **kwargs)
 
-    def do_run(self, *args, time=False, label=None, **kwargs):
+    def do_run(self, *args, time=False, label=None, log_exc=True, **kwargs):
         if not self.compiled: raise ProgramsError("Compile the program first")
-        command = self.run + list(args)
+        command = [*self.run, *args]
         kwargs.setdefault('cwd', self.relpath)
         kwargs.setdefault('check', True)
         _fix_timeout(kwargs)
+        if 'timeout' in kwargs:
+            info_print(f"  will force timeout after {kwargs['timeout']:.2f} sec.", file=stderr)
         if time:
             start_time = timel.time()
         try:
-            return self._run(command, **kwargs)
+            return self._run(log_exc, subprocess.run, command, **kwargs)
         finally:
             if time:
                 self.last_running_time = elapsed = timel.time() - start_time
                 info_print(f'{label or "":>18} elapsed time: {elapsed:.2f} sec.', file=stderr)
 
-    def _run(self, *args, **kwargs):
+    def _run(self, log_exc, func, *args, **kwargs):
         try:
-            return subprocess.run(*args, **kwargs)
+            return func(*args, **kwargs)
         except Exception as exc:
-            err_print("An exception was raised while running", *args, "with", kwargs, file=stderr)
-            err_print("The exception is:", file=stderr)
-            err_print(f'    {exc!r}', file=stderr)
-            err_print(f'    {exc}', file=stderr)
-            err_print("The current program is:", self, file=stderr)
+            if log_exc:
+                err_print("The ff exception was raised:", file=stderr)
+                err_print(f'    {exc!r}', file=stderr)
+                err_print(f'    {exc}', file=stderr)
+                err_print("while running", func, file=stderr)
+                err_print("      args", args, file=stderr)
+                err_print("    kwargs", kwargs, file=stderr)
+                err_print("The current program is:", self, file=stderr)
             raise
 
-    def _do_run_process(self, process, *, time=False, label=None, check=False, timeout=None):
+    def _do_run_process(self, process, *, time=False, label=None, check=False, log_exc=True, timeout=None):
         if time:
             start_time = timel.time()
         with process as proc:  # just to be safe; maybe in the future, Popen.__enter__ might return something else
             try:
-                retcode = proc.wait(timeout=timeout)
-            except:
+                retcode = self._run(log_exc, proc.wait, timeout=timeout)
+            except Exception as exc:
                 proc.kill()
                 raise
             finally:
@@ -193,70 +205,122 @@ class Program:
         return subprocess.CompletedProcess(proc.args, None, None, retcode)
 
 
-    def do_interact(self, interactor, *args, time=False, label=None, check=False,
-                    interactor_args=(), interactor_kwargs=None,  **kwargs):
-        """Interact with 'interactor' by connecting their stdins and stdouts together."""
+    def do_interact(self, interactor, *args, time=False, label=None, check=False, log_exc=True,
+                    node_count=1, interaction_mode=IMode.STDIO, pass_id=False,
+                    interactor_args=(), interactor_kwargs=None, **kwargs):
+        """Interact with 'interactor'.
+
+        There will be 'node_count' copies of the current program, and one copy of the interactor.
+        The default node_count is 1.
+
+        The nodes will be indexed 0 to node_count-1. If 'pass_id' is True, the ID will be passed to each node as an arg.
+        The default pass_id is False.
+
+        The mode of interaction depends on 'interaction_mode':
+
+        In STDIO mode (default):
+        - Their stdins and stdouts are woven together. Note that node_count must be 1 in this mode.
+
+        In FIFO mode:
+        - The communication will be done via FIFOs.
+        - A FIFO pair will be created for each node, for a total of 2*node_count FIFOs.
+        - The FIFO names will be passed to the interactor as args: --from-user [...] --to-user [...]
+        - This probably isn't possible in windows because there are no FIFOs there.
+        """
         if not interactor:
             raise ProgramsError("No interactor passed")
+
         for stream in 'stdin', 'stdout':
-            if stream in kwargs or stream in interactor_kwargs:
-                raise ProgramsError(f"You cannot pass {stream!r} to interactors")
+            if stream in kwargs:
+                raise ProgramsError(f"You cannot pass the {stream!r} argument to the node if there's an interactor")
+
+        if node_count < 1:
+            raise ProgramsError(f"node_count must be at least 1; got {node_count}")
+
+        interaction_mode = IMode(interaction_mode)
+        if node_count > 1 and interaction_mode != IMode.FIFO:
+            raise ProgramsError("The interaction mode must be 'fifo' if there is more than one node")
 
         _fix_timeout(kwargs)
+        if 'timeout' in kwargs:
+            info_print(f"  will force timeout after {kwargs['timeout']:.2f} sec.", file=stderr)
 
-        # we can't pass timeout to the process constructor, so we take it, and then
-        # pass it to when we run it.
+        # we can't pass 'timeout' to the process constructor, so we take it, and then pass it to when we run it.
         timeout = kwargs.pop('timeout', None)
 
-        process = self.get_runner_process(*args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, **kwargs)
-
-        # connect them
-        if not interactor_kwargs: interactor_kwargs = {}
+        # setup the interactor args and kwargs
+        interactor_args = [*(interactor_args or ())]
+        interactor_kwargs = {**(interactor_kwargs or {})}
         interactor_kwargs.setdefault('label', 'INTERACTOR')
-        interactor_kwargs['stdin'] = process.stdout
-        interactor_kwargs['stdout'] = process.stdin
 
-        # start the interaction
-        def interactor_run(*args, **kwargs):
-            # TODO find a better way than monkeying around like this
-            interactor_run.thrown = None
-            interactor_run.result = None
-            try:
-                result = interactor.do_run(*args, **kwargs)
-            except Exception as thrown:
-                interactor_run.thrown = thrown
+        # set a slightly larger timeout for the interactor
+        interactor_kwargs.setdefault('timeout', float('inf'))
+        ext_timeout = None
+        if timeout is not None:
+            ext_timeout = timeout + 2
+            interactor_kwargs['timeout'] = min(interactor_kwargs['timeout'], ext_timeout)
+        if interactor_kwargs['timeout'] >= float('inf'):
+            del interactor_kwargs['timeout']
+        else:
+            info_print(f"  the timeout for the interactor is {interactor_kwargs['timeout']:.2f} sec.", file=stderr)
+
+        @contextmanager
+        def prepare_communication():
+            # setup communication channels
+            pargses = [[*args, *([idx] if pass_id else [])] for idx in range(node_count)]
+
+            run_process = partial(self._do_run_process, time=time, label=label, check=check, log_exc=log_exc, timeout=timeout)
+
+            # TODO match statement
+            if interaction_mode == IMode.STDIO:
+
+                info_print("Weaving the stdin and stdout of the node and the interactor")
+                for stream in 'stdin', 'stdout':
+                    if stream in interactor_kwargs:
+                        raise ProgramsError(f"You cannot pass the {stream!r} argument to the interactor in 'stdio' mode")
+                assert node_count == 1
+                [pargs] = pargses
+                process = self.get_runner_process(*pargs, stdin=subprocess.PIPE, stdout=subprocess.PIPE, **kwargs)
+                interactor_kwargs['stdin'] = process.stdout
+                interactor_kwargs['stdout'] = process.stdin
+                yield run_process, [process]
             else:
-                interactor_run.result = result
-                return result
+                assert interaction_mode == IMode.FIFO
 
-            return new_target
+                def run(pargs, from_interactor_fifo, to_interactor_fifo):
+                    with open(to_interactor_fifo, 'w') as to_interactor_file, open(from_interactor_fifo) as from_interactor_file:
+                        return run_process(self.get_runner_process(*pargs, stdin=from_interactor_file, stdout=to_interactor_file, **kwargs))
 
-        interactor_thread = Thread(target=interactor_run, args=interactor_args, kwargs=interactor_kwargs)
-        interactor_thread.start()
-        result = self._do_run_process(process, time=time, label=label, check=check, timeout=timeout)
-        interactor_thread.join()
+                info_print(f"Creating {node_count} FIFO pairs")
+                with tempfile.TemporaryDirectory(prefix='kg_tmp_dir_') as tmpdirname:
+                    info_print("The temporary directory is", tmpdirname)
+                    node_to_interactor_fifos = [os.path.join(tmpdirname, f"nod{idx}_to_itc") for idx in range(node_count)]
+                    interactor_to_node_fifos = [os.path.join(tmpdirname, f"itc_to_nod{idx}") for idx in range(node_count)]
+                    for fifo in chain(node_to_interactor_fifos, interactor_to_node_fifos):
+                        os.mkfifo(fifo)
+                        # set readable and writable by anyone
+                        os.chmod(fifo, os.stat(fifo).st_mode
+                                | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH
+                                | stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
 
-        # too much monkeying around!! help. also, think about thread safety...
-        if interactor_run.thrown: raise InteractorException(interactor_run.thrown)
-        return result, interactor_run.result
+                    # connect these fifos to the stdio's of the nodes
+                    interactor_args.extend(['--from-user', *(fifo for fifo in node_to_interactor_fifos)])
+                    interactor_args.extend(['--to-user',   *(fifo for fifo in interactor_to_node_fifos)])
+                    yield run, pargses, interactor_to_node_fifos, node_to_interactor_fifos
+                    info_print("Deleting temporary directory", tmpdirname)
 
 
-    def do_interact_nodes(self, n, node, *args, pass_id=True, time=False, label=None, check=False,
-                          node_args=(), node_kwargs=None, **kwargs):
-        """Interact with 'n' copies of 'node'.
-        
-        The nodes will be indexed 0 to n-1. If 'pass_id' is True, the ID will be passed to each node as an arg.
+        with prepare_communication() as (run, *argseqs), thread_pool_executor(
+                    'Running interaction',
+                    max_workers=min(32, node_count+1),
+                    thread_name_prefix='kg_interact',
+                    logf=stderr,
+                ) as executor:
 
-        This will create n FIFO pairs, one for each node.
+            itc_future = executor.submit(interactor.do_run, *interactor_args, **interactor_kwargs)
+            cur_results = [*executor.map(run, *argseqs, timeout=ext_timeout)]
 
-        The FIFO names will be passed as args: --from-user [...] --to-user [...]
-        """
-        if not node:
-            raise ProgramsError("No node passed")
-        for stream in 'stdin', 'stdout':
-            if stream in kwargs or stream in interactor_kwargs:
-                raise ProgramsError(f"You cannot pass {stream!r} to interactors")
-        # TODO
+            return cur_results, itc_future.result()
 
 
     def matches_abbr(self, abbr):

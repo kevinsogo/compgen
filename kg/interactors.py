@@ -215,7 +215,14 @@ def _interact_generic(interactor, input, *users, output=None, judge=None, **kwar
         kwargs['output_path'], output_f = maybe_open(output, 'w')
         kwargs['judge_path'],  judge_f  = maybe_open(judge)
 
-        user_info = [(maybe_open(fr_user), maybe_open(to_user, 'w', buffering=1)) for fr_user, to_user in users]
+        ### @@ rem {
+        # open reads before writes first...
+        # this is somewhat a fragile 'agreement' between the mediator (KompGen) and this interactor
+        # however, opening FIFOs in nonblocking mode seem like such a hassle...
+        # TODO really think about the best way to do this...
+        ### @@ }
+        fr_users_info = [maybe_open(fr_user) for fr_user, to_user in users]
+        to_users_info = [maybe_open(to_user, 'w', buffering=1) for fr_user, to_user in users]
         (
             kwargs['from_user_paths'],
             kwargs['to_user_paths'],
@@ -224,7 +231,7 @@ def _interact_generic(interactor, input, *users, output=None, judge=None, **kwar
             fr_user_path,
             to_user_path,
             TextIOPair(fr_user, to_user),
-        ) for userid, ((fr_user_path, fr_user), (to_user_path, to_user)) in enumerate(user_info)))
+        ) for userid, ((fr_user_path, fr_user), (to_user_path, to_user)) in enumerate(zip(fr_users_info, to_users_info))))
 
         try:
             score = interactor(input_f, *user_ios, output_file=output_f, judge_file=judge_f, **kwargs)

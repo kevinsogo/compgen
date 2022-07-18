@@ -249,8 +249,11 @@ def wait_all(futures, info=None, executor=None, logf=stderr):
 
 
 def thread_pool_executor(task, *, max_workers, thread_name_prefix, logf=stderr, **kwargs):
-    info_print(task, f"with {max_workers or 'several'} worker threads ({os.cpu_count()} CPUs)...", file=stderr)
-    info_print(f"Threads are prefixed with {thread_name_prefix}", file=stderr)
+    info_print(
+            task,
+            f"with {max_workers or 'several'} worker threads ({os.cpu_count()} CPUs)... "
+            f"thread prefix is {thread_name_prefix!r}",
+            file=stderr)
     if kwargs: info_print("Other args are", kwargs, file=stderr)
     return concurrent.futures.ThreadPoolExecutor(
             max_workers=max_workers,

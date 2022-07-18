@@ -557,7 +557,7 @@ def generate_outputs(format_, data_maker, *, model_solution=None, judge=None, in
             if data_maker.attributes.get('interacts'):
                 if not interactor:
                     raise CommandError('"interacts" is true but no interactor found')
-                results = data_maker.do_interact(interactor, time=True, label='DATA_MAKER', check=True,
+                data_maker.do_interact(interactor, time=True, label='DATA_MAKER', check=True,
                         interactor_args=[input_, output_],
                         interactor_kwargs=dict(time=True, label='INTERACTOR', check=True),
                     )
@@ -581,7 +581,7 @@ def generate_outputs(format_, data_maker, *, model_solution=None, judge=None, in
                         pref(info_print, f"  Running model solution on {input_}")
                         try:
                             if interactor:
-                                results = model_solution.do_interact(interactor,
+                                model_solution.do_interact(interactor,
                                         label='MODEL_SOLUTION', check=True,
                                         interactor_args=[input_, tmp.name],
                                         interactor_kwargs=dict(label='INTERACTOR', check=True),
@@ -753,8 +753,12 @@ def kg_test(format_, args):
                         iargs = [input_, tmp.name]
                         if not interactor_strict_args:
                             iargs += [dummy_tmp.name, result_tmp.name, '-C', solution.filename, '-t', str(index), '-v']
-                        solution_res, interactor_res = solution.do_interact(interactor,
-                                time=True, label='SOLUTION', check=True,
+                        [solution_res], interactor_res = solution.do_interact(
+                                interactor,
+                                time=True,
+                                label='SOLUTION',
+                                check=True,
+                                log_exc=False,
                                 interactor_args=iargs,
                                 interactor_kwargs=dict(check=False),
                                 time_limit=time_limit,
@@ -767,12 +771,16 @@ def kg_test(format_, args):
                                     time=True,
                                     label='SOLUTION',
                                     check=True,
+                                    log_exc=False,
                                     time_limit=time_limit,
                                 )
-                except TimeoutExpired:
-                    pass
-                except CalledProcessError:
+                except TimeoutExpired as exc:
+                    err_print('The solution took too long, so it was force-terminated...')
+                    err_print(exc)
+                    return False, 0
+                except CalledProcessError as exc:
                     err_print('The solution issued a runtime error...')
+                    err_print(exc)
                     return False, 0
                 finally:
                     # save the running time now, since we're monkeying around...
@@ -810,8 +818,8 @@ def kg_test(format_, args):
                 if get_score.running_time is None:
                     warn_print("Warning: The running time cannot be extracted from this run.")
                 elif get_score.running_time > time_limit:
-                    err_print(f"The solution exceeded the time limit of {time_limit:.3f}sec; "
-                              f"it didn't finish after {get_score.running_time:.3f}sec...")
+                    err_print(f"The solution exceeded the time limit of {time_limit:.3f} sec; "
+                              f"it didn't finish after {get_score.running_time:.3f} sec...")
                     if score > 0: info_print(f"It would have gotten a score of {score} otherwise...")
                     return False, 0
 

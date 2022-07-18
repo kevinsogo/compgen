@@ -7,6 +7,7 @@ from textwrap import dedent
 import argparse
 import json
 import os
+import shutil
 import tempfile
 
 from .programs import get_python3_command, Program
@@ -106,11 +107,16 @@ cleartemps_p = subparsers.add_parser('clear-temp-files',
 def kgutil_cleartemps(args):
     temp_file_pat = os.path.join(tempfile.gettempdir(), 'kg_tmp_*')
     print(f"Removing files in: {temp_file_pat!r}", file=stderr)
-    ct = 0
+    ct_file = 0
+    ct_folder = 0
     for filename in glob(temp_file_pat):
-        os.remove(filename)
-        ct += 1
-    print(f"Removed {ct} files", file=stderr)
+        if os.path.isfile(filename):
+            os.remove(filename)
+            ct_file += 1
+        else:
+            shutil.rmtree(filename)
+            ct_folder += 1
+    print(f"Removed {ct_file} files and {ct_folder} folders", file=stderr)
 
 
 

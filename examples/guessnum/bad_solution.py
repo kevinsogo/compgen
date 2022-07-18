@@ -1,6 +1,8 @@
 import time
+import hashlib
 from random import *
-input()
+seed(int(hashlib.sha224(input().encode('utf-8')).hexdigest(), 16))
+
 v = randrange(-10**9, 10**9+1)
 print('ask', v, flush=True)
 v -= int(input())
