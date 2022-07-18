@@ -127,7 +127,10 @@ class IStreamState:
         self._future2 = None
         self._drop_lines()
 
-# TODO I ought to make this a subclass of TextIOBase or something, but please read about its implications ### @rem
+### @@rem {
+# TODO I ought to make this a subclass of TextIOBase or something, but please read about its implications
+# I think the default .readline implementation calls .read somehow, but we're repurposing .read here
+### @@}
 class InteractiveStream:
     def __init__(self, reader, writer=None, *, mode=None, exc=StreamError, **options):
         if reader and not reader.readable(): raise OSError('"reader" argument must be writable')
@@ -326,15 +329,13 @@ class InteractiveStream:
             target = force_to_set(target)
             ret = True
 
-        if not self._buf.remaining():
-            if EOF in target: return EOF
-            raise (exc or self.exc)(f"{{{', '.join(map(stream_char_label, target))}}} expected but no more characters in the current line")
-
-        ch = self._buf.peek()
+        if not self._buf.remaining(): self._buffer_line()
+        ch = self._buf.peek() if self._buf.remaining() else EOF
         if ch not in target:
             raise (exc or self.exc)(f"{{{', '.join(map(stream_char_label, target))}}} expected but {stream_char_label(ch)} found")
 
-        self._buf.advance()
+        # advance only after successfully reading char ### @rem
+        if ch != EOF: self._buf.advance()
 
         if ret: return ch
 
@@ -778,16 +779,14 @@ def test_some_stuff():
                 ret = True
 
             if not self._buf.remaining():
-                if EOF in target:
-                    return EOF
-                else:
-                    raise exc(f"{{{', '.join(map(stream_char_label, target))}}} expected but no more characters in the current line")
+                self._buffer_line()
 
-            ch = self._buf.peek()
+            ch = self._buf.peek() if self._buf.remaining() else EOF
             if ch not in target:
                 raise exc(f"{{{', '.join(map(stream_char_label, target))}}} expected but {stream_char_label(ch)} found")
 
-            self._buf.advance()
+            if ch != EOF:
+                self._buf.advance()
 
             if ret:
                 return ch
