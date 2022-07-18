@@ -39,7 +39,7 @@ case "$choice" in
     done
     echo "Finished deleting. You may still be able to import 'kg', but it will be empty."
     echo "If you want to remove it completely, delete the corresponding KompGen* folders"
-    echo "in the site-packages/dist-packages of your Python3 installations. Due to the"
+    echo "in the site-packages or dist-packages of your Python3 installations. Due to the"
     echo "way this script works, there may be up to two such locations. For example, I"
     echo "found them in:"
     echo

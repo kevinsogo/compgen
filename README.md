@@ -12,7 +12,7 @@ Intended for Ubuntu (and probably some other Unix-based systems) for now, althou
 
 # Setup
 
-- Run `bash setup.sh` (or `setup.bat` if you're using Windows). If it prints `DONE`, then it was successful. Make sure you have `python3` and `pip3`.  
+- Run `bash setup.sh` (or run `setup.bat` if you're using Windows). If it prints `DONE`, then it was successful. Make sure you have `python3` and `pip3`.  
 
     - *Note:* It installs KompGen (and `setuptools`) via `pip`. Feel free to modify `setup.sh` if you don't want to install globally, e.g., if you want to use virtualenv or something. 
 
@@ -223,6 +223,9 @@ $ kg make inputs
 
 # generate the inputs and outputs only
 $ kg make inputs outputs
+
+# generate subtasks (if your problem has them)
+$ kg make subtasks
 
 # same as the commands described previously, but you don't have to supply -i and -o
 $ kg subtasks

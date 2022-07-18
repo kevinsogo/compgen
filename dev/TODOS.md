@@ -362,8 +362,6 @@ This includes some disorganized ideas, TODOs, notes...
 
 - Consider using the Kattis format as the base. (far future backwards-incompatible version.)
 
-- Improve `StrictStream`. Right now, I'm manually buffering 10^5 characters at a time, but I think there has to be a more idiomatic way to buffer.  
-
 - Add option to generate only subranges of the tests, to make it fast.
 
 - Do something about the fact that Python's `random` module makes no guarantees of reproducibility across implementations and platforms; see [this](https://stackoverflow.com/questions/8786084/reproducibility-of-python-pseudo-random-numbers-across-systems-and-versions). I guess a simple solution would be to copy `random.py`, but this would blow up the sizes of the files in `kgkompiled`.
