@@ -2,7 +2,7 @@ This is a detailed guide on how to prepare a problem from scratch using KompGen.
 
 Actually, not from scratch; this assumes you've already written the problem statement. And also that you've already read the README. 
 
-For a more beginner-friendly tutorial, see [this page](docs/TUTORIAL.md).  
+For a more beginner-friendly tutorial, see [this page](./TUTORIAL.md).  
 
 
 
@@ -10,7 +10,7 @@ For a more beginner-friendly tutorial, see [this page](docs/TUTORIAL.md).
 
 To prepare a problem, you will write a bunch of different files which will serve different purposes: generators, validators, checkers, etc. We will explain what those are shortly.
 
-Ideally, we will be writing everything in Python 3, although it's possible to use another language for it, or even parts of it; we will learn how to do so later on.
+Ideally, we will be writing everything in Python 3, although it's possible to use other languages for it, or even only for some parts of it; we will learn how to do so later on.
 
 
 ## Some restrictions
@@ -48,7 +48,7 @@ This will create a folder named `problem_title`. We will write everything relate
 
 The metadata about the problem can be found in `details.json`. It looks like this:
 
-```json
+```js
 {{ templates/details.json }}
 ```
 
@@ -103,15 +103,15 @@ Here's a validator that can also check subtasks. It takes the subtask name as th
 
 - Use integer literals as subtask names.
 
-- Behind the scenes, `a <= +Var <= b` creates something that contains an `Intervals` object, but this syntax is more flexible since you can also write something like `a < +Var < b`, and even `(a <= +Var <= b) & (+Var <= c)`.  
+- Behind the scenes, `a <= +Var <= b` creates something that contains an `Intervals` object, but this syntax is more flexible since you can also write something like `a < +Var < b`, and even `(a <= +Var < b) & (+Var <= c)`.  
 
 - Don't crash or reject if `argv[1]` is not a valid subtask name (or even a valid integer literal); instead, proceed as if you're checking against the largest subtask. (Important for Polygon.)
 
-- The `&` operation is *not* commutative. Always use the subtask `Bounds` as the second argument. (It goes from general to specific.)
+- Behind the scenes, the dicts containing the constraints are created as `Bounds(bounds)`, and two such objects can be combined via `&`, e.g., `Bounds(bounds) & Bounds(subtasks['1'])`.
+    
+    - However, `&` operation is *not* commutative. Always use the subtask `Bounds` as the second argument. (It goes from general to specific.)
 
 - `.int` can also be called like `.int(1, 10**5)`.
-
-- The method names (`.int`, `.space`, etc.) are inspired by testlib (`.read_int`, `.read_space`).
 
 The validators above use **chain-style validation**. Let's say you want to read `x`, `y` and `z` from a line, space-separated, and each with its own constraints. Then instead of writing something like this:
 
@@ -169,7 +169,7 @@ It's easy to write a test generator.
 
 **Notes:**
 
-- Don't import `random`. Use the provided random number generator. (It is of type `random.Random`.)
+- Don't import `random`. Use the provided random number generator. (It is an instance of `random.Random`.)
 
 - You can replace `stdout` with a file-like object.
 
@@ -199,7 +199,7 @@ This is similar to Polygon's testscript system (although you can't use pipes `|`
 gen_single 10 100000 > 11
 ```
 
-This will force the output of that line to be the $11$th file. Note that counting starts at $1$, but generated files start at `000`, so this will create `tests/010.in`.  
+This will force the output of that line to be `tests/011.in`. Note that generated files start at `000`, so this is actually the $12$th file. Omitting the `start=0` line (or replacing it with `start=1`) makes the testscript count from `1` instead, but generated files still start at `000`, so the line goes to `tests/010.in`.
 
 *Note:* Generators are expected to produce the same output file for the same list of arguments. (The random seed is determined purely by the argument list.) This means that something like this will generate the same files:
 
@@ -233,7 +233,7 @@ The general template for custom checkers is the following:
 {{ templates/checker_generic_template.py }}
 ```
 
-Here, `input_file`, `output_file` and `judge_file` are iterators that enumerate the distinct *lines* of each file. (If you want to enumerate *tokens* instead, pass `"tokens"` to `@set_checker()`. It will be whitespace-insensitive.) `kwargs` will contain other auxiliary data (e.g., test index, source code path, etc.), though it may vary between platforms. Anyway, you probably won't need it most of the time.
+Here, `input_stream`, `output_stream` and `judge_stream` are iterators that enumerate the distinct *lines* of each file. (If you want to enumerate *tokens* instead, pass `"tokens"` to `@set_checker()`. It will be whitespace-insensitive.) `kwargs` will contain other auxiliary data (e.g., test index, source code path, etc.), though it may vary between platforms. Anyway, you probably won't need it most of the time.
 
 Here's an example for the problem "find any longest subsequence of distinct elements":
 
@@ -242,6 +242,19 @@ Here's an example for the problem "find any longest subsequence of distinct elem
 ```
 
 *Note:* KompGen uses `model_solution` to generate `*.ans` files. But sometimes, you want them to not necessarily contain the answer, but rather just some auxiliary data to help with judging. In this case, you should fill `judge_data_maker` in `details.json`, so it will be used to generate `*.ans` files. 
+
+
+# Interactors
+
+Interactors (program that interact with the contestant's solution) are also supported. They are useful for tasks with hidden information.
+
+They're implemented very similarly to checkers. The general template for interactors is the following:
+
+```python
+{{ templates/interactor_generic_template.py }}
+```
+
+
 
 <!-- TODO graph checking. is_tree, is_connected, etc. -->
 
@@ -268,7 +281,7 @@ code_that=only*appears+in_hackerrank
 line=that_only*appears_in%polygon ### @if format == 'pg'
 
 PLATFORM = 'cms'
-PLATFORM = 'local' ### @ rem
+PLATFORM = 'local' ### @rem
 ```
 where `@rem` is an abbreviation of `@if False`.
 
@@ -297,7 +310,7 @@ Try to read `kg/checkers.py` to see the different directives in action. Note tha
 
 The files generated in `kgkompiled` may be too big for your tastes. To make them smaller, there are two (evil) options accepted by `kg kompile` that can reduce the file sizes a bit:
 
-1. `-S`. Attempts to reduce the indentation level; this saves several spaces. Beware, it may break some programs, particularly those with inconsistent indentation. I suggest keeping everything to 4 spaces. 
+1. `-S`. Attempts to reduce the indentation level; this saves several spaces. Beware, it may break some programs, particularly those with inconsistent indentation, and those with multiline strings not passed to `textwrap.dedent`. I suggest keeping everything to 4 spaces.
 
 2. `-C`. A very evil option. See for yourself! :D
 

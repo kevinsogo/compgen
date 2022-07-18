@@ -1,14 +1,8 @@
-{% if interactor %}
-"""Interacts with the solution. Useful for tasks with hidden information."""
-
 from sys import *
 from kg.interactors import * ### @import
 
 @interactor
-def interact(input_stream, user_stream, {% if not minimal %}output_stream=None, {% endif %}**kwargs):
-    ... # write your interactor here
-    {% if not minimal %}
-
+def interact(input_stream, user_stream, output_stream=None, **kwargs):
     # input_stream is readable
     # output_stream is writable (if it's present at all)
     # user_stream is readable and writable. It represents communication with the contestant
@@ -17,18 +11,15 @@ def interact(input_stream, user_stream, {% if not minimal %}output_stream=None, 
     #     - Note: user_stream.print(...) flushes per line
 
     # Raise this if the answer is incorrect
-    # raise Wrong("The contestant's output is incorrect!")
+    raise Wrong("The contestant's output is incorrect!")
     
     # Raise this if the judge data is incorrect, or if the interaction fails for some reason other than 'Wrong'
     # Any other exception type raised will be considered equivalent to Fail.
     # Any 'Fail' verdict must be investigated since it indicates a problem with the checker/interactor/test data/etc.
-    # raise Fail("The judge data is incorrect. Fix it!")
+    raise Fail("The judge data is incorrect. Fix it!")
 
     # the return value is the score, and must be a value between 0.0 and 1.0
-    {% endif %}
 
     return 1.0 
 
-if __name__ == '__main__':
-    interact_with(interact)
-{% endif %}
+if __name__ == '__main__': interact_with(interact)

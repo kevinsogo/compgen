@@ -18,7 +18,6 @@ def validate(stream, *, lim):
         totaln += n
         [a] = stream.read.ints(n, lim.a).eoln
 
-    [] = stream.read.eof
     ensure(totaln in lim.totaln)
 
 if __name__ == '__main__':

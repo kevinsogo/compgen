@@ -14,7 +14,11 @@
         "some_other_code.java"
     ],
     "checker": "checker.py",
-    "valid_subtasks": [1, 2, 3],
+    "valid_subtasks": [
+        {"id": 1, "score": 11},
+        {"id": 2, "score": 20},
+        {"id": 3, "score": 69}
+    ],
     "subtasks_files": "subtasks.json",
     "version": "0.2"
 }

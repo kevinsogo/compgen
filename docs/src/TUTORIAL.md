@@ -275,7 +275,7 @@ subtasks = {
 }
 ```
 
-Here, `bounds` should have the constraints for the variables across all subtasks, and `subtasks` should have any additional constraints. KompGen also supports "or" via the `|` operator, so for subtask 1, we can write something like
+Here, `bounds` should have the constraints for the variables across all subtasks, and `subtasks` should have any additional constraints. KompGen also supports "and" and "or" via the `&` and `|` operators, so for subtask 1, we can write something like
 
 ```python
 'n': (+Var == 1) | (+Var == 2) | (+Var == 3) | (+Var == 69) | (+Var == 420)
@@ -359,7 +359,7 @@ if __name__ == '__main__':
 
 ## The KompGen generator model
 
-In the KompGen model, a generator is a program takes several parameters for input, and outputs something. This output is passed through the *formatter*, which takes the output and prints it to a file according to the input format. Then the *testscript* calls the generators several times.
+In the KompGen model, a generator is a program that takes several parameters for input, and outputs something. This output is passed through the *formatter*, which takes the output and prints it to a file according to the input format. Then the *testscript* calls the generators several times.
 
 Let me illustrate with a simple example. Here's a generator that takes two integers, `T` and `N`, and outputs `T` random integers from `1` to `N`, which is saved in a file called `gen_random.py`. You can ignore the header and the footer for now, just focus on the function `gen_random`:
 
@@ -2141,7 +2141,7 @@ This file can also be given a subset of `['input', 'output', 'judge']` to signal
 
 
 ```python
-@checker(no_extra_chars=['output', 'judge'])
+@checker(extra_chars_allowed=['output', 'judge'])
 @default_score
 def check_solution(input_stream, output_stream, judge_stream, **kwargs):
     # ...
