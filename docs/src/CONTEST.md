@@ -256,7 +256,7 @@ CMS is the official platform used at the IOI and maintained by the IOI. Thus, it
 
 ## Compiling to CMS-readable format (KompGen loader)
 
-A loader for KompGen-created contests is available. However, you have to use the `kompgen` branch of [this fork of CMS](https://github.com/kevinsogo/cms). I will try my best to maintain that the latest CMS branch is merged here, but one consequence is that you have to use the bleeding-edge CMS, not the latest CMS release. (This is not a problem in our experience.) Also, when I finish polishing the KompGen loader, I will work on getting it accepted into CMS, so you don't have to use the KompGen format.
+A loader for KompGen-created contests is available. However, you have to use the `kompgen` branch of [this fork of CMS](https://github.com/kevinsogo/cms). I will try my best to maintain that the latest CMS branch is merged here, but one consequence is that you have to use the bleeding-edge CMS, not the latest CMS release. (This is not a problem in our experience.) Also, when I finish polishing the KompGen loader, I will work on getting it accepted into CMS, so you don't have to use this branch.
 
 After writing a `contest.json`, run:
 
@@ -276,10 +276,10 @@ $ kg kontest cms examples/contest.json   # add --make-all if you want
 
 This will create the folder `kgkompiled/EXAMPLECONTEST` from two example problems.
 
-The contest configuration file also has the `cms_option` field, which should be a dictionary containing additional CMS settings, e.g.,
+The contest configuration file also has the `cms_options` field, which should be a dictionary containing additional CMS settings, e.g.,
 
 ```json
-    "cms_option": {
+    "cms_options": {
         "name": "add",
         "max_submission_number": 80,
         "max_user_test_number": 11,
@@ -292,7 +292,7 @@ All fields here are optional. (The list above is not exhaustive.)
 
 After doing this, and after running all CMS services, you can now easily upload the contest to CMS by taking the following steps:
 
-- Run `cmsImportUsers path/to/kgkompiled/[contestcode]/contest/ -A` to import all users.
+- Run `cmsImportUser path/to/kgkompiled/[contestcode]/contest/ -A` to import all users.
 
     - You only need to do this once, even if you have multiple contests.
 
