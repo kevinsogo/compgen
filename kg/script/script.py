@@ -2306,7 +2306,7 @@ def kg_contest(format_, args):
             "problems": codes,
             "start": contest.start_time.timestamp(),
             "stop": contest.end_time.timestamp(),
-            "duration": contest.duration.total_seconds(),
+            "per_user_time": contest.duration.total_seconds(),
             "timezone": contest.display_timezone,
             "languages": [lang['lang'] for lang in contest.langs],
             # compute score precision based on the individual problems' score precision
