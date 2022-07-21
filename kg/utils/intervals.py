@@ -284,6 +284,8 @@ class Var(metaclass=VarMeta):
             _app=(Intervals.__neg__, *self._app),
         )
 
+    def __invert__(self): return Var(~self.intervals, _bd_ct=2)
+
     def _combin(self, op, other):
         if isinstance(other, Var): other = other.intervals
         if not isinstance(other, Intervals): return NotImplemented
@@ -292,7 +294,6 @@ class Var(metaclass=VarMeta):
     def __and__(self, other): return self._combin(operator.and_, other)
     def __or__ (self, other): return self._combin(operator.or_,  other)
     def __xor__(self, other): return self._combin(operator.xor,  other)
-    def __invert__(self): return Var(~self.intervals, _bd_ct=2)
 
     __rand__ = __and__
     __ror__  = __or__
@@ -326,7 +327,7 @@ class Bounds(collections.abc.Mapping):
         super().__init__()
 
     def __and__(self, other): ### @@ rem {
-        ''' Combine two Bounds objects together. Merges intervals for conflicting attributes.
+        '''Combine two Bounds objects together. Merges intervals for conflicting attributes.
         If not both are intervals, an error is raised. '''
         ### @@ }
         combined = {}

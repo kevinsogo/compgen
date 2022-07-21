@@ -237,7 +237,12 @@ def wait_all(futures, info=None, executor=None, logf=stderr):
             info_print(f"    {exc!r}", file=logf)
             info_print(f"    {exc}", file=logf)
             info_print(info, f"cancelling", file=logf)
-            if executor: executor.shutdown(cancel_futures=True)
+            if executor:
+                # TODO for python3.9, just use cancel_futures= always
+                try:
+                    executor.shutdown(cancel_futures=True)
+                except TypeError:
+                    executor.shutdown()
             for future in futures: future.cancel()
             info_print(info, f"cancelled", file=logf)
             raise

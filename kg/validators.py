@@ -8,6 +8,7 @@ _patterns = functools.lru_cache(maxsize=None)(re.compile)
 
 
 class ValidationError(Exception): ...
+class ValidationStreamError(Exception): ... # TODO unify with streams.StreamError
 
 
 # TODO needs unification with the other streams   ### @ rem
@@ -32,14 +33,14 @@ class StrictInputStream:
     ### @@ }
 
     def _next_char(self):
-        if self.last == EOF: raise StreamError("Read past EOF")
+        if self.last == EOF: raise ValidationStreamError("Read past EOF")
         if self.next is None: self.next = self.file.read(1)
         self.last = self.next
         self.next = None
         return self.last
 
     def peek_char(self):
-        if self.last == EOF: raise StreamError("Peeked past EOF")
+        if self.last == EOF: raise ValidationStreamError("Peeked past EOF")
         if self.next is None: self.next = self.file.read(1)
         return self.next
 
@@ -55,17 +56,17 @@ class StrictInputStream:
         lres = 0
         while good(self.peek_char()):
             if bad(self.peek_char()):
-                raise StreamError(f"Invalid character for {_called} detected: {stream_char_label(self.peek_char())}")
+                raise ValidationStreamError(f"Invalid character for {_called} detected: {stream_char_label(self.peek_char())}")
             res.write(self._next_char())
             lres += 1
             if n is not None and lres > n: 
-                raise StreamError(f"Expected exactly {n} characters, got more.")
+                raise ValidationStreamError(f"Expected exactly {n} characters, got more.")
             if lres > maxn:
-                raise StreamError(f"Took too many characters! Expected at most {maxn}")
+                raise ValidationStreamError(f"Took too many characters! Expected at most {maxn}")
         if n is not None and lres != n:
-            raise StreamError(f"Expected exactly {n} characters, got {lres}")
+            raise ValidationStreamError(f"Expected exactly {n} characters, got {lres}")
         if l is not None and lres not in l:
-            raise StreamError(f"Expected length in {l}, got {lres}")
+            raise ValidationStreamError(f"Expected length in {l}, got {lres}")
         if include_end:
             res.write(self._next_char())
         return res.getvalue()
@@ -97,7 +98,7 @@ class StrictInputStream:
     def read_token(self, regex=None, *, ends={SPACE, EOLN, EOF}, other_ends=set(), _called="token", **kwargs): # optimize this. 
         tok = self.read_until(ends, other_ends=other_ends, _called=_called, **kwargs)
         if regex is not None and not _patterns('^' + regex + r'\Z').fullmatch(tok):
-            raise StreamError(f"Expected token with regex {regex!r}, got {tok!r}")
+            raise ValidationStreamError(f"Expected token with regex {regex!r}, got {tok!r}")
         return tok
 
     @listify
@@ -138,11 +139,11 @@ class StrictInputStream:
             if len(target) > 1:
                 raise ValueError(f"Invalid argument for read_char: {target!r}")
             if self._next_char() != target:
-                raise StreamError(f"Expected {stream_char_label(target)}, got {stream_char_label(self.last)}")
+                raise ValidationStreamError(f"Expected {stream_char_label(target)}, got {stream_char_label(self.last)}")
         else:
             target = force_to_set(target)
             if self._next_char() not in target:
-                raise StreamError(f"Expected [{', '.join(map(stream_char_label, target))}], got {stream_char_label(self.last)}")
+                raise ValidationStreamError(f"Expected [{', '.join(map(stream_char_label, target))}], got {stream_char_label(self.last)}")
             return self.last
 
     # Convenience, to implement read_int_eoln, read_real_space, read_int_space_space, etc. ### @rem
