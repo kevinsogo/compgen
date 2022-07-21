@@ -304,11 +304,9 @@ def _interact_cms(interact, *, input_file=sys.stdin, score_file=sys.stdout, mess
 
     fr_users, to_users = args.user_paths[::2], args.user_paths[1::2]
     if len(fr_users) != len(to_users): raise InteractorError("Invalid number of arguments: must be even")
+    if not fr_users: raise InteractorError("User FIFOs not found")
 
-    if fr_users:
-        users = [*zip(fr_users, to_users)]
-    else:
-        users = [(sys.stdin, sys.stdout)]
+    users = [*zip(fr_users, to_users)]
 
     verdict, score, message = _interact_generic(interact, input_file, *users, verbose=False)
 
