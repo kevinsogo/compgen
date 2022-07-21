@@ -12,7 +12,7 @@ def interact(input_stream, user_stream, *, output_stream=None, **kwargs):
     user_stream.print(moves)
     while True:
         [tok, value] = user_stream.read.token().space.int(lim.value).eoln
-        output_stream.print(tok, value)
+        if output_stream: output_stream.print(tok, value)
         if tok == "answer":
             return 1.0 # got the answer. pass to checker
         elif tok == "ask":
