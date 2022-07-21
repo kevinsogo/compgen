@@ -13,6 +13,11 @@
     "statement": "statement.md",
     "node_count": 10,
 
+    "comments": [
+        "This is intended for the 'N > 1' version of CMS Communication tasks. See:",
+        "https://cms.readthedocs.io/en/v1.4/Task%20types.html#communication",
+        "This will probably only work on CMS and not on other judges/systems."
+    ],
     "time_limit": 4,
     "version": "0.2"
 }

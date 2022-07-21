@@ -33,7 +33,7 @@ class Interactor:
                 None,
                 output_file,
                 exc=lambda message: Fail(f'[output] {message}'),
-            ))
+            )) if output_file else None
             judge_s = stack.enter_context(InteractiveStream(
                 judge_file,
                 mode=ISMode(self.judge_mode),
@@ -216,13 +216,14 @@ def _interact_generic(interactor, input, *users, output=None, judge=None, **kwar
         kwargs['judge_path'],  judge_f  = maybe_open(judge)
 
         ### @@ rem {
-        # open reads before writes first...
+        # open writes first before reads...
         # this is somewhat a fragile 'agreement' between the mediator (KompGen) and this interactor
+        # and also agrees with what CMS does. Very fragile!
         # however, opening FIFOs in nonblocking mode seem like such a hassle...
         # TODO really think about the best way to do this...
         ### @@ }
-        fr_users_info = [maybe_open(fr_user) for fr_user, to_user in users]
         to_users_info = [maybe_open(to_user, 'w', buffering=1) for fr_user, to_user in users]
+        fr_users_info = [maybe_open(fr_user) for fr_user, to_user in users]
         (
             kwargs['from_user_paths'],
             kwargs['to_user_paths'],

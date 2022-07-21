@@ -297,7 +297,11 @@ class Program:
 
                 def run(idx, pargs, from_interactor_fifo, to_interactor_fifo):
                     run_process = partial(self._do_run_process, time=time, label=label.format(id=idx), check=check, log_exc=log_exc, timeout=timeout)
-                    with open(to_interactor_fifo, 'w') as to_interactor_file, open(from_interactor_fifo) as from_interactor_file:
+                    # see note on interactors.py about having to correspond to its (and CMS's) order of FIFO opening.
+                    # There should probably be an option to say whether to read the input or output first.
+                    # If you can use nonblocking mode here (os.open and NONBLOCK something), that might be even better; feel free to update.
+                    # But I think os.open only returns a file descriptor AND it's a Raw IO, not even a Binary (buffered) one.
+                    with open(from_interactor_fifo) as from_interactor_file, open(to_interactor_fifo, 'w') as to_interactor_file:
                         return run_process(self.get_runner_process(*pargs, stdin=from_interactor_file, stdout=to_interactor_file, **kwargs))
 
                 info_print(f"Creating {node_count} FIFO pairs")

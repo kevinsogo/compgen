@@ -553,7 +553,7 @@ def generate_outputs(format_, data_maker, *, model_solution=None, judge=None, in
 
     def produce(index, input_, output_):
         def pref(print, *args, **kwargs):
-            info_print(f"[{index}]", end=' ')
+            info_print(f"[{index}]".rjust(5), end=' ')
             print(*args, **kwargs)
         touch_container(output_)
         pref(print, info_text('GENERATING'), src_text(input_, '-->', output_))
@@ -613,7 +613,7 @@ def generate_outputs(format_, data_maker, *, model_solution=None, judge=None, in
                     pref(err_print, f"The judge did not accept {output_}", file=stderr)
                     raise CommandError(f"The judge did not accept {output_}") from cpe
 
-        pref(print, info_text('GENERATED', input_, '-->'), key_text(output_))
+        pref(print, info_text('GENERATED ', input_, '-->'), key_text(output_))
         if max_workers == 1: print()
 
     with thread_pool_executor(
@@ -847,7 +847,8 @@ def kg_test(format_, args):
                     rt_sum, rt_max = get_score.running_time
                     if node_count == 1: assert rt_sum == rt_max
                     # TODO we're using rt_max since we're using wall-clock time (even naively via time.time)
-                    # but we probably want to use sum of CPU times.
+                    # but we probably want to use sum of user times.
+                    # https://cms.readthedocs.io/en/v1.4/Task%20types.html
                     if rt_max > time_limit:
                         err_print(f"The solution exceeded the time limit of {time_limit:.3f} sec;", end=' ')
                         if node_count == 1:
@@ -1634,19 +1635,23 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
     kg_libs = set(locations)
 
     checkers = []
+    interactors = []
 
-    # detect checkers (try to be smart)
+    # detect checkers an interactors (try to be smart)
     for file in files:
         base, ext = os.path.splitext(os.path.basename(file.rel_filename))
         if 'checker' in base and ext == '.py':
             checkers.append(file)
+        if 'interactor' in base and ext == '.py':
+            interactors.append(file)
 
     if problem_code:
         # current files
-        checkers.append(details.checker)
+        checkers.insert(0, details.checker)
+        interactors.insert(0, details.interactor)
 
-        all_local = [details.validator, details.interactor, details.model_solution] + (
-                details.generators + details.other_programs + files + extra_files + checkers)
+        all_local = [details.validator, details.model_solution] + (
+                details.generators + details.other_programs + files + extra_files + checkers + interactors)
 
         # files that start with 'grader.' (for cms mainly)
         graders = [file for file in details.other_programs if os.path.basename(file.filename).startswith('grader.')]
@@ -1655,16 +1660,15 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
 
         # files that need to be either translated (kg python codes) or just copied (everything else)
         to_compiles = {
-            'pg': [details.validator, details.interactor] + checkers + details.generators,
+            'pg': [details.validator] + checkers + interactors + details.generators,
             'hr': checkers,
-            'pc2': [details.validator] + checkers,
-            'dom': [details.validator] + checkers,
-            'cms': [(checker, "checker") for checker in checkers] + graders,
+            'pc2': [details.validator] + checkers, # TODO interactors
+            'dom': [details.validator] + checkers, # TODO interactors
+            'cms': [(checker,    "checker" if i == 1 else f"checker{i}")    for i, checker    in enumerate(checkers, 1)]
+                 + [(interactor, "manager" if i == 1 else f"interactor{i}") for i, interactor in enumerate(interactors, 1)]
+                 + graders,
             'cms-it': [(checker, os.path.join("check", "checker")) for checker in checkers]
-                    + [
-                        (grader, os.path.join("sol", os.path.basename(grader.rel_filename)))
-                        for grader in graders
-                    ],
+                    + [(grader,  os.path.join("sol", os.path.basename(grader.rel_filename))) for grader in graders],
         }
     else:
         all_local = files + extra_files
@@ -1990,12 +1994,20 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                 'name': cms_code,
                 'title': details.title,
                 'time_limit': details.time_limit,
-                'task_type': 'Batch', # only Batch and OutputOnly for now.
-                                      # For OutputOnly, just override with cms_options.
-                                      # TODO support Communication
-                'checker': 'checker',
+                # only Batch, Communication and OutputOnly.
+                # For OutputOnly, just override with cms_options.
+                # TODO support Communication
+                'task_type': 'Communication' if details.interactor else 'Batch',
                 'statement': 'statement.pdf',
             }
+
+            if config['task_type'] == 'Communication':
+                node_count = details.node_count
+                if node_count is None: node_count = 1
+                if node_count < 1:
+                    raise CommandError(f"Node count invalid: {node_count}")
+                config['node_count'] = node_count
+                config['io_type'] = 'std_io'  # refers to the user's way of getting I/O, not the manager's
 
             scoring_overall = details.scoring_overall
             if details.binary:
@@ -2047,7 +2059,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
             if total_score == 100:
                 info_print('The total score is', total_score)
             else:
-                warn_print(f'WARNING: The total score is {total_score}, but we want 100')
+                warn_print(f'WARNING: The total score is {total_score}, but we usually want 100')
 
             # override options
             config.update(details.cms_options)

@@ -15,6 +15,7 @@ def interact(input_stream, *user_streams, output_stream=None, **kwargs):
 
     def valid_str(s):
         return len(s) == n and all(ch in {'R', 'B'} for ch in s)
+
     results = [0, 0]
     for cas in range(t):
         [target] = input_stream.read.token().eoln
@@ -29,8 +30,8 @@ def interact(input_stream, *user_streams, output_stream=None, **kwargs):
         results[valid_str(got) and sum(gotc == targetc for gotc, targetc in zip(got, target)) >= n // 2] += 1
 
     lost, won = results
-    output_stream.print(lost, won)
-    print('The prisoners lost', lost, 'and won', won, 'experiments', file=stderr)
+    if output_stream: output_stream.print(lost, won)
+    print('The prisoners lost', lost, 'and won', won, 'experiments', file=stderr) ### @rem
     return 1.0 if lost == 0 else 0.0
 
 if __name__ == '__main__':

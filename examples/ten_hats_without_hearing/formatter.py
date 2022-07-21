@@ -4,6 +4,4 @@ from kg.formatters import * ### @import
 
 @formatter
 def format_case(stream, cases, *, print, **kwargs):
-    print(len(cases))
-    for s in cases:
-        print(s)
+    print(len(cases), *cases, sep='\n')
