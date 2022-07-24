@@ -325,7 +325,7 @@ class Program:
 
         with prepare_communication() as (run, *argseqs), thread_pool_executor(
                     'Running interaction',
-                    max_workers=min(32, node_count+1),
+                    max_workers=node_count+1, # everything needs to be in their separate threads
                     thread_name_prefix='kg_interact',
                     logf=stderr,
                 ) as executor:
