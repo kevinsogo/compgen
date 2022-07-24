@@ -5,7 +5,7 @@ from sys import *
 from kg.interactors import * ### @import
 
 @interactor
-def interact(input_stream, user_stream, {% if not minimal %}output_stream=None, {% endif %}**kwargs):
+def interact(input_stream, user_stream, output_stream=None, **kwargs):
     ... # write your interactor here
     {% if not minimal %}
 
