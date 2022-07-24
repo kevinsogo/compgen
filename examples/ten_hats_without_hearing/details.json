@@ -18,6 +18,6 @@
         "https://cms.readthedocs.io/en/v1.4/Task%20types.html#communication",
         "This will probably only work on CMS and not on other judges/systems."
     ],
-    "time_limit": 4,
+    "time_limit": 30,
     "version": "0.2"
 }
