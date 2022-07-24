@@ -22,7 +22,7 @@ def get_lang(lang):
 
 # We disallow single-character names because some contest systems do so.
 # But maybe we should allow it? I'm open for discussion. -Kevin
-valid_contestcode = re.compile(r'^[a-zA-Z][a-zA-Z0-9_-]*[a-zA-Z]\Z')
+valid_contestcode = re.compile(r'^[a-zA-Z][a-zA-Z0-9_-]*[a-zA-Z0-9]\Z')
 valid_username = re.compile(r'^[A-Za-z0-9_-]+\Z')
 
 class ContestDetails(object):
