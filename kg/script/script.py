@@ -348,7 +348,7 @@ def _collect_subtasks(input_subs):
         for sub in natsorted(subtset):
             if files_of_subtask[sub]:
                 deps = [dep for dep in natsorted(subtset) if dep != sub and files_of_subtask[dep] <= files_of_subtask[sub]]
-                print(info_text("Subtask"), key_text(sub), info_text("contains the ff subtasks:"), key_text(*deps))
+                print(info_text("Subtask"), key_text(str(sub).rjust(2)), info_text("contains the ff subtasks:"), key_text(*deps))
                 for dep in deps: depends_on[dep].add(sub)
         
         if include_subtask_groups:
@@ -373,7 +373,7 @@ def _collect_subtasks(input_subs):
             def group_str(group):
                 group_s = raw_group_str[group].rjust(mxl)
                 if group in represented_by:
-                    return key_text(group_s), info_text("AKA subtask"), key_text(represented_by[group])
+                    return key_text(group_s), info_text("AKA subtask"), key_text(str(represented_by[group]).rjust(2))
                 else:
                     return key_text(group_s),
 
@@ -386,7 +386,7 @@ def _collect_subtasks(input_subs):
             info_print("Subtask group representations:")
             for sub in natsorted(all_subtasks):
                 if sub in representing:
-                    print(info_text("Subtask"), key_text(sub), info_text("is represented by subtask group:"),
+                    print(info_text("Subtask"), key_text(str(sub).rjust(2)), info_text("is represented by subtask group:"),
                           *group_str(representing[sub]))
                 else:
                     warn_print('Warning: No subtask group represents subtask', sub, file=stderr)
@@ -777,7 +777,7 @@ def kg_test(format_, args):
                         solutions_res, interactor_res = solution.do_interact(
                                 interactor,
                                 time=True,
-                                label='SOLUTION',
+                                label='SOLUTION_{id}',
                                 check=True,
                                 log_exc=False,
                                 interaction_mode=interaction_mode,

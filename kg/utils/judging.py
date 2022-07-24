@@ -97,7 +97,7 @@ hr_verdict_name = {
 
 def write_json_verdict(verdict, message, score, result_file):
     with open(result_file, 'w') as f:
-        json.dump({'verdict': verdict, 'message': message, 'score': score}, f)
+        json.dump({'verdict': verdict, 'message': message, 'score': float(score)}, f)
 
 def write_xml_verdict(verdict, message, score, result_file):
     from xml.etree.ElementTree import Element, ElementTree
