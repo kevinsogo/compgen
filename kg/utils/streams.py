@@ -242,6 +242,8 @@ class InteractiveStream:
         finally:
             try:
                 if self.writer: self.writer.close()
+            except BrokenPipeError: # silently allow broken pipe errors
+                pass
             finally:
                 self._closed = True # can only set this after closing
 
