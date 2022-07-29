@@ -276,7 +276,7 @@ $ kg kontest cms examples/contest.json   # add --make-all if you want
 
 This will create the folder `kgkompiled/EXAMPLECONTEST` from two example problems.
 
-The contest configuration file also has the `cms_options` field, which should be a dictionary containing additional CMS settings, e.g.,
+The *problem* configuration file also has the `cms_options` field, which should be a dictionary containing additional CMS settings, e.g.,
 
 ```json
     "cms_options": {

@@ -293,7 +293,7 @@ def _reg_plat_interactor(name):
 
 
 ### @@if format in ('cms', 'cms-it') {
-# TODO check if this works
+# TODO check if this works for cms-it
 @_reg_plat_interactor('cms')
 @_reg_plat_interactor('cms-it')
 def _interact_cms(interact, *, input_file=sys.stdin, score_file=sys.stdout, message_file=sys.stderr, title='', help=None, **kwargs):
