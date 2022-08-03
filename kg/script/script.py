@@ -889,7 +889,7 @@ def kg_test(format_, args):
         """ print the raw files gotten correct and wrong """
         corrects = [index for index, score_row in sorted(scoresheet.items()) if score_row['correct']]
         wrongs = [index for index, score_row in sorted(scoresheet.items()) if not score_row['correct']]
-        running_times = filter(None, (score_row['running_time'] for score_row in scoresheet.values()))
+        running_times = [*filter(None, (score_row['running_time'] for score_row in scoresheet.values()))]
         max_time = max(rt_max for rt_sum, rt_max in running_times) if running_times else None
         decor_print()
         decor_print('.'*42)
@@ -899,7 +899,7 @@ def kg_test(format_, args):
         (succ_print if len(corrects) == len(scoresheet) else err_print)(len(corrects), end=' ')
         (succ_print if len(corrects) == len(scoresheet) else info_print)(f'out of {len(scoresheet)} files correct')
         if max_time is None:
-            warn_print('Warning: No running time was extracted from any run')
+            info_print('No running time was found from any run')
         else:
             info_print(f'Max running time: {max_time:.2f}sec.')
         decor_print('.'*42)
@@ -954,7 +954,8 @@ def kg_test(format_, args):
                 raise ValueError(f"Unknown/Unsupported per-subtask scoring policy: {details.scoring_per_subtask}")
 
             sub_details['weighted_score'] = sub_details['weight'] * sub_details['score']
-            sub_details['max_running_time'] = max(rt_max for rt_sum, rt_max in sub_details['running_times']) if sub_details['running_times'] else None
+            running_times = [*filter(None, sub_details['running_times'])] if sub_details['running_times'] else None
+            sub_details['max_running_time'] = max(rt_max for rt_sum, rt_max in running_times) if running_times else None
         return all_subtasks
 
     def get_score_for(group_scores):
@@ -1004,7 +1005,7 @@ def kg_test(format_, args):
                 )(f"{score:8.3f}"),
                 info_text(f" out of {weight:8.3f}"),
                 (
-                    warn_text("  No running time was extracted")
+                    info_text("  (no running time was found)")
                     if max_running_time is None else
                     info_text(f"  w/ max running time: {max_running_time:.2f}sec.")
                 ), sep='')
