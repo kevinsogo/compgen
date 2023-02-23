@@ -26,11 +26,11 @@ def check_real(input_file, output_file, judge_file, **kwargs):
                 if v1 != v2:
                     # they're different as tokens. try considering them as numbers ### @rem
                     try:
-                        v1, v2 = Decimal(v1), Decimal(v2) ### @replace "error", "abs_rel_error" if has_rel else "abs_error"
+                        v1, v2 = Decimal(v1), Decimal(v2)
                     except InvalidOperation as ex:
                         raise Wrong(f"Unequal tokens that are not numbers: {v1!r} != {v2!r}") from ex
                     else:
-                        err = error(v1, v2)
+                        err = error(v1, v2) ### @replace "error", "abs_rel_error" if has_rel else "abs_error"
                         worst = max(worst, err)
                         if err > EPS:
                             raise Wrong(f"Not within the required precision: got error {err}")

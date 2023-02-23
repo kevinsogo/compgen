@@ -23,11 +23,11 @@ def check_real(input_file, output_file, judge_file, **kwargs):
             for v1, v2 in zip(p1, p2):
                 if v1 != v2:
                     try:
-                        v1, v2 = Decimal(v1), Decimal(v2) 
+                        v1, v2 = Decimal(v1), Decimal(v2)
                     except InvalidOperation as ex:
                         raise Wrong(f"Unequal tokens that are not numbers: {v1!r} != {v2!r}") from ex
                     else:
-                        err = error(v1, v2)
+                        err = abs_error(v1, v2) 
                         worst = max(worst, err)
                         if err > EPS:
                             raise Wrong(f"Not within the required precision: got error {err}")
