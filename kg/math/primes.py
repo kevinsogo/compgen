@@ -101,7 +101,7 @@ def is_prime_naive(n):
 
 # 'guarantee' is deprecated ### @rem
 def is_prime(n, *, guarantee=True):
-    return is_prime_miller_rabin(n, more_witnesses=(random.randint(2, n-2) for i in range(min(16, int(log(n)/4)) if n >= 2**64 else 0)))
+    return is_prime_miller_rabin(n, more_witnesses=(random.randint(2, n-2) for i in range(min(16, int(math.log(n)/4)) if n >= 2**64 else 0)))
 
 def next_prime(n, *, guarantee=True):
     while not is_prime(n): n += 1
