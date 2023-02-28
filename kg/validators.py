@@ -163,7 +163,7 @@ class StrictInputStream:
         # TODO setting __name__ doesn't seem to be enough ### @rem
         _meth.__name__ = name
         setattr(self.__class__, name, _meth)
-        return _meth
+        return getattr(self, name)
 
     @property
     def read(self):
