@@ -128,16 +128,22 @@ def dfs_data(nodes, edges, *, start=None, start_all=False, directed=False, weigh
                         parent[j] = i
                         stack.append((j, d + 1))
 
+def farthest_data(nodes, edges, *, start, weighted=False):
+    node, depth = start, 0
+    for b in bfs_data(nodes, edges, start=start, weighted=weighted):
+        depth, node = max((depth, node), (b.depth, b.node))
+    return node, depth
+
 def farthest(nodes, edges, *, start, weighted=False):
-    return bfs(nodes, edges, start=start, weighted=weighted)[-1]
+    node, depth = farthest_data(nodes, edges, start=start, weighted=weighted)
+    return node
 
 def diameter(nodes, edges, *, weighted=False):
     nodes = make_nodes(nodes)
     adj = make_adj(nodes, edges, weighted=weighted)
-    i = farthest(nodes, adj, start=nodes[0], weighted=weighted)
-    for b in bfs_data(nodes, adj, start=i, weighted=weighted):
-        ...
-    return i, b.node, b.depth
+    start = farthest(nodes, adj, start=nodes[0], weighted=weighted)
+    node, depth = farthest_data(nodes, adj, start=start, weighted=weighted)
+    return start, node, depth
 
 @listify
 def bipartition(nodes, edges):
