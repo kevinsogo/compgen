@@ -14,16 +14,21 @@ def make_nodes(nodes):
     if not nodes: raise GraphError("Node list cannot be empty")
     return nodes
 
-def make_adj(nodes, edges, *, directed=False):
+def make_adj(nodes, edges, *, directed=False, weighted=False):
     if isinstance(edges, _Adj): return edges
     nodes = make_nodes(nodes)
     if isinstance(edges, dict):
         if sorted(edges.keys()) != sorted(nodes): raise GraphError("Invalid adjaacency list")
         return edges
     adj = _Adj((i, []) for i in nodes)
-    for a, b, *rest in edges:
-        adj[a].append(b)
-        if not directed: adj[b].append(a)
+    if weighted:
+        for a, b, c, *rest in edges:
+            adj[a].append((b, c))
+            if not directed: adj[b].append((a, c))
+    else:
+        for a, b, *rest in edges:
+            adj[a].append(b)
+            if not directed: adj[b].append(a)
     return adj
 
 def is_tree(nodes, edges):
@@ -65,14 +70,14 @@ class GraphTraversalData:
         yield self.parent
         yield self.depth
 
-def bfs_data(nodes, edges, *, start=None, start_all=False, directed=False):
+def bfs_data(nodes, edges, *, start=None, start_all=False, directed=False, weighted=False):
     nodes = make_nodes(nodes)
     if start_all and start is not None:
         raise GraphError(
                 f"You can't pass start={start} if "
                 f"start_all={start_all} is true (n={len(nodes)})")
     starts = nodes if start_all else [start] if start is not None else [nodes[0]]
-    adj = make_adj(nodes, edges, directed=directed)
+    adj = make_adj(nodes, edges, directed=directed, weighted=weighted)
     if any(start not in adj for start in starts):
         raise GraphError(f"Failed to BFS: {start} not in nodes (n={len(nodes)})")
     parent = {}
@@ -83,19 +88,25 @@ def bfs_data(nodes, edges, *, start=None, start_all=False, directed=False):
         while queue:
             i, d = queue.popleft()
             yield GraphTraversalData(i, parent[i], d, source=start)
-            for j in adj[i]:
-                if j not in parent:
-                    parent[j] = i
-                    queue.append((j, d + 1))
+            if weighted:
+                for j, c in adj[i]:
+                    if j not in parent:
+                        parent[j] = i
+                        queue.append((j, d + c))
+            else:
+                for j in adj[i]:
+                    if j not in parent:
+                        parent[j] = i
+                        queue.append((j, d + 1))
 
-def dfs_data(nodes, edges, *, start=None, start_all=False, directed=False):
+def dfs_data(nodes, edges, *, start=None, start_all=False, directed=False, weighted=False):
     nodes = make_nodes(nodes)
     if start_all and start is not None:
         raise GraphError(
                 f"You can't pass start={start} if "
                 f"start_all={start_all} is true (n={len(nodes)})")
     starts = nodes if start_all else [start] if start is not None else [nodes[0]]
-    adj = make_adj(nodes, edges, directed=directed)
+    adj = make_adj(nodes, edges, directed=directed, weighted=weighted)
     if any(start not in adj for start in starts):
         raise GraphError(f"Failed to DFS: {start} not in nodes (n={len(nodes)})")
     parent = {}
@@ -106,19 +117,25 @@ def dfs_data(nodes, edges, *, start=None, start_all=False, directed=False):
         while stack:
             i, d = stack.pop()
             yield GraphTraversalData(i, parent[i], d, source=start)
-            for j in reversed(adj[i]): # reverse adjacency for "canonicity"
-                if j not in parent:
-                    parent[j] = i
-                    stack.append((j, d + 1))
+            if weighted:
+                for j, c in reversed(adj[i]): # reverse adjacency for "canonicity"
+                    if j not in parent:
+                        parent[j] = i
+                        stack.append((j, d + c))
+            else:
+                for j in reversed(adj[i]): # reverse adjacency for "canonicity"
+                    if j not in parent:
+                        parent[j] = i
+                        stack.append((j, d + 1))
 
-def farthest(nodes, edges, *, start):
-    return bfs(nodes, edges, start=start)[-1]
+def farthest(nodes, edges, *, start, weighted=False):
+    return bfs(nodes, edges, start=start, weighted=weighted)[-1]
 
-def diameter(nodes, edges):
+def diameter(nodes, edges, *, weighted=False):
     nodes = make_nodes(nodes)
-    adj = make_adj(nodes, edges)
-    i = farthest(nodes, adj, start=nodes[0])
-    for b in bfs_data(nodes, adj, start=i):
+    adj = make_adj(nodes, edges, weighted=weighted)
+    i = farthest(nodes, adj, start=nodes[0], weighted=weighted)
+    for b in bfs_data(nodes, adj, start=i, weighted=weighted):
         ...
     return i, b.node, b.depth
 
