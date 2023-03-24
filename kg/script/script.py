@@ -2397,9 +2397,12 @@ def kg_contest(format_, args):
                 info_print('Running "kg make all"...')
                 kg_make(['all'], problem_loc, format_, details)
 
-            time_limit = int(round(details.time_limit))
-            if time_limit != details.time_limit:
-                raise TypeError(f"The time limit must be an integer for {args.format}: {problem_loc} {time_limit}")
+            if args.format == 'dom':
+                time_limit = details.time_limit
+            else:
+                time_limit = int(round(details.time_limit))
+                if time_limit != details.time_limit:
+                    raise TypeError(f"The time limit must be an integer for {args.format}: {problem_loc} {time_limit}")
 
             letters.append(letter)
             problem = {
