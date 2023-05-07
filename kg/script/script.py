@@ -1700,16 +1700,18 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
     subtask_score.missing = False
 
     # convert to various formats
-    for fmt, name, copy_files in [
-            ('pg', 'Polygon', True),
-            ('hr', 'HackerRank', True),
-            ('pc2', 'PC2', False),
-            ('dom', 'DOMjudge', False),
-            ('cms', 'CMS', True),
-            ('cms-it', 'CMS Italian', False),
+    for fmt, name, copy_files, shebang_format in [
+            ('pg', 'Polygon', True, None),
+            ('hr', 'HackerRank', True, None),
+            ('pc2', 'PC2', False, None),
+            ('dom', 'DOMjudge', False, "#!/chroot/domjudge/usr/bin/{}"),
+            ('cms', 'CMS', True, None),
+            ('cms-it', 'CMS Italian', False, None),
         ]:
         if fmt not in target_formats: continue
         to_compile = files + to_compiles.get(fmt, [])
+
+        shebang_format = shebang_format or "#!/usr/bin/env {}"
 
         problem_template = os.path.join(kg_problem_template, fmt)
 
@@ -1801,7 +1803,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                 for line in lines:
                     assert not line.endswith('\n')
                     if not shebanged and not line.startswith('#!'):
-                        shebang_line = f"#!/usr/bin/env {python3}"
+                        shebang_line = shebang_format.format(python3)
                         info_print(f'adding shebang line {shebang_line!r}')
                         print(shebang_line, file=f)
                     shebanged = True
