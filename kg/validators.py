@@ -205,8 +205,8 @@ def validator(f=None, *, bounds=None, subtasks=None, extra_chars_allowed=False, 
 def detect_subtasks(validate, file, subtasks, *args, **kwargs):
     file = io.StringIO(file.read())
     for subtask in subtasks:
+        file.seek(0)
         try:
-            file.seek(0)
             validate(file, *args, subtask=subtask, force_subtask=True, **kwargs)
         except Exception:
             ... 
