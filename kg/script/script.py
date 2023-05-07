@@ -1987,9 +1987,9 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
 
         if fmt == 'cms' and problem_code:
             # copy statement file
-            info_print('creating statement file...')
             source_file = statement_file
             target_file = os.path.join(dest_folder, 'statement.pdf')
+            info_print(f'creating statement file... (from {source_file})')
             copy_file(source_file, target_file)
 
             # create config file
