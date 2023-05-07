@@ -299,7 +299,7 @@ def deprec_alias(oname, nobj, *a, **kw): return nobj
 
 ### @@ rem {
 def deprec_name_warning(old_name, new_name):
-    return f"{new_name!r} deprec; use {old_name!r} instead"
+    return f"{old_name!r} deprecated; use {new_name!r} instead"
 
 def warn_deprec_name(old_name, new_name):
     warn(deprec_name_warning(old_name, new_name))
