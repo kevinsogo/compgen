@@ -47,8 +47,9 @@ ISTREAM_MODE_DEFAULTS = {
 
 
 class IStreamState:
-    def __init__(self, file):
+    def __init__(self, file, *, exc=StreamError):
         self._file = file
+        self._exc = exc
         # this ought to be a deque, but collections.deque doesn't have random access ### @rem
         self._buf = ['']
         self._l = 0
@@ -62,7 +63,12 @@ class IStreamState:
         self._l += 1
         self._i = 0
         if self._l == len(self._buf):
-            self._buf.append(self._file.readline())
+            try:
+                line = self._file.readline()
+            except UnicodeDecodeError as ex:
+                raise self._exc("Output stream is not properly encoded") from ex
+            else:
+                self._buf.append(line)
         if self._future2 is not None and self._future1 != (self._l, self._i):
             self._future1 = None
             self._future2 = None
@@ -156,7 +162,7 @@ class InteractiveStream:
         self._closed = False
         self._pending = None
 
-        self._buf = IStreamState(self._reader) if self._reader else None
+        self._buf = IStreamState(self._reader, exc=exc) if self._reader else None
         self._read = ChainRead(self)
 
         super().__init__()
@@ -436,7 +442,7 @@ class InteractiveStream:
 
     def writable(self, *args): return self.writer.writable(*args)
     def flush(self, *args): return self.writer.flush(*args)
-    def isatty(self): return self._file.isatty() or self.writer.isatty()
+    def isatty(self): return self._reader.isatty() or self.writer.isatty()
 
     @property
     def closed(self): return self._closed
