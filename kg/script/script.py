@@ -1992,6 +1992,12 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
             info_print(f'creating statement file... (from {source_file})')
             copy_file(source_file, target_file)
 
+            # make test codes
+            def test_code_from_input(inputf):
+                base, ext = os.path.splitext(os.path.basename(inputf))
+                return base
+            test_codes = [test_code_from_input(inputf) for inputf in input_files]
+
             # create config file
             config = {
                 'name': cms_code,
@@ -2000,6 +2006,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                 # only Batch, Communication and OutputOnly.
                 # For OutputOnly, just override with cms_options.
                 'task_type': details.cms_options.get('task_type', 'Communication' if details.interactor else 'Batch'),
+                'codenames': test_codes,
                 'statement': 'statement.pdf',
             }
 
@@ -2053,9 +2060,8 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                         files_in_subtask = {sub: [] for sub in details.valid_subtasks}
                         for low, high, subs in subtasks_files:
                             for idx in range(low, high + 1):
-                                base, ext = os.path.splitext(os.path.basename(input_files[idx]))
                                 for sub in subs:
-                                    files_in_subtask[sub].append(base)
+                                    files_in_subtask[sub].append(test_codes[idx])
                         config['score_type_parameters'] = [
                             [subtask_score(sub), '|'.join(files_in_subtask[sub])]
                             for sub in details.valid_subtasks
