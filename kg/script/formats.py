@@ -292,12 +292,13 @@ class KGFormat(Format):
 
 @set_format('cms', 'CMS')
 class CMSFormat(Format):
-    def __init__(self, loc='.', *, read='', write='', clear='', subtasks=None):
+    def __init__(self, loc='.', *, read='', write='', clear='', subtasks=None, **kwargs):
         super().__init__(
                 os.path.join(loc, 'tests', '**.in'),
                 os.path.join(loc, 'tests', '**.ans'),
             read=read, write=write, clear=clear, name='cms')
         self.subtasks = subtasks
+        self.kwargs = kwargs
         testcode_re = re.compile(r'^(?P<pre>\d+)(?:_subs_(?:\d+_)+(?:end|))?\.in\Z')
         for inputf, ex in zip(natsorted(self.inputs), self.expected_parts()):
             match = testcode_re.match(os.path.basename(inputf))
@@ -317,12 +318,17 @@ class CMSFormat(Format):
             yield 'end'
 
     def expected_parts(self):
-        return self.generic_expected_parts(subtasks=self.subtasks)
+        return self.generic_expected_parts(subtasks=self.subtasks, **self.kwargs)
 
     @classmethod
-    def generic_expected_parts(cls, *, subtasks=None):
-        for c in count():
-            yield str(c).zfill(3), cls._get_subtasks(c, subtasks),
+    def generic_expected_parts(cls, *, subtasks=None, **kwargs):
+        if kwargs.get('task_type') == 'OutputOnly':
+            for c in count(1): # TODO add offset as option
+                # empty string is here because the number of 'parts' must be consistent
+                yield str(c).zfill(2), ''
+        else:
+            for c in count():
+                yield str(c).zfill(3), cls._get_subtasks(c, subtasks),
 
 
 @set_format('cms-it', 'CMS-Italian')

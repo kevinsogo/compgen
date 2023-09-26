@@ -1904,7 +1904,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                 input_files, output_files = convert_formats(
                         (format_, loc),
                         (fmt, dest_folder),
-                        dest_kwargs=dict(subtasks=subtasks_files)
+                        dest_kwargs=dict(subtasks=subtasks_files, **details.cms_options)
                     )
             else:
                 input_files, output_files = convert_formats(
@@ -1999,8 +1999,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                 'time_limit': details.time_limit,
                 # only Batch, Communication and OutputOnly.
                 # For OutputOnly, just override with cms_options.
-                # TODO support Communication
-                'task_type': 'Communication' if details.interactor else 'Batch',
+                'task_type': details.cms_options.get('task_type', 'Communication' if details.interactor else 'Batch'),
                 'statement': 'statement.pdf',
             }
 
@@ -2049,10 +2048,23 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
 
                 if scoring_overall == '!sum':
                     config['score_type'] = 'GroupMin'
-                    config['score_type_parameters'] = [
-                        [subtask_score(sub), rf".+_subs.*_{sub}_.*"]
-                        for sub in details.valid_subtasks
-                    ]
+                    # special-case OutputOnly
+                    if config['task_type'] == 'OutputOnly':
+                        files_in_subtask = {sub: [] for sub in details.valid_subtasks}
+                        for low, high, subs in subtasks_files:
+                            for idx in range(low, high + 1):
+                                base, ext = os.path.splitext(os.path.basename(input_files[idx]))
+                                for sub in subs:
+                                    files_in_subtask[sub].append(base)
+                        config['score_type_parameters'] = [
+                            [subtask_score(sub), '|'.join(files_in_subtask[sub])]
+                            for sub in details.valid_subtasks
+                        ]
+                    else:
+                        config['score_type_parameters'] = [
+                            [subtask_score(sub), rf".+_subs.*_{sub}_.*"]
+                            for sub in details.valid_subtasks
+                        ]
                     total_score = sum(score for score, *rest in config['score_type_parameters'])
                 else:
                     raise CommandError(
@@ -2085,7 +2097,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                 assert os.path.samefile(tests_folder, os.path.commonpath([tests_folder, filename]))
                 return os.path.relpath(filename, start=tests_folder)
             with zipfile.ZipFile(tests_zipname, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                for inp, outp in CMSFormat(dest_folder, read='io').thru_io():
+                for inp, outp in CMSFormat(dest_folder, read='io', **config).thru_io():
                     for fl in inp, outp:
                         zipf.write(fl, arcname=get_arcname(fl))
 
