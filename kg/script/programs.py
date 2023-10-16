@@ -46,13 +46,14 @@ def _strip_prefixes(command, *prefixes):
         else:
             yield part
 
-def _get_python3_command(*, fallback='python3', lowest_version=8, highest_version=10, verbose=True):
+def _get_python3_command(*, fallback='python3', lowest_version=8, highest_version=12, verbose=True):
     """Get the first python3 command that has KompGen installed.
 
     We prioritize the commends in the following order:
 
-        - pypy3.*, python3.* (higher versions first)
+        - pypy3.* (higher versions first)
         - pypy3
+        - python3.* (higher versions first)
         - python3
         - py3
         - python
@@ -63,13 +64,14 @@ def _get_python3_command(*, fallback='python3', lowest_version=8, highest_versio
     'import kg' may not be enough because after uninstalling, the import may still succeed,
     though 'kg' will just be an empty module.
     """
-    if verbose: info_print("getting python3 command...", end='', file=stderr, flush=True)
+    if verbose: info_print("getting Python 3 command...", end='', file=stderr, flush=True)
     previous = set()
     def commands():
         for v in range(highest_version, lowest_version-1, -1):
-            for py in 'pypy3', 'python3':
-                yield f'{py}.{v}'
+            yield f'pypy3.{v}'
         yield 'pypy3'
+        for v in range(highest_version, lowest_version-1, -1):
+            yield f'python3.{v}'
         yield 'python3'
         yield 'py3'
         yield 'python'
