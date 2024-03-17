@@ -184,7 +184,7 @@ def topologically_sort(nodes, edges):
     deg = {node: 0 for node in nodes}
     for i in nodes:
         for j in adj[i]: deg[j] += 1
-    goods = deque(i for i in nodes if deg[i] == 0)
+    goods = collections.deque(i for i in nodes if deg[i] == 0)
     while goods:
         i = goods.popleft()
         yield i
