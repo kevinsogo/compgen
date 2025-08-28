@@ -21,9 +21,17 @@ start=0
 ! cat sample.in > $
 
 # otherwise, the program is searched through "generators" in details.json
+{% if multi_file %}
+gen_random $$ 2 10 10 > $$
+gen_random $$ 2 10 100 > $$
+gen_random $$ 2 10 1000 > $$
+gen_random $$ 2 10 10000 > $$
+# gen_random $$ 2 10 100000 > $$
+{% else %}
 gen_random 10 10 > $
 gen_random 10 100 > $
 gen_random 10 1000 > $
 gen_random 10 10000 > $
 # gen_random 10 100000 > $
+{% endif %}
 {% endif %}
