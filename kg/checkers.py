@@ -419,11 +419,12 @@ def _check_dom(check, *, title='', log_file=sys.stdout, help=None, exit_after=Tr
 
 ### @@ }
 
-### @@if format in ('local', 'kg', 'pg', 'pc2') {
+### @@if format in ('local', 'kg', 'pg', 'pc2', 'checker_only') {
 @_reg_plat_checker('local')
 @_reg_plat_checker('kg')
 @_reg_plat_checker('pg')
 @_reg_plat_checker('pc2')
+@_reg_plat_checker('checker_only')
 def _check_local(check, *, title='', log_file=sys.stdout, help=None, force_verbose=False, exit_after=True):
     desc = help or CURR_PLATFORM + (' checker for the problem' + (f' "{title}"' if title else ''))
     parser = argparse.ArgumentParser(description=desc)
