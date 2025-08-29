@@ -106,7 +106,7 @@ This just takes a test case (in a Python representation of your choosing) and pr
 from kg.formatters import * ### @import
 
 @formatter
-def format_case(stream, cases, *, print, **kwargs):
+def format_case(stream: InteractiveStream, cases, *, print, **kwargs):
     print(len(cases))
     for arr in cases:
         print(len(arr))
@@ -133,7 +133,7 @@ bounds = {
 }
 
 @validator(bounds=bounds)
-def validate(stream, *, lim):
+def validate(stream: StrictInputStream, *, lim):
 
     [t] = stream.read.int(lim.t).eoln
     totaln = 0
@@ -170,7 +170,7 @@ subtasks = {
 }
 
 @validator(bounds=bounds, subtasks=subtasks)
-def validate(stream, subtask=None, *, lim):
+def validate(stream: StrictInputStream, subtask=None, *, lim):
     [t] = stream.read.int(lim.t).eoln
     totaln = 0
     for cas in range(t):
@@ -255,7 +255,7 @@ from formatter import * ### @import
 
 A = 10**9
 
-def random_cases(rand, *args):
+def random_cases(rand: KGRandom, *args):
     ''' generates test data for a file '''
     T, N = map(int, args[:2])
     cases = []
@@ -270,7 +270,7 @@ if __name__ == '__main__':
 
 **Notes:**
 
-- Don't import `random`. Use the provided random number generator. (It is an instance of `random.Random`.)
+- Don't import `random`. Use the provided random number generator. (It is an subclass of `random.Random`.)
 
 - You can replace `stdout` with a file-like object.
 
