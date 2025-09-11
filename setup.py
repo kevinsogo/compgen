@@ -53,5 +53,6 @@ setup(name='KompGen',
           'argcomplete',
           'pytz',
           'PyYAML',
+          'requests',
       ],
 )

@@ -47,6 +47,8 @@ class Format:
         self.inputs = set(glob(inputg) if inputg is not None else [])
         self.outputs = set(glob(outputg) if outputg is not None else [])
 
+        self.samples = set(glob(os.path.join('.', 'sample*.in')))
+
         self.i_to_o = {}
         self.o_to_i = {}
 
@@ -201,6 +203,9 @@ class Format:
 
     def thru_io(self):
         return natsorted(self.i_to_o.items())
+    
+    def thru_samples(self):
+        return natsorted(self.samples)
 
     def thru_expected_io(self):
         for parts in self.expected_parts():
@@ -292,13 +297,12 @@ class KGFormat(Format):
 
 @set_format('cms', 'CMS')
 class CMSFormat(Format):
-    def __init__(self, loc='.', *, read='', write='', clear='', subtasks=None, **kwargs):
+    def __init__(self, loc='.', *, read='', write='', clear='', subtasks=None):
         super().__init__(
                 os.path.join(loc, 'tests', '**.in'),
                 os.path.join(loc, 'tests', '**.ans'),
             read=read, write=write, clear=clear, name='cms')
         self.subtasks = subtasks
-        self.kwargs = kwargs
         testcode_re = re.compile(r'^(?P<pre>\d+)(?:_subs_(?:\d+_)+(?:end|))?\.in\Z')
         for inputf, ex in zip(natsorted(self.inputs), self.expected_parts()):
             match = testcode_re.match(os.path.basename(inputf))
@@ -318,17 +322,12 @@ class CMSFormat(Format):
             yield 'end'
 
     def expected_parts(self):
-        return self.generic_expected_parts(subtasks=self.subtasks, **self.kwargs)
+        return self.generic_expected_parts(subtasks=self.subtasks)
 
     @classmethod
-    def generic_expected_parts(cls, *, subtasks=None, **kwargs):
-        if kwargs.get('task_type') == 'OutputOnly':
-            for c in count(1): # TODO add offset as option
-                # empty string is here because the number of 'parts' must be consistent
-                yield str(c).zfill(2), ''
-        else:
-            for c in count():
-                yield str(c).zfill(3), cls._get_subtasks(c, subtasks),
+    def generic_expected_parts(cls, *, subtasks=None):
+        for c in count():
+            yield str(c).zfill(3), cls._get_subtasks(c, subtasks),
 
 
 @set_format('cms-it', 'CMS-Italian')
@@ -347,6 +346,23 @@ class CMSItFormat(Format):
     def generic_expected_parts(cls):
         for c in count():
             yield str(c),
+
+@set_format('hu', 'hurado')
+class HuFormat(Format):
+    def __init__(self, loc='.', *, read='', write='', clear='', tests_folder='tests'):
+        super().__init__(
+                os.path.join(loc, tests_folder, '*.in'),
+                os.path.join(loc, tests_folder, '*.ans'),
+            read=read, write=write, clear=clear, name='hu')
+        for inputf, ex in zip(natsorted(self.inputs), self.expected_parts()):
+            expinpf = self._join_iparts(*ex)
+            if inputf != expinpf:
+                raise FormatError(f"Expected {expinpf} but got {inputf}")
+
+    @classmethod
+    def generic_expected_parts(cls):
+        for c in count():
+            yield str(c).zfill(3),
 
 
 def get_format(args, *, read='', write='', clear='', **kwargs):

@@ -1,19 +1,24 @@
 from collections import defaultdict, OrderedDict, Counter
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import ExitStack
 from datetime import datetime
 from functools import wraps
 from html.parser import HTMLParser
+from natsort import natsorted
 from operator import attrgetter
 from random import randrange, shuffle
-from shutil import rmtree, make_archive
+from shutil import rmtree, make_archive, copy2
 from string import ascii_letters, ascii_uppercase, digits
 from subprocess import PIPE, CalledProcessError, SubprocessError, TimeoutExpired
 from sys import stdin, stdout, stderr
 from textwrap import dedent
 import argparse
 import contextlib
+import hashlib
+import os
 import os.path
 import re
+import requests
 import tempfile
 import yaml
 import zipfile
@@ -608,6 +613,7 @@ def generate_outputs(format_, data_maker, *, model_solution=None, judge=None, in
                         yield tmp.name
             with model_output() as model_out:
                 try:
+                    print(input_, model_out, output_)
                     judge.do_run(*map(os.path.abspath, (input_, model_out, output_)), check=True, label='CHECKER')
                 except CalledProcessError as cpe:
                     pref(err_print, f"The judge did not accept {output_}", file=stderr)
@@ -1289,6 +1295,7 @@ q_p = subparsers.add_parser('joke',
 
                 '''))
                 + cformat_text('[^[Any]^] [*[help]*] [#[would]#] [.[be].] [%[very]%] [@[much]@] [+[appreciated]+]...'))
+
 qs = [
     '10kg > 1kg > 100g > 10g > log > log log > sqrt log log > 1',
     '5kg < 5kig',
@@ -1301,8 +1308,329 @@ def kg_q(format_, args):
     key_print(random.choice(qs))
 
 
+salvage_p = subparsers.add_parser('salvage',
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    help='Salvage Hackerrank I/O into kg format (without a model solution)',
+    description='Converts I/O downloaded from Hackerrank into something we can test locally w/ Kompgen'
+)
+@set_handler(salvage_p)
+def kg_salvage(format_, args):
+    if not os.path.isdir('./input') or not os.path.isdir('./output'):
+        key_print('Input or Output folders from HR not found')
+        return
 
+    INPUT_FOLDER = './input'
+    OUTPUT_FOLDER = './output'
+    TESTS_FOLDER = './tests'
+    os.makedirs(TESTS_FOLDER, exist_ok=True)
+    for input_file in natsorted(os.listdir(INPUT_FOLDER)):
+        if not os.path.isfile(os.path.join(INPUT_FOLDER, input_file)) or not input_file.startswith('input'):
+            continue
+        z = input_file.removeprefix('input').removesuffix('.txt')
+        output_file = f'output{z}.txt'
+        if not os.path.isfile(os.path.join(OUTPUT_FOLDER, output_file)):
+            continue
 
+        copy2(os.path.join(INPUT_FOLDER, input_file), os.path.join(TESTS_FOLDER, f'{(z).zfill(3)}.in'))
+        copy2(os.path.join(OUTPUT_FOLDER, output_file), os.path.join(TESTS_FOLDER, f'{(z).zfill(3)}.ans'))
+
+    key_print("Salvage successful!")
+
+##########################################
+
+# https://stackoverflow.com/a/44873382
+def sha256sum(filename):
+    h  = hashlib.sha256()
+    b  = bytearray(128*1024)
+    mv = memoryview(b)
+    with open(filename, 'rb') as f:
+        while n := f.readinto(mv):
+            h.update(mv[:n])
+    return h.hexdigest()
+    
+def sluggify(s: str):
+    s = '-'.join(s.split())
+    return ''.join(c for c in s if c in set(ascii_letters + '-')).lower()
+
+hurado_p = subparsers.add_parser('hurado',
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+               help='Upload a file to Hurado',
+        description=rand_cformat_text(dedent('''\
+                Upload this problem's data to Hurado!
+                ''')))
+hurado_p.add_argument('-d', '--details', help=argparse.SUPPRESS)
+hurado_p.add_argument('-l', '--loc', default='.', help='location to run commands on')
+hurado_p.add_argument('-w', '--workers', default=10, help='max no. of workers')
+hurado_p.add_argument('-s', '--slug', default=None, help='The problem slug')
+hurado_p.add_argument('--id', default=None, help='ID of problem (defaults to using folder name as slug)')
+hurado_p.add_argument('--oo', action='store_true', help='Check this to flag a problem as Output-Only')
+hurado_p.add_argument('--pb', action='store_true', help='Only makes the set public if this is invoked')
+hurado_p.add_argument('--local', action='store_true', help='Upload to localhost only')
+
+@set_handler(hurado_p)
+def kg_hurado(format_, args):
+    hurado_prefix = 'http://localhost:10000' if args.local else 'https://practice.noi.ph/'
+    KOMPGEN_TOKEN = os.getenv("KOMPGEN_KEY_LOCAL") if args.local else os.getenv("KOMPGEN_KEY")
+    HURADO_HEADERS = {
+        'X-XSRF-PROTECTION': '1',
+        'Kompgen-Token': KOMPGEN_TOKEN,
+    }
+    def post_file(file_path, endpoint_url):
+        with open(file_path, 'rb') as file:
+            response = requests.post(
+                endpoint_url,
+                headers=HURADO_HEADERS,
+                files={'file': file},
+            )
+            return {
+                "file": file_path,
+                "status_code": response.status_code, 
+                "response_text": response.text,
+            }
+
+    details = Details.from_format_loc(format_, args.details, relpath=args.loc)
+    input_output_format_ = HuFormat(read='io')
+
+    task_type = 'batch' # ang baboy, do something better
+    if args.oo:
+        task_type = 'output'
+
+    sample_IO = []
+    if task_type in ['batch']:
+        # generate the samples
+        class SampleFormat:
+            def thru_io(self):
+                # sample.in goes before everything else
+                def custom_key(io):
+                    i, o = io
+                    has_number = bool(re.search(r'\d', i))
+                    return (has_number, (i, o))
+
+                return natsorted({
+                    inputf: f'{inputf[:-3]}.ans'
+                    for inputf in glob('sample*.in')
+                }.items(), key=custom_key)
+        sample_format = SampleFormat()
+        interacts = details.judge_data_maker.attributes.get('interacts') or details.interactor and details.model_solution == details.judge_data_maker
+        generate_outputs(
+            sample_format,
+            details.judge_data_maker,
+            model_solution=details.model_solution,
+            interacts=interacts,
+            node_count=details.node_count,
+            interactor=details.interactor,
+            max_workers=args.workers,
+        )
+        for inputf, outputf in sample_format.thru_io():
+            with open(inputf, 'r') as input_, open(outputf, 'r') as output_:
+                sample_IO.append({
+                    'input': input_.read(),
+                    'output': output_.read(),
+                    'explanation': '',
+                })
+
+    test_case_count = len(input_output_format_.thru_inputs())
+    filepath_to_hash = {
+        file_path_: sha256sum(file_path_)
+        for file_path_ in chain(input_output_format_.thru_inputs(), input_output_format_.thru_outputs())
+    }
+    hash_to_filepath = {
+        hash_: file_path_
+        for file_path_, hash_ in filepath_to_hash.items()
+    }
+
+    r_existing_hashes = requests.post(
+        f'{hurado_prefix}/api/v1/tasks/files/hashes',
+        headers=HURADO_HEADERS,
+        json=list(hash_to_filepath.keys()),
+    )
+    if r_existing_hashes.status_code != 200:
+        key_print('Was unable to verify which hashes have already been uploaded')
+        return
+    existing_hashes = set(r_existing_hashes.json()['saved'])
+
+    results = []
+    with ThreadPoolExecutor(max_workers=args.workers) as executor:
+        # Submit tasks to the thread pool
+        futures = {
+            executor.submit(post_file, file_path, f'{hurado_prefix}/api/v1/tasks/files'): file_path
+            for hash_, file_path in hash_to_filepath.items()
+            if hash_ not in existing_hashes
+        }
+        for future in as_completed(futures):
+            result = future.result()
+            results.append(result)
+    if any(
+        result['status_code'] != 200
+        for result in results
+    ):
+        key_print('Error in uploading at least one file')
+        key_print('Try running the upload again (already-uploaded files will not be duplicated)')
+        print(results)
+        return
+
+    if details.valid_subtasks:
+        subtask_points = {
+            k: subtask.score
+            for k, subtask in details.valid_subtasks.items()
+        }
+        subtasks_files = details.load_subtasks_files()
+    else:
+        subtask_points = {
+            1: 100,
+        }
+        subtasks_files = [
+            [0, test_case_count-1, [1]]
+        ]
+    test_cases_of_subtask = defaultdict(list)
+    for L, R, subtasks_ in subtasks_files:
+        for k in range(L, R+1):
+            for subtask_ in subtasks_:
+                test_cases_of_subtask[subtask_].append(k)
+
+    def num_to_kg_format(i, suffix):
+        return f'{str(i).zfill(3)}.{suffix}'
+
+    def num_to_kg_filepath(i, suffix):
+        return f'./tests/{num_to_kg_format(i, suffix)}'
+
+    sample_hashes = set(
+        sha256sum(filepath_)
+        for filepath_ in input_output_format_.thru_samples()
+    )
+
+    slug = args.slug or sluggify(os.path.basename(os.getcwd()))
+    title = details.details['title']
+    common = {
+        'id': 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',  # ...dummy bc im lazy to make a separate Create Schema without the id field
+        'slug': slug,
+        'title': title,
+        'is_public': args.pb,
+        'score_max': sum(subtask_points.values()),
+        'sample_IO': sample_IO,
+    }
+    if task_type == 'batch':
+        subtasks = [
+            {
+                'name': f'Subtask #{k}',
+                'score_max': subtask_points[k],
+                'reducer_kind': 'min',
+                'data': [
+                    {
+                        'name': f'Test Case #{test_case}',
+                        'is_sample': filepath_to_hash[num_to_kg_filepath(test_case, 'in')] in sample_hashes,
+                        'input_file_name': num_to_kg_format(test_case, 'in'),
+                        'input_file_hash': filepath_to_hash[num_to_kg_filepath(test_case, 'in')],
+                        'judge_file_name': num_to_kg_format(test_case, 'ans'),
+                        'judge_file_hash': filepath_to_hash[num_to_kg_filepath(test_case, 'ans')],
+                    }
+                    for test_case in test_cases
+                ]
+            }
+            for k, test_cases in sorted(test_cases_of_subtask.items())
+        ]
+        json = common | {
+            'type': task_type,
+            'time_limit_ms': int(details.details['time_limit']*1000),
+            'memory_limit_byte': 256_000_000,
+            'compile_time_limit_ms': None,
+            'compile_memory_limit_byte': None,
+            'submission_size_limit_byte': None,
+            'checker_kind': 'ld',  # custom checkers have to be set manually
+            'subtasks': subtasks,
+        }
+    elif task_type == 'output':
+        subtasks = [
+            {
+                'name': f'Subtask #{k}',
+                'score_max': subtask_points[k],
+                'data': [
+                    {
+                        'name': f'Test Case #{test_case}',
+                        'judge_file_name': num_to_kg_format(test_case, 'ans'),
+                        'judge_file_hash': filepath_to_hash[num_to_kg_filepath(test_case, 'ans')],
+                    }
+                    for test_case in test_cases
+                ]
+            }
+            for k, test_cases in sorted(test_cases_of_subtask.items())
+        ]
+        json = common | {
+            'type': task_type,
+            'flavor': 'text',   # TODO: add flag to allow it to be file
+            'time_limit_ms': None,
+            'memory_limit_byte': None,
+            'compile_time_limit_ms': None,
+            'compile_memory_limit_byte': None,
+            'submission_size_limit_byte': None,
+            'checker_kind': 'ld',  # custom checkers have to be set manually
+            'subtasks': subtasks,
+        }
+
+    else:
+        key_print('Unsupported file type')
+        return
+
+    problem_id = args.id or slug
+    existence_check = requests.get(
+        f'{hurado_prefix}/api/v1/tasks/{problem_id}',
+        headers=HURADO_HEADERS,
+        data={
+            'id': problem_id,
+        },
+    )
+    if existence_check.status_code == 404:  # Create
+        key_print(f'Creating new problem "{title}" with slug {slug}')
+        json |= {
+            'description': '',
+            'statement': '',
+            'credits': [],
+            'attachments': [],
+            'scripts': [],
+        }
+        if task_type == 'batch':
+            json |= {
+                'compile_time_limit_ms': None,
+                'compile_memory_limit_byte': None,
+            }
+        elif task_type == 'output':
+            json |= {
+                'submission_size_limit_byte': None,
+            }
+
+        create = requests.post(
+            f'{hurado_prefix}/api/v1/tasks',
+            headers=HURADO_HEADERS, 
+            json=json,
+        )
+        if create.status_code == 200:
+            key_print('Problem data successfully uploaded to Hurado')
+            key_print('The following are (as of now) not yet automatically configured:')
+            key_print('        statement, description, custom checkers (if any), credits, attachments')
+        else:
+            key_print('Error in creating Hurado problem')
+            key_print(create.status_code)
+            key_print(create.text)
+    
+    elif existence_check.status_code == 200:
+        data = existence_check.json()
+        found_id = data['id']
+        update = requests.put(
+            f'{hurado_prefix}/api/v1/tasks/{found_id}/kg',
+            headers=HURADO_HEADERS, 
+            json=json,
+        )
+        if update.status_code == 200:
+            key_print('Problem data successfully updated on Hurado')
+        else:
+            key_print('Error in updating Hurado problem')
+            key_print(update.status_code)
+            key_print(update.text)
+
+    else:
+        key_print('Could not upload problem data; unexpected status code')
+        key_print(existence_check.status_code)
+        key_print(existence_check.text)
 
 ##########################################
 # make a new problem
@@ -1700,18 +2028,16 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
     subtask_score.missing = False
 
     # convert to various formats
-    for fmt, name, copy_files, shebang_format in [
-            ('pg', 'Polygon', True, None),
-            ('hr', 'HackerRank', True, None),
-            ('pc2', 'PC2', False, None),
-            ('dom', 'DOMjudge', False, "#!/chroot/domjudge/usr/bin/{}"),
-            ('cms', 'CMS', True, None),
-            ('cms-it', 'CMS Italian', False, None),
+    for fmt, name, copy_files in [
+            ('pg', 'Polygon', True),
+            ('hr', 'HackerRank', True),
+            ('pc2', 'PC2', False),
+            ('dom', 'DOMjudge', False),
+            ('cms', 'CMS', True),
+            ('cms-it', 'CMS Italian', False),
         ]:
         if fmt not in target_formats: continue
         to_compile = files + to_compiles.get(fmt, [])
-
-        shebang_format = shebang_format or "#!/usr/bin/env {}"
 
         problem_template = os.path.join(kg_problem_template, fmt)
 
@@ -1803,7 +2129,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                 for line in lines:
                     assert not line.endswith('\n')
                     if not shebanged and not line.startswith('#!'):
-                        shebang_line = shebang_format.format(python3)
+                        shebang_line = f"#!/usr/bin/env {python3}"
                         info_print(f'adding shebang line {shebang_line!r}')
                         print(shebang_line, file=f)
                     shebanged = True
@@ -1904,13 +2230,14 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                 input_files, output_files = convert_formats(
                         (format_, loc),
                         (fmt, dest_folder),
-                        dest_kwargs=dict(subtasks=subtasks_files, **details.cms_options)
+                        dest_kwargs=dict(subtasks=subtasks_files)
                     )
             else:
-                input_files, output_files = convert_formats(
-                        (format_, loc),
-                        (fmt, dest_folder),
-                    )
+                ...
+                # input_files, output_files = convert_formats(
+                #         (format_, loc),
+                #         (fmt, dest_folder),
+                #     )
 
 
         if fmt == 'dom' and problem_code:
@@ -1987,16 +2314,10 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
 
         if fmt == 'cms' and problem_code:
             # copy statement file
+            info_print('creating statement file...')
             source_file = statement_file
             target_file = os.path.join(dest_folder, 'statement.pdf')
-            info_print(f'creating statement file... (from {source_file})')
             copy_file(source_file, target_file)
-
-            # make test codes
-            def test_code_from_input(inputf):
-                base, ext = os.path.splitext(os.path.basename(inputf))
-                return base
-            test_codes = [test_code_from_input(inputf) for inputf in input_files]
 
             # create config file
             config = {
@@ -2005,8 +2326,8 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                 'time_limit': details.time_limit,
                 # only Batch, Communication and OutputOnly.
                 # For OutputOnly, just override with cms_options.
-                'task_type': details.cms_options.get('task_type', 'Communication' if details.interactor else 'Batch'),
-                'codenames': test_codes,
+                # TODO support Communication
+                'task_type': 'Communication' if details.interactor else 'Batch',
                 'statement': 'statement.pdf',
             }
 
@@ -2055,22 +2376,10 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
 
                 if scoring_overall == '!sum':
                     config['score_type'] = 'GroupMin'
-                    # special-case OutputOnly
-                    if config['task_type'] == 'OutputOnly':
-                        files_in_subtask = {sub: [] for sub in details.valid_subtasks}
-                        for low, high, subs in subtasks_files:
-                            for idx in range(low, high + 1):
-                                for sub in subs:
-                                    files_in_subtask[sub].append(test_codes[idx])
-                        config['score_type_parameters'] = [
-                            [subtask_score(sub), '|'.join(files_in_subtask[sub])]
-                            for sub in details.valid_subtasks
-                        ]
-                    else:
-                        config['score_type_parameters'] = [
-                            [subtask_score(sub), rf".+_subs.*_{sub}_.*"]
-                            for sub in details.valid_subtasks
-                        ]
+                    config['score_type_parameters'] = [
+                        [subtask_score(sub), rf".+_subs.*_{sub}_.*"]
+                        for sub in details.valid_subtasks
+                    ]
                     total_score = sum(score for score, *rest in config['score_type_parameters'])
                 else:
                     raise CommandError(
@@ -2103,7 +2412,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                 assert os.path.samefile(tests_folder, os.path.commonpath([tests_folder, filename]))
                 return os.path.relpath(filename, start=tests_folder)
             with zipfile.ZipFile(tests_zipname, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                for inp, outp in CMSFormat(dest_folder, read='io', **config).thru_io():
+                for inp, outp in CMSFormat(dest_folder, read='io').thru_io():
                     for fl in inp, outp:
                         zipf.write(fl, arcname=get_arcname(fl))
 
@@ -2117,15 +2426,16 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                     zipf.write(fl, arcname=os.path.basename(fl))
 
         if fmt == 'pg' and problem_code:
-            zipname = os.path.join(dest_folder, 'upload_this_to_polygon_but_rarely.zip')
-            info_print('making zip for Polygon...', zipname)
-            tests_folder = os.path.join(dest_folder, 'tests')
-            def get_arcname(filename):
-                assert os.path.samefile(tests_folder, os.path.commonpath([tests_folder, filename]))
-                return os.path.relpath(filename, start=tests_folder)
-            with zipfile.ZipFile(zipname, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                for inp in PGFormat(dest_folder, read='i').thru_inputs():
-                    zipf.write(inp, arcname=get_arcname(inp))
+            ...
+            # zipname = os.path.join(dest_folder, 'upload_this_to_polygon_but_rarely.zip')
+            # info_print('making zip for Polygon...', zipname)
+            # tests_folder = os.path.join(dest_folder, 'tests')
+            # def get_arcname(filename):
+            #     assert os.path.samefile(tests_folder, os.path.commonpath([tests_folder, filename]))
+            #     return os.path.relpath(filename, start=tests_folder)
+            # with zipfile.ZipFile(zipname, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            #     for inp in PGFormat(dest_folder, read='i').thru_inputs():
+            #         zipf.write(inp, arcname=get_arcname(inp))
 
         if fmt == 'hr' and problem_code:
             zipname = os.path.join(dest_folder, 'upload_this_to_hackerrank.zip')
@@ -2417,12 +2727,9 @@ def kg_contest(format_, args):
                 info_print('Running "kg make all"...')
                 kg_make(['all'], problem_loc, format_, details)
 
-            if args.format == 'dom':
-                time_limit = details.time_limit
-            else:
-                time_limit = int(round(details.time_limit))
-                if time_limit != details.time_limit:
-                    raise TypeError(f"The time limit must be an integer for {args.format}: {problem_loc} {time_limit}")
+            time_limit = int(round(details.time_limit))
+            if time_limit != details.time_limit:
+                raise TypeError(f"The time limit must be an integer for {args.format}: {problem_loc} {time_limit}")
 
             letters.append(letter)
             problem = {
