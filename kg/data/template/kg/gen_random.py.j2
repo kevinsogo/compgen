@@ -5,13 +5,13 @@ from kg.generators import * ### @import
 from formatter import * ### @import
 
 {% if minimal %}
-def gen_random(rand: KGRandom, *args):
+def gen_random(rand: KGRandom, *args: str):
     ... # write your generator here
 {% else %}
 A = 10**9
 
 @listify
-def gen_random(rand: KGRandom, *args):
+def gen_random(rand: KGRandom, *args: str):
     ... # write your generator here
 
 {% if multi_file %}
