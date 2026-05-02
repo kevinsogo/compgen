@@ -1357,6 +1357,7 @@ init_p.add_argument('-m', '--minimal', action='store_true', help="Only put the e
 init_p.add_argument('-c', '--checker', action='store_true', help="Include a checker.")
 init_p.add_argument('-i', '--interactor', action='store_true', help="Include an interactor.")
 init_p.add_argument('-tl', '--time-limit', type=int, default=2, help='Time limit.')
+init_p.add_argument('-mf', '--multi-file', action='store_true', help='Use a multi-file generator. (Default is a single-file generator.)')
 
 # We disallow single-character names because some contest systems do so.
 # But maybe we should allow it? I'm open for discussion. -Kevin
@@ -1398,6 +1399,7 @@ def kg_init(format_, args):
         # TODO find a way to indent only up to a certain level
         'subtask_list_json': "[" + ','.join('\n    ' + json.dumps(sub) for sub in subtask_list) + "\n]",
         'time_limit': args.time_limit,
+        'multi_file': args.multi_file,
         "version": VERSION,
     }
 

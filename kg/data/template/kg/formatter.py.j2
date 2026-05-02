@@ -3,7 +3,11 @@
 from kg.formatters import * ### @import
 
 @formatter
-def format_case(stream, cases, *, print, **kwargs):
+{% if multi_file %}
+def format_case(stream: InteractiveStream, cases, *, print):
+{% else %}
+def format_case(stream: InteractiveStream, cases, *, print, **kwargs):
+{% endif %}
     ... # write your formatter here
     {% if not minimal %}
 

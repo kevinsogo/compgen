@@ -239,7 +239,7 @@ subtasks = {
 }
 
 @validator(bounds=bounds, subtasks=subtasks)
-def validate(stream, subtask=None, *, lim):
+def validate(stream: StrictInputStream, subtask=None, *, lim):
     ... # write your validator here
 
     # example:
@@ -297,7 +297,7 @@ For this problem, our `validate` function will look like
 
 ```python
 @validator(bounds=bounds, subtasks=subtasks)
-def validate(stream, subtask=None, *, lim):
+def validate(stream: StrictInputStream, subtask=None, *, lim):
 
     [t] = stream.read.int(lim.t).eoln
     for cas in range(t):
@@ -314,7 +314,7 @@ Note how the limits on `t` and `n` are magically checked when we do `int(lim.t)`
 
 ```python
 @validator(bounds=bounds, subtasks=subtasks)
-def validate(stream, subtask=None, *, lim):
+def validate(stream: StrictInputStream, subtask=None, *, lim):
 
     [t] = stream.read.int(lim.t).eoln
     for cas in range(t):
@@ -343,7 +343,7 @@ subtasks = {
 }
 
 @validator(bounds=bounds, subtasks=subtasks)
-def validate(stream, subtask=None, *, lim):
+def validate(stream: StrictInputStream, subtask=None, *, lim):
 
     [t] = stream.read.int(lim.t).eoln
     for cas in range(t):
@@ -368,7 +368,7 @@ from sys import *
 from kg.generators import * ### @import
 from formatter import * ### @import
 
-def gen_random(rand, *args):
+def gen_random(rand: KGRandom, *args):
     T, N = map(int, args[:2])
     res = []
     for cas in range(T):
@@ -387,7 +387,7 @@ Note that `gen_random` doesn't actually write to the file, it just outputs the i
 from kg.formatters import * ### @import
 
 @formatter
-def format_case(stream, cases, *, print):
+def format_case(stream: InteractiveStream, cases, *, print):
     print(len(cases))
     for n in cases:
         print(n)
@@ -448,7 +448,7 @@ Let's go back to the problem Mystery Function. For the sake of demonstration, we
 Let's decide that our generators will return a list of integers, one integer for each test case. Now that we've decided what our generators will return, we can write the formatter, which is the first thing we write when making test cases. Open `formatter.py` and change it to this:
 
 ```python
-def format_case(stream, cases, *, print):
+def format_case(stream: InteractiveStream, cases, *, print):
     print(len(cases))
     for n in cases:
         print(n)
@@ -465,7 +465,7 @@ from sys import *
 from kg.generators import * ### @import
 from formatter import * ### @import
 
-def gen_subtask1(rand, *args):
+def gen_subtask1(rand: KGRandom, *args):
     T = int(args[0])
     res = []
     for cas in range(T):
@@ -569,7 +569,7 @@ from sys import *
 from kg.generators import * ### @import
 from formatter import * ### @import
 
-def gen_random(rand, *args):
+def gen_random(rand: KGRandom, *args):
     T, N = map(int, args[:2])
     res = rand.shuffled(range(-N+1, N))
     while len(res) < T:
@@ -808,7 +808,7 @@ subtasks = {
 }
 
 @validator(bounds=bounds, subtasks=subtasks)
-def validate(stream, subtask=None, *, lim):
+def validate(stream: StrictInputStream, subtask=None, *, lim):
 
     [t] = stream.read.int(lim.t).eoln
     for cas in range(t):
@@ -875,7 +875,7 @@ subtasks = {
 }
 
 @validator(bounds=bounds, subtasks=subtasks)
-def validate(stream, subtask=None, *, lim):
+def validate(stream: StrictInputStream, subtask=None, *, lim):
 
     [t] = stream.read.int(lim.t).eoln
     for cas in range(t):
@@ -896,7 +896,7 @@ It's a good idea to get the sample input and formatter out of the way before doi
 Now let's write the formatter. Recall that this is the file that will take the output of the generator and print it to the file. Let's decide that the generator will output a list of pairs `[F, m]`. The formatter here is pretty simple:
 
 ```python
-def format_case(stream, cases, *, print):
+def format_case(stream: InteractiveStream, cases, *, print):
     print(len(cases))
     for F, m in cases:
         print(F, m)
@@ -926,7 +926,7 @@ from sys import *
 from kg.generators import * ### @import
 from formatter import * ### @import
 
-def gen_random(rand, *args):
+def gen_random(rand: KGRandom, *args):
     T, N, ans_is_int = map(int, args[:3])
     cases = []
     for cas in range(T):
@@ -951,7 +951,7 @@ from sys import *
 from kg.generators import * ### @import
 from formatter import * ### @import
 
-def gen_all(rand, *args):
+def gen_all(rand: KGRandom, *args):
     T, N, ans_is_int = map(int, args[:3])
     cases = []
     for F in range(1, N+1):
@@ -982,7 +982,7 @@ from formatter import * ### @import
 
 from itertools import product
 
-def gen_limits(rand, *args):
+def gen_limits(rand: KGRandom, *args):
     N, ans_is_int = map(int, args[:2])
     cases = []
     for F, m in product([1, 2, int(N**.5), N//2, N-1, N], repeat=2):
@@ -1190,7 +1190,7 @@ valid_chars = string.ascii_letters + string.digits + ' '
 # the same as "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 "
 
 @validator(bounds=bounds, subtasks=subtasks)
-def validate(stream, subtask=None, *, lim):
+def validate(stream: StrictInputStream, subtask=None, *, lim):
 
     [t] = stream.read.int(lim.t).eoln
     for cas in range(t):
@@ -1244,7 +1244,7 @@ But if you want to use the more advanced features of KompGen that aren't discuss
 Again, it's always a good idea to get the sample test case and the formatter out of the way first. Edit `sample.in` with the sample test case. Write the formatter for this one, which is pretty simple:
 
 ```python
-def format_case(stream, cases, *, print):
+def format_case(stream: InteractiveStream, cases, *, print):
     print(len(cases))
     for sentence in cases:
         print(sentence)
@@ -1269,7 +1269,7 @@ Generating random words can be done with a function. We just have to remember to
 ```python
 import string
 
-def random_word(rand, length):
+def random_word(rand: KGRandom, length):
     letters = [rand.choice(string.ascii_letters)]
     for i in range(length - 1):
         letters.append(rand.choice(string.ascii_letters + string.digits))
@@ -1320,7 +1320,7 @@ Suppose I want to figure out what `skew` does exactly. So I pull out a terminal,
 To get a better idea of what the skew "feels like", you probably want to run each of the above multiple times. For a length of `80`, I'm picking as reasonable choices of skew `3`, `4`, `5`, `10`, and `25`. So my `random_sentence` function looks like this:
 
 ```python
-def random_sentence(rand, n):
+def random_sentence(rand: KGRandom, n):
     sentence = [str(n)]
     length = rand.choice([80]*10 + [79]*5 + [rand.randint(len(str(n)), 78)]*5)
     bias = rand.choice([3, 4, 5]*5 + [10]*3 + [25]*2)
@@ -1344,13 +1344,13 @@ import string
 from kg.generators import * ### @import
 from formatter import * ### @import
 
-def random_word(rand, length):
+def random_word(rand: KGRandom, length):
     letters = [rand.choice(string.ascii_letters)]
     for i in range(length - 1):
         letters.append(rand.choice(string.ascii_letters*2 + string.digits*3))
     return ''.join(rand.shuffled(letters))
 
-def trick_word(rand, length):
+def trick_word(rand: KGRandom, length):
     prefix = rand.choice(["0"]*5 + ["00"]*4 + ["0x"])
     if length <= len(prefix):
         return normal_word(rand, length)
@@ -1360,7 +1360,7 @@ def trick_word(rand, length):
         letters.append(rand.choice(string.digits))
     return ''.join(rand.shuffled(letters))
 
-def random_sentence(rand, n):
+def random_sentence(rand: KGRandom, n):
     sentence = [str(n)]
     length = rand.choice([80]*10 + [79]*5 + [rand.randint(len(str(n)), 78)]*5)
     bias = rand.choice([3, 4, 5]*5 + [10]*3 + [25]*2)
@@ -1372,7 +1372,7 @@ def random_sentence(rand, n):
             sentence.append(random_word(rand, i - 1))
     return ' '.join(rand.shuffled(sentence))
 
-def make_file(rand, *args):
+def make_file(rand: KGRandom, *args):
     T, L = map(int, args[:2])
     cases = []
     N = 10**L
@@ -1402,7 +1402,7 @@ In fact, try running `kg make inputs` and inspect the output. Notice anything we
 So what I did was modify `make_file` to look like:
 
 ```python
-def make_file(rand, *args):
+def make_file(rand: KGRandom, *args):
     # ... omitted for brevity ...
     while len(cases) < T:
         length = rand.randint(1, L)
@@ -1614,7 +1614,7 @@ subtasks = {
 }
 
 @validator(bounds=bounds, subtasks=subtasks)
-def validate(stream, subtask=None, *, lim):
+def validate(stream: StrictInputStream, subtask=None, *, lim):
 
     [t] = stream.read.int(lim.t).eoln
     for cas in range(t):
@@ -1637,7 +1637,7 @@ And now let's move on to test planning and writing the generators.
 As always, let's get the sample test case and formatter out of the way first. Edit `sample.in` and open `formatter.py`. Our output will be a list of cases, and each case will be a list of walks, giving us this formatter:
 
 ```python
-def format_case(stream, cases, *, print):
+def format_case(stream: InteractiveStream, cases, *, print):
     print(len(cases))
     for cas in cases:
         print(len(cas))
@@ -1669,13 +1669,13 @@ from sys import *
 from kg.generators import * ### @import
 from formatter import * ### @import
 
-def random_sequence(rand, P, A_min, A_max):
+def random_sequence(rand: KGRandom, P, A_min, A_max):
     walk = []
     for i in range(P):
         walk.append(rand.randint(A_min, A_max))
     return walk
 
-def random_case(rand, SSI_min, SSI_max, A_min, A_max, bias_min, bias_max):
+def random_case(rand: KGRandom, SSI_min, SSI_max, A_min, A_max, bias_min, bias_max):
     cas = []
     SSI = rand.randint(SSI_min, SSI_max)
     bias = rand.choice(bias_min, bias_max)
@@ -1683,7 +1683,7 @@ def random_case(rand, SSI_min, SSI_max, A_min, A_max, bias_min, bias_max):
         cas.append(random_sequence(rand, P, A_min, A_max))
     return cas
 
-def gen_random(rand, new_case, *args):
+def gen_random(rand: KGRandom, new_case, *args):
     T, SSI_min, SSI_max, A_min, A_max, bias_min, bias_max = map(int, args[:7])
     cases = []
     for i in range(T):
@@ -1754,7 +1754,7 @@ def pairs(SSI, A):
             cas.append([i, j])
     return rand.shuffled(cas[:SSI//2])
 
-def gen_limits(rand, *args):
+def gen_limits(rand: KGRandom, *args):
     SSI, A = map(int, args[:2])
     cases = []
     cases.append(complete(SSI, A))
@@ -2039,7 +2039,7 @@ Here's a simple example of a multi-file generator using the single-file model. H
 
 ```python
 @formatter
-def format_case(stream, cases, *, print):
+def format_case(stream: InteractiveStream, cases, *, print):
     print(len(cases))
     for case in cases:
         s, n, d = case
@@ -2054,7 +2054,7 @@ from sys import *
 from kg.generators import * ### @import
 from formatter import * ### @import
 
-def gen_random(rand, *args):
+def gen_random(rand: KGRandom, *args):
     F, A = map(int, args[:2])
     for cas in range(F):
         x, y = rand.randint(1, A), rand.randint(1, A)
@@ -2075,14 +2075,14 @@ from sys import *
 from kg.generators import * ### @import
 from formatter import * ### @import
 
-def gen_random(rand, *args):
+def gen_random(rand: KGRandom, *args):
     F, A = map(int, args[:2])
     for cas in range(F):
         x, y = rand.randint(1, A), rand.randint(1, A)
         yield [0, x, y]
         yield [1, x, y]
 
-def distribute(rand, *args):
+def distribute(rand: KGRandom, *args):
     T, args = args
     yield from group_into(T, gen_random(rand, *args))
 

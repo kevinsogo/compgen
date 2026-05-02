@@ -5,22 +5,37 @@ from kg.generators import * ### @import
 from formatter import * ### @import
 
 {% if minimal %}
-def gen_random(rand, *args):
+def gen_random(rand: KGRandom, *args: str):
     ... # write your generator here
 {% else %}
 A = 10**9
 
 @listify
-def gen_random(rand, *args):
+def gen_random(rand: KGRandom, *args: str):
     ... # write your generator here
 
+{% if multi_file %}
+    # example:
+    num_files, T, N = map(int, args[:3])
+    for _ in range(num_files):
+        cases = []
+        for _ in range(T):
+            n = rand.randint(1, N)
+            cases.append([rand.randint(-A, A) for _ in range(n)])
+        yield cases
+{% else %}
     # example:
     T, N = map(int, args[:2])
-    for cas in range(T):
+    for _ in range(T):
         n = rand.randint(1, N)
-        yield [rand.randint(-A, A) for i in range(n)]
+        yield [rand.randint(-A, A) for _ in range(n)]
+{% endif %}
 {% endif %}
 
-
+{% if multi_file %}
+if __name__ == '__main__':
+    write_to_files(format_case, gen_random, *argv[1:])
+{% else %}
 if __name__ == '__main__':
     write_to_file(format_case, gen_random, argv[1:], stdout)
+{% endif %}

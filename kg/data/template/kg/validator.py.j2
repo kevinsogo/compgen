@@ -18,7 +18,7 @@ subtasks = {
 {% endif %}
 
 @validator(bounds=bounds{{", subtasks=subtasks" if subtasks >= 1 else ""}})
-def validate(stream{{", subtask=None" if subtasks >= 1 else ""}}, *, lim):
+def validate(stream: StrictInputStream{{", subtask=None" if subtasks >= 1 else ""}}, *, lim):
     ... # write your validator here
 
     {% if not minimal %}
