@@ -1522,7 +1522,7 @@ def _get_cms_code(details, code_raw):
 def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, compress=False, python3='python3',
         dest_loc=None, files=[], extra_files=[], statement_file=None, global_statement_file=None, max_workers=None):
 
-    valid_formats = {'hr', 'pg', 'pc2', 'dom', 'cms', 'cms-it'}
+    valid_formats = {'hr', 'pg', 'pc2', 'dom', 'cms', 'cms-it', 'checker_only'}
     if not set(target_formats) <= valid_formats:
         raise CommandError(f"Invalid formats: {set(target_formats) - valid_formats}")
     if not is_same_format(format_, 'kg'):
@@ -1670,6 +1670,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
                  + graders,
             'cms-it': [(checker, os.path.join("check", "checker")) for checker in checkers]
                     + [(grader,  os.path.join("sol", os.path.basename(grader.rel_filename))) for grader in graders],
+            'checker_only': checkers,
         }
     else:
         all_local = files + extra_files
@@ -1707,6 +1708,7 @@ def kg_compile(format_, details, *target_formats, loc='.', shift_left=False, com
             ('dom', 'DOMjudge', False, "#!/chroot/domjudge/usr/bin/{}"),
             ('cms', 'CMS', True, None),
             ('cms-it', 'CMS Italian', False, None),
+            ('checker_only', 'Checker only', False, None),
         ]:
         if fmt not in target_formats: continue
         to_compile = files + to_compiles.get(fmt, [])
