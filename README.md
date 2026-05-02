@@ -8,15 +8,13 @@ Use this library if you're one of the following:
 
 Intended for Ubuntu (and probably some other Unix-based systems) for now, although at least two people have managed to make it work in Windows. If you can't, feel free to ask for help :)
 
-
-
 # Setup
 
-- Run `bash setup.sh` (or run `setup.bat` if you're using Windows). If it prints `DONE`, then it was successful. Make sure you have `python3` and `pip3`.  
+- Navigate to the root directory of this repository (which includes the `pyproject.toml` file) and run `python3 -m pip install .`
 
-    - *Note:* It installs KompGen (and `setuptools`) via `pip`. Feel free to modify `setup.sh` if you don't want to install globally, e.g., if you want to use virtualenv or something. 
+- If you want to install this on, say, `python3.9` or `pypy3`, run `python3.9 -m pip install .` (or `pypy3`). I recommend installing it on the latest pypy3 version.
 
-    - If it issues errors for you, please read `setup.sh` and try to find a way to run each line somehow.
+    - *Note:* For pypy3 installed via `snap` or via `ppa:pypy/ppa`, I couldn't install things easily due to permission issues. I suggest installing pypy3 via [the instructions here](https://doc.pypy.org/en/latest/install.html#installing-pypy).
 
 <!-- - (Optional) If you want to autocomplete commands in bash with tab, make sure that `AUTOCOMPLETE READY` was printed by `setup.sh`, and then add the following line in your `.bashrc`:
 
@@ -28,12 +26,7 @@ eval "$(register-python-argcomplete kg)"
 
     - *Note:* This is still early on in development&mdash;we haven't even decided on the release cycle/method yet&mdash;so expect regular updates (pull from the repo regularly), and a few of them might be backwards-incompatible. We'll fix this soon, promise!
 
-
-- If you want to install this on, say, `python3.9` or `pypy3`, run `bash setup.sh python3.9` (or `pypy3`). I recommend installing it on the latest pypy3 version.
-
-    - *Note:* For pypy3 installed via `snap` or via `ppa:pypy/ppa`, I couldn't install things easily due to permission issues. I suggest installing pypy3 via [the instructions here](https://doc.pypy.org/en/latest/install.html#installing-pypy).
-
-
+- To uninstall, run `pip uninstall KompGen`.
 
 
 # Useful scripts
